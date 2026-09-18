@@ -67,7 +67,8 @@ fun SettingsView(
     bibleViewModel: BibleViewModel,
     authViewModel: AuthViewModel,
     modifier: Modifier = Modifier,
-    onSignInClick: () -> Unit
+    onSignInClick: () -> Unit,
+    onLibraryClick: () -> Unit
 ) {
     val themeMode by bibleViewModel.themeMode.collectAsState()
     val verseTextScale by bibleViewModel.verseTextScale.collectAsState()
@@ -83,6 +84,27 @@ fun SettingsView(
     ) {
         SettingsSection(title = "Account") {
             AccountSection(authViewModel = authViewModel, onSignInClick = onSignInClick)
+        }
+
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+        // A single row for now — folded into a fuller Profile hub redesign in a later phase
+        // (docs/UI_Integration_Roadmap.md Phase G), but the Library screen itself needs a way
+        // in as soon as it exists.
+        SettingsSection(title = "My Library") {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(onClick = onLibraryClick),
+                shape = MaterialTheme.shapes.medium,
+                color = MaterialTheme.colorScheme.surfaceVariant
+            ) {
+                Text(
+                    text = "Highlights & Notes",
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.padding(Spacing.md)
+                )
+            }
         }
 
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)

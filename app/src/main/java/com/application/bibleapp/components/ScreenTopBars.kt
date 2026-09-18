@@ -119,3 +119,16 @@ fun RegisterTopBar(onBackClick: () -> Unit) {
         }
     )
 }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun LibraryTopBar(onBackClick: () -> Unit) {
+    TopBar(
+        title = { Text("Library") },
+        navigationIcon = {
+            IconButton(onClick = onBackClick) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+            }
+        }
+    )
+}

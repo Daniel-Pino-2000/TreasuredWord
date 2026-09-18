@@ -105,6 +105,15 @@ class BibleViewModel(
     private val _noteEditor = MutableStateFlow<NoteEditorState?>(null)
     val noteEditor: StateFlow<NoteEditorState?> = _noteEditor.asStateFlow()
 
+    // Every active highlight/note across all chapters — the Library screen's data, loaded on
+    // demand (not kept live like _highlightsInChapter/_notesInChapter, since it's only ever
+    // shown on its own screen) via [loadLibrary].
+    private val _libraryHighlights = MutableStateFlow<List<Highlight>>(emptyList())
+    val libraryHighlights: StateFlow<List<Highlight>> = _libraryHighlights.asStateFlow()
+
+    private val _libraryNotes = MutableStateFlow<List<Note>>(emptyList())
+    val libraryNotes: StateFlow<List<Note>> = _libraryNotes.asStateFlow()
+
     private val _currentBook = MutableStateFlow(1)
     val currentBook: StateFlow<Int> = _currentBook
 
@@ -391,6 +400,34 @@ class BibleViewModel(
         _noteEditor.value = null
         viewModelScope.launch {
             repository.deleteNote(existing.localId)
+            reloadNotesInChapter()
+        }
+    }
+
+    /** Loads every active highlight/note for the Library screen — call once when it opens. */
+    fun loadLibrary() {
+        viewModelScope.launch {
+            _libraryHighlights.value = repository.getAllActiveHighlights()
+            _libraryNotes.value = repository.getAllActiveNotes()
+        }
+    }
+
+    /** Swipe-to-delete from the Library list. Also refreshes the in-chapter highlight state
+     *  in case the deleted highlight belonged to whatever chapter is currently loaded in
+     *  BibleView — cheap no-op reload otherwise, since the ViewModel (and its StateFlows) is
+     *  shared across screens rather than recreated per navigation. */
+    fun deleteLibraryHighlight(highlight: Highlight) {
+        _libraryHighlights.update { it.filterNot { h -> h.localId == highlight.localId } }
+        viewModelScope.launch {
+            repository.deleteHighlight(highlight.localId)
+            reloadHighlightsInChapter()
+        }
+    }
+
+    fun deleteLibraryNote(note: Note) {
+        _libraryNotes.update { it.filterNot { n -> n.localId == note.localId } }
+        viewModelScope.launch {
+            repository.deleteNote(note.localId)
             reloadNotesInChapter()
         }
     }

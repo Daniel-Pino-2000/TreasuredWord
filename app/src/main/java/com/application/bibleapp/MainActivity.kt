@@ -32,6 +32,7 @@ import androidx.navigation.compose.rememberNavController
 import com.application.bibleapp.components.BibleTopBar
 import com.application.bibleapp.components.BookPickerTopBar
 import com.application.bibleapp.components.HomeTopBar
+import com.application.bibleapp.components.LibraryTopBar
 import com.application.bibleapp.components.LoginTopBar
 import com.application.bibleapp.components.MainBottomBar
 import com.application.bibleapp.components.RegisterTopBar
@@ -191,6 +192,7 @@ class MainActivity : ComponentActivity() {
                             Screen.More.route -> SettingsTopBar()
                             Screen.Login.route -> LoginTopBar { navController.popBackStack() }
                             Screen.Register.route -> RegisterTopBar { navController.popBackStack() }
+                            Screen.Library.route -> LibraryTopBar { navController.popBackStack() }
                             else -> TopBar()
                         }
                     },
@@ -199,7 +201,8 @@ class MainActivity : ComponentActivity() {
                                 Screen.BookPicker.route,
                                 Screen.VersePicker.route,
                                 Screen.Login.route,
-                                Screen.Register.route
+                                Screen.Register.route,
+                                Screen.Library.route
                             )
                         ) {
                             MainBottomBar(

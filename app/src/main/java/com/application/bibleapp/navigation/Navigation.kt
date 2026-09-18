@@ -14,6 +14,7 @@ import com.application.bibleapp.data.repository.BibleRepository
 import com.application.bibleapp.screens.BibleView
 import com.application.bibleapp.screens.BookPickerView
 import com.application.bibleapp.screens.HomeView
+import com.application.bibleapp.screens.LibraryView
 import com.application.bibleapp.screens.LoginView
 import com.application.bibleapp.screens.RegisterView
 import com.application.bibleapp.screens.SearchView
@@ -65,7 +66,19 @@ fun Navigation(
                 bibleViewModel = bibleViewModel,
                 authViewModel = authViewModel,
                 modifier = Modifier.padding(padding),
-                onSignInClick = { navController.navigate(Screen.Login.route) }
+                onSignInClick = { navController.navigate(Screen.Login.route) },
+                onLibraryClick = { navController.navigate(Screen.Library.route) }
+            )
+        }
+
+        composable(Screen.Library.route) {
+            LibraryView(
+                bibleViewModel = bibleViewModel,
+                modifier = Modifier.padding(padding),
+                onVerseClick = { bookId, chapter, verse ->
+                    bibleViewModel.setBook(bookId, chapter, verse)
+                    navController.navigate(Screen.Bible.route)
+                }
             )
         }
 
