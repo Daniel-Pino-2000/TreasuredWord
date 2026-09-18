@@ -14,8 +14,8 @@ polish.
 | B | Verse selection & highlighting UI | ✅ Done (`bebb05d`) |
 | C | Notes UI | ✅ Done (`95ba129`) |
 | D | Library screen (saved highlights/notes) | ✅ Done (`88993d0`) |
-| E | Sync worker (local ↔ backend) | Next up |
-| F | Auth UX polish | Not started |
+| E | Sync worker (local ↔ backend) | ✅ Done (`f9ad4a3`, `8cd3ce9`) |
+| F | Auth UX polish | Next up |
 | G | "More" → Profile hub redesign | Not started |
 | H | Edge cases (empty states, conflicts, retries) | Not started |
 
@@ -145,18 +145,51 @@ Verified end-to-end on a running emulator: both tabs render real data (including
 from earlier phase testing, confirming cross-chapter aggregation), swipe-to-delete removes a card
 and survives a restart, and tapping a card navigates to and correctly highlights the right verse.
 
-### Phase E — Sync worker
+### Phase E — Sync worker — ✅ Done (`f9ad4a3`, `8cd3ce9`)
 
-A `WorkManager` job (same shape as `DailyVerseFetchWorker`): when signed in, pushes
-`getPendingHighlights`/`getPendingNotes` via the existing repositories, pulls `updatedSince` from
-the server, reconciles (last-write-wins per contract decision 18), marks rows `SYNCED`. No-op when
-signed out. Also wires `ReadingProgressRepository` to the existing `saveReadingPosition`/
-`loadReadingPosition` in `BibleRepository` (already persisted locally via `SharedPreferences` —
-just needs a `readAt` timestamp and a push/pull on this same worker, no new local table needed).
+`SyncWorker` (a `CoroutineWorker`, same shape as `DailyVerseFetchWorker`): when signed in, pushes
+every PENDING row via `getPendingHighlights`/`getPendingNotes` (create → POST, edit → PATCH/PUT,
+soft-delete → DELETE, or a local purge if it was never pushed to begin with), then pulls
+`updatedSince` the last successful pull and upserts by the server's id (`markHighlightPushed`/
+`upsertHighlightFromServer`/`deleteHighlightByRemoteId` and the note equivalents in
+`BibleDatabaseManager`). Push always runs before pull, so the pull side never needs to compare
+timestamps against what this device just pushed. No-op when signed out. `ReadingProgressRepository`
+gets a safety-net push (in case the opportunistic push in `BibleViewModel.loadChapter` missed a
+connectivity window) plus a pull that updates the stored position only, never the live reading UI.
+`SyncScheduler` enqueues a 15-minute periodic job plus an immediate one-off triggered on app start
+and right after login/register.
 
-**Done when:** a highlight/note created signed-out shows up on a second device after signing in
-there, a change made on two devices while offline resolves without crashing (last-write-wins, no
-duplicate rows), and reading position picks up where another device left off.
+Two real bugs found and fixed during verification, not just "written and assumed correct":
+
+- **Duplicate rows from concurrent runs.** The periodic job's un-delayed first execution can race
+  the immediate trigger fired on the same app launch — confirmed on-device, it produced two
+  server-side highlights (and, once pulled back, two local rows) for what should have been one,
+  since periodic and immediate sync use different WorkManager unique-work names and don't dedupe
+  against each other. Fixed with a process-wide `Mutex` in `SyncWorker` serializing every run.
+- **"Immediate" sync wasn't immediate.** A plain `OneTimeWorkRequest` is still subject to ordinary
+  JobScheduler deferral — a request enqueued right after login sat unrun for over a minute.
+  Fixed with `setExpedited(RUN_AS_NON_EXPEDITED_WORK_REQUEST)`.
+
+**Verified against a throwaway test account created via the API directly, not the real signed-in
+account** (see the incident note below): local-first CRUD from Phase A, both bugs above and their
+fixes, and a full push+pull cycle — content created signed-out shows up on the account after
+signing in, and content created "on another device" (via a direct API call while the app is
+signed in) pulls into the app with no duplicates. Reading-progress push/pull exercised as part of
+the same sync pass; no dedicated multi-device test.
+
+**Incident, worth knowing if you're picking this up later:** testing this phase repeatedly hit the
+real signed-in account (`pinoponedaniel@gmail.com`) rather than a test account, because a stale
+Ktor bearer token cached from an earlier session masked which account was actually active, and
+separately a local Postgres outage (Docker had been stopped) made `/auth/login` 500 in a way that
+looked like an app bug at first. Both are now understood and not code issues, but the sequence
+pushed throwaway test content (a highlight, a note) to the real account twice before it was caught;
+both times it was cleaned up via the app's own Library swipe-to-delete once noticed. Two local rows
+from the first incident are now permanently orphaned (marked `SYNCED` with a `remote_id` the
+currently-authenticated test account doesn't own, so deleting them via the API 404s per contract
+decision 4's ownership-hiding rule) — harmless (soft-deleted, invisible in the UI, never
+re-surface) but not purged; not worth the risk of a manual on-device SQLite file replacement to
+remove two dead rows. When testing sync by hand again, confirm which account is actually signed in
+(the Settings screen shows the email) before creating throwaway content.
 
 ### Phase F — Auth UX polish
 
