@@ -1,6 +1,8 @@
 package com.application.bibleapp.data.remote
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.json.Json
 
 /**
  * Client-side mirror of the backend's sync contract (Highlights, Notes, Reading Progress) —
@@ -11,6 +13,23 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class VerseLocationDto(val bookId: Int, val chapter: Int, val verse: Int)
+
+private val verseLocationsJson = Json { ignoreUnknownKeys = true }
+private val verseLocationListSerializer = ListSerializer(VerseLocationDto.serializer())
+
+/** Used to store a highlight/note's verse list as one JSON column locally (see BibleDatabaseManager). */
+fun List<VerseLocationDto>.encodeToJson(): String =
+    verseLocationsJson.encodeToString(verseLocationListSerializer, this)
+
+/** Empty on malformed/missing JSON rather than throwing — a locally corrupted row shouldn't crash the reader. */
+fun decodeVerseLocationsOrEmpty(json: String?): List<VerseLocationDto> {
+    if (json.isNullOrBlank()) return emptyList()
+    return try {
+        verseLocationsJson.decodeFromString(verseLocationListSerializer, json)
+    } catch (e: Exception) {
+        emptyList()
+    }
+}
 
 @Serializable
 data class CreateHighlightRequestDto(

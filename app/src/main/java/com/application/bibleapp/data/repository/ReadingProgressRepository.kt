@@ -3,6 +3,7 @@ package com.application.bibleapp.data.repository
 import com.application.bibleapp.data.remote.HttpClientProvider
 import com.application.bibleapp.data.remote.ReadingProgressResponseDto
 import com.application.bibleapp.data.remote.UpdateReadingProgressRequestDto
+import com.application.bibleapp.utils.isoTimestampNow
 import io.ktor.client.call.body
 import io.ktor.client.request.get
 import io.ktor.client.request.put
@@ -11,22 +12,6 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-import java.util.TimeZone
-
-/**
- * `readAt` needs to be an ISO-8601 UTC instant (server/docs/api_contract.md decision 8), but
- * this app's minSdk (24) is below java.time.Instant's native availability (API 26) and core
- * library desugaring isn't enabled — so this formats it manually instead of pulling in a new
- * dependency or toolchain change just for one timestamp.
- */
-private fun isoTimestampNow(): String {
-    val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
-    format.timeZone = TimeZone.getTimeZone("UTC")
-    return format.format(Date())
-}
 
 /**
  * The backend-synced "where I left off" position — a singleton per user, not a list, matching

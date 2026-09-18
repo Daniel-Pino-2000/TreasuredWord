@@ -1,19 +1,27 @@
 package com.application.bibleapp.data.local
 
 import android.content.Context
+import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.util.Log
 import com.application.bibleapp.data.model.BibleVerse
 import com.application.bibleapp.data.model.DailyVerseRef
 import com.application.bibleapp.data.model.DownloadedVersionInfo
 import com.application.bibleapp.data.model.Footnote
+import com.application.bibleapp.data.model.Highlight
+import com.application.bibleapp.data.model.Note
+import com.application.bibleapp.data.model.SyncStatus
 import com.application.bibleapp.data.model.VerseUI
 import com.application.bibleapp.data.model.decodeVerseContentOrNull
 import com.application.bibleapp.data.model.encodeToJson
 import com.application.bibleapp.data.remote.BibleRemoteDataSource
 import com.application.bibleapp.data.remote.DownloadedTranslation
+import com.application.bibleapp.data.remote.VerseLocationDto
+import com.application.bibleapp.data.remote.decodeVerseLocationsOrEmpty
+import com.application.bibleapp.data.remote.encodeToJson as encodeVerseLocationsToJson
 import com.application.bibleapp.utils.NetworkUtils
 import com.application.bibleapp.utils.TextUtils.normalizeForSearch
+import com.application.bibleapp.utils.isoTimestampNow
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -92,6 +100,7 @@ object BibleDatabaseManager {
                 SQLiteDatabase.OPEN_READWRITE
             )
             ensureDownloadedVersionsTable(dbInstance!!)
+            ensureUserContentTables(dbInstance!!)
         }
         return dbInstance!!
     }
@@ -206,6 +215,47 @@ object BibleDatabaseManager {
         )
 
         Log.d("BibleDB", "Downloaded versions/verses/footnotes tables ready")
+    }
+
+    /**
+     * Local-first storage for highlights and notes — see server/docs/api_contract.md and
+     * data/model/Highlight.kt, Note.kt. This device's Room-free SQLite is the source of truth;
+     * `sync_status` marks rows the sync worker (Phase E) still needs to push. `remote_id` stays
+     * NULL until the first successful push. Soft deletes (`deleted_at`) mirror the server's
+     * tombstone model so a pending deletion can still be pushed after the row is "gone" locally.
+     */
+    private fun ensureUserContentTables(db: SQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS highlights (
+                local_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                remote_id TEXT,
+                version_id TEXT NOT NULL,
+                verses_json TEXT NOT NULL,
+                color INTEGER NOT NULL,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                deleted_at TEXT,
+                sync_status TEXT NOT NULL DEFAULT 'PENDING'
+            )
+            """.trimIndent()
+        )
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS notes (
+                local_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                remote_id TEXT,
+                version_id TEXT NOT NULL,
+                verses_json TEXT NOT NULL,
+                text TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                deleted_at TEXT,
+                sync_status TEXT NOT NULL DEFAULT 'PENDING'
+            )
+            """.trimIndent()
+        )
+        Log.d("BibleDB", "Highlight/note tables ready")
     }
 
     /** Overwrites the cached daily-verse reference — always a single row, replaced wholesale. */
@@ -630,4 +680,153 @@ object BibleDatabaseManager {
             emptyList()
         }
     }
+
+    // ---- Highlights & Notes (local-first; see ensureUserContentTables) ----
+
+    private fun lastInsertRowId(db: SQLiteDatabase): Long =
+        db.rawQuery("SELECT last_insert_rowid()", null).use { cursor ->
+            cursor.moveToFirst()
+            cursor.getLong(0)
+        }
+
+    private const val HIGHLIGHT_COLUMNS =
+        "local_id, remote_id, version_id, verses_json, color, created_at, updated_at, deleted_at, sync_status"
+
+    private fun cursorToHighlight(cursor: Cursor): Highlight = Highlight(
+        localId = cursor.getLong(0),
+        remoteId = if (cursor.isNull(1)) null else cursor.getString(1),
+        versionId = cursor.getString(2),
+        verses = decodeVerseLocationsOrEmpty(cursor.getString(3)),
+        color = cursor.getInt(4),
+        createdAt = cursor.getString(5),
+        updatedAt = cursor.getString(6),
+        deletedAt = if (cursor.isNull(7)) null else cursor.getString(7),
+        syncStatus = SyncStatus.fromStored(cursor.getString(8))
+    )
+
+    /** Saves locally right away (PENDING) — no account or network required; Phase E's sync worker pushes it later. */
+    fun insertHighlight(context: Context, versionId: String, verses: List<VerseLocationDto>, color: Int): Highlight {
+        val db = getDatabase(context)
+        val now = isoTimestampNow()
+        db.execSQL(
+            """
+            INSERT INTO highlights (version_id, verses_json, color, created_at, updated_at, sync_status)
+            VALUES (?, ?, ?, ?, ?, 'PENDING')
+            """.trimIndent(),
+            arrayOf(versionId, verses.encodeVerseLocationsToJson(), color, now, now)
+        )
+        return Highlight(lastInsertRowId(db), null, versionId, verses, color, now, now, null, SyncStatus.PENDING)
+    }
+
+    /** Recoloring is the only post-creation edit for a highlight (contract decision 14). */
+    fun recolorHighlight(context: Context, localId: Long, color: Int) {
+        val db = getDatabase(context)
+        db.execSQL(
+            "UPDATE highlights SET color = ?, updated_at = ?, sync_status = 'PENDING' WHERE local_id = ?",
+            arrayOf(color, isoTimestampNow(), localId)
+        )
+    }
+
+    /** Soft delete, mirroring the server's tombstone model — the row stays until it's pushed. */
+    fun softDeleteHighlight(context: Context, localId: Long) {
+        val db = getDatabase(context)
+        val now = isoTimestampNow()
+        db.execSQL(
+            "UPDATE highlights SET deleted_at = ?, updated_at = ?, sync_status = 'PENDING' WHERE local_id = ?",
+            arrayOf(now, now, localId)
+        )
+    }
+
+    /** Active highlights covering any verse in [bookId]/[chapter] — same "any entry matches" filter as the
+     *  server's query params (contract decision 15), applied locally for rendering the reading view. */
+    fun getHighlightsForChapter(context: Context, bookId: Int, chapter: Int): List<Highlight> =
+        getDatabase(context).rawQuery("SELECT $HIGHLIGHT_COLUMNS FROM highlights WHERE deleted_at IS NULL", null)
+            .use { cursor -> generateSequence { if (cursor.moveToNext()) cursorToHighlight(cursor) else null }.toList() }
+            .filter { highlight -> highlight.verses.any { it.bookId == bookId && it.chapter == chapter } }
+
+    /** All active highlights, most recently created first — for the Library screen. */
+    fun getAllActiveHighlights(context: Context): List<Highlight> =
+        getDatabase(context).rawQuery(
+            "SELECT $HIGHLIGHT_COLUMNS FROM highlights WHERE deleted_at IS NULL ORDER BY created_at DESC",
+            null
+        ).use { cursor -> generateSequence { if (cursor.moveToNext()) cursorToHighlight(cursor) else null }.toList() }
+
+    /** Every row (active or soft-deleted) still needing a push — the sync worker's queue (Phase E). */
+    fun getPendingHighlights(context: Context): List<Highlight> =
+        getDatabase(context).rawQuery(
+            "SELECT $HIGHLIGHT_COLUMNS FROM highlights WHERE sync_status = 'PENDING'",
+            null
+        ).use { cursor -> generateSequence { if (cursor.moveToNext()) cursorToHighlight(cursor) else null }.toList() }
+
+    private const val NOTE_COLUMNS =
+        "local_id, remote_id, version_id, verses_json, text, created_at, updated_at, deleted_at, sync_status"
+
+    private fun cursorToNote(cursor: Cursor): Note = Note(
+        localId = cursor.getLong(0),
+        remoteId = if (cursor.isNull(1)) null else cursor.getString(1),
+        versionId = cursor.getString(2),
+        verses = decodeVerseLocationsOrEmpty(cursor.getString(3)),
+        text = cursor.getString(4),
+        createdAt = cursor.getString(5),
+        updatedAt = cursor.getString(6),
+        deletedAt = if (cursor.isNull(7)) null else cursor.getString(7),
+        syncStatus = SyncStatus.fromStored(cursor.getString(8))
+    )
+
+    fun insertNote(context: Context, versionId: String, verses: List<VerseLocationDto>, text: String): Note {
+        val db = getDatabase(context)
+        val now = isoTimestampNow()
+        db.execSQL(
+            """
+            INSERT INTO notes (version_id, verses_json, text, created_at, updated_at, sync_status)
+            VALUES (?, ?, ?, ?, ?, 'PENDING')
+            """.trimIndent(),
+            arrayOf(versionId, verses.encodeVerseLocationsToJson(), text, now, now)
+        )
+        return Note(lastInsertRowId(db), null, versionId, verses, text, now, now, null, SyncStatus.PENDING)
+    }
+
+    /** Both the verse list and text are editable in place for notes (contract decision 14). */
+    fun updateNote(context: Context, localId: Long, verses: List<VerseLocationDto>, text: String) {
+        val db = getDatabase(context)
+        db.execSQL(
+            "UPDATE notes SET verses_json = ?, text = ?, updated_at = ?, sync_status = 'PENDING' WHERE local_id = ?",
+            arrayOf(verses.encodeVerseLocationsToJson(), text, isoTimestampNow(), localId)
+        )
+    }
+
+    fun softDeleteNote(context: Context, localId: Long) {
+        val db = getDatabase(context)
+        val now = isoTimestampNow()
+        db.execSQL(
+            "UPDATE notes SET deleted_at = ?, updated_at = ?, sync_status = 'PENDING' WHERE local_id = ?",
+            arrayOf(now, now, localId)
+        )
+    }
+
+    /** Opened directly by a note's own editor screen, not just from an already-loaded list (contract's note-detail rationale). */
+    fun getNoteById(context: Context, localId: Long): Note? =
+        getDatabase(context).rawQuery(
+            "SELECT $NOTE_COLUMNS FROM notes WHERE local_id = ? AND deleted_at IS NULL",
+            arrayOf(localId.toString())
+        ).use { cursor -> if (cursor.moveToFirst()) cursorToNote(cursor) else null }
+
+    fun getNotesForChapter(context: Context, bookId: Int, chapter: Int): List<Note> =
+        getDatabase(context).rawQuery("SELECT $NOTE_COLUMNS FROM notes WHERE deleted_at IS NULL", null)
+            .use { cursor -> generateSequence { if (cursor.moveToNext()) cursorToNote(cursor) else null }.toList() }
+            .filter { note -> note.verses.any { it.bookId == bookId && it.chapter == chapter } }
+
+    /** All active notes, most recently created first — for the Library screen. */
+    fun getAllActiveNotes(context: Context): List<Note> =
+        getDatabase(context).rawQuery(
+            "SELECT $NOTE_COLUMNS FROM notes WHERE deleted_at IS NULL ORDER BY created_at DESC",
+            null
+        ).use { cursor -> generateSequence { if (cursor.moveToNext()) cursorToNote(cursor) else null }.toList() }
+
+    /** Every row (active or soft-deleted) still needing a push — the sync worker's queue (Phase E). */
+    fun getPendingNotes(context: Context): List<Note> =
+        getDatabase(context).rawQuery(
+            "SELECT $NOTE_COLUMNS FROM notes WHERE sync_status = 'PENDING'",
+            null
+        ).use { cursor -> generateSequence { if (cursor.moveToNext()) cursorToNote(cursor) else null }.toList() }
 }
