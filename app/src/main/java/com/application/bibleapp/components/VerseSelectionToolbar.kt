@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.NoteAdd
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -21,15 +22,15 @@ import androidx.compose.ui.unit.dp
 
 /**
  * Bottom-anchored contextual toolbar shown while one or more verses are selected (see
- * BibleViewModel.selectedVerses / docs/UI_Integration_Roadmap.md Phase B). Tapping a swatch
- * immediately creates the highlight and clears the selection — no separate confirm step, since
- * highlighting is the only action this phase supports (Note/Copy/Share are deferred to later
- * phases per the roadmap).
+ * BibleViewModel.selectedVerses / docs/UI_Integration_Roadmap.md). Tapping a swatch immediately
+ * creates the highlight and clears the selection — no separate confirm step. The Note action
+ * opens NoteEditorSheet over the current selection instead (Copy/Share are still deferred).
  */
 @Composable
 fun VerseSelectionToolbar(
     selectionCount: Int,
     onColorSelected: (Int) -> Unit,
+    onAddNote: () -> Unit,
     onCancel: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -54,8 +55,13 @@ fun VerseSelectionToolbar(
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                IconButton(onClick = onCancel) {
-                    Icon(Icons.Default.Close, contentDescription = "Cancel selection")
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = onAddNote) {
+                        Icon(Icons.AutoMirrored.Filled.NoteAdd, contentDescription = "Add note")
+                    }
+                    IconButton(onClick = onCancel) {
+                        Icon(Icons.Default.Close, contentDescription = "Cancel selection")
+                    }
                 }
             }
             HighlightColorSwatchRow(

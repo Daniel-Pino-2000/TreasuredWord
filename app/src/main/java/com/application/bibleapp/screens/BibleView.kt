@@ -19,7 +19,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import com.application.bibleapp.components.BibleText
 import com.application.bibleapp.components.HighlightActionSheet
+import com.application.bibleapp.components.NoteEditorSheet
 import com.application.bibleapp.components.VerseSelectionToolbar
+import com.application.bibleapp.data.model.BibleBooks
 import com.application.bibleapp.data.remote.VerseLocationDto
 import com.application.bibleapp.ui.theme.ReadingStyle
 import com.application.bibleapp.ui.theme.Spacing
@@ -41,7 +43,11 @@ fun BibleView(
     val highlightsInChapter by bibleViewModel.highlightsInChapter.collectAsState()
     val selectedVerses by bibleViewModel.selectedVerses.collectAsState()
     val highlightPopup by bibleViewModel.highlightPopup.collectAsState()
+    val notesInChapter by bibleViewModel.notesInChapter.collectAsState()
+    val noteEditor by bibleViewModel.noteEditor.collectAsState()
+    val bookNames by bibleViewModel.bookNames.collectAsState()
     val chapterTitle = "$currentBookName $currentChapter"
+    val bookName = { bookId: Int -> bookNames[bookId] ?: BibleBooks.getBookById(bookId)?.name ?: "Unknown" }
 
     // Flattened lookup for BibleText's per-verse background rendering — one entry per verse a
     // highlight covers, not per highlight, so a verse covered by more than one overlapping
@@ -54,6 +60,11 @@ fun BibleView(
                 highlight.verses.forEach { put(it, color) }
             }
         }
+    }
+
+    // Every verse covered by an active note in this chapter — drives BibleText's inline glyph.
+    val notedVerses = remember(notesInChapter) {
+        notesInChapter.flatMapTo(mutableSetOf()) { it.verses }
     }
 
     Box(
@@ -71,13 +82,19 @@ fun BibleView(
             highlightColorsByVerse = highlightColorsByVerse,
             selectedVerses = selectedVerses,
             onVerseTap = { location -> bibleViewModel.onVerseTap(location) },
-            onVerseLongPress = { location -> bibleViewModel.onVerseLongPress(location) }
+            onVerseLongPress = { location -> bibleViewModel.onVerseLongPress(location) },
+            notedVerses = notedVerses,
+            onNoteGlyphTap = { location ->
+                notesInChapter.firstOrNull { location in it.verses }
+                    ?.let { bibleViewModel.openNoteEditorForNote(it) }
+            }
         )
 
         if (selectedVerses.isNotEmpty()) {
             VerseSelectionToolbar(
                 selectionCount = selectedVerses.size,
                 onColorSelected = { colorArgb -> bibleViewModel.highlightSelection(colorArgb) },
+                onAddNote = { bibleViewModel.openNoteEditorForSelection() },
                 onCancel = { bibleViewModel.clearSelection() },
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
@@ -113,6 +130,20 @@ fun BibleView(
             onColorSelected = { target, colorArgb -> bibleViewModel.recolorHighlight(target, colorArgb) },
             onRemove = { target -> bibleViewModel.removeHighlight(target) },
             onDismiss = { bibleViewModel.dismissHighlightPopup() }
+        )
+    }
+
+    noteEditor?.let { editor ->
+        NoteEditorSheet(
+            verses = editor.verses,
+            text = editor.text,
+            isEditingExisting = editor.existingNote != null,
+            bookName = bookName,
+            onTextChange = { text -> bibleViewModel.updateNoteEditorText(text) },
+            onRemoveVerse = { location -> bibleViewModel.removeVerseFromNoteEditor(location) },
+            onSave = { bibleViewModel.saveNoteEditor() },
+            onDelete = { bibleViewModel.deleteNoteEditor() },
+            onDismiss = { bibleViewModel.dismissNoteEditor() }
         )
     }
 }

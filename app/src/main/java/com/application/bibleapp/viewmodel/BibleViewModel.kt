@@ -11,6 +11,7 @@ import com.application.bibleapp.data.model.DailyVerseUI
 import com.application.bibleapp.data.model.DownloadedVersionInfo
 import com.application.bibleapp.data.model.Footnote
 import com.application.bibleapp.data.model.Highlight
+import com.application.bibleapp.data.model.Note
 import com.application.bibleapp.data.model.SelectedBibleVersion
 import com.application.bibleapp.data.model.VerseOfTheDay
 import com.application.bibleapp.data.model.VerseUI
@@ -33,6 +34,19 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+
+/**
+ * State for the open note editor sheet — either a new note being composed from the current
+ * verse selection ([existingNote] null) or an existing one opened via its inline glyph
+ * (see BibleText's note-glyph tap handling). [verses] is a working copy the sheet can remove
+ * chips from before saving; the contract requires at least one verse (see api_contract.md
+ * decision 17), enforced by [BibleViewModel.removeVerseFromNoteEditor] refusing to drop the last one.
+ */
+data class NoteEditorState(
+    val existingNote: Note?,
+    val verses: List<VerseLocationDto>,
+    val text: String
+)
 
 /**
  * Version state is split across three flows that the version picker composes
@@ -81,6 +95,15 @@ class BibleViewModel(
     // shown when tapping (not long-pressing) an already-highlighted verse outside selection mode.
     private val _highlightPopup = MutableStateFlow<Highlight?>(null)
     val highlightPopup: StateFlow<Highlight?> = _highlightPopup.asStateFlow()
+
+    // Active notes covering the chapter currently on screen — same reload points as
+    // _highlightsInChapter (loadChapter, and after any create/update/delete).
+    private val _notesInChapter = MutableStateFlow<List<Note>>(emptyList())
+    val notesInChapter: StateFlow<List<Note>> = _notesInChapter.asStateFlow()
+
+    // The open note editor sheet's state, or null when it's closed — see [NoteEditorState].
+    private val _noteEditor = MutableStateFlow<NoteEditorState?>(null)
+    val noteEditor: StateFlow<NoteEditorState?> = _noteEditor.asStateFlow()
 
     private val _currentBook = MutableStateFlow(1)
     val currentBook: StateFlow<Int> = _currentBook
@@ -227,6 +250,7 @@ class BibleViewModel(
         // are about to leave the screen.
         _selectedVerses.value = emptySet()
         _highlightPopup.value = null
+        _noteEditor.value = null
         viewModelScope.launch {
             val versionId = _selectedVersion.value.id
             val chapterData = repository.getChapter(bookId = bookId, chapter = chapterId, versionId = versionId)
@@ -239,12 +263,19 @@ class BibleViewModel(
             repository.saveReadingPosition(bookId, chapterId, verse)
             syncReadingProgressToServer(versionId, bookId, chapterId, verse)
             _highlightsInChapter.value = repository.getHighlightsForChapter(bookId, chapterId)
+            _notesInChapter.value = repository.getNotesForChapter(bookId, chapterId)
         }
     }
 
     private fun reloadHighlightsInChapter() {
         viewModelScope.launch {
             _highlightsInChapter.value = repository.getHighlightsForChapter(_currentBook.value, _currentChapter.value)
+        }
+    }
+
+    private fun reloadNotesInChapter() {
+        viewModelScope.launch {
+            _notesInChapter.value = repository.getNotesForChapter(_currentBook.value, _currentChapter.value)
         }
     }
 
@@ -303,6 +334,65 @@ class BibleViewModel(
 
     fun dismissHighlightPopup() {
         _highlightPopup.value = null
+    }
+
+    /** Opens the editor to attach a new note to the current selection — sorted into Bible order
+     *  since [selectedVerses] is a Set with no guaranteed iteration order (contract decision 12). */
+    fun openNoteEditorForSelection() {
+        val verses = _selectedVerses.value.toList().sortedWith(
+            compareBy({ it.bookId }, { it.chapter }, { it.verse })
+        )
+        if (verses.isEmpty()) return
+        _selectedVerses.value = emptySet()
+        _noteEditor.value = NoteEditorState(existingNote = null, verses = verses, text = "")
+    }
+
+    /** Opens the editor on an existing note — reached from its inline glyph in the reading view. */
+    fun openNoteEditorForNote(note: Note) {
+        _noteEditor.value = NoteEditorState(existingNote = note, verses = note.verses, text = note.text)
+    }
+
+    fun updateNoteEditorText(text: String) {
+        _noteEditor.update { it?.copy(text = text) }
+    }
+
+    /** No-ops if this would empty the verse list — a note must cover at least one verse
+     *  (contract decision 17). */
+    fun removeVerseFromNoteEditor(location: VerseLocationDto) {
+        _noteEditor.update { state ->
+            if (state == null || state.verses.size <= 1) state
+            else state.copy(verses = state.verses.filterNot { it == location })
+        }
+    }
+
+    fun dismissNoteEditor() {
+        _noteEditor.value = null
+    }
+
+    /** Creates a new note, or updates the one being edited — both the verse list and text are
+     *  editable in place for notes (contract decision 14, unlike highlights). */
+    fun saveNoteEditor() {
+        val state = _noteEditor.value ?: return
+        if (state.verses.isEmpty() || state.text.isBlank()) return
+        _noteEditor.value = null
+        viewModelScope.launch {
+            val existing = state.existingNote
+            if (existing == null) {
+                repository.createNote(_selectedVersion.value.id, state.verses, state.text)
+            } else {
+                repository.updateNote(existing.localId, state.verses, state.text)
+            }
+            reloadNotesInChapter()
+        }
+    }
+
+    fun deleteNoteEditor() {
+        val existing = _noteEditor.value?.existingNote ?: return
+        _noteEditor.value = null
+        viewModelScope.launch {
+            repository.deleteNote(existing.localId)
+            reloadNotesInChapter()
+        }
     }
 
     /** Fire-and-forget: a failed background sync shouldn't interrupt someone just reading —
