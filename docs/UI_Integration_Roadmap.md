@@ -17,7 +17,7 @@ polish.
 | E | Sync worker (local ↔ backend) | ✅ Done (`f9ad4a3`, `8cd3ce9`) |
 | F | Auth UX polish | ✅ Done (`ef4a57e`) |
 | G | "More" → Profile hub redesign | ✅ Done (`441a90c`) |
-| H | Edge cases (empty states, conflicts, retries) | Next up |
+| H | Edge cases (empty states, conflicts, retries) | ✅ Done (`b9e08a0`) |
 
 Ordered so each phase is demoable before the next depends on it: B/C/D work fully offline with no
 backend involved, E only wires sync on top of what B–D already built, F/G/H are polish once the
@@ -267,10 +267,63 @@ the scheduled job's network capability from `INTERNET&TRUSTED&VALIDATED&...` to
 now" within a couple seconds; the header correctly shows the avatar initial, email, and sync
 status in both signed-in and signed-out states.
 
-### Phase H — Edge cases
+### Phase H — Edge cases — ✅ Done (`b9e08a0`)
 
-Empty states, conflict/offline banners, retry affordances for failed syncs, polish on the
-delete-account cascade confirmation (already partly built).
+Scoped down to what the earlier phases had actually left open, rather than building speculative
+UI for things that turned out to already be handled or to not need a UI at all:
+
+- **Empty states** — already fully covered before this phase started: `LibraryView.kt`
+  (Phase D) has `EmptyLibraryState` for both "nothing saved yet" and "nothing matches this
+  search" on each tab, and `SearchView.kt` has its own equivalent pair. Nothing to add.
+- **Conflicts** — not a UI concern by design, not something this phase built a banner for. The
+  architecture decision (see above) already made this server-owned last-write-wins, invisible to
+  the client on purpose — inventing a conflict-resolution UI would contradict that decision, not
+  complete it.
+- **Offline banner** — Settings' Sync section now distinguishes three states that used to all
+  render as the same "Not synced yet": actually offline, a sync that failed after exhausting
+  retries, and genuinely never having synced. Offline is checked via `NetworkUtils.isOnline()` on
+  `ON_RESUME` (the same pattern the Notifications section already used for its
+  battery-optimization check) rather than a live `NetworkCallback` — a connectivity flip while the
+  screen is already open just catches up next time you look at it, which is an acceptable
+  tradeoff for a status line, not something worth a persistent registered callback. Offline hides
+  "Sync now" (tapping it would just enqueue a job that sits unrun until `WorkManager`'s
+  `CONNECTED` constraint clears, with no visible feedback either way) rather than leaving it live.
+- **Retry affordance for failed syncs** — a new `lastSyncFailed` flag (`BibleRepository`,
+  persisted, cleared on the next fully-successful pass) is set by `SyncWorker` only once retries
+  are exhausted (see `MAX_RETRY_ATTEMPTS`), so it never flags a transient hiccup a plain retry
+  would've quietly recovered from. Settings shows it as "Sync failed" in error styling with a
+  "Retry" button — which is just the same "Sync now" action under a different label, since manual
+  retry (already built in Phase G) *is* the correct retry affordance; no separate mechanism was
+  needed.
+- **Delete-account cascade — the one actual bug found here.** Deleting an account left every
+  local highlight/note pointing at a `remote_id` that no longer resolved to anything server-side,
+  so every future sync pass would silently 404 retrying it forever — precisely the orphaned-row
+  problem Phase E's incident notes already describe, but guaranteed to recur on every deletion
+  since it invalidates every `remote_id` at once rather than just the couple of rows Phase E hit
+  by chance. `BibleRepository.detachLocalContentFromDeletedAccount()` (called from Settings'
+  delete-account confirmation on success) now purges any already-pending tombstone outright and
+  resets everything else to local-only PENDING content — kept on the device, detached from the
+  dead account, ready to push as a fresh create the next time the user signs into any account.
+  The confirmation dialog's copy was inaccurate about this before (it implied local copies were
+  deleted along with the account) and now says plainly that they stay on the device.
+- **Also added**: per-item push-failure logging in `SyncWorker` (`logPushFailure`). A single
+  item's push failure is deliberately swallowed by design so it doesn't fail the whole pass or
+  block everything queued behind it — but that also made it completely invisible, even in
+  logcat, which is exactly what got in the way of diagnosing the delete-account bug above while
+  building this phase. Doesn't change the retry behavior, just makes the next "why won't this
+  ever sync" investigation possible without re-deriving this instrumentation from scratch.
+
+Verified live on-device against two throwaway accounts (never the real signed-in one): disabled
+Wi-Fi/data via `adb shell svc wifi disable` / `svc data disable` and confirmed the offline banner
+appeared and "Sync now" disappeared, then re-enabled both and confirmed it reverted to "Synced
+just now"; deleted an account that had 4 highlights and 1 note, pulled the local SQLite DB via
+`run-as` + `sqlite3` and confirmed all 5 rows had `remote_id` cleared and `sync_status` reset to
+`PENDING`; registered a second fresh account, tapped "Sync now", and confirmed via the same
+DB-pull technique that all 5 rows pushed cleanly and now hold fresh server `remote_id`s with
+`sync_status = SYNCED` — no orphaned-404 recurrence.
+
+This closes out the roadmap's originally planned phases (A through H). Anything past this point
+is new work, not a gap in what was scoped here.
 
 ---
 
