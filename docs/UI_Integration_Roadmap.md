@@ -13,8 +13,8 @@ polish.
 | A | Local persistence (highlights/notes tables) | ✅ Done (`874e415`) |
 | B | Verse selection & highlighting UI | ✅ Done (`bebb05d`) |
 | C | Notes UI | ✅ Done (`95ba129`) |
-| D | Library screen (saved highlights/notes) | Next up |
-| E | Sync worker (local ↔ backend) | Not started |
+| D | Library screen (saved highlights/notes) | ✅ Done (`88993d0`) |
+| E | Sync worker (local ↔ backend) | Next up |
 | F | Auth UX polish | Not started |
 | G | "More" → Profile hub redesign | Not started |
 | H | Edge cases (empty states, conflicts, retries) | Not started |
@@ -123,18 +123,27 @@ contract decision 14).
 Verified end-to-end on a running emulator: attach a note to a selection, see the glyph render,
 reopen and edit an existing note's text, delete it, and persistence across a full app restart.
 
-### Phase D — Library screen
+### Phase D — Library screen — ✅ Done (`88993d0`)
 
-One screen (new `Screen.Library` route, pushed without the bottom bar — same pattern as
-`BookPicker`/`VersePicker`), with a segmented control at the top switching between Highlights and
-Notes, rather than two separate screens/routes. Reads straight from
-`getAllActiveHighlights`/`getAllActiveNotes` — fully usable and demoable before any sync code
-exists. Card list (color swatch or note preview, verse ref, timestamp), swipe-to-delete,
-tap-to-jump-to-passage, search/filter by book or note text.
+One screen (`Screen.Library` route, pushed without the bottom bar — same pattern as
+`BookPicker`/`VersePicker`), with a `SingleChoiceSegmentedButtonRow` switching between Highlights
+and Notes, rather than two separate screens/routes. Reads from `BibleViewModel.libraryHighlights`/
+`libraryNotes`, populated by `loadLibrary()` (`getAllActiveHighlights`/`getAllActiveNotes`) when
+the screen opens — fully usable and demoable before any sync code exists. Card list (solid color
+swatch or note-icon, `formatVerseRefs` reference, `formatDisplayDate` timestamp, note preview
+truncated to 2 lines), `SwipeToDismissBox` swipe-to-delete, tap-to-jump (`setBook` + navigate to
+`Screen.Bible`), search filtering by resolved book name (highlights) or book name/note text
+(notes). A minimal "My Library" row was added to `SettingsView` as the entry point, ahead of the
+fuller Profile hub redesign in Phase G.
 
-**Done when:** both tabs render real local data, deleting a card removes it (soft-delete, so it's
-gone from the list but still queued to push once Phase E exists), and tapping a card navigates to
-that verse in `BibleView`.
+One real bug caught during testing: highlight swatches initially rendered at their stored 35%
+text-overlay alpha, so every color looked like the same washed-out gray in the list — fixed to
+render the swatch dot at full opacity (a color *legend* needs to be distinguishable; the
+translucency is only needed where it overlays actual verse text in `BibleText`).
+
+Verified end-to-end on a running emulator: both tabs render real data (including items left over
+from earlier phase testing, confirming cross-chapter aggregation), swipe-to-delete removes a card
+and survives a restart, and tapping a card navigates to and correctly highlights the right verse.
 
 ### Phase E — Sync worker
 
