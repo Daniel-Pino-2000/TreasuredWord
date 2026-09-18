@@ -62,34 +62,38 @@ class SyncWorker(
     params: WorkerParameters
 ) : CoroutineWorker(context, params) {
 
-    override suspend fun doWork(): Result = syncMutex.withLock {
-        val authRepository = AuthRepository(applicationContext)
-        if (!authRepository.isLoggedIn) return@withLock Result.success()
+    override suspend fun doWork(): Result {
+        Log.i(TAG, "doWork() invoked (runAttemptCount=$runAttemptCount)")
+        return syncMutex.withLock {
+            val authRepository = AuthRepository(applicationContext)
+            Log.i(TAG, "isLoggedIn=${authRepository.isLoggedIn}")
+            if (!authRepository.isLoggedIn) return@withLock Result.success()
 
-        val bibleRepository = BibleRepository(
-            context = applicationContext,
-            remote = HelloAoBibleDataSource(),
-            daily = OurMannaBibleDataSource()
-        )
-        val highlightRepository = HighlightRepository()
-        val noteRepository = NoteRepository()
-        val readingProgressRepository = ReadingProgressRepository()
+            val bibleRepository = BibleRepository(
+                context = applicationContext,
+                remote = HelloAoBibleDataSource(),
+                daily = OurMannaBibleDataSource()
+            )
+            val highlightRepository = HighlightRepository()
+            val noteRepository = NoteRepository()
+            val readingProgressRepository = ReadingProgressRepository()
 
-        val outcome = runCatching {
-            pushHighlights(bibleRepository, highlightRepository)
-            pullHighlights(bibleRepository, highlightRepository)
-            pushNotes(bibleRepository, noteRepository)
-            pullNotes(bibleRepository, noteRepository)
-            syncReadingProgress(bibleRepository, readingProgressRepository)
-        }
-
-        outcome.fold(
-            onSuccess = { Result.success() },
-            onFailure = { e ->
-                Log.w(TAG, "Sync failed (attempt ${runAttemptCount + 1}): ${e.message}")
-                if (runAttemptCount < MAX_RETRY_ATTEMPTS) Result.retry() else Result.failure()
+            val outcome = runCatching {
+                pushHighlights(bibleRepository, highlightRepository)
+                pullHighlights(bibleRepository, highlightRepository)
+                pushNotes(bibleRepository, noteRepository)
+                pullNotes(bibleRepository, noteRepository)
+                syncReadingProgress(bibleRepository, readingProgressRepository)
             }
-        )
+
+            outcome.fold(
+                onSuccess = { Result.success() },
+                onFailure = { e ->
+                    Log.w(TAG, "Sync failed (attempt ${runAttemptCount + 1}): ${e.message}")
+                    if (runAttemptCount < MAX_RETRY_ATTEMPTS) Result.retry() else Result.failure()
+                }
+            )
+        }
     }
 
     private suspend fun pushHighlights(bibleRepository: BibleRepository, remote: HighlightRepository) {
