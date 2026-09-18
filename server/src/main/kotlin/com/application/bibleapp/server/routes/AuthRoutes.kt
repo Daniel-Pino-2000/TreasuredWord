@@ -13,8 +13,10 @@ import com.application.bibleapp.server.models.LoginRequest
 import com.application.bibleapp.server.models.LogoutRequest
 import com.application.bibleapp.server.models.RefreshRequest
 import com.application.bibleapp.server.models.RegisterRequest
+import com.application.bibleapp.server.plugins.AUTH_RATE_LIMIT
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.auth.authenticate
+import io.ktor.server.plugins.ratelimit.rateLimit
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
@@ -65,111 +67,113 @@ private fun issueTokensFor(userId: UUID, jwtConfig: JwtConfig): AuthResponse {
 
 fun Route.authRoutes() {
 
-    post("/auth/register") {
-        val request = call.receive<RegisterRequest>()
+    rateLimit(AUTH_RATE_LIMIT) {
+        post("/auth/register") {
+            val request = call.receive<RegisterRequest>()
 
-        val fieldErrors = mutableMapOf<String, String>()
-        if (!EMAIL_REGEX.matches(request.email)) {
-            fieldErrors["email"] = "must be a valid email address"
-        }
-        if (request.password.length < MIN_PASSWORD_LENGTH) {
-            fieldErrors["password"] = "must be at least $MIN_PASSWORD_LENGTH characters"
-        }
-        if (fieldErrors.isNotEmpty()) {
-            call.respond(
-                HttpStatusCode.BadRequest,
-                ErrorResponse(
-                    code = "VALIDATION_ERROR",
-                    message = "One or more fields are invalid",
-                    fieldErrors = fieldErrors
-                )
-            )
-            return@post
-        }
-
-        val existingUser = transaction {
-            Users.selectAll().where { Users.email eq request.email }.singleOrNull()
-        }
-
-        if (existingUser != null) {
-            call.respond(
-                HttpStatusCode.Conflict,
-                ErrorResponse(code = "EMAIL_ALREADY_REGISTERED", message = "Email is already registered")
-            )
-            return@post
-        }
-
-        val passwordHash = PasswordHasher.hash(request.password)
-
-        val userId = transaction {
-            Users.insert {
-                it[Users.email] = request.email
-                it[Users.passwordHash] = passwordHash
-                it[Users.createdAt] = Instant.now()
-            } get Users.id
-        }
-
-        val jwtConfig = call.application.getJwtConfig()
-        call.respond(HttpStatusCode.Created, issueTokensFor(userId, jwtConfig))
-    }
-
-    post("/auth/login") {
-        val request = call.receive<LoginRequest>()
-
-        val user = transaction {
-            Users.selectAll().where { Users.email eq request.email }.singleOrNull()
-        }
-
-        // Same response whether the email doesn't exist or the password is wrong (checking
-        // user != null with the && short-circuits before ever calling PasswordHasher.verify
-        // when there's no row to compare against) - see docs/api_contract.md decision 4. The
-        // API should never let a caller distinguish "wrong password" from "no such account".
-        val credentialsAreValid = user != null && PasswordHasher.verify(request.password, user[Users.passwordHash])
-
-        if (!credentialsAreValid) {
-            call.respond(
-                HttpStatusCode.Unauthorized,
-                ErrorResponse(code = "INVALID_CREDENTIALS", message = "Invalid email or password")
-            )
-            return@post
-        }
-
-        val jwtConfig = call.application.getJwtConfig()
-        call.respond(HttpStatusCode.OK, issueTokensFor(user!![Users.id], jwtConfig))
-    }
-
-    post("/auth/refresh") {
-        val request = call.receive<RefreshRequest>()
-        val submittedHash = RefreshTokenIssuer.hash(request.refreshToken)
-
-        val tokenRow = transaction {
-            RefreshTokens.selectAll().where { RefreshTokens.tokenHash eq submittedHash }.singleOrNull()
-        }
-
-        val isUsable = tokenRow != null &&
-            tokenRow[RefreshTokens.revokedAt] == null &&
-            tokenRow[RefreshTokens.expiresAt].isAfter(Instant.now())
-
-        if (tokenRow == null || !isUsable) {
-            call.respond(
-                HttpStatusCode.Unauthorized,
-                ErrorResponse(code = "UNAUTHORIZED", message = "Invalid, expired, or already-used refresh token")
-            )
-            return@post
-        }
-
-        // Rotation: this token is spent the moment it's used, regardless of whether the
-        // caller ever uses the newly-issued one. If this exact token is submitted again later,
-        // that's the "reuse of an already-rotated token" signal from the contract's design
-        // decisions - a sign the token may have been copied/stolen, not normal client behavior.
-        transaction {
-            RefreshTokens.update({ RefreshTokens.id eq tokenRow[RefreshTokens.id] }) {
-                it[revokedAt] = Instant.now()
+            val fieldErrors = mutableMapOf<String, String>()
+            if (!EMAIL_REGEX.matches(request.email)) {
+                fieldErrors["email"] = "must be a valid email address"
             }
+            if (request.password.length < MIN_PASSWORD_LENGTH) {
+                fieldErrors["password"] = "must be at least $MIN_PASSWORD_LENGTH characters"
+            }
+            if (fieldErrors.isNotEmpty()) {
+                call.respond(
+                    HttpStatusCode.BadRequest,
+                    ErrorResponse(
+                        code = "VALIDATION_ERROR",
+                        message = "One or more fields are invalid",
+                        fieldErrors = fieldErrors
+                    )
+                )
+                return@post
+            }
+
+            val existingUser = transaction {
+                Users.selectAll().where { Users.email eq request.email }.singleOrNull()
+            }
+
+            if (existingUser != null) {
+                call.respond(
+                    HttpStatusCode.Conflict,
+                    ErrorResponse(code = "EMAIL_ALREADY_REGISTERED", message = "Email is already registered")
+                )
+                return@post
+            }
+
+            val passwordHash = PasswordHasher.hash(request.password)
+
+            val userId = transaction {
+                Users.insert {
+                    it[Users.email] = request.email
+                    it[Users.passwordHash] = passwordHash
+                    it[Users.createdAt] = Instant.now()
+                } get Users.id
+            }
+
+            val jwtConfig = call.application.getJwtConfig()
+            call.respond(HttpStatusCode.Created, issueTokensFor(userId, jwtConfig))
         }
 
-        val jwtConfig = call.application.getJwtConfig()
-        call.respond(HttpStatusCode.OK, issueTokensFor(tokenRow[RefreshTokens.userId], jwtConfig))
+        post("/auth/login") {
+            val request = call.receive<LoginRequest>()
+
+            val user = transaction {
+                Users.selectAll().where { Users.email eq request.email }.singleOrNull()
+            }
+
+            // Same response whether the email doesn't exist or the password is wrong (checking
+            // user != null with the && short-circuits before ever calling PasswordHasher.verify
+            // when there's no row to compare against) - see docs/api_contract.md decision 4. The
+            // API should never let a caller distinguish "wrong password" from "no such account".
+            val credentialsAreValid = user != null && PasswordHasher.verify(request.password, user[Users.passwordHash])
+
+            if (!credentialsAreValid) {
+                call.respond(
+                    HttpStatusCode.Unauthorized,
+                    ErrorResponse(code = "INVALID_CREDENTIALS", message = "Invalid email or password")
+                )
+                return@post
+            }
+
+            val jwtConfig = call.application.getJwtConfig()
+            call.respond(HttpStatusCode.OK, issueTokensFor(user!![Users.id], jwtConfig))
+        }
+
+        post("/auth/refresh") {
+            val request = call.receive<RefreshRequest>()
+            val submittedHash = RefreshTokenIssuer.hash(request.refreshToken)
+
+            val tokenRow = transaction {
+                RefreshTokens.selectAll().where { RefreshTokens.tokenHash eq submittedHash }.singleOrNull()
+            }
+
+            val isUsable = tokenRow != null &&
+                tokenRow[RefreshTokens.revokedAt] == null &&
+                tokenRow[RefreshTokens.expiresAt].isAfter(Instant.now())
+
+            if (tokenRow == null || !isUsable) {
+                call.respond(
+                    HttpStatusCode.Unauthorized,
+                    ErrorResponse(code = "UNAUTHORIZED", message = "Invalid, expired, or already-used refresh token")
+                )
+                return@post
+            }
+
+            // Rotation: this token is spent the moment it's used, regardless of whether the
+            // caller ever uses the newly-issued one. If this exact token is submitted again later,
+            // that's the "reuse of an already-rotated token" signal from the contract's design
+            // decisions - a sign the token may have been copied/stolen, not normal client behavior.
+            transaction {
+                RefreshTokens.update({ RefreshTokens.id eq tokenRow[RefreshTokens.id] }) {
+                    it[revokedAt] = Instant.now()
+                }
+            }
+
+            val jwtConfig = call.application.getJwtConfig()
+            call.respond(HttpStatusCode.OK, issueTokensFor(tokenRow[RefreshTokens.userId], jwtConfig))
+        }
     }
 
     authenticate("auth-jwt") {

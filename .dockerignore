@@ -1,0 +1,14 @@
+# The Docker build (see Dockerfile) only needs gradle/, gradlew, the root build files, and
+# server/ — everything else here just slows down sending the build context to the daemon.
+app/
+docs/
+.git/
+.gradle/
+.idea/
+build/
+*/build/
+*/*/build/
+.github/
+*.md
+*.pdf
+local.properties

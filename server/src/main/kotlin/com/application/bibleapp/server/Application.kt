@@ -2,6 +2,7 @@ package com.application.bibleapp.server
 
 import com.application.bibleapp.server.plugins.configureDatabases
 import com.application.bibleapp.server.plugins.configureMonitoring
+import com.application.bibleapp.server.plugins.configureRateLimiting
 import com.application.bibleapp.server.plugins.configureRouting
 import com.application.bibleapp.server.plugins.configureSecurity
 import com.application.bibleapp.server.plugins.configureSerialization
@@ -16,6 +17,7 @@ fun Application.module() {
     configureMonitoring()
     configureSerialization()
     configureSecurity()
+    configureRateLimiting()
     configureDatabases()
     configureRouting()
 }

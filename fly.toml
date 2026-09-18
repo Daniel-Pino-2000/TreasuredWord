@@ -1,0 +1,35 @@
+# Fly.io app config (Phase 5) — see server/DEPLOY.md for the full setup story. Secrets
+# (DATABASE_URL, DATABASE_USER, DATABASE_PASSWORD, JWT_SECRET) are deliberately NOT here — this
+# file is committed to git, so they're set instead via `fly secrets set`, which stores them
+# encrypted and injects them as env vars at runtime.
+#
+# `app` below is a placeholder — Fly app names are globally unique, so replace it with whatever
+# `fly launch` actually reserves for you before your first deploy.
+app = "bibleapp-server"
+primary_region = "iad"
+
+[build]
+
+[env]
+  # Caps the JVM heap so this fits comfortably in a small (512MB) VM instead of the JVM
+  # defaulting to a fraction of the *host's* memory, which on a shared runner can be far more
+  # than this container actually has to work with.
+  JAVA_TOOL_OPTIONS = "-Xmx256m"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [[http_service.checks]]
+    grace_period = "10s"
+    interval = "15s"
+    method = "get"
+    timeout = "5s"
+    path = "/health"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
