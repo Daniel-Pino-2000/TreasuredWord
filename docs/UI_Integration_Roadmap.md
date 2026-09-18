@@ -16,8 +16,8 @@ polish.
 | D | Library screen (saved highlights/notes) | ✅ Done (`88993d0`) |
 | E | Sync worker (local ↔ backend) | ✅ Done (`f9ad4a3`, `8cd3ce9`) |
 | F | Auth UX polish | ✅ Done (`ef4a57e`) |
-| G | "More" → Profile hub redesign | Next up |
-| H | Edge cases (empty states, conflicts, retries) | Not started |
+| G | "More" → Profile hub redesign | ✅ Done (`441a90c`) |
+| H | Edge cases (empty states, conflicts, retries) | Next up |
 
 Ordered so each phase is demoable before the next depends on it: B/C/D work fully offline with no
 backend involved, E only wires sync on top of what B–D already built, F/G/H are polish once the
@@ -226,20 +226,46 @@ no stale "Signed in" state across sign-out/sign-in cycles.
 
 ### Phase G — "More" → Profile hub redesign
 
-Restructure `screens/SettingsView.kt` into sectioned rows instead of adding a 5th bottom-nav tab
+Restructured `screens/SettingsView.kt` into sectioned rows instead of adding a 5th bottom-nav tab
 (Home/Bible/Search stay the daily-use tabs; Library/Account are lower-frequency):
 
-- **Header** — signed in: avatar-initial circle, email, sync status (`Synced · 2m ago` / spinner /
-  offline). Signed out: "Sign in to sync across devices" CTA, not a gate.
-- **My Library** — `Highlights` and `Notes` rows, both opening the Phase D `Screen.Library` route
-  pre-selected to that tab.
-- **Reading** — continue-reading shortcut, reading-progress display.
-- **Preferences** — existing Appearance/Text Size/Notifications, plus new **Sync** section:
-  Wi-Fi-only toggle, auto-sync toggle, manual "Sync now" (these are UI-only until Phase E's worker
-  reads them — e.g. a `NetworkType` constraint on the `WorkManager` job for the Wi-Fi-only toggle;
-  don't ship this section before Phase E respects it, or the toggles will be dead switches).
-- **Account** — Sign out, Delete Account (existing dialog, unchanged).
+- **Header** (`ProfileHeader`) — avatar-initial circle (first letter of the signed-in email, "?"
+  signed out), email or "Not signed in", and a sync status line: "Sign in to sync across devices"
+  signed out, else "Syncing…" / "Synced `<relative time>`" / "Not synced yet". New
+  `formatRelativeSyncTime()` in `utils/TimeUtils.kt` renders "just now"/"5m ago"/"3h ago", falling
+  back to the existing `formatDisplayDate()` past a day.
+- **My Library** — `Highlights` and `Notes` rows, both opening `Screen.Library` pre-selected to
+  that tab. `Screen.Library`'s route grew a `{tab}` path arg (`createRoute(tab)`,
+  `TAB_HIGHLIGHTS`/`TAB_NOTES` constants) and `LibraryView` takes an `initialTab` param consumed
+  once via `rememberSaveable { mutableStateOf(LibraryTab.fromRouteArg(initialTab)) }`.
+- **Reading** — a "Continue reading" row showing the current book/chapter
+  (`bibleViewModel.currentBookName`/`currentChapter`), tapping through to `Screen.Bible`.
+- **Sync** (signed in only; signed out shows a one-line sign-in pitch instead) — Auto-sync and
+  Wi-Fi-only toggles, a status line, and a manual "Sync now". Toggling either preference calls
+  `bibleViewModel.setAutoSyncEnabled`/`setWifiOnlySync` (persists + updates a `StateFlow`) **and**
+  `SyncScheduler.schedulePeriodicSync(context)` right there in the composable, since the ViewModel
+  has no `Context` to reschedule `WorkManager` itself. `SyncScheduler` now reads both preferences
+  itself on every call (`currentConstraints()`, `isAutoSyncEnabled()`) rather than taking them as
+  parameters, so every enqueue site — app startup, post-login, this screen — automatically respects
+  whatever was last chosen. "Sync now" calls `bibleViewModel.awaitManualSync()` (a `delay(500)`
+  polling loop watching `loadLastSyncCompletedAt()` for up to 10s, driving a spinner) alongside
+  `SyncScheduler.triggerImmediateSync(context)`. `SyncWorker` stamps
+  `bibleRepository.saveLastSyncCompletedAt(isoTimestampNow())` only in the fully-successful branch
+  of `doWork()`, so the status line never claims a sync that a mid-pass failure actually left
+  PENDING.
+- **Notifications** — unchanged from Phase D/F.
+- **Account** — Sign out, Delete Account (existing dialog, unchanged); the email/sync-status
+  display that used to live here moved to the header, so this section is action-only now.
 - **About** — existing, unchanged.
+
+Verified live on a running emulator against a fresh throwaway account
+(`phaseg_test@example.com` — not the real signed-in account, consistent with the Phase E incident
+lesson below): both Library rows land on the correct pre-selected tab; toggling Wi-Fi-only flips
+the scheduled job's network capability from `INTERNET&TRUSTED&VALIDATED&...` to
+`NOT_METERED&INTERNET&TRUSTED&VALIDATED&...` immediately, confirmed via
+`dumpsys jobscheduler`; "Sync now" flips the status line from "Not synced yet" to "Synced just
+now" within a couple seconds; the header correctly shows the avatar initial, email, and sync
+status in both signed-in and signed-out states.
 
 ### Phase H — Edge cases
 
