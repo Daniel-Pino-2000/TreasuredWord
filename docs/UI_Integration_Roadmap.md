@@ -12,8 +12,8 @@ polish.
 |---|---|---|
 | A | Local persistence (highlights/notes tables) | ✅ Done (`874e415`) |
 | B | Verse selection & highlighting UI | ✅ Done (`bebb05d`) |
-| C | Notes UI | Next up |
-| D | Library screen (saved highlights/notes) | Not started |
+| C | Notes UI | ✅ Done (`95ba129`) |
+| D | Library screen (saved highlights/notes) | Next up |
 | E | Sync worker (local ↔ backend) | Not started |
 | F | Auth UX polish | Not started |
 | G | "More" → Profile hub redesign | Not started |
@@ -105,14 +105,23 @@ Verified end-to-end on a running emulator (long-press select, non-contiguous mul
 highlight/recolor/remove, cancel, persistence across a full app restart) rather than by compile
 success alone.
 
-### Phase C — Notes UI
+### Phase C — Notes UI — ✅ Done (`95ba129`)
 
-`Note` toolbar action opens a bottom sheet: removable chips for selected verse refs, multiline
-text field, `Save`/`Cancel`, writing to `insertNote`/`updateNote`. Verses with a note get an inline
-glyph; tapping it opens that note's editor directly (verses + text both editable, per contract).
+`VerseSelectionToolbar`'s Note action opens `NoteEditorSheet`: removable chips for selected verse
+refs (an `InputChip`'s whole tap area removes it — Material3 gives one click slot per chip, not a
+separately-clickable trailing icon — and the X only shows once more than one verse remains, since
+a note needs at least one), a multiline text field, `Save`/`Delete` (delete only when editing an
+existing note). Writes to `createNote`/`updateNote`/`deleteNote`.
 
-**Done when:** you can attach a note to a selection, see the inline glyph on saved verses, reopen
-and edit an existing note's text and verse list, and delete it — offline and signed out.
+A noted verse gets an inline glyph right after its verse number — a real `Icon` via
+`InlineTextContent` in the `AnnotatedString` (not a gambled-on emoji glyph), with its own tracked
+character range checked in the same unified tap-to-offset handler Phase B built for footnotes and
+verse taps (checked ahead of a plain verse tap, same reasoning as the footnote-marker check).
+Tapping it opens that note's editor directly, pre-filled (verses + text both editable, per
+contract decision 14).
+
+Verified end-to-end on a running emulator: attach a note to a selection, see the glyph render,
+reopen and edit an existing note's text, delete it, and persistence across a full app restart.
 
 ### Phase D — Library screen
 
