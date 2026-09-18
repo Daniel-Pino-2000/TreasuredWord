@@ -6,8 +6,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -21,9 +27,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.text.KeyboardOptions
 import com.application.bibleapp.ui.theme.Spacing
+import com.application.bibleapp.utils.isValidEmailFormat
 import com.application.bibleapp.viewmodel.AuthViewModel
 
 @Composable
@@ -35,8 +42,13 @@ fun LoginView(
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var passwordVisible by remember { mutableStateOf(false) }
     val isLoading by authViewModel.isLoading.collectAsState()
     val errorMessage by authViewModel.errorMessage.collectAsState()
+
+    // Only flagged once there's something to judge — an empty field isn't "invalid" yet,
+    // it just hasn't been filled in.
+    val emailFormatValid = email.isBlank() || isValidEmailFormat(email)
 
     Column(
         modifier = modifier
@@ -58,6 +70,10 @@ fun LoginView(
                 authViewModel.clearError()
             },
             label = { Text("Email") },
+            isError = !emailFormatValid,
+            supportingText = if (!emailFormatValid) {
+                { Text("Enter a valid email address") }
+            } else null,
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
             modifier = Modifier.fillMaxWidth()
@@ -71,11 +87,22 @@ fun LoginView(
             },
             label = { Text("Password") },
             singleLine = true,
-            visualTransformation = PasswordVisualTransformation(),
+            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+            trailingIcon = {
+                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                    Icon(
+                        imageVector = if (passwordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                        contentDescription = if (passwordVisible) "Hide password" else "Show password"
+                    )
+                }
+            },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             modifier = Modifier.fillMaxWidth()
         )
 
+        // Deliberately the same message whether the email doesn't exist or the password is
+        // wrong — never reveals which one — matching the backend's own INVALID_CREDENTIALS
+        // ambiguity (server/docs/api_contract.md decision 4).
         errorMessage?.let {
             Text(
                 text = it,
@@ -86,7 +113,7 @@ fun LoginView(
 
         Button(
             onClick = { authViewModel.login(email.trim(), password, onSuccess = onLoginSuccess) },
-            enabled = !isLoading && email.isNotBlank() && password.isNotBlank(),
+            enabled = !isLoading && isValidEmailFormat(email) && password.isNotBlank(),
             modifier = Modifier.fillMaxWidth()
         ) {
             if (isLoading) {

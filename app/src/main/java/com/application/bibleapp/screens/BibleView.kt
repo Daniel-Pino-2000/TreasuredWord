@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.Color
 import com.application.bibleapp.components.BibleText
 import com.application.bibleapp.components.HighlightActionSheet
 import com.application.bibleapp.components.NoteEditorSheet
+import com.application.bibleapp.components.SignInNudgeBanner
 import com.application.bibleapp.components.VerseSelectionToolbar
 import com.application.bibleapp.data.model.BibleBooks
 import com.application.bibleapp.data.remote.VerseLocationDto
@@ -31,7 +32,8 @@ import com.application.bibleapp.viewmodel.BibleViewModel
 @Composable
 fun BibleView(
     bibleViewModel: BibleViewModel,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onSignInClick: () -> Unit = {}
 ) {
 
     val currentVerse by bibleViewModel.currentVerse.collectAsState()
@@ -46,6 +48,7 @@ fun BibleView(
     val notesInChapter by bibleViewModel.notesInChapter.collectAsState()
     val noteEditor by bibleViewModel.noteEditor.collectAsState()
     val bookNames by bibleViewModel.bookNames.collectAsState()
+    val showSignInNudge by bibleViewModel.showSignInNudge.collectAsState()
     val chapterTitle = "$currentBookName $currentChapter"
     val bookName = { bookId: Int -> bookNames[bookId] ?: BibleBooks.getBookById(bookId)?.name ?: "Unknown" }
 
@@ -98,6 +101,19 @@ fun BibleView(
                 onCancel = { bibleViewModel.clearSelection() },
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+            )
+        }
+
+        if (showSignInNudge) {
+            SignInNudgeBanner(
+                onSignInClick = {
+                    bibleViewModel.dismissSignInNudge()
+                    onSignInClick()
+                },
+                onDismiss = { bibleViewModel.dismissSignInNudge() },
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
                     .fillMaxWidth()
             )
         }

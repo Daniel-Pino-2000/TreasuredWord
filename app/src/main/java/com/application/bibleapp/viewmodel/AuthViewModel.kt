@@ -72,7 +72,17 @@ class AuthViewModel(private val authRepository: AuthRepository) : ViewModel() {
 
     fun refreshCurrentUser() {
         viewModelScope.launch {
-            authRepository.getCurrentUser().onSuccess { _currentUser.value = it }
+            authRepository.getCurrentUser().fold(
+                onSuccess = { _currentUser.value = it },
+                onFailure = {
+                    // A failed fetch here often means the access token expired and the
+                    // automatic refresh attempt also failed (HttpClientProvider's Auth plugin
+                    // already cleared TokenStore in that case — see its refreshTokens doc).
+                    // Re-reading isLoggedIn reflects that in the UI instead of leaving it
+                    // showing "Signed in" for a session that's actually already gone.
+                    _isLoggedIn.value = authRepository.isLoggedIn
+                }
+            )
         }
     }
 

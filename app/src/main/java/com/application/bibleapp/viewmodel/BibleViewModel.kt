@@ -114,6 +114,26 @@ class BibleViewModel(
     private val _libraryNotes = MutableStateFlow<List<Note>>(emptyList())
     val libraryNotes: StateFlow<List<Note>> = _libraryNotes.asStateFlow()
 
+    // Prompts sign-in the first time someone highlights or notes a verse while signed out —
+    // not a wall (the feature already worked, local-first), just a one-time nudge that it'd
+    // sync if they did. Shown at most once per app session: [signInNudgeOffered] tracks
+    // "already offered" independent of [_showSignInNudge]'s own true/false, so dismissing it
+    // doesn't cause the next highlight to immediately offer it again.
+    private var signInNudgeOffered = false
+    private val _showSignInNudge = MutableStateFlow(false)
+    val showSignInNudge: StateFlow<Boolean> = _showSignInNudge.asStateFlow()
+
+    private fun maybeOfferSignIn() {
+        if (!authRepository.isLoggedIn && !signInNudgeOffered) {
+            signInNudgeOffered = true
+            _showSignInNudge.value = true
+        }
+    }
+
+    fun dismissSignInNudge() {
+        _showSignInNudge.value = false
+    }
+
     private val _currentBook = MutableStateFlow(1)
     val currentBook: StateFlow<Int> = _currentBook
 
@@ -322,6 +342,7 @@ class BibleViewModel(
         viewModelScope.launch {
             repository.createHighlight(versionId, verses, colorArgb)
             reloadHighlightsInChapter()
+            maybeOfferSignIn()
         }
     }
 
@@ -388,6 +409,7 @@ class BibleViewModel(
             val existing = state.existingNote
             if (existing == null) {
                 repository.createNote(_selectedVersion.value.id, state.verses, state.text)
+                maybeOfferSignIn()
             } else {
                 repository.updateNote(existing.localId, state.verses, state.text)
             }

@@ -50,7 +50,11 @@ fun Navigation(
         }
 
         composable(Screen.Bible.route) {
-            BibleView(bibleViewModel, modifier = Modifier.padding(padding))
+            BibleView(
+                bibleViewModel,
+                modifier = Modifier.padding(padding),
+                onSignInClick = { navController.navigate(Screen.Login.route) }
+            )
         }
 
         composable(Screen.Search.route) {
@@ -92,6 +96,7 @@ fun Navigation(
                 modifier = Modifier.padding(padding),
                 onLoginSuccess = {
                     bibleViewModel.syncReadingProgressFromServer()
+                    bibleViewModel.dismissSignInNudge()
                     SyncScheduler.triggerImmediateSync(context)
                     navController.popBackStack()
                 },
@@ -105,6 +110,7 @@ fun Navigation(
                 modifier = Modifier.padding(padding),
                 onRegisterSuccess = {
                     bibleViewModel.syncReadingProgressFromServer()
+                    bibleViewModel.dismissSignInNudge()
                     SyncScheduler.triggerImmediateSync(context)
                     navController.popBackStack(Screen.More.route, inclusive = false)
                 },

@@ -7,8 +7,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -22,13 +27,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.application.bibleapp.ui.theme.Spacing
+import com.application.bibleapp.utils.MIN_PASSWORD_LENGTH
+import com.application.bibleapp.utils.isValidEmailFormat
 import com.application.bibleapp.viewmodel.AuthViewModel
-
-/** Mirrors the backend's own minimum (server/routes/AuthRoutes.kt) so the user finds out
- *  their password is too short here, instead of only after submitting. */
-private const val MIN_PASSWORD_LENGTH = 8
 
 @Composable
 fun RegisterView(
@@ -40,11 +44,18 @@ fun RegisterView(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
-    var localError by remember { mutableStateOf<String?>(null) }
+    var passwordVisible by remember { mutableStateOf(false) }
     val isLoading by authViewModel.isLoading.collectAsState()
     val remoteError by authViewModel.errorMessage.collectAsState()
 
-    val errorToShow = localError ?: remoteError
+    // Each only flags once there's something to judge, so the form doesn't start red before
+    // the user has typed anything.
+    val emailFormatValid = email.isBlank() || isValidEmailFormat(email)
+    val passwordLengthValid = password.isBlank() || password.length >= MIN_PASSWORD_LENGTH
+    val passwordsMatch = confirmPassword.isBlank() || password == confirmPassword
+
+    val canSubmit = !isLoading && isValidEmailFormat(email) &&
+        password.length >= MIN_PASSWORD_LENGTH && password == confirmPassword
 
     Column(
         modifier = modifier
@@ -64,10 +75,13 @@ fun RegisterView(
             value = email,
             onValueChange = {
                 email = it
-                localError = null
                 authViewModel.clearError()
             },
             label = { Text("Email") },
+            isError = !emailFormatValid,
+            supportingText = if (!emailFormatValid) {
+                { Text("Enter a valid email address") }
+            } else null,
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
             modifier = Modifier.fillMaxWidth()
@@ -77,13 +91,21 @@ fun RegisterView(
             value = password,
             onValueChange = {
                 password = it
-                localError = null
                 authViewModel.clearError()
             },
             label = { Text("Password") },
+            isError = !passwordLengthValid,
             supportingText = { Text("At least $MIN_PASSWORD_LENGTH characters") },
             singleLine = true,
-            visualTransformation = PasswordVisualTransformation(),
+            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+            trailingIcon = {
+                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                    Icon(
+                        imageVector = if (passwordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                        contentDescription = if (passwordVisible) "Hide password" else "Show password"
+                    )
+                }
+            },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             modifier = Modifier.fillMaxWidth()
         )
@@ -92,17 +114,20 @@ fun RegisterView(
             value = confirmPassword,
             onValueChange = {
                 confirmPassword = it
-                localError = null
                 authViewModel.clearError()
             },
             label = { Text("Confirm password") },
+            isError = !passwordsMatch,
+            supportingText = if (!passwordsMatch) {
+                { Text("Passwords don't match") }
+            } else null,
             singleLine = true,
-            visualTransformation = PasswordVisualTransformation(),
+            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             modifier = Modifier.fillMaxWidth()
         )
 
-        errorToShow?.let {
+        remoteError?.let {
             Text(
                 text = it,
                 color = MaterialTheme.colorScheme.error,
@@ -111,17 +136,8 @@ fun RegisterView(
         }
 
         Button(
-            onClick = {
-                when {
-                    password.length < MIN_PASSWORD_LENGTH ->
-                        localError = "Password must be at least $MIN_PASSWORD_LENGTH characters"
-                    password != confirmPassword ->
-                        localError = "Passwords don't match"
-                    else ->
-                        authViewModel.register(email.trim(), password, onSuccess = onRegisterSuccess)
-                }
-            },
-            enabled = !isLoading && email.isNotBlank() && password.isNotBlank() && confirmPassword.isNotBlank(),
+            onClick = { authViewModel.register(email.trim(), password, onSuccess = onRegisterSuccess) },
+            enabled = canSubmit,
             modifier = Modifier.fillMaxWidth()
         ) {
             if (isLoading) {
