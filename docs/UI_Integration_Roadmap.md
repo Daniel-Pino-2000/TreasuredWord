@@ -15,8 +15,8 @@ polish.
 | C | Notes UI | ✅ Done (`95ba129`) |
 | D | Library screen (saved highlights/notes) | ✅ Done (`88993d0`) |
 | E | Sync worker (local ↔ backend) | ✅ Done (`f9ad4a3`, `8cd3ce9`) |
-| F | Auth UX polish | Next up |
-| G | "More" → Profile hub redesign | Not started |
+| F | Auth UX polish | ✅ Done (`ef4a57e`) |
+| G | "More" → Profile hub redesign | Next up |
 | H | Edge cases (empty states, conflicts, retries) | Not started |
 
 Ordered so each phase is demoable before the next depends on it: B/C/D work fully offline with no
@@ -191,19 +191,38 @@ re-surface) but not purged; not worth the risk of a manual on-device SQLite file
 remove two dead rows. When testing sync by hand again, confirm which account is actually signed in
 (the Settings screen shows the email) before creating throwaway content.
 
-### Phase F — Auth UX polish
+### Phase F — Auth UX polish — ✅ Done (`ef4a57e`)
 
-- Inline validation as-you-type (email format, password strength), not just on submit.
-- Generic error banner for bad login, confirming the UI never reveals which field was wrong
-  (matches contract decision 4's deliberate `INVALID_CREDENTIALS` ambiguity).
-- Disable submit + spinner while in flight, to prevent double-submits.
-- Password visibility toggle.
-- Silent token refresh on app start via `TokenStore`; graceful drop to signed-out state on
-  refresh failure.
-- No "Forgot password" link yet — deferred in the backend contract (no email provider wired up).
-  Omit rather than ship a dead end.
-- Sign-in prompted contextually (e.g. "Sign in to back this up" the first time someone highlights
-  while signed out), not as a forced wall — consistent with local-first.
+Most of this list turned out to already exist from the original auth build — this phase mainly
+closed real gaps and fixed one live bug found during Phase E's debugging:
+
+- **Inline as-you-type validation** — new. `utils/AuthValidation.kt` mirrors the backend's own
+  `EMAIL_REGEX`/`MIN_PASSWORD_LENGTH` (server/routes/AuthRoutes.kt) so `LoginView`/`RegisterView`
+  show a field-level error (red border + `supportingText`) and disable the submit button the
+  moment something's invalid, not just after a round trip. `RegisterView` also validates
+  confirm-password match live.
+- **Generic error for bad login** — already correct, confirmed not changed:
+  `AuthError.InvalidCredentials.displayMessage` is the same "Invalid email or password" whether
+  the email doesn't exist or the password is wrong (contract decision 4).
+- **Disable submit + spinner while in flight** — already implemented in both screens (`enabled =
+  !isLoading`, `CircularProgressIndicator` swapped in for the button label).
+- **Password visibility toggle** — new, both `LoginView` and `RegisterView` (the confirm-password
+  field follows the same toggle rather than getting its own).
+- **Silent token refresh / graceful drop to signed-out** — the refresh mechanism itself
+  (`HttpClientProvider`'s Auth plugin) already existed and already clears `TokenStore` on a failed
+  refresh. What was missing, and is now fixed: `AuthViewModel.refreshCurrentUser()` left
+  `_isLoggedIn` stuck `true` after that happened, so Settings kept showing "Signed in" with no
+  resolvable email — this is the exact bug hit live during Phase E testing. Fixed by re-reading
+  `authRepository.isLoggedIn` on that failure path.
+- **No "Forgot password" link** — confirmed already absent from both screens; nothing to do.
+- **Contextual sign-in nudge** — new. `components/SignInNudgeBanner.kt`, shown once per app
+  session after the first highlight or note created while signed out
+  (`BibleViewModel.maybeOfferSignIn`/`showSignInNudge`), dismissible, and cleared automatically on
+  a successful sign-in from any entry point (not just the banner's own button).
+
+Verified on a running emulator: field-level validation and the visibility toggle on both screens,
+the nudge appearing once and staying dismissed through a second highlight the same session, and
+no stale "Signed in" state across sign-out/sign-in cycles.
 
 ### Phase G — "More" → Profile hub redesign
 
