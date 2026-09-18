@@ -9,11 +9,14 @@ import com.application.bibleapp.data.model.DEFAULT_VERSION
 import com.application.bibleapp.data.model.DailyVerseRef
 import com.application.bibleapp.data.model.DownloadedVersionInfo
 import com.application.bibleapp.data.model.Footnote
+import com.application.bibleapp.data.model.Highlight
+import com.application.bibleapp.data.model.Note
 import com.application.bibleapp.data.model.VerseUI
 import com.application.bibleapp.data.model.toUI
 import com.application.bibleapp.data.remote.BibleRemoteDataSource
 import com.application.bibleapp.data.remote.DailyVerseDataSource
 import com.application.bibleapp.data.remote.HttpClientProvider
+import com.application.bibleapp.data.remote.VerseLocationDto
 import com.application.bibleapp.ui.theme.ThemeMode
 import com.application.bibleapp.ui.theme.VerseTextScale
 import com.application.bibleapp.utils.NetworkUtils
@@ -79,6 +82,41 @@ class BibleRepository(
             if (query.isBlank()) emptyList()
             else BibleDatabaseManager.searchVerses(query, versionId)
         }
+
+    // ---- Highlights & Notes (local-first; see data/local/BibleDatabaseManager.kt) ----
+
+    suspend fun getHighlightsForChapter(bookId: Int, chapter: Int): List<Highlight> =
+        withContext(Dispatchers.IO) { BibleDatabaseManager.getHighlightsForChapter(context, bookId, chapter) }
+
+    suspend fun getAllActiveHighlights(): List<Highlight> =
+        withContext(Dispatchers.IO) { BibleDatabaseManager.getAllActiveHighlights(context) }
+
+    suspend fun createHighlight(versionId: String, verses: List<VerseLocationDto>, color: Int): Highlight =
+        withContext(Dispatchers.IO) { BibleDatabaseManager.insertHighlight(context, versionId, verses, color) }
+
+    suspend fun recolorHighlight(localId: Long, color: Int) =
+        withContext(Dispatchers.IO) { BibleDatabaseManager.recolorHighlight(context, localId, color) }
+
+    suspend fun deleteHighlight(localId: Long) =
+        withContext(Dispatchers.IO) { BibleDatabaseManager.softDeleteHighlight(context, localId) }
+
+    suspend fun getNotesForChapter(bookId: Int, chapter: Int): List<Note> =
+        withContext(Dispatchers.IO) { BibleDatabaseManager.getNotesForChapter(context, bookId, chapter) }
+
+    suspend fun getAllActiveNotes(): List<Note> =
+        withContext(Dispatchers.IO) { BibleDatabaseManager.getAllActiveNotes(context) }
+
+    suspend fun getNoteById(localId: Long): Note? =
+        withContext(Dispatchers.IO) { BibleDatabaseManager.getNoteById(context, localId) }
+
+    suspend fun createNote(versionId: String, verses: List<VerseLocationDto>, text: String): Note =
+        withContext(Dispatchers.IO) { BibleDatabaseManager.insertNote(context, versionId, verses, text) }
+
+    suspend fun updateNote(localId: Long, verses: List<VerseLocationDto>, text: String) =
+        withContext(Dispatchers.IO) { BibleDatabaseManager.updateNote(context, localId, verses, text) }
+
+    suspend fun deleteNote(localId: Long) =
+        withContext(Dispatchers.IO) { BibleDatabaseManager.softDeleteNote(context, localId) }
 
     /**
      * Reads the reference [DailyVerseFetchWorker][com.application.bibleapp.worker.DailyVerseFetchWorker]

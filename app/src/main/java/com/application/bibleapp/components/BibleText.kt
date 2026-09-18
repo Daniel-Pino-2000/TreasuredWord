@@ -1,5 +1,6 @@
 package com.application.bibleapp.components
 
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -13,24 +14,28 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.ParagraphStyle
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.BaselineShift
 import androidx.compose.ui.text.style.TextIndent
-import androidx.compose.ui.text.withLink
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.application.bibleapp.data.model.StoredHeading
 import com.application.bibleapp.data.model.VerseRun
 import com.application.bibleapp.data.model.VerseUI
+import com.application.bibleapp.data.remote.VerseLocationDto
 import com.application.bibleapp.ui.theme.ReadingStyle
 import com.application.bibleapp.ui.theme.Spacing
 import com.application.bibleapp.ui.theme.scaledBy
@@ -68,6 +73,31 @@ private data class VerseParagraph(val verses: List<VerseUI>, val isContinuation:
  *  only carries a heading on its opening verse) is still re-chunked to roughly this size —
  *  see the second doc paragraph on [groupIntoParagraphs]. */
 private const val MAX_VERSES_PER_PARAGRAPH = 6
+
+/** Character range (in one paragraph's [AnnotatedString]) covered by one verse — used to map a
+ *  tap/long-press position (via [TextLayoutResult.getOffsetForPosition]) back to which verse was
+ *  touched, since a paragraph renders several verses as one flowing block of text. */
+private data class VerseSpan(val range: IntRange, val location: VerseLocationDto)
+
+/** Character range covered by one footnote marker glyph. Checked before [VerseSpan]s when
+ *  resolving a tap, so tapping the marker itself still opens the footnote instead of registering
+ *  as a verse tap — this replaces the old `withLink`/`LinkAnnotation` approach so footnote clicks
+ *  and verse tap/long-press share one gesture detector instead of two that could contend for the
+ *  same touch. */
+private data class FootnoteSpan(val range: IntRange, val noteId: Int)
+
+private data class ParagraphContent(
+    val text: AnnotatedString,
+    val verseSpans: List<VerseSpan>,
+    val footnoteSpans: List<FootnoteSpan>
+)
+
+private fun VerseUI.toLocationOrNull(): VerseLocationDto? {
+    val book = bookId ?: return null
+    val ch = chapter ?: return null
+    val v = verse ?: return null
+    return VerseLocationDto(book, ch, v)
+}
 
 /**
  * Groups verses at real paragraph boundaries only: the chapter's first verse, any verse
@@ -123,7 +153,13 @@ fun BibleText(
     chapterTitle: String,
     modifier: Modifier = Modifier,
     textScale: Float = 1f,
-    onFootnoteClick: (Int) -> Unit = {}
+    onFootnoteClick: (Int) -> Unit = {},
+    /** Background color for a verse already covered by a saved highlight, keyed by location. */
+    highlightColorsByVerse: Map<VerseLocationDto, Color> = emptyMap(),
+    /** Verses currently selected (long-pressed/tapped) but not yet saved as a highlight. */
+    selectedVerses: Set<VerseLocationDto> = emptySet(),
+    onVerseTap: (VerseLocationDto) -> Unit = {},
+    onVerseLongPress: (VerseLocationDto) -> Unit = {}
 ) {
     // Create a new LazyListState each time the verses list changes
     val listState = remember(verses) { androidx.compose.foundation.lazy.LazyListState() }
@@ -151,6 +187,9 @@ fun BibleText(
     val wordsOfJesusColor = MaterialTheme.colorScheme.error
     val footnoteColor = MaterialTheme.colorScheme.primary
     val verseNumberColor = MaterialTheme.colorScheme.onSurfaceVariant
+    // Deliberately distinct from any saved highlight color (see ui/theme/HighlightColors.kt) so
+    // "currently selecting" never looks like "already highlighted".
+    val selectionColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.28f)
 
     LazyColumn(
         modifier = modifier,
@@ -162,6 +201,19 @@ fun BibleText(
         }
         itemsIndexed(paragraphs) { index, paragraph ->
             val headings = paragraph.verses.first().richContent?.headings.orEmpty()
+            val content = remember(paragraph, highlightColorsByVerse, selectedVerses, textScale) {
+                paragraphAnnotatedString(
+                    paragraph.verses,
+                    wordsOfJesusColor,
+                    footnoteColor,
+                    verseNumberColor,
+                    textScale,
+                    highlightColorsByVerse,
+                    selectedVerses,
+                    selectionColor
+                )
+            }
+            var layoutResult by remember(paragraph) { mutableStateOf<TextLayoutResult?>(null) }
 
             Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
                 Column(modifier = Modifier.widthIn(max = MAX_READING_WIDTH).fillMaxWidth()) {
@@ -169,23 +221,44 @@ fun BibleText(
                         HeadingText(heading, textScale)
                     }
                     Text(
-                        text = paragraphAnnotatedString(
-                            paragraph.verses, wordsOfJesusColor, footnoteColor, verseNumberColor, textScale, onFootnoteClick
-                        ),
+                        text = content.text,
                         style = ReadingStyle.VerseText.scaledBy(textScale),
                         color = MaterialTheme.colorScheme.onSurface,
                         // A heading already reads as a section break on its own, and a
                         // continuation chunk (see VerseParagraph.isContinuation) isn't a real
                         // paragraph start at all — only add the gap above paragraphs that
                         // both start without a heading and are genuinely new.
-                        modifier = Modifier.padding(
-                            top = if (index > 0 && headings.isEmpty() && !paragraph.isContinuation) {
-                                Spacing.xl
-                            } else {
-                                0.dp
+                        modifier = Modifier
+                            .padding(
+                                top = if (index > 0 && headings.isEmpty() && !paragraph.isContinuation) {
+                                    Spacing.xl
+                                } else {
+                                    0.dp
+                                },
+                                bottom = Spacing.xs
+                            )
+                            .pointerInput(paragraph) {
+                                detectTapGestures(
+                                    onTap = { offset ->
+                                        val layout = layoutResult ?: return@detectTapGestures
+                                        val charOffset = layout.getOffsetForPosition(offset)
+                                        val footnote = content.footnoteSpans.firstOrNull { charOffset in it.range }
+                                        if (footnote != null) {
+                                            onFootnoteClick(footnote.noteId)
+                                            return@detectTapGestures
+                                        }
+                                        val verse = content.verseSpans.firstOrNull { charOffset in it.range }
+                                        if (verse != null) onVerseTap(verse.location)
+                                    },
+                                    onLongPress = { offset ->
+                                        val layout = layoutResult ?: return@detectTapGestures
+                                        val charOffset = layout.getOffsetForPosition(offset)
+                                        val verse = content.verseSpans.firstOrNull { charOffset in it.range }
+                                        if (verse != null) onVerseLongPress(verse.location)
+                                    }
+                                )
                             },
-                            bottom = Spacing.xs
-                        )
+                        onTextLayout = { layoutResult = it }
                     )
                 }
             }
@@ -247,7 +320,10 @@ private fun HeadingText(heading: StoredHeading, textScale: Float) {
  * verse numbers render as small superscript markers inline (not line-starts), words-of-Jesus
  * runs are colored, poem-tagged runs each get their own indented line via [ParagraphStyle],
  * and a clickable superscript marker follows any run with an attached footnote. Verses with
- * no rich content at all (legacy rows) fall back to their plain text.
+ * no rich content at all (legacy rows) fall back to their plain text. Alongside the text, tracks
+ * each verse's and footnote marker's character range ([VerseSpan]/[FootnoteSpan]) so a tap or
+ * long-press position (resolved to a character offset via the rendered [TextLayoutResult]) can be
+ * mapped back to what was actually touched.
  */
 private fun paragraphAnnotatedString(
     verses: List<VerseUI>,
@@ -255,17 +331,28 @@ private fun paragraphAnnotatedString(
     footnoteColor: Color,
     verseNumberColor: Color,
     textScale: Float,
-    onFootnoteClick: (Int) -> Unit
-): AnnotatedString {
+    highlightColorsByVerse: Map<VerseLocationDto, Color>,
+    selectedVerses: Set<VerseLocationDto>,
+    selectionColor: Color
+): ParagraphContent {
     val verseNumberStyle = ReadingStyle.VerseNumber.scaledBy(textScale).toSpanStyle().copy(
         color = verseNumberColor,
         baselineShift = BaselineShift.Superscript
     )
+    val footnoteMarkerStyle = SpanStyle(
+        color = footnoteColor,
+        fontSize = 11.sp * textScale,
+        baselineShift = BaselineShift.Superscript
+    )
 
-    return buildAnnotatedString {
+    val verseSpans = mutableListOf<VerseSpan>()
+    val footnoteSpans = mutableListOf<FootnoteSpan>()
+
+    val text = buildAnnotatedString {
         var isFirstRunInParagraph = true
 
         verses.forEach { verse ->
+            val verseStart = length
             val runs = verse.richContent?.runs
 
             if (runs.isNullOrEmpty()) {
@@ -273,43 +360,54 @@ private fun paragraphAnnotatedString(
                 appendVerseNumber(verse.verse, verseNumberStyle)
                 append(verse.text.removePrefix(LEGACY_PARAGRAPH_MARKER))
                 isFirstRunInParagraph = false
-                return@forEach
+            } else {
+                runs.forEachIndexed { index, run ->
+                    val isFirstRunOfVerse = index == 0
+                    val startsNewLine = run.poemLevel != null || (run.lineBreakBefore && !isFirstRunInParagraph)
+
+                    if (startsNewLine) {
+                        // Verified on-device with a pixel-level before/after comparison:
+                        // giving a poem line's *first* display line a non-zero indent
+                        // while it also opens with the verse-number superscript throws
+                        // off Compose's indent for that paragraph's *wrapped* line — the
+                        // wrap renders less indented than the first line instead of
+                        // matching it. Lines that don't carry a verse number (every
+                        // second-clause/continuation poem run) aren't affected — their
+                        // first line and wrap both indent correctly at the same value.
+                        // So: a verse-opening poem line gets firstLine=0 (the verse
+                        // number sits flush at the margin, same as it does in ordinary
+                        // prose paragraphs elsewhere in this file) and only its wrap
+                        // picks up the poem indent; every other poem line indents
+                        // uniformly on both its first line and its wrap.
+                        val indent = POEM_INDENT_STEP * (run.poemLevel ?: 0)
+                        val firstLineIndent = if (isFirstRunOfVerse) 0.sp else indent
+                        val style = ParagraphStyle(textIndent = TextIndent(firstLine = firstLineIndent, restLine = indent))
+                        withStyle(style) {
+                            if (isFirstRunOfVerse) appendVerseNumber(verse.verse, verseNumberStyle)
+                            appendRun(run, wordsOfJesusColor, footnoteMarkerStyle, footnoteSpans)
+                        }
+                    } else {
+                        if (!isFirstRunInParagraph) append(" ")
+                        if (isFirstRunOfVerse) appendVerseNumber(verse.verse, verseNumberStyle)
+                        appendRun(run, wordsOfJesusColor, footnoteMarkerStyle, footnoteSpans)
+                    }
+                    isFirstRunInParagraph = false
+                }
             }
 
-            runs.forEachIndexed { index, run ->
-                val isFirstRunOfVerse = index == 0
-                val startsNewLine = run.poemLevel != null || (run.lineBreakBefore && !isFirstRunInParagraph)
-
-                if (startsNewLine) {
-                    // Verified on-device with a pixel-level before/after comparison:
-                    // giving a poem line's *first* display line a non-zero indent
-                    // while it also opens with the verse-number superscript throws
-                    // off Compose's indent for that paragraph's *wrapped* line — the
-                    // wrap renders less indented than the first line instead of
-                    // matching it. Lines that don't carry a verse number (every
-                    // second-clause/continuation poem run) aren't affected — their
-                    // first line and wrap both indent correctly at the same value.
-                    // So: a verse-opening poem line gets firstLine=0 (the verse
-                    // number sits flush at the margin, same as it does in ordinary
-                    // prose paragraphs elsewhere in this file) and only its wrap
-                    // picks up the poem indent; every other poem line indents
-                    // uniformly on both its first line and its wrap.
-                    val indent = POEM_INDENT_STEP * (run.poemLevel ?: 0)
-                    val firstLineIndent = if (isFirstRunOfVerse) 0.sp else indent
-                    val style = ParagraphStyle(textIndent = TextIndent(firstLine = firstLineIndent, restLine = indent))
-                    withStyle(style) {
-                        if (isFirstRunOfVerse) appendVerseNumber(verse.verse, verseNumberStyle)
-                        appendRun(run, wordsOfJesusColor, footnoteColor, textScale, onFootnoteClick)
-                    }
-                } else {
-                    if (!isFirstRunInParagraph) append(" ")
-                    if (isFirstRunOfVerse) appendVerseNumber(verse.verse, verseNumberStyle)
-                    appendRun(run, wordsOfJesusColor, footnoteColor, textScale, onFootnoteClick)
+            val verseEnd = length
+            val location = verse.toLocationOrNull()
+            if (location != null) {
+                verseSpans += VerseSpan(verseStart until verseEnd, location)
+                val background = if (location in selectedVerses) selectionColor else highlightColorsByVerse[location]
+                if (background != null) {
+                    addStyle(SpanStyle(background = background), verseStart, verseEnd)
                 }
-                isFirstRunInParagraph = false
             }
         }
     }
+
+    return ParagraphContent(text, verseSpans, footnoteSpans)
 }
 
 private fun AnnotatedString.Builder.appendVerseNumber(verseNumber: Int?, style: SpanStyle) {
@@ -320,9 +418,8 @@ private fun AnnotatedString.Builder.appendVerseNumber(verseNumber: Int?, style: 
 private fun AnnotatedString.Builder.appendRun(
     run: VerseRun,
     wordsOfJesusColor: Color,
-    footnoteColor: Color,
-    textScale: Float,
-    onFootnoteClick: (Int) -> Unit
+    footnoteMarkerStyle: SpanStyle,
+    footnoteSpans: MutableList<FootnoteSpan>
 ) {
     if (run.isWordsOfJesus) {
         withStyle(SpanStyle(color = wordsOfJesusColor)) { append(run.text) }
@@ -331,15 +428,7 @@ private fun AnnotatedString.Builder.appendRun(
     }
 
     val noteId = run.footnoteId ?: return
-    withLink(LinkAnnotation.Clickable(tag = "footnote-$noteId") { onFootnoteClick(noteId) }) {
-        withStyle(
-            SpanStyle(
-                color = footnoteColor,
-                fontSize = 11.sp * textScale,
-                baselineShift = BaselineShift.Superscript
-            )
-        ) {
-            append(FOOTNOTE_MARKER)
-        }
-    }
+    val markerStart = length
+    withStyle(footnoteMarkerStyle) { append(FOOTNOTE_MARKER) }
+    footnoteSpans += FootnoteSpan(markerStart until length, noteId)
 }

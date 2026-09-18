@@ -10,12 +10,14 @@ import com.application.bibleapp.data.model.DailyVerseRef
 import com.application.bibleapp.data.model.DailyVerseUI
 import com.application.bibleapp.data.model.DownloadedVersionInfo
 import com.application.bibleapp.data.model.Footnote
+import com.application.bibleapp.data.model.Highlight
 import com.application.bibleapp.data.model.SelectedBibleVersion
 import com.application.bibleapp.data.model.VerseOfTheDay
 import com.application.bibleapp.data.model.VerseUI
 import com.application.bibleapp.data.model.chapterCount
 import com.application.bibleapp.data.model.resolveDailyVerseUI
 import com.application.bibleapp.data.remote.LanguageGroup
+import com.application.bibleapp.data.remote.VerseLocationDto
 import com.application.bibleapp.data.remote.groupVersionsByLanguage
 import com.application.bibleapp.data.repository.AuthRepository
 import com.application.bibleapp.data.repository.BibleRepository
@@ -29,6 +31,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /**
@@ -63,6 +66,21 @@ class BibleViewModel(
     // The footnote currently shown in a bottom sheet, or null when none is open.
     private val _selectedFootnote = MutableStateFlow<Footnote?>(null)
     val selectedFootnote: StateFlow<Footnote?> = _selectedFootnote.asStateFlow()
+
+    // Active highlights covering the chapter currently on screen — reloaded on every
+    // loadChapter() and after any create/recolor/delete (see data/local/BibleDatabaseManager.kt).
+    private val _highlightsInChapter = MutableStateFlow<List<Highlight>>(emptyList())
+    val highlightsInChapter: StateFlow<List<Highlight>> = _highlightsInChapter.asStateFlow()
+
+    // Verses the user has long-pressed/tapped into selection, before choosing a highlight color.
+    // Non-empty means "selection mode" is active — see onVerseTap/onVerseLongPress.
+    private val _selectedVerses = MutableStateFlow<Set<VerseLocationDto>>(emptySet())
+    val selectedVerses: StateFlow<Set<VerseLocationDto>> = _selectedVerses.asStateFlow()
+
+    // The highlight whose "change color / remove" sheet is open, or null when none is —
+    // shown when tapping (not long-pressing) an already-highlighted verse outside selection mode.
+    private val _highlightPopup = MutableStateFlow<Highlight?>(null)
+    val highlightPopup: StateFlow<Highlight?> = _highlightPopup.asStateFlow()
 
     private val _currentBook = MutableStateFlow(1)
     val currentBook: StateFlow<Int> = _currentBook
@@ -205,6 +223,10 @@ class BibleViewModel(
     }
 
     fun loadChapter(bookId: Int, chapterId: Int, verseId: Int = 1) {
+        // A new chapter means any in-progress selection or open popup belongs to verses that
+        // are about to leave the screen.
+        _selectedVerses.value = emptySet()
+        _highlightPopup.value = null
         viewModelScope.launch {
             val versionId = _selectedVersion.value.id
             val chapterData = repository.getChapter(bookId = bookId, chapter = chapterId, versionId = versionId)
@@ -216,7 +238,71 @@ class BibleViewModel(
             _currentVerse.value = verse
             repository.saveReadingPosition(bookId, chapterId, verse)
             syncReadingProgressToServer(versionId, bookId, chapterId, verse)
+            _highlightsInChapter.value = repository.getHighlightsForChapter(bookId, chapterId)
         }
+    }
+
+    private fun reloadHighlightsInChapter() {
+        viewModelScope.launch {
+            _highlightsInChapter.value = repository.getHighlightsForChapter(_currentBook.value, _currentChapter.value)
+        }
+    }
+
+    /** Long-press always starts/extends a selection, regardless of whether the verse is already highlighted. */
+    fun onVerseLongPress(location: VerseLocationDto) {
+        toggleVerseSelection(location)
+    }
+
+    /** In selection mode, a tap toggles that verse. Outside selection mode, tapping an
+     *  already-highlighted verse opens its change-color/remove sheet; tapping a plain verse is a no-op. */
+    fun onVerseTap(location: VerseLocationDto) {
+        if (_selectedVerses.value.isNotEmpty()) {
+            toggleVerseSelection(location)
+            return
+        }
+        _highlightPopup.value = _highlightsInChapter.value.firstOrNull { location in it.verses }
+    }
+
+    private fun toggleVerseSelection(location: VerseLocationDto) {
+        _selectedVerses.update { current ->
+            if (location in current) current - location else current + location
+        }
+    }
+
+    fun clearSelection() {
+        _selectedVerses.value = emptySet()
+    }
+
+    /** Creates one highlight covering every currently selected verse, then clears the selection. */
+    fun highlightSelection(colorArgb: Int) {
+        val verses = _selectedVerses.value.toList()
+        if (verses.isEmpty()) return
+        val versionId = _selectedVersion.value.id
+        _selectedVerses.value = emptySet()
+        viewModelScope.launch {
+            repository.createHighlight(versionId, verses, colorArgb)
+            reloadHighlightsInChapter()
+        }
+    }
+
+    fun recolorHighlight(highlight: Highlight, colorArgb: Int) {
+        _highlightPopup.value = null
+        viewModelScope.launch {
+            repository.recolorHighlight(highlight.localId, colorArgb)
+            reloadHighlightsInChapter()
+        }
+    }
+
+    fun removeHighlight(highlight: Highlight) {
+        _highlightPopup.value = null
+        viewModelScope.launch {
+            repository.deleteHighlight(highlight.localId)
+            reloadHighlightsInChapter()
+        }
+    }
+
+    fun dismissHighlightPopup() {
+        _highlightPopup.value = null
     }
 
     /** Fire-and-forget: a failed background sync shouldn't interrupt someone just reading —
