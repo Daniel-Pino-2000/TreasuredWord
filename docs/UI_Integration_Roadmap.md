@@ -11,8 +11,8 @@ polish.
 | Phase | Focus | Status |
 |---|---|---|
 | A | Local persistence (highlights/notes tables) | ✅ Done (`874e415`) |
-| B | Verse selection & highlighting UI | Next up |
-| C | Notes UI | Not started |
+| B | Verse selection & highlighting UI | ✅ Done (`bebb05d`) |
+| C | Notes UI | Next up |
 | D | Library screen (saved highlights/notes) | Not started |
 | E | Sync worker (local ↔ backend) | Not started |
 | F | Auth UX polish | Not started |
@@ -80,24 +80,30 @@ highlights, insert/update/soft-delete/query for notes, plus `getPending*` for th
 future queue and `get*ForChapter` (any-verse-matches filter, mirroring the server's `bookId`/
 `chapter` query params) for rendering the reading view.
 
-### Phase B — Verse selection & highlighting UI — next up
+### Phase B — Verse selection & highlighting UI — ✅ Done (`bebb05d`)
 
-In `BibleText.kt`/`BibleView.kt`, writing to the Phase A tables only (no backend involved yet):
+In `BibleText.kt`/`BibleView.kt`, writing to the Phase A tables only (no backend involved):
 
-- Long-press a verse → selection mode (tinted background, margin marker, haptic) → contextual
-  bottom toolbar (`Highlight` / `Note` / `Copy` / `Share` / `Cancel`, selection counter).
-- Tap to toggle additional verses (supports non-contiguous, per the contract's `verses: List<...>`
-  shape); drag handles extend a contiguous range.
-- `Highlight` → slim horizontal color-swatch row (5-6 curated colors from the existing palette) →
-  tap applies instantly, exits selection, undo snackbar.
+- Long-press a verse → selection mode (tinted background) → bottom contextual toolbar
+  (`VerseSelectionToolbar`: selection counter, 5 curated color swatches from
+  `ui/theme/HighlightColors.kt`, cancel). Tap toggles additional verses, including non-contiguous
+  ones. Tapping a swatch applies the highlight immediately and clears the selection.
 - Saved highlights render as translucent background spans in the `AnnotatedString`, sourced from
-  `getHighlightsForChapter`.
-- Tapping (not long-pressing) an already-highlighted verse opens `Change color` / `Remove` — never
-  a fresh selection (verses are immutable after creation; only color is editable).
+  `highlightsInChapter`.
+- Tapping (not long-pressing) an already-highlighted verse opens `HighlightActionSheet` —
+  `Change color` / `Remove` — never a fresh selection (verses are immutable after creation; only
+  color is editable).
+- All tap/long-press detection is unified through one gesture handler per paragraph (character
+  offset via `TextLayoutResult.getOffsetForPosition`, mapped back to whichever verse or footnote
+  marker owns that offset), replacing the old `withLink`/`LinkAnnotation` footnote-click mechanism
+  rather than layering a second pointer-input handler on top of it — see the commit message for why.
 
-**Done when:** you can select one or more verses (contiguous or scattered), highlight them in any
-swatch color, see the highlight persist across app restart (reads from local SQLite, not memory),
-and change/remove an existing highlight — all with the app offline and signed out.
+Deferred, not in this pass: drag handles to extend a contiguous range (tap-to-toggle already
+covers it), Copy/Share actions, and Note (Phase C).
+
+Verified end-to-end on a running emulator (long-press select, non-contiguous multi-select,
+highlight/recolor/remove, cancel, persistence across a full app restart) rather than by compile
+success alone.
 
 ### Phase C — Notes UI
 
