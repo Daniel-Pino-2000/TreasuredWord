@@ -829,4 +829,116 @@ object BibleDatabaseManager {
             "SELECT $NOTE_COLUMNS FROM notes WHERE sync_status = 'PENDING'",
             null
         ).use { cursor -> generateSequence { if (cursor.moveToNext()) cursorToNote(cursor) else null }.toList() }
+
+    // ---- Sync worker support (Phase E) — see worker/SyncWorker.kt ----
+
+    /** After a successful create/recolor push — stamps the server's id (a no-op change if this
+     *  row already had one, e.g. a recolor) and timestamps, and clears PENDING. */
+    fun markHighlightPushed(context: Context, localId: Long, remoteId: String, createdAt: String, updatedAt: String) {
+        getDatabase(context).execSQL(
+            "UPDATE highlights SET remote_id = ?, created_at = ?, updated_at = ?, sync_status = 'SYNCED' WHERE local_id = ?",
+            arrayOf(remoteId, createdAt, updatedAt, localId)
+        )
+    }
+
+    /** Hard-removes a local row once its deletion has been confirmed pushed (or, for a row that
+     *  was created and soft-deleted again before ever reaching the server, immediately — there's
+     *  nothing to push for a row the server never saw). Unlike [softDeleteHighlight], this isn't
+     *  a tombstone; nothing references a purged row afterward. */
+    fun purgeHighlight(context: Context, localId: Long) {
+        getDatabase(context).execSQL("DELETE FROM highlights WHERE local_id = ?", arrayOf(localId))
+    }
+
+    /** Removes this device's copy of a highlight the server reports as deleted (a pulled
+     *  tombstone) — a no-op if this device never had a synced copy of it. */
+    fun deleteHighlightByRemoteId(context: Context, remoteId: String) {
+        getDatabase(context).execSQL("DELETE FROM highlights WHERE remote_id = ?", arrayOf(remoteId))
+    }
+
+    /** Inserts or refreshes the local copy of a highlight from the server's authoritative state —
+     *  either a highlight seen for the first time (created on another device) or this device's
+     *  own row, freshly confirmed. Matched by [remoteId], not local_id, since the two devices
+     *  don't share local row ids. */
+    fun upsertHighlightFromServer(
+        context: Context,
+        remoteId: String,
+        versionId: String,
+        verses: List<VerseLocationDto>,
+        color: Int,
+        createdAt: String,
+        updatedAt: String
+    ) {
+        val db = getDatabase(context)
+        val versesJson = verses.encodeVerseLocationsToJson()
+        val existingLocalId = db.rawQuery("SELECT local_id FROM highlights WHERE remote_id = ?", arrayOf(remoteId))
+            .use { cursor -> if (cursor.moveToFirst()) cursor.getLong(0) else null }
+        if (existingLocalId != null) {
+            db.execSQL(
+                """
+                UPDATE highlights SET version_id = ?, verses_json = ?, color = ?, created_at = ?,
+                    updated_at = ?, deleted_at = NULL, sync_status = 'SYNCED' WHERE local_id = ?
+                """.trimIndent(),
+                arrayOf(versionId, versesJson, color, createdAt, updatedAt, existingLocalId)
+            )
+        } else {
+            db.execSQL(
+                """
+                INSERT INTO highlights (remote_id, version_id, verses_json, color, created_at, updated_at, sync_status)
+                VALUES (?, ?, ?, ?, ?, ?, 'SYNCED')
+                """.trimIndent(),
+                arrayOf(remoteId, versionId, versesJson, color, createdAt, updatedAt)
+            )
+        }
+    }
+
+    /** See [markHighlightPushed] — the note equivalent. */
+    fun markNotePushed(context: Context, localId: Long, remoteId: String, createdAt: String, updatedAt: String) {
+        getDatabase(context).execSQL(
+            "UPDATE notes SET remote_id = ?, created_at = ?, updated_at = ?, sync_status = 'SYNCED' WHERE local_id = ?",
+            arrayOf(remoteId, createdAt, updatedAt, localId)
+        )
+    }
+
+    /** See [purgeHighlight] — the note equivalent. */
+    fun purgeNote(context: Context, localId: Long) {
+        getDatabase(context).execSQL("DELETE FROM notes WHERE local_id = ?", arrayOf(localId))
+    }
+
+    /** See [deleteHighlightByRemoteId] — the note equivalent. */
+    fun deleteNoteByRemoteId(context: Context, remoteId: String) {
+        getDatabase(context).execSQL("DELETE FROM notes WHERE remote_id = ?", arrayOf(remoteId))
+    }
+
+    /** See [upsertHighlightFromServer] — the note equivalent (text instead of color). */
+    fun upsertNoteFromServer(
+        context: Context,
+        remoteId: String,
+        versionId: String,
+        verses: List<VerseLocationDto>,
+        text: String,
+        createdAt: String,
+        updatedAt: String
+    ) {
+        val db = getDatabase(context)
+        val versesJson = verses.encodeVerseLocationsToJson()
+        val existingLocalId = db.rawQuery("SELECT local_id FROM notes WHERE remote_id = ?", arrayOf(remoteId))
+            .use { cursor -> if (cursor.moveToFirst()) cursor.getLong(0) else null }
+        if (existingLocalId != null) {
+            db.execSQL(
+                """
+                UPDATE notes SET version_id = ?, verses_json = ?, text = ?, created_at = ?,
+                    updated_at = ?, deleted_at = NULL, sync_status = 'SYNCED' WHERE local_id = ?
+                """.trimIndent(),
+                arrayOf(versionId, versesJson, text, createdAt, updatedAt, existingLocalId)
+            )
+        } else {
+            db.execSQL(
+                """
+                INSERT INTO notes (remote_id, version_id, verses_json, text, created_at, updated_at, sync_status)
+                VALUES (?, ?, ?, ?, ?, ?, 'SYNCED')
+                """.trimIndent(),
+                arrayOf(remoteId, versionId, versesJson, text, createdAt, updatedAt)
+            )
+        }
+    }
 }

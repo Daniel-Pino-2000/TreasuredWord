@@ -27,12 +27,19 @@ class HighlightRepository {
     private val client get() = HttpClientProvider.client
     private val baseUrl get() = HttpClientProvider.BASE_URL
 
-    suspend fun listHighlights(bookId: Int? = null, chapter: Int? = null): Result<List<HighlightResponseDto>> =
+    /** [updatedSince] (ISO-8601) also returns soft-deleted tombstones for anything changed since
+     *  then — see server/docs/api_contract.md's `GET /highlights` and the sync worker (Phase E). */
+    suspend fun listHighlights(
+        bookId: Int? = null,
+        chapter: Int? = null,
+        updatedSince: String? = null
+    ): Result<List<HighlightResponseDto>> =
         runCatching {
             val response = client.get("$baseUrl/highlights") {
                 url {
                     bookId?.let { parameters.append("bookId", it.toString()) }
                     chapter?.let { parameters.append("chapter", it.toString()) }
+                    updatedSince?.let { parameters.append("updatedSince", it) }
                 }
             }
             requireSuccess(response)

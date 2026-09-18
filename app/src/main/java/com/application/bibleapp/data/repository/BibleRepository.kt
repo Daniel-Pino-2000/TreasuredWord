@@ -118,6 +118,67 @@ class BibleRepository(
     suspend fun deleteNote(localId: Long) =
         withContext(Dispatchers.IO) { BibleDatabaseManager.softDeleteNote(context, localId) }
 
+    // ---- Sync worker support (Phase E) — see worker/SyncWorker.kt ----
+
+    suspend fun getPendingHighlights(): List<Highlight> =
+        withContext(Dispatchers.IO) { BibleDatabaseManager.getPendingHighlights(context) }
+
+    suspend fun markHighlightPushed(localId: Long, remoteId: String, createdAt: String, updatedAt: String) =
+        withContext(Dispatchers.IO) { BibleDatabaseManager.markHighlightPushed(context, localId, remoteId, createdAt, updatedAt) }
+
+    suspend fun purgeHighlight(localId: Long) =
+        withContext(Dispatchers.IO) { BibleDatabaseManager.purgeHighlight(context, localId) }
+
+    suspend fun deleteHighlightByRemoteId(remoteId: String) =
+        withContext(Dispatchers.IO) { BibleDatabaseManager.deleteHighlightByRemoteId(context, remoteId) }
+
+    suspend fun upsertHighlightFromServer(
+        remoteId: String,
+        versionId: String,
+        verses: List<VerseLocationDto>,
+        color: Int,
+        createdAt: String,
+        updatedAt: String
+    ) = withContext(Dispatchers.IO) {
+        BibleDatabaseManager.upsertHighlightFromServer(context, remoteId, versionId, verses, color, createdAt, updatedAt)
+    }
+
+    suspend fun getPendingNotes(): List<Note> =
+        withContext(Dispatchers.IO) { BibleDatabaseManager.getPendingNotes(context) }
+
+    suspend fun markNotePushed(localId: Long, remoteId: String, createdAt: String, updatedAt: String) =
+        withContext(Dispatchers.IO) { BibleDatabaseManager.markNotePushed(context, localId, remoteId, createdAt, updatedAt) }
+
+    suspend fun purgeNote(localId: Long) =
+        withContext(Dispatchers.IO) { BibleDatabaseManager.purgeNote(context, localId) }
+
+    suspend fun deleteNoteByRemoteId(remoteId: String) =
+        withContext(Dispatchers.IO) { BibleDatabaseManager.deleteNoteByRemoteId(context, remoteId) }
+
+    suspend fun upsertNoteFromServer(
+        remoteId: String,
+        versionId: String,
+        verses: List<VerseLocationDto>,
+        text: String,
+        createdAt: String,
+        updatedAt: String
+    ) = withContext(Dispatchers.IO) {
+        BibleDatabaseManager.upsertNoteFromServer(context, remoteId, versionId, verses, text, createdAt, updatedAt)
+    }
+
+    /** Last time this device successfully pulled highlights/notes — passed as the server's
+     *  `updatedSince` query param so a sync pass only asks for what changed since then (and gets
+     *  tombstones for anything deleted elsewhere in the meantime). Null before the first sync. */
+    fun loadHighlightsSyncWatermark(): String? = prefs.getString(KEY_HIGHLIGHTS_SYNC_WATERMARK, null)
+    fun saveHighlightsSyncWatermark(iso: String) {
+        prefs.edit().putString(KEY_HIGHLIGHTS_SYNC_WATERMARK, iso).apply()
+    }
+
+    fun loadNotesSyncWatermark(): String? = prefs.getString(KEY_NOTES_SYNC_WATERMARK, null)
+    fun saveNotesSyncWatermark(iso: String) {
+        prefs.edit().putString(KEY_NOTES_SYNC_WATERMARK, iso).apply()
+    }
+
     /**
      * Reads the reference [DailyVerseFetchWorker][com.application.bibleapp.worker.DailyVerseFetchWorker]
      * cached in the local DB — a plain read, no network involved. Falls back to a
@@ -328,6 +389,8 @@ class BibleRepository(
         const val KEY_NOTIFICATION_ENABLED = "notification_enabled"
         const val KEY_NOTIFICATION_HOUR = "notification_hour"
         const val KEY_NOTIFICATION_MINUTE = "notification_minute"
+        const val KEY_HIGHLIGHTS_SYNC_WATERMARK = "highlights_sync_watermark"
+        const val KEY_NOTES_SYNC_WATERMARK = "notes_sync_watermark"
         const val DEFAULT_NOTIFICATION_HOUR = 8
         const val DEFAULT_NOTIFICATION_MINUTE = 0
 

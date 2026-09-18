@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -23,6 +24,7 @@ import com.application.bibleapp.screens.VersePickerView
 import com.application.bibleapp.screens.VersionPickerView
 import com.application.bibleapp.viewmodel.AuthViewModel
 import com.application.bibleapp.viewmodel.BibleViewModel
+import com.application.bibleapp.worker.SyncScheduler
 
 @Composable
 fun Navigation(
@@ -31,6 +33,8 @@ fun Navigation(
     bibleViewModel: BibleViewModel,
     authViewModel: AuthViewModel
 ) {
+    val context = LocalContext.current
+
     NavHost(
         navController = navController,
         startDestination = Screen.Home.route
@@ -88,6 +92,7 @@ fun Navigation(
                 modifier = Modifier.padding(padding),
                 onLoginSuccess = {
                     bibleViewModel.syncReadingProgressFromServer()
+                    SyncScheduler.triggerImmediateSync(context)
                     navController.popBackStack()
                 },
                 onNavigateToRegister = { navController.navigate(Screen.Register.route) }
@@ -100,6 +105,7 @@ fun Navigation(
                 modifier = Modifier.padding(padding),
                 onRegisterSuccess = {
                     bibleViewModel.syncReadingProgressFromServer()
+                    SyncScheduler.triggerImmediateSync(context)
                     navController.popBackStack(Screen.More.route, inclusive = false)
                 },
                 onNavigateToLogin = { navController.popBackStack() }
