@@ -232,6 +232,12 @@ class BibleViewModel(
     private val _lastSyncCompletedAt = MutableStateFlow(repository.loadLastSyncCompletedAt())
     val lastSyncCompletedAt: StateFlow<String?> = _lastSyncCompletedAt.asStateFlow()
 
+    // Phase H — mutually exclusive with a fresh success (SyncWorker clears this the moment a pass
+    // fully succeeds), so it's always the current truth without comparing timestamps against
+    // lastSyncCompletedAt to see which is "newer".
+    private val _lastSyncFailed = MutableStateFlow(repository.isLastSyncFailed())
+    val lastSyncFailed: StateFlow<Boolean> = _lastSyncFailed.asStateFlow()
+
     private val _isSyncing = MutableStateFlow(false)
     val isSyncing: StateFlow<Boolean> = _isSyncing.asStateFlow()
 
@@ -245,17 +251,25 @@ class BibleViewModel(
         repository.setWifiOnlySyncEnabled(enabled)
     }
 
-    /** Re-reads the persisted "last synced" stamp — call when Settings opens, since a background
-     *  periodic sync could have updated it since the ViewModel's initial value was read. */
+    /** Re-reads the persisted "last synced"/"last failed" stamps — call when Settings opens,
+     *  since a background periodic sync could have updated either since the ViewModel's initial
+     *  value was read. */
     fun refreshSyncStatus() {
         _lastSyncCompletedAt.value = repository.loadLastSyncCompletedAt()
+        _lastSyncFailed.value = repository.isLastSyncFailed()
     }
 
     /** Drives a short-lived spinner for the manual "Sync now" button — polls for
      *  [BibleRepository.loadLastSyncCompletedAt] to change rather than wiring a full WorkManager
      *  WorkInfo observer just for this one button. The actual trigger
      *  ([com.application.bibleapp.worker.SyncScheduler.triggerImmediateSync]) is called by the
-     *  composable, which has the Context it needs; this just watches for it to finish. */
+     *  composable, which has the Context it needs; this just watches for it to finish.
+     *
+     *  Doesn't poll [BibleRepository.isLastSyncFailed] to end the wait early — SyncWorker only
+     *  sets it once retries are exhausted (see MAX_RETRY_ATTEMPTS), and WorkManager's backoff
+     *  between retries already runs well past this 10s window, so a manual tap can't observe a
+     *  "final" failure this way; it can only ever time out waiting on one. The status line still
+     *  picks up the flag on the next [refreshSyncStatus] once a background retry does resolve. */
     fun awaitManualSync() {
         if (_isSyncing.value) return
         _isSyncing.value = true
@@ -266,11 +280,22 @@ class BibleViewModel(
                 val current = repository.loadLastSyncCompletedAt()
                 if (current != before) {
                     _lastSyncCompletedAt.value = current
+                    _lastSyncFailed.value = false
                     _isSyncing.value = false
                     return@launch
                 }
             }
             _isSyncing.value = false
+        }
+    }
+
+    /** See [BibleRepository.detachLocalContentFromDeletedAccount] — called once account deletion
+     *  succeeds (Phase H). Refreshes the sync status flows afterward since the watermarks/status
+     *  it just cleared feed straight into them. */
+    fun detachLocalContentFromDeletedAccount() {
+        viewModelScope.launch {
+            repository.detachLocalContentFromDeletedAccount()
+            refreshSyncStatus()
         }
     }
 

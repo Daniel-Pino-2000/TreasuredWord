@@ -92,11 +92,21 @@ class SyncWorker(
                     // fully successful pass, not a partial one, so the displayed time never
                     // claims content synced that a mid-pass failure actually left PENDING.
                     bibleRepository.saveLastSyncCompletedAt(isoTimestampNow())
+                    bibleRepository.saveLastSyncFailed(false)
                     Result.success()
                 },
                 onFailure = { e ->
                     Log.w(TAG, "Sync failed (attempt ${runAttemptCount + 1}): ${e.message}")
-                    if (runAttemptCount < MAX_RETRY_ATTEMPTS) Result.retry() else Result.failure()
+                    if (runAttemptCount < MAX_RETRY_ATTEMPTS) {
+                        Result.retry()
+                    } else {
+                        // Only flagged once retries are exhausted (Phase H) — a mid-retry attempt
+                        // isn't a user-facing failure yet, it's still working through WorkManager's
+                        // backoff, and flagging it here would flash "Sync failed" on transient
+                        // hiccups a plain retry would've quietly recovered from.
+                        bibleRepository.saveLastSyncFailed(true)
+                        Result.failure()
+                    }
                 }
             )
         }
@@ -112,18 +122,20 @@ class SyncWorker(
             if (remoteId == null) {
                 bibleRepository.purgeHighlight(highlight.localId)
             } else {
-                remote.deleteHighlight(remoteId).onSuccess { bibleRepository.purgeHighlight(highlight.localId) }
+                remote.deleteHighlight(remoteId)
+                    .onSuccess { bibleRepository.purgeHighlight(highlight.localId) }
+                    .onFailure { logPushFailure("highlight delete", highlight.localId, it) }
             }
             return
         }
         if (remoteId == null) {
-            remote.createHighlight(highlight.versionId, highlight.verses, highlight.color).onSuccess { dto ->
-                bibleRepository.markHighlightPushed(highlight.localId, dto.id, dto.createdAt, dto.updatedAt)
-            }
+            remote.createHighlight(highlight.versionId, highlight.verses, highlight.color)
+                .onSuccess { dto -> bibleRepository.markHighlightPushed(highlight.localId, dto.id, dto.createdAt, dto.updatedAt) }
+                .onFailure { logPushFailure("highlight create", highlight.localId, it) }
         } else {
-            remote.recolorHighlight(remoteId, highlight.color).onSuccess { dto ->
-                bibleRepository.markHighlightPushed(highlight.localId, dto.id, dto.createdAt, dto.updatedAt)
-            }
+            remote.recolorHighlight(remoteId, highlight.color)
+                .onSuccess { dto -> bibleRepository.markHighlightPushed(highlight.localId, dto.id, dto.createdAt, dto.updatedAt) }
+                .onFailure { logPushFailure("highlight recolor", highlight.localId, it) }
         }
     }
 
@@ -154,18 +166,20 @@ class SyncWorker(
             if (remoteId == null) {
                 bibleRepository.purgeNote(note.localId)
             } else {
-                remote.deleteNote(remoteId).onSuccess { bibleRepository.purgeNote(note.localId) }
+                remote.deleteNote(remoteId)
+                    .onSuccess { bibleRepository.purgeNote(note.localId) }
+                    .onFailure { logPushFailure("note delete", note.localId, it) }
             }
             return
         }
         if (remoteId == null) {
-            remote.createNote(note.versionId, note.verses, note.text).onSuccess { dto ->
-                bibleRepository.markNotePushed(note.localId, dto.id, dto.createdAt, dto.updatedAt)
-            }
+            remote.createNote(note.versionId, note.verses, note.text)
+                .onSuccess { dto -> bibleRepository.markNotePushed(note.localId, dto.id, dto.createdAt, dto.updatedAt) }
+                .onFailure { logPushFailure("note create", note.localId, it) }
         } else {
-            remote.updateNote(remoteId, note.verses, note.text).onSuccess { dto ->
-                bibleRepository.markNotePushed(note.localId, dto.id, dto.createdAt, dto.updatedAt)
-            }
+            remote.updateNote(remoteId, note.verses, note.text)
+                .onSuccess { dto -> bibleRepository.markNotePushed(note.localId, dto.id, dto.createdAt, dto.updatedAt) }
+                .onFailure { logPushFailure("note update", note.localId, it) }
         }
     }
 
@@ -196,6 +210,19 @@ class SyncWorker(
                 bibleRepository.saveReadingPosition(server.bookId, server.chapter, server.verse)
             }
         }
+    }
+
+    /**
+     * A single item's push failing (e.g. a stale/rejected token, a 4xx the server won't ever
+     * accept) is deliberately swallowed by design — see the class doc — so it doesn't fail the
+     * whole pass or block everything else queued behind it. That used to mean it was also
+     * completely invisible: the row just silently stays PENDING and gets retried next pass with
+     * no trace of why. Logging it here doesn't change that retry behavior, it just makes a
+     * "why won't this ever sync" investigation possible without re-deriving this exact
+     * instrumentation from scratch (Phase H).
+     */
+    private fun logPushFailure(what: String, localId: Long, error: Throwable) {
+        Log.w(TAG, "Push $what (local_id=$localId) failed: ${error.message}")
     }
 
     private companion object {

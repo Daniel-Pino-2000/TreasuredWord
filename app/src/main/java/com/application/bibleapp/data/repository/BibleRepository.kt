@@ -401,6 +401,37 @@ class BibleRepository(
         prefs.edit().putString(KEY_LAST_SYNC_COMPLETED_AT, iso).apply()
     }
 
+    /** Set by SyncWorker only once it's given up retrying a pass (see MAX_RETRY_ATTEMPTS),
+     *  cleared on the next fully successful one — a simple "is the *last* attempt's outcome an
+     *  error" flag rather than a log, so it never needs timestamp-ordering against
+     *  [loadLastSyncCompletedAt] to know which is current (Phase H). Drives Settings' "Sync
+     *  failed" status line. */
+    fun isLastSyncFailed(): Boolean = prefs.getBoolean(KEY_LAST_SYNC_FAILED, false)
+    fun saveLastSyncFailed(failed: Boolean) {
+        prefs.edit().putBoolean(KEY_LAST_SYNC_FAILED, failed).apply()
+    }
+
+    /**
+     * Called once account deletion succeeds (Phase H) — the account's `remote_id`s no longer
+     * refer to anything, and leaving them in place would recreate the exact orphaned-row problem
+     * from Phase E's incident notes (every future sync pass 404s trying to update a row that
+     * belongs to a deleted account, forever PENDING). A still-pending tombstone has nothing left
+     * to push to, so it's purged outright; everything else is detached back to local-only PENDING
+     * content — the device keeps what's on it, just no longer tied to any account, ready to be
+     * freshly created if the user signs into another one later. Also clears the sync watermarks
+     * and status, since neither means anything against an account that no longer exists.
+     */
+    suspend fun detachLocalContentFromDeletedAccount() = withContext(Dispatchers.IO) {
+        BibleDatabaseManager.detachHighlightsFromAccount(context)
+        BibleDatabaseManager.detachNotesFromAccount(context)
+        prefs.edit()
+            .remove(KEY_HIGHLIGHTS_SYNC_WATERMARK)
+            .remove(KEY_NOTES_SYNC_WATERMARK)
+            .remove(KEY_LAST_SYNC_COMPLETED_AT)
+            .remove(KEY_LAST_SYNC_FAILED)
+            .apply()
+    }
+
     private companion object {
         const val KEY_SELECTED_VERSION = "selected_version_id"
         const val KEY_THEME_MODE = "theme_mode"
@@ -416,6 +447,7 @@ class BibleRepository(
         const val KEY_AUTO_SYNC_ENABLED = "auto_sync_enabled"
         const val KEY_WIFI_ONLY_SYNC = "wifi_only_sync"
         const val KEY_LAST_SYNC_COMPLETED_AT = "last_sync_completed_at"
+        const val KEY_LAST_SYNC_FAILED = "last_sync_failed"
         const val DEFAULT_NOTIFICATION_HOUR = 8
         const val DEFAULT_NOTIFICATION_MINUTE = 0
 

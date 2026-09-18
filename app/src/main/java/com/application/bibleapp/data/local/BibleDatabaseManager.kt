@@ -941,4 +941,24 @@ object BibleDatabaseManager {
             )
         }
     }
+
+    // ---- Account deletion cascade (Phase H) — see BibleRepository.detachLocalContentFromDeletedAccount ----
+
+    /** A still-pending tombstone has nothing left to push once the account is gone, so it's
+     *  purged outright; every other row is detached back to local-only PENDING content instead
+     *  of left pointing at a `remote_id` that will 404 forever (the Phase E orphaned-row bug,
+     *  guaranteed to recur here otherwise since account deletion invalidates every remote_id at
+     *  once). */
+    fun detachHighlightsFromAccount(context: Context) {
+        val db = getDatabase(context)
+        db.execSQL("DELETE FROM highlights WHERE deleted_at IS NOT NULL")
+        db.execSQL("UPDATE highlights SET remote_id = NULL, sync_status = 'PENDING' WHERE remote_id IS NOT NULL")
+    }
+
+    /** See [detachHighlightsFromAccount] — the note equivalent. */
+    fun detachNotesFromAccount(context: Context) {
+        val db = getDatabase(context)
+        db.execSQL("DELETE FROM notes WHERE deleted_at IS NOT NULL")
+        db.execSQL("UPDATE notes SET remote_id = NULL, sync_status = 'PENDING' WHERE remote_id IS NOT NULL")
+    }
 }

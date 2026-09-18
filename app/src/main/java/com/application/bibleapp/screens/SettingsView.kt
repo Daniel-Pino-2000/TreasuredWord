@@ -64,6 +64,7 @@ import com.application.bibleapp.ui.theme.Spacing
 import com.application.bibleapp.ui.theme.ThemeMode
 import com.application.bibleapp.ui.theme.VerseTextScale
 import com.application.bibleapp.ui.theme.scaledBy
+import com.application.bibleapp.utils.NetworkUtils
 import com.application.bibleapp.utils.formatRelativeSyncTime
 import com.application.bibleapp.viewmodel.AuthViewModel
 import com.application.bibleapp.viewmodel.BibleViewModel
@@ -89,6 +90,7 @@ fun SettingsView(
     val autoSyncEnabled by bibleViewModel.autoSyncEnabled.collectAsState()
     val wifiOnlySync by bibleViewModel.wifiOnlySync.collectAsState()
     val lastSyncCompletedAt by bibleViewModel.lastSyncCompletedAt.collectAsState()
+    val lastSyncFailed by bibleViewModel.lastSyncFailed.collectAsState()
     val isSyncing by bibleViewModel.isSyncing.collectAsState()
     val currentBookName by bibleViewModel.currentBookName.collectAsState()
     val currentChapter by bibleViewModel.currentChapter.collectAsState()
@@ -196,6 +198,22 @@ fun SettingsView(
 
         SettingsSection(title = "Sync") {
             if (isLoggedIn) {
+                // Checked on resume rather than via a live NetworkCallback — same tradeoff as the
+                // battery-optimization check below: a connectivity flip while this screen is
+                // sitting in the foreground is rare enough that "catches up next time you look at
+                // it" is good enough, and it's the pattern this file already uses (Phase H).
+                var isOffline by remember { mutableStateOf(!NetworkUtils.isOnline(context)) }
+                val lifecycleOwner = LocalLifecycleOwner.current
+                DisposableEffect(lifecycleOwner) {
+                    val observer = LifecycleEventObserver { _, event ->
+                        if (event == Lifecycle.Event.ON_RESUME) {
+                            isOffline = !NetworkUtils.isOnline(context)
+                        }
+                    }
+                    lifecycleOwner.lifecycle.addObserver(observer)
+                    onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+                }
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -224,30 +242,61 @@ fun SettingsView(
                         }
                     )
                 }
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = Spacing.sm),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+
+                if (isOffline) {
                     Text(
-                        text = when {
-                            isSyncing -> "Syncing…"
-                            lastSyncCompletedAt != null -> "Synced " + formatRelativeSyncTime(lastSyncCompletedAt!!)
-                            else -> "Not synced yet"
-                        },
+                        text = "You're offline — highlights and notes will sync automatically " +
+                            "once you're back online.",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = Spacing.sm)
                     )
-                    if (isSyncing) {
-                        CircularProgressIndicator(modifier = Modifier.size(20.dp))
-                    } else {
+                } else if (lastSyncFailed && !isSyncing) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = Spacing.sm),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Sync failed",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error
+                        )
                         TextButton(onClick = {
                             bibleViewModel.awaitManualSync()
                             SyncScheduler.triggerImmediateSync(context)
                         }) {
-                            Text("Sync now")
+                            Text("Retry")
+                        }
+                    }
+                } else {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = Spacing.sm),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = when {
+                                isSyncing -> "Syncing…"
+                                lastSyncCompletedAt != null -> "Synced " + formatRelativeSyncTime(lastSyncCompletedAt!!)
+                                else -> "Not synced yet"
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        if (isSyncing) {
+                            CircularProgressIndicator(modifier = Modifier.size(20.dp))
+                        } else {
+                            TextButton(onClick = {
+                                bibleViewModel.awaitManualSync()
+                                SyncScheduler.triggerImmediateSync(context)
+                            }) {
+                                Text("Sync now")
+                            }
                         }
                     }
                 }
@@ -383,7 +432,11 @@ fun SettingsView(
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
         SettingsSection(title = "Account") {
-            AccountSection(authViewModel = authViewModel, onSignInClick = onSignInClick)
+            AccountSection(
+                authViewModel = authViewModel,
+                bibleViewModel = bibleViewModel,
+                onSignInClick = onSignInClick
+            )
         }
 
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
@@ -492,6 +545,7 @@ private fun SettingsRow(
 @Composable
 private fun AccountSection(
     authViewModel: AuthViewModel,
+    bibleViewModel: BibleViewModel,
     onSignInClick: () -> Unit
 ) {
     val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
@@ -525,6 +579,12 @@ private fun AccountSection(
             onConfirm = { password, onError ->
                 authViewModel.deleteAccount(password) { errorMessage ->
                     if (errorMessage == null) {
+                        // The account and its server-side backup are gone, but this device's
+                        // own copies of its highlights/notes are not what just got deleted —
+                        // detach them from the dead account instead of leaving every row
+                        // pointing at a remote_id that will 404 forever (Phase H; see
+                        // BibleRepository.detachLocalContentFromDeletedAccount).
+                        bibleViewModel.detachLocalContentFromDeletedAccount()
                         showDeleteDialog = false
                     } else {
                         onError(errorMessage)
@@ -555,8 +615,9 @@ private fun DeleteAccountDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                 Text(
-                    "This permanently deletes your account and all synced highlights, notes, " +
-                        "and reading progress. This can't be undone."
+                    "This permanently deletes your account and everything backed up to it. " +
+                        "This can't be undone. Highlights and notes already on this device " +
+                        "will stay here, but won't sync anywhere else."
                 )
                 OutlinedTextField(
                     value = password,
