@@ -379,6 +379,28 @@ class BibleRepository(
         verse = prefs.getInt(KEY_READING_VERSE, 1)
     )
 
+    // ---- Sync preferences (Phase G) — read by SyncScheduler/SyncWorker, written by Settings ----
+
+    /** Defaults to on — matches Phase E's existing behavior before this preference existed. */
+    fun isAutoSyncEnabled(): Boolean = prefs.getBoolean(KEY_AUTO_SYNC_ENABLED, true)
+    fun setAutoSyncEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_AUTO_SYNC_ENABLED, enabled).apply()
+    }
+
+    /** Defaults to off — matches Phase E's existing behavior (any connected network) before this
+     *  preference existed. */
+    fun isWifiOnlySyncEnabled(): Boolean = prefs.getBoolean(KEY_WIFI_ONLY_SYNC, false)
+    fun setWifiOnlySyncEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_WIFI_ONLY_SYNC, enabled).apply()
+    }
+
+    /** Stamped by SyncWorker at the end of a fully successful pass — drives Settings' "Synced
+     *  Xm ago" status line. Null before the first successful sync this install has ever done. */
+    fun loadLastSyncCompletedAt(): String? = prefs.getString(KEY_LAST_SYNC_COMPLETED_AT, null)
+    fun saveLastSyncCompletedAt(iso: String) {
+        prefs.edit().putString(KEY_LAST_SYNC_COMPLETED_AT, iso).apply()
+    }
+
     private companion object {
         const val KEY_SELECTED_VERSION = "selected_version_id"
         const val KEY_THEME_MODE = "theme_mode"
@@ -391,6 +413,9 @@ class BibleRepository(
         const val KEY_NOTIFICATION_MINUTE = "notification_minute"
         const val KEY_HIGHLIGHTS_SYNC_WATERMARK = "highlights_sync_watermark"
         const val KEY_NOTES_SYNC_WATERMARK = "notes_sync_watermark"
+        const val KEY_AUTO_SYNC_ENABLED = "auto_sync_enabled"
+        const val KEY_WIFI_ONLY_SYNC = "wifi_only_sync"
+        const val KEY_LAST_SYNC_COMPLETED_AT = "last_sync_completed_at"
         const val DEFAULT_NOTIFICATION_HOUR = 8
         const val DEFAULT_NOTIFICATION_MINUTE = 0
 

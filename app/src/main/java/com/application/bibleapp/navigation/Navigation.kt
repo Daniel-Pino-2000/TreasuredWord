@@ -75,14 +75,19 @@ fun Navigation(
                 authViewModel = authViewModel,
                 modifier = Modifier.padding(padding),
                 onSignInClick = { navController.navigate(Screen.Login.route) },
-                onLibraryClick = { navController.navigate(Screen.Library.route) }
+                onLibraryClick = { tab -> navController.navigate(Screen.Library.createRoute(tab)) },
+                onContinueReadingClick = { navController.navigate(Screen.Bible.route) }
             )
         }
 
-        composable(Screen.Library.route) {
+        composable(
+            Screen.Library.route,
+            arguments = listOf(navArgument("tab") { type = NavType.StringType })
+        ) { backStackEntry ->
             LibraryView(
                 bibleViewModel = bibleViewModel,
                 modifier = Modifier.padding(padding),
+                initialTab = backStackEntry.arguments?.getString("tab"),
                 onVerseClick = { bookId, chapter, verse ->
                     bibleViewModel.setBook(bookId, chapter, verse)
                     navController.navigate(Screen.Bible.route)

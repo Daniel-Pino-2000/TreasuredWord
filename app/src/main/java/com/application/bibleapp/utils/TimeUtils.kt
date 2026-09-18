@@ -28,3 +28,20 @@ fun formatDisplayDate(iso: String): String {
     val display = SimpleDateFormat("MMM d, yyyy", Locale.getDefault())
     return runCatching { display.format(parser.parse(iso)!!) }.getOrDefault(iso)
 }
+
+/** A stored ISO-8601 UTC timestamp (see [isoTimestampNow]) as a short relative phrase — "just
+ *  now", "5m ago", "3h ago" — for Settings' sync status line (Phase G). Falls back to
+ *  [formatDisplayDate] past a day, since "37h ago" reads worse than a calendar date. */
+fun formatRelativeSyncTime(iso: String): String {
+    val parser = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).apply {
+        timeZone = TimeZone.getTimeZone("UTC")
+    }
+    val parsed = runCatching { parser.parse(iso) }.getOrNull() ?: return formatDisplayDate(iso)
+    val minutes = (Date().time - parsed.time) / 60000
+    return when {
+        minutes < 1 -> "just now"
+        minutes < 60 -> "${minutes}m ago"
+        minutes < 24 * 60 -> "${minutes / 60}h ago"
+        else -> formatDisplayDate(iso)
+    }
+}

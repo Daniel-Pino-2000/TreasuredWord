@@ -87,7 +87,13 @@ class SyncWorker(
             }
 
             outcome.fold(
-                onSuccess = { Result.success() },
+                onSuccess = {
+                    // Drives Settings' "Synced Xm ago" status line (Phase G) — stamped only on a
+                    // fully successful pass, not a partial one, so the displayed time never
+                    // claims content synced that a mid-pass failure actually left PENDING.
+                    bibleRepository.saveLastSyncCompletedAt(isoTimestampNow())
+                    Result.success()
+                },
                 onFailure = { e ->
                     Log.w(TAG, "Sync failed (attempt ${runAttemptCount + 1}): ${e.message}")
                     if (runAttemptCount < MAX_RETRY_ATTEMPTS) Result.retry() else Result.failure()

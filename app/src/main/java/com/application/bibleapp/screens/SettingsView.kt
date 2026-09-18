@@ -16,16 +16,20 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
@@ -39,6 +43,7 @@ import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -53,13 +58,16 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import com.application.bibleapp.navigation.Screen
 import com.application.bibleapp.ui.theme.ReadingStyle
 import com.application.bibleapp.ui.theme.Spacing
 import com.application.bibleapp.ui.theme.ThemeMode
 import com.application.bibleapp.ui.theme.VerseTextScale
 import com.application.bibleapp.ui.theme.scaledBy
+import com.application.bibleapp.utils.formatRelativeSyncTime
 import com.application.bibleapp.viewmodel.AuthViewModel
 import com.application.bibleapp.viewmodel.BibleViewModel
+import com.application.bibleapp.worker.SyncScheduler
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,12 +76,28 @@ fun SettingsView(
     authViewModel: AuthViewModel,
     modifier: Modifier = Modifier,
     onSignInClick: () -> Unit,
-    onLibraryClick: () -> Unit
+    onLibraryClick: (tab: String) -> Unit,
+    onContinueReadingClick: () -> Unit
 ) {
+    val context = LocalContext.current
     val themeMode by bibleViewModel.themeMode.collectAsState()
     val verseTextScale by bibleViewModel.verseTextScale.collectAsState()
     val notificationEnabled by bibleViewModel.notificationEnabled.collectAsState()
     val notificationTime by bibleViewModel.notificationTime.collectAsState()
+    val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
+    val currentUser by authViewModel.currentUser.collectAsState()
+    val autoSyncEnabled by bibleViewModel.autoSyncEnabled.collectAsState()
+    val wifiOnlySync by bibleViewModel.wifiOnlySync.collectAsState()
+    val lastSyncCompletedAt by bibleViewModel.lastSyncCompletedAt.collectAsState()
+    val isSyncing by bibleViewModel.isSyncing.collectAsState()
+    val currentBookName by bibleViewModel.currentBookName.collectAsState()
+    val currentChapter by bibleViewModel.currentChapter.collectAsState()
+
+    // Reflects a background periodic sync's timestamp even if this screen was already open
+    // when it completed, rather than only ever showing whatever was true on first composition.
+    LaunchedEffect(Unit) {
+        bibleViewModel.refreshSyncStatus()
+    }
 
     Column(
         modifier = modifier
@@ -82,29 +106,34 @@ fun SettingsView(
             .padding(Spacing.lg),
         verticalArrangement = Arrangement.spacedBy(Spacing.xl)
     ) {
-        SettingsSection(title = "Account") {
-            AccountSection(authViewModel = authViewModel, onSignInClick = onSignInClick)
+        ProfileHeader(
+            isLoggedIn = isLoggedIn,
+            email = currentUser?.email,
+            isSyncing = isSyncing,
+            lastSyncCompletedAt = lastSyncCompletedAt
+        )
+
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+        SettingsSection(title = "My Library") {
+            SettingsRow(
+                label = "Highlights",
+                onClick = { onLibraryClick(Screen.Library.TAB_HIGHLIGHTS) }
+            )
+            SettingsRow(
+                label = "Notes",
+                onClick = { onLibraryClick(Screen.Library.TAB_NOTES) }
+            )
         }
 
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
-        // A single row for now — folded into a fuller Profile hub redesign in a later phase
-        // (docs/UI_Integration_Roadmap.md Phase G), but the Library screen itself needs a way
-        // in as soon as it exists.
-        SettingsSection(title = "My Library") {
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(onClick = onLibraryClick),
-                shape = MaterialTheme.shapes.medium,
-                color = MaterialTheme.colorScheme.surfaceVariant
-            ) {
-                Text(
-                    text = "Highlights & Notes",
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.padding(Spacing.md)
-                )
-            }
+        SettingsSection(title = "Reading") {
+            SettingsRow(
+                label = "Continue reading",
+                supportingText = "$currentBookName $currentChapter",
+                onClick = onContinueReadingClick
+            )
         }
 
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
@@ -165,9 +194,76 @@ fun SettingsView(
 
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
+        SettingsSection(title = "Sync") {
+            if (isLoggedIn) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Auto-sync", style = MaterialTheme.typography.bodyLarge)
+                    Switch(
+                        checked = autoSyncEnabled,
+                        onCheckedChange = { enabled ->
+                            bibleViewModel.setAutoSyncEnabled(enabled)
+                            SyncScheduler.schedulePeriodicSync(context)
+                        }
+                    )
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Wi-Fi only", style = MaterialTheme.typography.bodyLarge)
+                    Switch(
+                        checked = wifiOnlySync,
+                        onCheckedChange = { enabled ->
+                            bibleViewModel.setWifiOnlySync(enabled)
+                            SyncScheduler.schedulePeriodicSync(context)
+                        }
+                    )
+                }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = Spacing.sm),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = when {
+                            isSyncing -> "Syncing…"
+                            lastSyncCompletedAt != null -> "Synced " + formatRelativeSyncTime(lastSyncCompletedAt!!)
+                            else -> "Not synced yet"
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    if (isSyncing) {
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp))
+                    } else {
+                        TextButton(onClick = {
+                            bibleViewModel.awaitManualSync()
+                            SyncScheduler.triggerImmediateSync(context)
+                        }) {
+                            Text("Sync now")
+                        }
+                    }
+                }
+            } else {
+                Text(
+                    text = "Sign in to sync your highlights, notes, and reading progress across devices.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
         SettingsSection(title = "Notifications") {
             var showTimePicker by remember { mutableStateOf(false) }
-            val context = LocalContext.current
             val permissionLauncher = rememberLauncherForActivityResult(
                 ActivityResultContracts.RequestPermission()
             ) { granted -> if (granted) bibleViewModel.setNotificationEnabled(true) }
@@ -286,6 +382,12 @@ fun SettingsView(
 
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
+        SettingsSection(title = "Account") {
+            AccountSection(authViewModel = authViewModel, onSignInClick = onSignInClick)
+        }
+
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
         SettingsSection(title = "About") {
             Text("BibleApp", style = MaterialTheme.typography.bodyLarge)
             Text(
@@ -312,26 +414,92 @@ private fun SettingsSection(
     }
 }
 
+/** Avatar-initial + email/sign-in-state + sync status, at the top of the Profile hub — see
+ *  docs/UI_Integration_Roadmap.md Phase G. The initial is the first letter of the signed-in
+ *  email, or "?" signed out, so there's always something to put in the circle without pulling
+ *  in an actual avatar-image feature nobody asked for. */
+@Composable
+private fun ProfileHeader(
+    isLoggedIn: Boolean,
+    email: String?,
+    isSyncing: Boolean,
+    lastSyncCompletedAt: String?
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.md)
+    ) {
+        Surface(
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.primaryContainer,
+            modifier = Modifier.size(56.dp)
+        ) {
+            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                Text(
+                    text = (email?.firstOrNull()?.uppercaseChar() ?: '?').toString(),
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+        }
+        Column {
+            Text(
+                text = email ?: "Not signed in",
+                style = MaterialTheme.typography.titleMedium
+            )
+            Text(
+                text = when {
+                    !isLoggedIn -> "Sign in to sync across devices"
+                    isSyncing -> "Syncing…"
+                    lastSyncCompletedAt != null -> "Synced " + formatRelativeSyncTime(lastSyncCompletedAt)
+                    else -> "Not synced yet"
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+/** A tappable row used by "My Library" and "Reading" — a label plus optional supporting text
+ *  (e.g. the current book/chapter under "Continue reading"). */
+@Composable
+private fun SettingsRow(
+    label: String,
+    onClick: () -> Unit,
+    supportingText: String? = null
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surfaceVariant
+    ) {
+        Column(modifier = Modifier.padding(Spacing.md)) {
+            Text(text = label, style = MaterialTheme.typography.bodyLarge)
+            if (supportingText != null) {
+                Text(
+                    text = supportingText,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
 @Composable
 private fun AccountSection(
     authViewModel: AuthViewModel,
     onSignInClick: () -> Unit
 ) {
     val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
-    val currentUser by authViewModel.currentUser.collectAsState()
     var showDeleteDialog by remember { mutableStateOf(false) }
 
+    // Identity itself (email, sync status) lives in the ProfileHeader at the top of this
+    // screen — this section is just the account-level actions.
     if (isLoggedIn) {
-        Text(
-            text = currentUser?.email ?: "Signed in",
-            style = MaterialTheme.typography.bodyLarge
-        )
-        Text(
-            text = "Your highlights, notes, and reading progress sync across every device " +
-                "you sign in on.",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
             TextButton(onClick = { authViewModel.logout() }) {
                 Text("Sign out")

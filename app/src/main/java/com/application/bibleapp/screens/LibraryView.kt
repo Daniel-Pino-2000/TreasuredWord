@@ -46,14 +46,19 @@ import androidx.compose.ui.unit.dp
 import com.application.bibleapp.data.model.BibleBooks
 import com.application.bibleapp.data.model.Highlight
 import com.application.bibleapp.data.model.Note
+import com.application.bibleapp.navigation.Screen
 import com.application.bibleapp.ui.theme.Spacing
 import com.application.bibleapp.utils.formatDisplayDate
 import com.application.bibleapp.utils.formatVerseRefs
 import com.application.bibleapp.viewmodel.BibleViewModel
 
-private enum class LibraryTab(val label: String) {
-    HIGHLIGHTS("Highlights"),
-    NOTES("Notes")
+private enum class LibraryTab(val label: String, val routeArg: String) {
+    HIGHLIGHTS("Highlights", Screen.Library.TAB_HIGHLIGHTS),
+    NOTES("Notes", Screen.Library.TAB_NOTES);
+
+    companion object {
+        fun fromRouteArg(arg: String?): LibraryTab = entries.firstOrNull { it.routeArg == arg } ?: HIGHLIGHTS
+    }
 }
 
 /**
@@ -61,13 +66,15 @@ private enum class LibraryTab(val label: String) {
  * docs/UI_Integration_Roadmap.md Phase D. Reads straight from [BibleViewModel.libraryHighlights]/
  * [BibleViewModel.libraryNotes] (loaded once via [BibleViewModel.loadLibrary] when this screen
  * opens); nothing here needs the backend, so it's fully usable offline and signed out, same as
- * the highlighting/notes UI it's listing.
+ * the highlighting/notes UI it's listing. [initialTab] lets Settings' two "My Library" rows
+ * (Phase G) deep-link straight to either tab instead of always opening on Highlights.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LibraryView(
     bibleViewModel: BibleViewModel,
     modifier: Modifier = Modifier,
+    initialTab: String? = null,
     onVerseClick: (bookId: Int, chapter: Int, verse: Int) -> Unit
 ) {
     LaunchedEffect(Unit) { bibleViewModel.loadLibrary() }
@@ -77,7 +84,7 @@ fun LibraryView(
     val bookNames by bibleViewModel.bookNames.collectAsState()
     val bookName = { bookId: Int -> bookNames[bookId] ?: BibleBooks.getBookById(bookId)?.name ?: "Unknown" }
 
-    var selectedTab by rememberSaveable { mutableStateOf(LibraryTab.HIGHLIGHTS) }
+    var selectedTab by rememberSaveable { mutableStateOf(LibraryTab.fromRouteArg(initialTab)) }
     var query by rememberSaveable { mutableStateOf("") }
 
     Column(modifier = modifier.fillMaxSize()) {

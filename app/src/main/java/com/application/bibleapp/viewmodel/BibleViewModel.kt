@@ -26,6 +26,7 @@ import com.application.bibleapp.data.repository.NotificationTime
 import com.application.bibleapp.data.repository.ReadingProgressRepository
 import com.application.bibleapp.ui.theme.ThemeMode
 import com.application.bibleapp.ui.theme.VerseTextScale
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -216,6 +217,62 @@ class BibleViewModel(
 
     private val _notificationTime = MutableStateFlow(repository.loadNotificationTime())
     val notificationTime: StateFlow<NotificationTime> = _notificationTime.asStateFlow()
+
+    // ---- Sync preferences & status (Phase G) — actual WorkManager (re)scheduling happens in the
+    // composable that has a Context (SettingsView), same split already used for
+    // SyncScheduler.triggerImmediateSync in Navigation.kt; this ViewModel just owns the
+    // persisted values and the StateFlows Settings observes. ----
+
+    private val _autoSyncEnabled = MutableStateFlow(repository.isAutoSyncEnabled())
+    val autoSyncEnabled: StateFlow<Boolean> = _autoSyncEnabled.asStateFlow()
+
+    private val _wifiOnlySync = MutableStateFlow(repository.isWifiOnlySyncEnabled())
+    val wifiOnlySync: StateFlow<Boolean> = _wifiOnlySync.asStateFlow()
+
+    private val _lastSyncCompletedAt = MutableStateFlow(repository.loadLastSyncCompletedAt())
+    val lastSyncCompletedAt: StateFlow<String?> = _lastSyncCompletedAt.asStateFlow()
+
+    private val _isSyncing = MutableStateFlow(false)
+    val isSyncing: StateFlow<Boolean> = _isSyncing.asStateFlow()
+
+    fun setAutoSyncEnabled(enabled: Boolean) {
+        _autoSyncEnabled.value = enabled
+        repository.setAutoSyncEnabled(enabled)
+    }
+
+    fun setWifiOnlySync(enabled: Boolean) {
+        _wifiOnlySync.value = enabled
+        repository.setWifiOnlySyncEnabled(enabled)
+    }
+
+    /** Re-reads the persisted "last synced" stamp — call when Settings opens, since a background
+     *  periodic sync could have updated it since the ViewModel's initial value was read. */
+    fun refreshSyncStatus() {
+        _lastSyncCompletedAt.value = repository.loadLastSyncCompletedAt()
+    }
+
+    /** Drives a short-lived spinner for the manual "Sync now" button — polls for
+     *  [BibleRepository.loadLastSyncCompletedAt] to change rather than wiring a full WorkManager
+     *  WorkInfo observer just for this one button. The actual trigger
+     *  ([com.application.bibleapp.worker.SyncScheduler.triggerImmediateSync]) is called by the
+     *  composable, which has the Context it needs; this just watches for it to finish. */
+    fun awaitManualSync() {
+        if (_isSyncing.value) return
+        _isSyncing.value = true
+        val before = repository.loadLastSyncCompletedAt()
+        viewModelScope.launch {
+            repeat(20) {
+                delay(500)
+                val current = repository.loadLastSyncCompletedAt()
+                if (current != before) {
+                    _lastSyncCompletedAt.value = current
+                    _isSyncing.value = false
+                    return@launch
+                }
+            }
+            _isSyncing.value = false
+        }
+    }
 
     // Locally downloaded versions, keyed by id, so the picker can badge "downloaded" /
     // "update available" without a DB query per row. Refreshed after every download.

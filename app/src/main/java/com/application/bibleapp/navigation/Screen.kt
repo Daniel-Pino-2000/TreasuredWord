@@ -22,5 +22,11 @@ sealed class Screen(val route: String, val title: String) {
     object Login: Screen("login", "Sign In")
     object Register: Screen("register", "Create Account")
 
-    object Library: Screen("library", "Library")
+    /** [tab] is "highlights" or "notes" — which of Library's segmented tabs opens pre-selected,
+     *  so Settings' "My Library" rows (Phase G) can deep-link straight to either one. */
+    object Library: Screen("library/{tab}", "Library") {
+        const val TAB_HIGHLIGHTS = "highlights"
+        const val TAB_NOTES = "notes"
+        fun createRoute(tab: String) = "library/$tab"
+    }
 }
