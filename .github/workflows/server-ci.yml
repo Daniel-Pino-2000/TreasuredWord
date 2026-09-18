@@ -58,8 +58,8 @@ jobs:
           DATABASE_URL: jdbc:postgresql://localhost:5432/bibleapp
           DATABASE_USER: postgres
           DATABASE_PASSWORD: postgres
-          # Test-only secret — never the real one, which only ever lives in Fly.io's secret
-          # store (see server/DEPLOY.md) and each developer's own local environment.
+          # Test-only secret — never the real one, which only ever lives in Render's encrypted
+          # env vars (see server/DEPLOY.md) and each developer's own local environment.
           JWT_SECRET: ci-test-secret-not-for-production
 
       - name: Upload test report

@@ -1,0 +1,30 @@
+# Render Blueprint (Phase 5) — see server/DEPLOY.md for the full setup story. Secrets
+# (DATABASE_URL, DATABASE_USER, DATABASE_PASSWORD, JWT_SECRET) are deliberately NOT here — this
+# file is committed to git, so `sync: false` below just reserves the env var name and leaves the
+# actual value to be filled in through Render's dashboard, which stores it encrypted.
+#
+# Render injects its own PORT env var at runtime and expects the app to listen on it —
+# application.conf already reads PORT via ${?PORT}, same mechanism used for DATABASE_URL etc.,
+# so no extra wiring was needed for this.
+services:
+  - type: web
+    name: bibleapp-server
+    env: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    region: ohio
+    healthCheckPath: /health
+    envVars:
+      # Caps the JVM heap instead of letting it default off the runner's own memory, which can
+      # be far more than this container's actual free-tier allocation.
+      - key: JAVA_TOOL_OPTIONS
+        value: -Xmx256m
+      - key: JWT_SECRET
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_USER
+        sync: false
+      - key: DATABASE_PASSWORD
+        sync: false

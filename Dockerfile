@@ -1,6 +1,6 @@
 # Builds and runs only the :server module (Ktor/Exposed/Postgres) — the repo also has an :app
 # module (Android/Compose) that this image never touches. See .dockerignore for what's excluded
-# from the build context, and server/DEPLOY.md for the full deploy story (Fly.io + Neon, Phase 5).
+# from the build context, and server/DEPLOY.md for the full deploy story (Render + Neon, Phase 5).
 
 # ---- Build stage ----
 FROM eclipse-temurin:17-jdk-jammy AS build
