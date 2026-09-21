@@ -5,13 +5,12 @@ Version and on-demand downloads of other translations for fully offline reading.
 
 ## Project status
 
-🚧 **Work in progress — not feature-complete.** The reader itself (bundled KJV, on-demand
-translation downloads, full-text search, footnotes, poem/heading formatting) works today.
-Two larger pieces are still ahead:
+🚧 **Work in progress — not feature-complete.** The reader (bundled KJV, on-demand
+translation downloads, full-text search, footnotes, poem/heading formatting) and user
+accounts/sync (highlights, notes, reading progress, kept in sync across devices by a
+deployed [Ktor](https://ktor.io) backend — see [Account sync](#account-sync) below) both
+work today. Still ahead:
 
-- **User accounts and sync** — a [Ktor](https://ktor.io) backend (Exposed ORM, PostgreSQL,
-  JWT authentication) for user accounts and persisting user data (bookmarks, reading
-  progress, notes) across devices. In active development on a feature branch.
 - **Bible chatbot** — an in-app assistant for answering Bible-related questions.
 
 ## Screenshots
@@ -130,6 +129,36 @@ than kept in memory only:
 
 Tapping an already-downloaded, non-active version switches instantly with no network
 call; tapping the already-active version is a no-op.
+
+## Account sync
+
+Highlights, notes, and reading progress are **local-first**: they save to local SQLite
+instantly and work fully offline or signed out — signing in turns on *cross-device sync*,
+not the feature itself. See `docs/UI_Integration_Roadmap.md` for the phase-by-phase build
+log (auth UX, the sync worker, a Profile hub, offline/conflict edge cases — all done as of
+Phase H) and `docs/api_contract.md` for the wire contract this UI talks to.
+
+**Backend** — a Kotlin/[Ktor](https://ktor.io) service (`server/`) on Exposed ORM over
+PostgreSQL, ships JWT access/refresh-token auth (bcrypt-hashed passwords), Flyway-managed
+schema migrations, and per-route rate limiting. It's deployed on [Render](https://render.com)
+against a [Neon](https://neon.tech) Postgres instance (see `server/DEPLOY.md`), and the app
+(`HttpClientProvider.BASE_URL`) talks to that live instance, not a local dev server —
+verified by registering a real account through the app's own UI against production, not
+just `curl`.
+
+**Sync worker** — [`SyncWorker`](app/src/main/java/com/application/bibleapp/worker/SyncWorker.kt)
+reconciles the local highlight/note/reading-progress tables with the backend: it pushes every
+locally-pending create/edit/delete first, then pulls anything changed server-side since the
+last successful pull, upserting by the server's id so a pull from another device merges
+cleanly with this one. Push always completes before pull, so the pull side never needs to
+compare local/server timestamps — ordering on write is the server's job (last-write-wins,
+per the contract). A [`Mutex`](app/src/main/java/com/application/bibleapp/worker/SyncWorker.kt)
+serializes runs against each other: `SyncScheduler` enqueues both a periodic sync and an
+immediate one-off under different WorkManager work names (so WorkManager itself won't dedupe
+them), and without the lock a periodic run's first execution could race an immediate trigger
+fired on the same app launch — confirmed on-device, it double-pushed the same pending row into
+two server-side highlights. Sign-out and network failures surface as banners in the UI
+(Phase H) rather than silently dropping local changes.
 
 ## Testing
 
