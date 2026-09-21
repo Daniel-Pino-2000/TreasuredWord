@@ -34,18 +34,15 @@ import kotlinx.serialization.json.Json
 object HttpClientProvider {
 
     /**
-     * The backend server's API root — see server/docs/api_contract.md for what lives under
-     * it. 10.0.2.2 is the Android emulator's alias for the host machine's own localhost, so
-     * this talks to the Ktor dev server (./gradlew :server:run) running on the same machine
-     * as the emulator — run the app on an emulator, not a physical device, while this is
-     * pointed here. Testing on a real device instead needs this changed to the host
-     * machine's actual LAN IP (and that IP added to src/debug/res/xml/network_security_config.xml
-     * — plain HTTP is blocked by default and only allowed there for the debug build); that's
-     * been deliberately deferred until the server is actually deployed somewhere reachable.
-     * Not runtime-configurable yet since there's nowhere to deploy this publicly — see the
-     * roadmap PDF's Phase 5 (hardening & deploy), which hasn't happened yet.
+     * The backend server's API root — see server/docs/api_contract.md for what lives under it.
+     * Points at the deployed TreasuredWord backend on Render (server/DEPLOY.md, Phase 5), reachable
+     * from an emulator, a real device, or anywhere else — HTTPS, no network_security_config
+     * cleartext exception needed. The local-dev alternative
+     * (http://10.0.2.2:8080/api/v1, the emulator's alias for the host machine's own
+     * ./gradlew :server:run) still works for offline backend iteration; swap this constant back
+     * temporarily if debugging against a local server, but don't commit that swap.
      */
-    const val BASE_URL = "http://10.0.2.2:8080/api/v1"
+    const val BASE_URL = "https://treasuredword.onrender.com/api/v1"
 
     private lateinit var tokenStore: TokenStore
 
