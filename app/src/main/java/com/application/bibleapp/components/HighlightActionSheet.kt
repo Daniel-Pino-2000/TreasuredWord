@@ -2,13 +2,19 @@ package com.application.bibleapp.components
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import com.application.bibleapp.data.model.Highlight
 import com.application.bibleapp.ui.theme.Spacing
 
@@ -35,10 +41,25 @@ fun HighlightActionSheet(
             )
             HighlightColorSwatchRow(
                 onColorSelected = { colorArgb -> onColorSelected(highlight, colorArgb) },
+                selectedColorArgb = highlight.color,
                 modifier = Modifier.padding(top = Spacing.lg, bottom = Spacing.lg)
             )
-            TextButton(onClick = { onRemove(highlight) }) {
-                Text("Remove highlight", color = MaterialTheme.colorScheme.error)
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            TextButton(
+                onClick = { onRemove(highlight) },
+                modifier = Modifier.padding(top = Spacing.sm, bottom = Spacing.xl)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Delete,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(18.dp)
+                )
+                Text(
+                    text = "Remove highlight",
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(start = Spacing.sm)
+                )
             }
         }
     }

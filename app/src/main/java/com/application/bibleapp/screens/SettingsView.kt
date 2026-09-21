@@ -341,9 +341,8 @@ fun SettingsView(
 
             if (notificationEnabled) {
                 Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { showTimePicker = true },
+                    onClick = { showTimePicker = true },
+                    modifier = Modifier.fillMaxWidth(),
                     shape = MaterialTheme.shapes.medium,
                     color = MaterialTheme.colorScheme.surfaceVariant
                 ) {
@@ -523,9 +522,8 @@ private fun SettingsRow(
     supportingText: String? = null
 ) {
     Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
         color = MaterialTheme.colorScheme.surfaceVariant
     ) {

@@ -11,6 +11,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.InputChip
 import androidx.compose.material3.InputChipDefaults
@@ -82,13 +84,19 @@ fun NoteEditorSheet(
                 value = text,
                 onValueChange = onTextChange,
                 label = { Text("Note") },
+                placeholder = { Text("Write your thoughts on this verse…") },
                 minLines = 4,
+                shape = MaterialTheme.shapes.medium,
                 modifier = Modifier.fillMaxWidth()
+            )
+            HorizontalDivider(
+                color = MaterialTheme.colorScheme.outlineVariant,
+                modifier = Modifier.padding(top = Spacing.lg)
             )
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = Spacing.lg, bottom = Spacing.xl),
+                    .padding(top = Spacing.md, bottom = Spacing.xl),
                 horizontalArrangement = if (isEditingExisting) Arrangement.SpaceBetween else Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -97,7 +105,7 @@ fun NoteEditorSheet(
                         Text("Delete", color = MaterialTheme.colorScheme.error)
                     }
                 }
-                TextButton(onClick = onSave, enabled = text.isNotBlank()) {
+                FilledTonalButton(onClick = onSave, enabled = text.isNotBlank()) {
                     Text("Save")
                 }
             }

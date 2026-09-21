@@ -213,6 +213,12 @@ fun BibleText(
     // "currently selecting" never looks like "already highlighted".
     val selectionColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.28f)
     val noteGlyphColor = MaterialTheme.colorScheme.primary
+    // No LocalIndication ripple reaches this surface — a paragraph is one flowing Text with tap
+    // targets resolved from character offsets, not per-verse composables, so a bounded ripple
+    // would either cover the whole paragraph or not clip correctly. This mirrors selectionColor's
+    // own span-background approach instead, giving instant feedback confined to the exact verse.
+    var pressedVerse by remember { mutableStateOf<VerseLocationDto?>(null) }
+    val pressColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f)
     // Roughly matches the verse-number superscript's visual weight rather than the full line
     // height, so the glyph reads as a small marker, not a mid-sized icon interrupting the text.
     val noteGlyphSize = (12 * textScale).sp
@@ -245,7 +251,7 @@ fun BibleText(
         }
         itemsIndexed(paragraphs) { index, paragraph ->
             val headings = paragraph.verses.first().richContent?.headings.orEmpty()
-            val content = remember(paragraph, highlightColorsByVerse, selectedVerses, notedVerses, textScale) {
+            val content = remember(paragraph, highlightColorsByVerse, selectedVerses, notedVerses, textScale, pressedVerse) {
                 paragraphAnnotatedString(
                     paragraph.verses,
                     wordsOfJesusColor,
@@ -255,7 +261,9 @@ fun BibleText(
                     highlightColorsByVerse,
                     selectedVerses,
                     selectionColor,
-                    notedVerses
+                    notedVerses,
+                    pressedVerse,
+                    pressColor
                 )
             }
             var layoutResult by remember(paragraph) { mutableStateOf<TextLayoutResult?>(null) }
@@ -285,6 +293,15 @@ fun BibleText(
                             )
                             .pointerInput(paragraph) {
                                 detectTapGestures(
+                                    onPress = { offset ->
+                                        val layout = layoutResult ?: return@detectTapGestures
+                                        val charOffset = layout.getOffsetForPosition(offset)
+                                        val verse = content.verseSpans.firstOrNull { charOffset in it.range }
+                                            ?.location ?: return@detectTapGestures
+                                        pressedVerse = verse
+                                        tryAwaitRelease()
+                                        if (pressedVerse == verse) pressedVerse = null
+                                    },
                                     onTap = { offset ->
                                         val layout = layoutResult ?: return@detectTapGestures
                                         val charOffset = layout.getOffsetForPosition(offset)
@@ -386,7 +403,9 @@ private fun paragraphAnnotatedString(
     highlightColorsByVerse: Map<VerseLocationDto, Color>,
     selectedVerses: Set<VerseLocationDto>,
     selectionColor: Color,
-    notedVerses: Set<VerseLocationDto>
+    notedVerses: Set<VerseLocationDto>,
+    pressedVerse: VerseLocationDto?,
+    pressColor: Color
 ): ParagraphContent {
     val verseNumberStyle = ReadingStyle.VerseNumber.scaledBy(textScale).toSpanStyle().copy(
         color = verseNumberColor,
@@ -459,7 +478,15 @@ private fun paragraphAnnotatedString(
             val verseEnd = length
             if (location != null) {
                 verseSpans += VerseSpan(verseStart until verseEnd, location)
-                val background = if (location in selectedVerses) selectionColor else highlightColorsByVerse[location]
+                // Press feedback only shows on a verse with no more meaningful background of its
+                // own yet (not selected, not already highlighted) — a saved highlight or an
+                // in-progress selection should never flicker to a different color mid-touch.
+                val background = when {
+                    location in selectedVerses -> selectionColor
+                    highlightColorsByVerse[location] != null -> highlightColorsByVerse[location]
+                    location == pressedVerse -> pressColor
+                    else -> null
+                }
                 if (background != null) {
                     addStyle(SpanStyle(background = background), verseStart, verseEnd)
                 }

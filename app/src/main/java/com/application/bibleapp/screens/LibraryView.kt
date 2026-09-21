@@ -6,10 +6,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -17,6 +20,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.StickyNote2
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.AutoStories
+import androidx.compose.material.icons.automirrored.outlined.StickyNote2
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -41,6 +46,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.application.bibleapp.data.model.BibleBooks
@@ -110,6 +119,7 @@ fun LibraryView(
             placeholder = { Text(if (selectedTab == LibraryTab.HIGHLIGHTS) "Search by book" else "Search notes") },
             singleLine = true,
             leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+            shape = MaterialTheme.shapes.large,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = Spacing.lg)
@@ -123,13 +133,14 @@ fun LibraryView(
                 }
                 if (filtered.isEmpty()) {
                     EmptyLibraryState(
-                        if (highlights.isEmpty()) "No highlights yet — long-press a verse while reading to add one."
-                        else "No highlights match \"$query\"."
+                        message = if (highlights.isEmpty()) "No highlights yet — long-press a verse while reading to add one."
+                        else "No highlights match \"$query\".",
+                        icon = Icons.Outlined.AutoStories
                     )
                 } else {
                     LazyColumn(
                         contentPadding = PaddingValues(Spacing.lg),
-                        verticalArrangement = Arrangement.spacedBy(Spacing.sm)
+                        verticalArrangement = Arrangement.spacedBy(Spacing.md)
                     ) {
                         items(filtered, key = { it.localId }) { highlight ->
                             SwipeToDeleteRow(onDelete = { bibleViewModel.deleteLibraryHighlight(highlight) }) {
@@ -159,13 +170,14 @@ fun LibraryView(
                 }
                 if (filtered.isEmpty()) {
                     EmptyLibraryState(
-                        if (notes.isEmpty()) "No notes yet — select a verse while reading to add one."
-                        else "No notes match \"$query\"."
+                        message = if (notes.isEmpty()) "No notes yet — select a verse while reading to add one."
+                        else "No notes match \"$query\".",
+                        icon = Icons.AutoMirrored.Outlined.StickyNote2
                     )
                 } else {
                     LazyColumn(
                         contentPadding = PaddingValues(Spacing.lg),
-                        verticalArrangement = Arrangement.spacedBy(Spacing.sm)
+                        verticalArrangement = Arrangement.spacedBy(Spacing.md)
                     ) {
                         items(filtered, key = { it.localId }) { note ->
                             SwipeToDeleteRow(onDelete = { bibleViewModel.deleteLibraryNote(note) }) {
@@ -231,25 +243,30 @@ private fun HighlightCard(highlight: Highlight, bookName: (Int) -> String, onCli
             .clip(MaterialTheme.shapes.medium),
         onClick = onClick,
         color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 1.dp,
         shape = MaterialTheme.shapes.medium
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(Spacing.md),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.md)
+                .height(IntrinsicSize.Min),
+            verticalAlignment = Alignment.CenterVertically
         ) {
+            // A bookmark-tab accent rather than a small legend dot — reads at a glance from
+            // across the list, the way a real highlighter streak would down a book's margin.
+            // Full opacity, unlike the translucent text-background rendering in BibleText: this
+            // is a color swatch, not verse text to keep legible underneath.
             Box(
                 modifier = Modifier
-                    .size(20.dp)
-                    .clip(CircleShape)
-                    // Full opacity here, unlike the translucent text-background rendering in
-                    // BibleText — this dot is a color legend, not verse text to keep legible
-                    // underneath, so it should read as distinctly as the picker's own swatches.
+                    .fillMaxHeight()
+                    .width(6.dp)
                     .background(Color(highlight.color).copy(alpha = 1f))
             )
-            Column(modifier = Modifier.weight(1f)) {
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(Spacing.md)
+            ) {
                 Text(
                     text = formatVerseRefs(highlight.verses, bookName),
                     style = MaterialTheme.typography.bodyLarge
@@ -257,7 +274,8 @@ private fun HighlightCard(highlight: Highlight, bookName: (Int) -> String, onCli
                 Text(
                     text = formatDisplayDate(highlight.createdAt),
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = Spacing.xs)
                 )
             }
         }
@@ -272,6 +290,7 @@ private fun NoteCard(note: Note, bookName: (Int) -> String, onClick: () -> Unit)
             .clip(MaterialTheme.shapes.medium),
         onClick = onClick,
         color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 1.dp,
         shape = MaterialTheme.shapes.medium
     ) {
         Row(
@@ -281,12 +300,20 @@ private fun NoteCard(note: Note, bookName: (Int) -> String, onClick: () -> Unit)
             verticalAlignment = Alignment.Top,
             horizontalArrangement = Arrangement.spacedBy(Spacing.md)
         ) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.StickyNote2,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(20.dp)
-            )
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primaryContainer),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.StickyNote2,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = formatVerseRefs(note.verses, bookName),
@@ -294,7 +321,7 @@ private fun NoteCard(note: Note, bookName: (Int) -> String, onClick: () -> Unit)
                 )
                 Text(
                     text = note.text,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodyMedium.copy(fontStyle = FontStyle.Italic),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
@@ -312,17 +339,29 @@ private fun NoteCard(note: Note, bookName: (Int) -> String, onClick: () -> Unit)
 }
 
 @Composable
-private fun EmptyLibraryState(message: String) {
+private fun EmptyLibraryState(message: String, icon: ImageVector) {
     Box(
         modifier = Modifier
             .fillMaxSize()
             .padding(Spacing.xl),
         contentAlignment = Alignment.Center
     ) {
-        Text(
-            text = message,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(Spacing.md)
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                modifier = Modifier.size(48.dp)
+            )
+            Text(
+                text = message,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+        }
     }
 }
