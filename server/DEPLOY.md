@@ -19,7 +19,7 @@ normal speed. That's the cost of "genuinely cannot be billed."
 3. **Create the service from the committed Blueprint**:
    - In the Render dashboard: **New +** → **Blueprint**.
    - Pick this repo. Render will detect `render.yaml` at the repo root automatically.
-   - It shows the one service (`bibleapp-server`) the blueprint defines and asks you to fill in
+   - It shows the one service (`treasuredword`) the blueprint defines and asks you to fill in
      the env vars marked `sync: false` — `DATABASE_URL`, `DATABASE_USER`, `DATABASE_PASSWORD`,
      `JWT_SECRET`. See "Every deploy" below for what values to use; you can also leave them blank
      here and fill them in afterward under the service's **Environment** tab.
@@ -48,7 +48,7 @@ either one-time or only needed when a secret changes.
 
 3. **Verify**:
    ```bash
-   curl https://<your-service-name>.onrender.com/health
+   curl https://treasuredword.onrender.com/health
    ```
    Logs are under the service's **Logs** tab in the dashboard (or `render logs` via the CLI).
 
@@ -79,7 +79,7 @@ either one-time or only needed when a secret changes.
 
 `app/src/main/java/com/application/bibleapp/data/remote/HttpClientProvider.kt`'s `BASE_URL` is
 still hardcoded to `http://10.0.2.2:8080/api/v1` (the emulator's alias for your own machine).
-Once there's a real `https://<service-name>.onrender.com` URL, that constant needs to change, and
+Once there's a real `https://treasuredword.onrender.com` URL, that constant needs to change, and
 the `10.0.2.2` cleartext exception in `app/src/debug/res/xml/network_security_config.xml` can go
 too (HTTPS doesn't need it). Not done yet — do this once the first real deploy is live and you
 have the actual URL.

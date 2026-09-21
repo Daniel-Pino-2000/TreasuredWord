@@ -8,7 +8,7 @@
 # so no extra wiring was needed for this.
 services:
   - type: web
-    name: bibleapp-server
+    name: treasuredword
     env: docker
     dockerfilePath: ./Dockerfile
     dockerContext: .
