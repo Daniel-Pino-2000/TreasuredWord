@@ -48,6 +48,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -55,11 +56,13 @@ import androidx.compose.ui.unit.dp
 import com.application.bibleapp.data.model.BibleBooks
 import com.application.bibleapp.data.model.Highlight
 import com.application.bibleapp.data.model.Note
+import com.application.bibleapp.data.remote.VerseLocationDto
 import com.application.bibleapp.navigation.Screen
 import com.application.bibleapp.ui.theme.Spacing
 import com.application.bibleapp.utils.formatDisplayDate
 import com.application.bibleapp.utils.formatVerseRefs
 import com.application.bibleapp.viewmodel.BibleViewModel
+import com.application.bibleapp.viewmodel.VerseTextKey
 
 private enum class LibraryTab(val label: String, val routeArg: String) {
     HIGHLIGHTS("Highlights", Screen.Library.TAB_HIGHLIGHTS),
@@ -90,6 +93,7 @@ fun LibraryView(
 
     val highlights by bibleViewModel.libraryHighlights.collectAsState()
     val notes by bibleViewModel.libraryNotes.collectAsState()
+    val verseTextByKey by bibleViewModel.libraryVerseText.collectAsState()
     val bookNames by bibleViewModel.bookNames.collectAsState()
     val bookName = { bookId: Int -> bookNames[bookId] ?: BibleBooks.getBookById(bookId)?.name ?: "Unknown" }
 
@@ -146,6 +150,7 @@ fun LibraryView(
                             SwipeToDeleteRow(onDelete = { bibleViewModel.deleteLibraryHighlight(highlight) }) {
                                 HighlightCard(
                                     highlight = highlight,
+                                    verseText = resolveVerseText(highlight.versionId, highlight.verses, verseTextByKey),
                                     bookName = bookName,
                                     onClick = {
                                         val first = highlight.verses.minWithOrNull(
@@ -183,6 +188,7 @@ fun LibraryView(
                             SwipeToDeleteRow(onDelete = { bibleViewModel.deleteLibraryNote(note) }) {
                                 NoteCard(
                                     note = note,
+                                    verseText = resolveVerseText(note.versionId, note.verses, verseTextByKey),
                                     bookName = bookName,
                                     onClick = {
                                         val first = note.verses.minWithOrNull(
@@ -235,8 +241,23 @@ private fun SwipeToDeleteRow(onDelete: () -> Unit, content: @Composable () -> Un
     }
 }
 
+/** Joins one highlight/note's verse(s) into a single display string from the preloaded
+ *  [textByKey] lookup (see [BibleViewModel.libraryVerseText]) — a bare number prefix per verse
+ *  only when there's more than one, so a single-verse card (the overwhelming common case) reads
+ *  as a clean quotation rather than "16 For God so loved...". */
+private fun resolveVerseText(versionId: String, verses: List<VerseLocationDto>, textByKey: Map<VerseTextKey, String>): String {
+    val ordered = verses.sortedWith(compareBy({ it.chapter }, { it.verse }))
+    if (ordered.size <= 1) {
+        return ordered.firstOrNull()?.let { textByKey[VerseTextKey(versionId, it)] }.orEmpty()
+    }
+    return ordered.joinToString(" ") { location ->
+        val text = textByKey[VerseTextKey(versionId, location)].orEmpty()
+        "${location.verse} $text"
+    }
+}
+
 @Composable
-private fun HighlightCard(highlight: Highlight, bookName: (Int) -> String, onClick: () -> Unit) {
+private fun HighlightCard(highlight: Highlight, verseText: String, bookName: (Int) -> String, onClick: () -> Unit) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -271,6 +292,16 @@ private fun HighlightCard(highlight: Highlight, bookName: (Int) -> String, onCli
                     text = formatVerseRefs(highlight.verses, bookName),
                     style = MaterialTheme.typography.bodyLarge
                 )
+                if (verseText.isNotBlank()) {
+                    Text(
+                        text = verseText,
+                        style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Serif),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 3,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(top = Spacing.xs)
+                    )
+                }
                 Text(
                     text = formatDisplayDate(highlight.createdAt),
                     style = MaterialTheme.typography.bodySmall,
@@ -283,7 +314,7 @@ private fun HighlightCard(highlight: Highlight, bookName: (Int) -> String, onCli
 }
 
 @Composable
-private fun NoteCard(note: Note, bookName: (Int) -> String, onClick: () -> Unit) {
+private fun NoteCard(note: Note, verseText: String, bookName: (Int) -> String, onClick: () -> Unit) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -319,13 +350,26 @@ private fun NoteCard(note: Note, bookName: (Int) -> String, onClick: () -> Unit)
                     text = formatVerseRefs(note.verses, bookName),
                     style = MaterialTheme.typography.bodyLarge
                 )
+                if (verseText.isNotBlank()) {
+                    Text(
+                        text = verseText,
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontFamily = FontFamily.Serif,
+                            fontStyle = FontStyle.Italic
+                        ),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(top = Spacing.xs)
+                    )
+                }
                 Text(
                     text = note.text,
-                    style = MaterialTheme.typography.bodyMedium.copy(fontStyle = FontStyle.Italic),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(top = Spacing.xs)
+                    modifier = Modifier.padding(top = Spacing.sm)
                 )
                 Text(
                     text = formatDisplayDate(note.createdAt),

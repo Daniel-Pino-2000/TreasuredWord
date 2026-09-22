@@ -1,5 +1,6 @@
 package com.application.bibleapp.components
 
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
@@ -56,6 +57,12 @@ import kotlin.math.roundToInt
  * nav bar sits over. Painting the [Surface] full-bleed and padding only its content is
  * what makes this surface color the one that actually shows through behind the system bar,
  * so the transition into its own space is seamless rather than a color break.
+ *
+ * [hideBar] — true while a reading-screen `ModalBottomSheet` (footnote/highlight/note) is open
+ * — collapses the *entire* group (chapter nav row included, which otherwise never collapses on
+ * scroll) so the sheet reaches a clean bottom edge instead of sitting above a still-visible bar.
+ * It's animated, not instant, and independent of [chromeHiddenFraction]: the tab row hides if
+ * either one calls for it, but the chapter nav row only ever responds to [hideBar].
  */
 @Composable
 fun MainBottomBar(
@@ -66,6 +73,8 @@ fun MainBottomBar(
     onItemSelected: (String) -> Unit,
     onBookPickerClicked: () -> Unit
 ) {
+    val sheetHiddenFraction by animateFloatAsState(targetValue = if (hideBar) 1f else 0f, label = "bottomBarSheetHide")
+
     Surface(
         color = MaterialTheme.colorScheme.surface,
         tonalElevation = NavigationBarDefaults.Elevation
@@ -80,32 +89,36 @@ fun MainBottomBar(
                 val canGoNext = currentChapter < chapterStructure.chapterCount(currentBook) ||
                     currentBook < BibleBooks.allBooks.size
 
-                // A touch more tonal elevation than its surroundings — the row reads as
-                // slightly "raised" relative to the tab row around it, the same system M3
-                // already uses to signal elevation, no new color introduced.
-                Surface(
-                    color = MaterialTheme.colorScheme.surface,
-                    tonalElevation = NavigationBarDefaults.Elevation + 2.dp
-                ) {
-                    ChapterNavBar(
-                        currentBook = currentBook,
-                        bookName = { bookId -> bookNames[bookId] ?: BibleBooks.getBookById(bookId)?.name ?: "Unknown" },
-                        currentChapter = currentChapter,
-                        canGoPrevious = canGoPrevious,
-                        canGoNext = canGoNext,
-                        onPrevious = { bibleViewModel.previousChapter() },
-                        onNext = { bibleViewModel.nextChapter() },
-                        onSelectBook = onBookPickerClicked
-                    )
-                }
+                CollapsingSection(collapsedFraction = sheetHiddenFraction) {
+                    Column {
+                        // A touch more tonal elevation than its surroundings — the row reads as
+                        // slightly "raised" relative to the tab row around it, the same system M3
+                        // already uses to signal elevation, no new color introduced.
+                        Surface(
+                            color = MaterialTheme.colorScheme.surface,
+                            tonalElevation = NavigationBarDefaults.Elevation + 2.dp
+                        ) {
+                            ChapterNavBar(
+                                currentBook = currentBook,
+                                bookName = { bookId -> bookNames[bookId] ?: BibleBooks.getBookById(bookId)?.name ?: "Unknown" },
+                                currentChapter = currentChapter,
+                                canGoPrevious = canGoPrevious,
+                                canGoNext = canGoNext,
+                                onPrevious = { bibleViewModel.previousChapter() },
+                                onNext = { bibleViewModel.nextChapter() },
+                                onSelectBook = onBookPickerClicked
+                            )
+                        }
 
-                HorizontalDivider(
-                    color = MaterialTheme.colorScheme.outlineVariant,
-                    thickness = 0.5.dp
-                )
+                        HorizontalDivider(
+                            color = MaterialTheme.colorScheme.outlineVariant,
+                            thickness = 0.5.dp
+                        )
+                    }
+                }
             }
 
-            CollapsingSection(collapsedFraction = chromeHiddenFraction) {
+            CollapsingSection(collapsedFraction = maxOf(chromeHiddenFraction, sheetHiddenFraction)) {
                 NavigationBar(
                     // Transparent: the color for this whole group comes from the single
                     // outer Surface above, so the tab row blends into it with no seam.

@@ -141,10 +141,16 @@ fun BibleView(
     }
 
     highlightPopup?.let { highlight ->
+        val noteOnSameVerse = notesInChapter.firstOrNull { note -> note.verses.any { it in highlight.verses } }
         HighlightActionSheet(
             highlight = highlight,
+            note = noteOnSameVerse,
             onColorSelected = { target, colorArgb -> bibleViewModel.recolorHighlight(target, colorArgb) },
             onRemove = { target -> bibleViewModel.removeHighlight(target) },
+            onOpenNote = { note ->
+                bibleViewModel.dismissHighlightPopup()
+                bibleViewModel.openNoteEditorForNote(note)
+            },
             onDismiss = { bibleViewModel.dismissHighlightPopup() }
         )
     }

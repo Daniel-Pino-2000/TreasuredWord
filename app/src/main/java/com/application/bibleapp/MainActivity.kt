@@ -160,6 +160,7 @@ class MainActivity : ComponentActivity() {
             }
 
             val themeMode by bibleViewModel.themeMode.collectAsState()
+            val isReadingSheetOpen by bibleViewModel.isReadingSheetOpen.collectAsState()
             val useDarkTheme = when (themeMode) {
                 ThemeMode.SYSTEM -> isSystemInDarkTheme()
                 ThemeMode.LIGHT -> false
@@ -208,7 +209,7 @@ class MainActivity : ComponentActivity() {
                             MainBottomBar(
                                 currentRoute = currentRoute,
                                 bibleViewModel = bibleViewModel,
-                                hideBar = false,
+                                hideBar = isReadingSheetOpen,
                                 chromeHiddenFraction = chromeHiddenFraction,
                                 onItemSelected = { route -> navController.navigate(route) },
                                 onBookPickerClicked = { navController.navigate(Screen.BookPicker.route) }

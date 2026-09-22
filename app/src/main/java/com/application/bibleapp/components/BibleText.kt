@@ -1,5 +1,6 @@
 package com.application.bibleapp.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.InlineTextContent
 import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.material.icons.Icons
@@ -26,7 +28,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.ParagraphStyle
@@ -104,12 +112,71 @@ private data class NoteSpan(val range: IntRange, val location: VerseLocationDto)
  *  [NoteSpan], not from the id itself. */
 private const val NOTE_GLYPH_ID = "note_glyph"
 
+/** A selection/highlight tint for the character range `[start, end)` — painted separately from
+ *  [ParagraphContent.text]'s own [SpanStyle]s (see [drawHighlightRegion]) rather than as a
+ *  [SpanStyle] background, which only ever draws a hard rectangle per line. */
+private data class BackgroundRegion(val start: Int, val end: Int, val color: Color)
+
 private data class ParagraphContent(
     val text: AnnotatedString,
     val verseSpans: List<VerseSpan>,
     val footnoteSpans: List<FootnoteSpan>,
-    val noteSpans: List<NoteSpan>
+    val noteSpans: List<NoteSpan>,
+    val backgroundRegions: List<BackgroundRegion>
 )
+
+/** Rounding on a highlight/selection stroke — enough to read as a felt-tip pen, not a text-editor
+ *  selection rectangle. */
+private val HIGHLIGHT_CORNER_RADIUS = 3.dp
+
+/** Slight vertical overshoot past each line's own ascent/descent box, like real ink covering a
+ *  touch more than the letters themselves. */
+private val HIGHLIGHT_VERTICAL_INFLATE = 1.dp
+
+/** Extra reach at the very start/end of a highlighted run only (never at a mid-run line wrap) —
+ *  the pen-down/pen-up overshoot of an actual highlighter stroke. */
+private val HIGHLIGHT_HORIZONTAL_CAP = 2.dp
+
+/**
+ * Paints [region] as one or more rounded strokes — one per visual line it spans — behind the text,
+ * using [layout] to find each line's exact horizontal extent for the region's character range.
+ * Replaces a plain [SpanStyle] background (a hard-edged rectangle per line, with square corners
+ * at every line wrap) with something closer to how a real highlighter marks a page.
+ */
+private fun DrawScope.drawHighlightRegion(layout: TextLayoutResult, region: BackgroundRegion) {
+    val start = region.start
+    val end = region.end
+    if (start >= end) return
+    val cornerRadius = CornerRadius(HIGHLIGHT_CORNER_RADIUS.toPx())
+    val verticalInflate = HIGHLIGHT_VERTICAL_INFLATE.toPx()
+    val horizontalCap = HIGHLIGHT_HORIZONTAL_CAP.toPx()
+    val startLine = layout.getLineForOffset(start)
+    val endLine = layout.getLineForOffset((end - 1).coerceAtLeast(start))
+    for (line in startLine..endLine) {
+        val lineStart = layout.getLineStart(line)
+        val lineEnd = layout.getLineEnd(line, visibleEnd = true)
+        val segmentStart = start.coerceAtLeast(lineStart)
+        val segmentEnd = end.coerceAtMost(lineEnd)
+        if (segmentStart >= segmentEnd) continue
+        var left = layout.getHorizontalPosition(segmentStart, usePrimaryDirection = true)
+        var right = layout.getHorizontalPosition(segmentEnd, usePrimaryDirection = true)
+        if (left > right) {
+            val swap = left
+            left = right
+            right = swap
+        }
+        if (line == startLine) left -= horizontalCap
+        if (line == endLine) right += horizontalCap
+        val top = layout.getLineTop(line) - verticalInflate
+        val bottom = layout.getLineBottom(line) + verticalInflate
+        drawRoundRect(
+            color = region.color,
+            topLeft = Offset(left, top),
+            size = Size(right - left, bottom - top),
+            cornerRadius = cornerRadius
+        )
+    }
+}
 
 private fun VerseUI.toLocationOrNull(): VerseLocationDto? {
     val book = bookId ?: return null
@@ -212,17 +279,12 @@ fun BibleText(
     // Deliberately distinct from any saved highlight color (see ui/theme/HighlightColors.kt) so
     // "currently selecting" never looks like "already highlighted".
     val selectionColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.28f)
-    val noteGlyphColor = MaterialTheme.colorScheme.primary
-    // No LocalIndication ripple reaches this surface — a paragraph is one flowing Text with tap
-    // targets resolved from character offsets, not per-verse composables, so a bounded ripple
-    // would either cover the whole paragraph or not clip correctly. This mirrors selectionColor's
-    // own span-background approach instead, giving instant feedback confined to the exact verse.
-    var pressedVerse by remember { mutableStateOf<VerseLocationDto?>(null) }
-    val pressColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f)
-    // Roughly matches the verse-number superscript's visual weight rather than the full line
-    // height, so the glyph reads as a small marker, not a mid-sized icon interrupting the text.
-    val noteGlyphSize = (12 * textScale).sp
-    val noteGlyphInlineContent = remember(noteGlyphColor, noteGlyphSize) {
+    val noteGlyphBadgeColor = MaterialTheme.colorScheme.primary
+    val noteGlyphIconColor = MaterialTheme.colorScheme.onPrimary
+    // A touch bigger than the old bare icon (which had no background of its own) since it now
+    // needs to read as a small filled badge, not just a glyph the size of a superscript number.
+    val noteGlyphSize = (15 * textScale).sp
+    val noteGlyphInlineContent = remember(noteGlyphBadgeColor, noteGlyphIconColor, noteGlyphSize) {
         mapOf(
             NOTE_GLYPH_ID to InlineTextContent(
                 Placeholder(
@@ -231,12 +293,24 @@ fun BibleText(
                     placeholderVerticalAlign = PlaceholderVerticalAlign.TextCenter
                 )
             ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.StickyNote2,
-                    contentDescription = "Note",
-                    tint = noteGlyphColor,
-                    modifier = Modifier.fillMaxSize()
-                )
+                // An explicit filled circle behind the icon — rather than a bare tinted Icon
+                // (which is a transparent silhouette outside its glyph strokes) sitting directly
+                // over a highlighted verse's background, so there's never a gap of the page's
+                // own background color showing through as a stray square around the glyph.
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(CircleShape)
+                        .background(noteGlyphBadgeColor),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.StickyNote2,
+                        contentDescription = "Note",
+                        tint = noteGlyphIconColor,
+                        modifier = Modifier.fillMaxSize(0.62f)
+                    )
+                }
             }
         )
     }
@@ -251,7 +325,7 @@ fun BibleText(
         }
         itemsIndexed(paragraphs) { index, paragraph ->
             val headings = paragraph.verses.first().richContent?.headings.orEmpty()
-            val content = remember(paragraph, highlightColorsByVerse, selectedVerses, notedVerses, textScale, pressedVerse) {
+            val content = remember(paragraph, highlightColorsByVerse, selectedVerses, notedVerses, textScale) {
                 paragraphAnnotatedString(
                     paragraph.verses,
                     wordsOfJesusColor,
@@ -261,9 +335,7 @@ fun BibleText(
                     highlightColorsByVerse,
                     selectedVerses,
                     selectionColor,
-                    notedVerses,
-                    pressedVerse,
-                    pressColor
+                    notedVerses
                 )
             }
             var layoutResult by remember(paragraph) { mutableStateOf<TextLayoutResult?>(null) }
@@ -291,17 +363,12 @@ fun BibleText(
                                 },
                                 bottom = Spacing.xs
                             )
+                            .drawBehind {
+                                val layout = layoutResult ?: return@drawBehind
+                                content.backgroundRegions.forEach { region -> drawHighlightRegion(layout, region) }
+                            }
                             .pointerInput(paragraph) {
                                 detectTapGestures(
-                                    onPress = { offset ->
-                                        val layout = layoutResult ?: return@detectTapGestures
-                                        val charOffset = layout.getOffsetForPosition(offset)
-                                        val verse = content.verseSpans.firstOrNull { charOffset in it.range }
-                                            ?.location ?: return@detectTapGestures
-                                        pressedVerse = verse
-                                        tryAwaitRelease()
-                                        if (pressedVerse == verse) pressedVerse = null
-                                    },
                                     onTap = { offset ->
                                         val layout = layoutResult ?: return@detectTapGestures
                                         val charOffset = layout.getOffsetForPosition(offset)
@@ -403,9 +470,7 @@ private fun paragraphAnnotatedString(
     highlightColorsByVerse: Map<VerseLocationDto, Color>,
     selectedVerses: Set<VerseLocationDto>,
     selectionColor: Color,
-    notedVerses: Set<VerseLocationDto>,
-    pressedVerse: VerseLocationDto?,
-    pressColor: Color
+    notedVerses: Set<VerseLocationDto>
 ): ParagraphContent {
     val verseNumberStyle = ReadingStyle.VerseNumber.scaledBy(textScale).toSpanStyle().copy(
         color = verseNumberColor,
@@ -420,6 +485,7 @@ private fun paragraphAnnotatedString(
     val verseSpans = mutableListOf<VerseSpan>()
     val footnoteSpans = mutableListOf<FootnoteSpan>()
     val noteSpans = mutableListOf<NoteSpan>()
+    val backgroundRegions = mutableListOf<BackgroundRegion>()
 
     val text = buildAnnotatedString {
         var isFirstRunInParagraph = true
@@ -478,23 +544,15 @@ private fun paragraphAnnotatedString(
             val verseEnd = length
             if (location != null) {
                 verseSpans += VerseSpan(verseStart until verseEnd, location)
-                // Press feedback only shows on a verse with no more meaningful background of its
-                // own yet (not selected, not already highlighted) — a saved highlight or an
-                // in-progress selection should never flicker to a different color mid-touch.
-                val background = when {
-                    location in selectedVerses -> selectionColor
-                    highlightColorsByVerse[location] != null -> highlightColorsByVerse[location]
-                    location == pressedVerse -> pressColor
-                    else -> null
-                }
+                val background = if (location in selectedVerses) selectionColor else highlightColorsByVerse[location]
                 if (background != null) {
-                    addStyle(SpanStyle(background = background), verseStart, verseEnd)
+                    backgroundRegions += BackgroundRegion(verseStart, verseEnd, background)
                 }
             }
         }
     }
 
-    return ParagraphContent(text, verseSpans, footnoteSpans, noteSpans)
+    return ParagraphContent(text, verseSpans, footnoteSpans, noteSpans, backgroundRegions)
 }
 
 private fun AnnotatedString.Builder.appendVerseNumber(verseNumber: Int?, style: SpanStyle) {

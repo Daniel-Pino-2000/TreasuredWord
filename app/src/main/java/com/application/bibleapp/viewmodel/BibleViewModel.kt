@@ -49,6 +49,15 @@ data class NoteEditorState(
     val text: String
 )
 
+/** Looks up one verse's cached scripture text (see [BibleViewModel.libraryVerseText]) — a location
+ *  alone isn't a safe key since the same verse's text can differ across versions. */
+data class VerseTextKey(val versionId: String, val location: VerseLocationDto)
+
+/** A stray pilcrow the plain-text fallback (no rich content) can't turn into a real paragraph
+ *  break — same marker BibleText strips for the reading view; the Library screen's verse
+ *  previews need the same cleanup. */
+private const val LEGACY_PARAGRAPH_MARKER = "¶ "
+
 /**
  * Version state is split across three flows that the version picker composes
  * together rather than one combined "picker state" object:
@@ -106,6 +115,14 @@ class BibleViewModel(
     private val _noteEditor = MutableStateFlow<NoteEditorState?>(null)
     val noteEditor: StateFlow<NoteEditorState?> = _noteEditor.asStateFlow()
 
+    /** True while any of the reading screen's three `ModalBottomSheet`s (footnote, highlight
+     *  action, note editor) is open — lets the bottom chrome (MainBottomBar) recede so a sheet
+     *  reaches a clean edge instead of sitting above a still-visible chapter nav/tab bar. */
+    val isReadingSheetOpen: StateFlow<Boolean> =
+        combine(_selectedFootnote, _highlightPopup, _noteEditor) { footnote, highlight, note ->
+            footnote != null || highlight != null || note != null
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
     // Every active highlight/note across all chapters — the Library screen's data, loaded on
     // demand (not kept live like _highlightsInChapter/_notesInChapter, since it's only ever
     // shown on its own screen) via [loadLibrary].
@@ -114,6 +131,13 @@ class BibleViewModel(
 
     private val _libraryNotes = MutableStateFlow<List<Note>>(emptyList())
     val libraryNotes: StateFlow<List<Note>> = _libraryNotes.asStateFlow()
+
+    // Scripture text for every verse a library highlight/note covers, keyed by the version it was
+    // made in (a highlight/note is immutable to its own version, and the same verse's text can
+    // differ across versions) — the Library screen wants to show the actual verse, not just its
+    // reference, but Highlight/Note only ever store locations, not text.
+    private val _libraryVerseText = MutableStateFlow<Map<VerseTextKey, String>>(emptyMap())
+    val libraryVerseText: StateFlow<Map<VerseTextKey, String>> = _libraryVerseText.asStateFlow()
 
     // Prompts sign-in the first time someone highlights or notes a verse while signed out —
     // not a wall (the feature already worked, local-first), just a one-time nudge that it'd
@@ -508,11 +532,31 @@ class BibleViewModel(
         }
     }
 
-    /** Loads every active highlight/note for the Library screen — call once when it opens. */
+    /** Loads every active highlight/note for the Library screen, plus the actual scripture text
+     *  each one covers — call once when it opens. */
     fun loadLibrary() {
         viewModelScope.launch {
-            _libraryHighlights.value = repository.getAllActiveHighlights()
-            _libraryNotes.value = repository.getAllActiveNotes()
+            val highlights = repository.getAllActiveHighlights()
+            val notes = repository.getAllActiveNotes()
+            _libraryHighlights.value = highlights
+            _libraryNotes.value = notes
+
+            // One chapter fetch per distinct (version, book, chapter) triple covered by any
+            // highlight/note, however many individual verses in it are actually referenced —
+            // cheap local-SQLite reads, and far fewer round trips than one per verse.
+            val neededChapters = (highlights.asSequence().flatMap { h -> h.verses.asSequence().map { Triple(h.versionId, it.bookId, it.chapter) } } +
+                notes.asSequence().flatMap { n -> n.verses.asSequence().map { Triple(n.versionId, it.bookId, it.chapter) } })
+                .toSet()
+
+            val textByKey = mutableMapOf<VerseTextKey, String>()
+            neededChapters.forEach { (versionId, bookId, chapter) ->
+                repository.getChapter(bookId, chapter, versionId).forEach { verse ->
+                    val v = verse.verse ?: return@forEach
+                    val location = VerseLocationDto(bookId, chapter, v)
+                    textByKey[VerseTextKey(versionId, location)] = verse.text.removePrefix(LEGACY_PARAGRAPH_MARKER)
+                }
+            }
+            _libraryVerseText.value = textByKey
         }
     }
 
