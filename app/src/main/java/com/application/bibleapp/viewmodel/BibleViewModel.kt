@@ -101,6 +101,13 @@ class BibleViewModel(
     private val _selectedVerses = MutableStateFlow<Set<VerseLocationDto>>(emptySet())
     val selectedVerses: StateFlow<Set<VerseLocationDto>> = _selectedVerses.asStateFlow()
 
+    // The highlight created (or already covering) the current, still-open selection — set the
+    // first time a color is picked for it, so picking a *different* color afterward (without
+    // cancelling first) recolors that same highlight instead of stacking a duplicate on top of
+    // it. Reset whenever the selected verse set itself changes, since a highlight's verse list
+    // is immutable and an id tracked against the old set is meaningless once it's changed.
+    private var activeSelectionHighlightId: Long? = null
+
     // The highlight whose "change color / remove" sheet is open, or null when none is —
     // shown when tapping (not long-pressing) an already-highlighted verse outside selection mode.
     private val _highlightPopup = MutableStateFlow<Highlight?>(null)
@@ -114,14 +121,6 @@ class BibleViewModel(
     // The open note editor sheet's state, or null when it's closed — see [NoteEditorState].
     private val _noteEditor = MutableStateFlow<NoteEditorState?>(null)
     val noteEditor: StateFlow<NoteEditorState?> = _noteEditor.asStateFlow()
-
-    /** True while any of the reading screen's three `ModalBottomSheet`s (footnote, highlight
-     *  action, note editor) is open — lets the bottom chrome (MainBottomBar) recede so a sheet
-     *  reaches a clean edge instead of sitting above a still-visible chapter nav/tab bar. */
-    val isReadingSheetOpen: StateFlow<Boolean> =
-        combine(_selectedFootnote, _highlightPopup, _noteEditor) { footnote, highlight, note ->
-            footnote != null || highlight != null || note != null
-        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 
     // Every active highlight/note across all chapters — the Library screen's data, loaded on
     // demand (not kept live like _highlightsInChapter/_notesInChapter, since it's only ever
@@ -384,6 +383,7 @@ class BibleViewModel(
         // A new chapter means any in-progress selection or open popup belongs to verses that
         // are about to leave the screen.
         _selectedVerses.value = emptySet()
+        activeSelectionHighlightId = null
         _highlightPopup.value = null
         _noteEditor.value = null
         viewModelScope.launch {
@@ -430,6 +430,9 @@ class BibleViewModel(
     }
 
     private fun toggleVerseSelection(location: VerseLocationDto) {
+        // The set is about to change, so any highlight tracked against the *old* set no longer
+        // means anything — see activeSelectionHighlightId's own doc comment.
+        activeSelectionHighlightId = null
         _selectedVerses.update { current ->
             if (location in current) current - location else current + location
         }
@@ -437,18 +440,27 @@ class BibleViewModel(
 
     fun clearSelection() {
         _selectedVerses.value = emptySet()
+        activeSelectionHighlightId = null
     }
 
-    /** Creates one highlight covering every currently selected verse, then clears the selection. */
+    /** Applies a color to every currently selected verse — the *first* color choice for this
+     *  selection creates a new highlight; picking a different color afterward, without
+     *  cancelling first, recolors that same highlight instead of stacking a duplicate on top of
+     *  it. Deliberately leaves the selection (and this toolbar) open afterward, so a note can
+     *  still be added to the same verses without having to reselect them. */
     fun highlightSelection(colorArgb: Int) {
         val verses = _selectedVerses.value.toList()
         if (verses.isEmpty()) return
         val versionId = _selectedVersion.value.id
-        _selectedVerses.value = emptySet()
+        val existingId = activeSelectionHighlightId
         viewModelScope.launch {
-            repository.createHighlight(versionId, verses, colorArgb)
+            if (existingId != null) {
+                repository.recolorHighlight(existingId, colorArgb)
+            } else {
+                activeSelectionHighlightId = repository.createHighlight(versionId, verses, colorArgb).localId
+                maybeOfferSignIn()
+            }
             reloadHighlightsInChapter()
-            maybeOfferSignIn()
         }
     }
 
@@ -480,12 +492,35 @@ class BibleViewModel(
         )
         if (verses.isEmpty()) return
         _selectedVerses.value = emptySet()
+        activeSelectionHighlightId = null
         _noteEditor.value = NoteEditorState(existingNote = null, verses = verses, text = "")
     }
 
     /** Opens the editor on an existing note — reached from its inline glyph in the reading view. */
     fun openNoteEditorForNote(note: Note) {
         _noteEditor.value = NoteEditorState(existingNote = note, verses = note.verses, text = note.text)
+    }
+
+    /** Reached from a Library highlight card: jumps to its chapter and arms selection mode over
+     *  its exact verses, with color-picking already wired to recolor it (see
+     *  [activeSelectionHighlightId]) rather than stack a duplicate on top of it — one tap away
+     *  from either recoloring or attaching a note, instead of having to re-find and re-select
+     *  the verse(s) by hand. */
+    fun openHighlightFromLibrary(highlight: Highlight) {
+        val first = highlight.verses.minWithOrNull(compareBy({ it.bookId }, { it.chapter }, { it.verse })) ?: return
+        setBook(first.bookId, first.chapter, first.verse)
+        _selectedVerses.value = highlight.verses.toSet()
+        activeSelectionHighlightId = highlight.localId
+    }
+
+    /** Reached from a Library note card: jumps to its chapter and opens the note straight into
+     *  its editor, pre-filled — generic verse selection wouldn't help edit a note's *text*, and
+     *  routing it through [openNoteEditorForSelection] would risk saving a second, blank note
+     *  over the same verses instead of updating this one. */
+    fun openNoteFromLibrary(note: Note) {
+        val first = note.verses.minWithOrNull(compareBy({ it.bookId }, { it.chapter }, { it.verse })) ?: return
+        setBook(first.bookId, first.chapter, first.verse)
+        openNoteEditorForNote(note)
     }
 
     fun updateNoteEditorText(text: String) {

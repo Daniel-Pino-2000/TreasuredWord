@@ -41,6 +41,7 @@ import com.application.bibleapp.components.SettingsTopBar
 import com.application.bibleapp.components.TopBar
 import com.application.bibleapp.components.VersePickerTopBar
 import com.application.bibleapp.components.VersionPickerTopBar
+import com.application.bibleapp.components.VerseSelectionToolbar
 import com.application.bibleapp.navigation.Navigation
 import com.application.bibleapp.navigation.Screen
 import com.application.bibleapp.ui.theme.BibleAppTheme
@@ -160,7 +161,6 @@ class MainActivity : ComponentActivity() {
             }
 
             val themeMode by bibleViewModel.themeMode.collectAsState()
-            val isReadingSheetOpen by bibleViewModel.isReadingSheetOpen.collectAsState()
             val useDarkTheme = when (themeMode) {
                 ThemeMode.SYSTEM -> isSystemInDarkTheme()
                 ThemeMode.LIGHT -> false
@@ -206,14 +206,27 @@ class MainActivity : ComponentActivity() {
                                 Screen.Library.route
                             )
                         ) {
-                            MainBottomBar(
-                                currentRoute = currentRoute,
-                                bibleViewModel = bibleViewModel,
-                                hideBar = isReadingSheetOpen,
-                                chromeHiddenFraction = chromeHiddenFraction,
-                                onItemSelected = { route -> navController.navigate(route) },
-                                onBookPickerClicked = { navController.navigate(Screen.BookPicker.route) }
-                            )
+                            val selectedVerses by bibleViewModel.selectedVerses.collectAsState()
+                            // While a selection is active, the toolbar takes this slot outright
+                            // instead of floating as a second overlay stacked on top of the
+                            // ordinary bottom chrome — Scaffold reserves exactly the space
+                            // whichever one of them needs, no jump between the two.
+                            if (currentRoute == Screen.Bible.route && selectedVerses.isNotEmpty()) {
+                                VerseSelectionToolbar(
+                                    selectionCount = selectedVerses.size,
+                                    onColorSelected = { colorArgb -> bibleViewModel.highlightSelection(colorArgb) },
+                                    onAddNote = { bibleViewModel.openNoteEditorForSelection() },
+                                    onCancel = { bibleViewModel.clearSelection() }
+                                )
+                            } else {
+                                MainBottomBar(
+                                    currentRoute = currentRoute,
+                                    bibleViewModel = bibleViewModel,
+                                    chromeHiddenFraction = chromeHiddenFraction,
+                                    onItemSelected = { route -> navController.navigate(route) },
+                                    onBookPickerClicked = { navController.navigate(Screen.BookPicker.route) }
+                                )
+                            }
                         }
                     }
                 ) { paddingValues ->

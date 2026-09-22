@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -21,7 +22,6 @@ import com.application.bibleapp.components.BibleText
 import com.application.bibleapp.components.HighlightActionSheet
 import com.application.bibleapp.components.NoteEditorSheet
 import com.application.bibleapp.components.SignInNudgeBanner
-import com.application.bibleapp.components.VerseSelectionToolbar
 import com.application.bibleapp.data.model.BibleBooks
 import com.application.bibleapp.data.remote.VerseLocationDto
 import com.application.bibleapp.ui.theme.ReadingStyle
@@ -93,18 +93,6 @@ fun BibleView(
             }
         )
 
-        if (selectedVerses.isNotEmpty()) {
-            VerseSelectionToolbar(
-                selectionCount = selectedVerses.size,
-                onColorSelected = { colorArgb -> bibleViewModel.highlightSelection(colorArgb) },
-                onAddNote = { bibleViewModel.openNoteEditorForSelection() },
-                onCancel = { bibleViewModel.clearSelection() },
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-            )
-        }
-
         if (showSignInNudge) {
             SignInNudgeBanner(
                 onSignInClick = {
@@ -124,7 +112,11 @@ fun BibleView(
             onDismissRequest = { bibleViewModel.dismissFootnote() },
             shape = MaterialTheme.shapes.large
         ) {
-            Column(modifier = Modifier.padding(horizontal = Spacing.xl, vertical = Spacing.sm)) {
+            Column(
+                modifier = Modifier
+                    .padding(horizontal = Spacing.xl, vertical = Spacing.sm)
+                    .navigationBarsPadding()
+            ) {
                 Text(
                     text = "Verse ${footnote.verse}",
                     style = MaterialTheme.typography.titleMedium,

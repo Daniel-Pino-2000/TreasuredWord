@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
@@ -52,7 +54,12 @@ fun NoteEditorSheet(
     onDismiss: () -> Unit
 ) {
     ModalBottomSheet(onDismissRequest = onDismiss, shape = MaterialTheme.shapes.large) {
-        Column(modifier = Modifier.padding(horizontal = Spacing.xl, vertical = Spacing.sm)) {
+        Column(
+            modifier = Modifier
+                .padding(horizontal = Spacing.xl, vertical = Spacing.sm)
+                .navigationBarsPadding()
+                .imePadding()
+        ) {
             Text(
                 text = "Note",
                 style = MaterialTheme.typography.titleMedium,

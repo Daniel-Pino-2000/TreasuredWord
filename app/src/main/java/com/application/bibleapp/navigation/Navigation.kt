@@ -88,10 +88,7 @@ fun Navigation(
                 bibleViewModel = bibleViewModel,
                 modifier = Modifier.padding(padding),
                 initialTab = backStackEntry.arguments?.getString("tab"),
-                onVerseClick = { bookId, chapter, verse ->
-                    bibleViewModel.setBook(bookId, chapter, verse)
-                    navController.navigate(Screen.Bible.route)
-                }
+                onNavigateToBible = { navController.navigate(Screen.Bible.route) }
             )
         }
 

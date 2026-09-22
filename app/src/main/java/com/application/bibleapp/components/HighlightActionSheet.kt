@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -50,7 +51,11 @@ fun HighlightActionSheet(
     onDismiss: () -> Unit
 ) {
     ModalBottomSheet(onDismissRequest = onDismiss, shape = MaterialTheme.shapes.large) {
-        Column(modifier = Modifier.padding(horizontal = Spacing.xl, vertical = Spacing.sm)) {
+        Column(
+            modifier = Modifier
+                .padding(horizontal = Spacing.xl, vertical = Spacing.sm)
+                .navigationBarsPadding()
+        ) {
             Text(
                 text = "Highlight",
                 style = MaterialTheme.typography.titleMedium,

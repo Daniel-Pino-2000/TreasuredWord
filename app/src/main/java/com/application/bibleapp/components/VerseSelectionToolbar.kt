@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.NoteAdd
 import androidx.compose.material.icons.filled.Close
@@ -25,10 +26,15 @@ import com.application.bibleapp.ui.theme.Spacing
 import androidx.compose.ui.unit.dp
 
 /**
- * Bottom-anchored contextual toolbar shown while one or more verses are selected (see
- * BibleViewModel.selectedVerses / docs/UI_Integration_Roadmap.md). Tapping a swatch immediately
- * creates the highlight and clears the selection — no separate confirm step. The Note action
- * opens NoteEditorSheet over the current selection instead (Copy/Share are still deferred).
+ * Takes over Scaffold's `bottomBar` slot (see MainActivity) while one or more verses are
+ * selected (BibleViewModel.selectedVerses / docs/UI_Integration_Roadmap.md) — rather than
+ * floating as a second overlay stacked on top of the ordinary bottom chrome, which used to leave
+ * both visible at once. Picking a color applies it and leaves the selection (and this toolbar)
+ * open, so a note can still be added to the same verses; only Cancel or the Note action end it.
+ *
+ * Rounded on top only, flat on the bottom — like a sheet, but it fills this slot exactly the way
+ * [MainBottomBar] does (same edge-to-edge width, same self-applied [navigationBarsPadding]), so
+ * a symmetrically-rounded shape would expose whatever's behind the app at its bottom corners.
  */
 @Composable
 fun VerseSelectionToolbar(
@@ -42,7 +48,7 @@ fun VerseSelectionToolbar(
         modifier = modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surface,
         tonalElevation = 6.dp,
-        shape = MaterialTheme.shapes.large
+        shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
     ) {
         Column(
             modifier = Modifier

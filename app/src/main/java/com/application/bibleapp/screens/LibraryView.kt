@@ -87,7 +87,7 @@ fun LibraryView(
     bibleViewModel: BibleViewModel,
     modifier: Modifier = Modifier,
     initialTab: String? = null,
-    onVerseClick: (bookId: Int, chapter: Int, verse: Int) -> Unit
+    onNavigateToBible: () -> Unit
 ) {
     LaunchedEffect(Unit) { bibleViewModel.loadLibrary() }
 
@@ -153,10 +153,8 @@ fun LibraryView(
                                     verseText = resolveVerseText(highlight.versionId, highlight.verses, verseTextByKey),
                                     bookName = bookName,
                                     onClick = {
-                                        val first = highlight.verses.minWithOrNull(
-                                            compareBy({ it.bookId }, { it.chapter }, { it.verse })
-                                        ) ?: return@HighlightCard
-                                        onVerseClick(first.bookId, first.chapter, first.verse)
+                                        bibleViewModel.openHighlightFromLibrary(highlight)
+                                        onNavigateToBible()
                                     }
                                 )
                             }
@@ -191,10 +189,8 @@ fun LibraryView(
                                     verseText = resolveVerseText(note.versionId, note.verses, verseTextByKey),
                                     bookName = bookName,
                                     onClick = {
-                                        val first = note.verses.minWithOrNull(
-                                            compareBy({ it.bookId }, { it.chapter }, { it.verse })
-                                        ) ?: return@NoteCard
-                                        onVerseClick(first.bookId, first.chapter, first.verse)
+                                        bibleViewModel.openNoteFromLibrary(note)
+                                        onNavigateToBible()
                                     }
                                 )
                             }
