@@ -3,12 +3,16 @@ package com.application.bibleapp.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.NoteAdd
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -55,9 +59,21 @@ fun VerseSelectionToolbar(
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = onAddNote) {
-                        Icon(Icons.AutoMirrored.Filled.NoteAdd, contentDescription = "Add note")
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                    // A labeled filled-tonal chip, not another plain icon button — the one
+                    // action here that leaves this toolbar (into the note editor) needs to read
+                    // as the clear primary action, not blend in next to Cancel.
+                    FilledTonalButton(
+                        onClick = onAddNote,
+                        contentPadding = ButtonDefaults.ButtonWithIconContentPadding
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.NoteAdd,
+                            contentDescription = null,
+                            modifier = Modifier.size(ButtonDefaults.IconSize)
+                        )
+                        Spacer(modifier = Modifier.size(ButtonDefaults.IconSpacing))
+                        Text("Note")
                     }
                     IconButton(onClick = onCancel) {
                         Icon(Icons.Default.Close, contentDescription = "Cancel selection")
