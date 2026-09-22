@@ -29,4 +29,14 @@ sealed class Screen(val route: String, val title: String) {
         const val TAB_NOTES = "notes"
         fun createRoute(tab: String) = "library/$tab"
     }
+
+    /** A single Library card's full detail — reached by tapping it in [Library], one tap short
+     *  of actually jumping into the reading view. [type] is "highlight" or "note"; [localId]
+     *  looks the item back up from BibleViewModel's already-loaded library StateFlows rather
+     *  than carrying the whole object through the nav graph. */
+    object LibraryItemDetail: Screen("library_item/{type}/{localId}", "Detail") {
+        const val TYPE_HIGHLIGHT = "highlight"
+        const val TYPE_NOTE = "note"
+        fun createRoute(type: String, localId: Long) = "library_item/$type/$localId"
+    }
 }

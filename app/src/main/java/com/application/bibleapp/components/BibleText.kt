@@ -35,7 +35,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.ParagraphStyle
@@ -115,12 +114,8 @@ private const val NOTE_GLYPH_ID = "note_glyph"
 
 /** A selection/highlight tint for the character range `[start, end)` — painted separately from
  *  [ParagraphContent.text]'s own [SpanStyle]s (see [drawHighlightRegion]) rather than as a
- *  [SpanStyle] background, which only ever draws a hard rectangle per line. [filled] distinguishes
- *  a saved highlight (a solid ink stroke) from an in-progress selection (a thin outline only) —
- *  deliberately a difference in *kind*, not just color, since [HighlightColors.palette] and the
- *  selection tint can otherwise land on similar hues (both warm/golden) and read as "yet another
- *  highlight color" instead of "currently selecting." */
-private data class BackgroundRegion(val start: Int, val end: Int, val color: Color, val filled: Boolean)
+ *  [SpanStyle] background, which only ever draws a hard rectangle per line. */
+private data class BackgroundRegion(val start: Int, val end: Int, val color: Color)
 
 private data class ParagraphContent(
     val text: AnnotatedString,
@@ -139,29 +134,22 @@ private val HIGHLIGHT_CORNER_RADIUS = 3.dp
 private val HIGHLIGHT_VERTICAL_INFLATE = 1.dp
 
 /** Extra reach at the very start/end of a highlighted run only (never at a mid-run line wrap) —
- *  the pen-down/pen-up overshoot of an actual highlighter stroke. Selection's outline skips this
- *  (see [drawHighlightRegion]) — a marquee-style box, not an ink stroke, should hug the text. */
+ *  the pen-down/pen-up overshoot of an actual highlighter stroke. */
 private val HIGHLIGHT_HORIZONTAL_CAP = 2.dp
 
-/** Stroke width for a selection outline (see [drawHighlightRegion]). */
-private val SELECTION_OUTLINE_WIDTH = 1.5.dp
-
 /**
- * Paints [region] as one or more rounded shapes — one per visual line it spans — behind the text,
+ * Paints [region] as one or more rounded strokes — one per visual line it spans — behind the text,
  * using [layout] to find each line's exact horizontal extent for the region's character range.
  * Replaces a plain [SpanStyle] background (a hard-edged rectangle per line, with square corners
- * at every line wrap) with something closer to how a real highlighter marks a page. A filled
- * region gets the ink-stroke treatment (rounded, a slight vertical/horizontal overshoot); an
- * unfilled one (selection) is a tight outline only, so it never reads as just another highlight
- * color.
+ * at every line wrap) with something closer to how a real highlighter marks a page.
  */
 private fun DrawScope.drawHighlightRegion(layout: TextLayoutResult, region: BackgroundRegion) {
     val start = region.start
     val end = region.end
     if (start >= end) return
     val cornerRadius = CornerRadius(HIGHLIGHT_CORNER_RADIUS.toPx())
-    val verticalInflate = if (region.filled) HIGHLIGHT_VERTICAL_INFLATE.toPx() else 0f
-    val horizontalCap = if (region.filled) HIGHLIGHT_HORIZONTAL_CAP.toPx() else 0f
+    val verticalInflate = HIGHLIGHT_VERTICAL_INFLATE.toPx()
+    val horizontalCap = HIGHLIGHT_HORIZONTAL_CAP.toPx()
     val startLine = layout.getLineForOffset(start)
     val endLine = layout.getLineForOffset((end - 1).coerceAtLeast(start))
     for (line in startLine..endLine) {
@@ -181,22 +169,12 @@ private fun DrawScope.drawHighlightRegion(layout: TextLayoutResult, region: Back
         if (line == endLine) right += horizontalCap
         val top = layout.getLineTop(line) - verticalInflate
         val bottom = layout.getLineBottom(line) + verticalInflate
-        if (region.filled) {
-            drawRoundRect(
-                color = region.color,
-                topLeft = Offset(left, top),
-                size = Size(right - left, bottom - top),
-                cornerRadius = cornerRadius
-            )
-        } else {
-            drawRoundRect(
-                color = region.color,
-                topLeft = Offset(left, top),
-                size = Size(right - left, bottom - top),
-                cornerRadius = cornerRadius,
-                style = Stroke(width = SELECTION_OUTLINE_WIDTH.toPx())
-            )
-        }
+        drawRoundRect(
+            color = region.color,
+            topLeft = Offset(left, top),
+            size = Size(right - left, bottom - top),
+            cornerRadius = cornerRadius
+        )
     }
 }
 
@@ -298,11 +276,10 @@ fun BibleText(
     val wordsOfJesusColor = MaterialTheme.colorScheme.error
     val footnoteColor = MaterialTheme.colorScheme.primary
     val verseNumberColor = MaterialTheme.colorScheme.onSurfaceVariant
-    // A thin outline (see drawHighlightRegion's `filled` branch), not a translucent fill — so
-    // "currently selecting" reads as a selection marquee, never as another highlight color, even
-    // though this hue and HighlightColors.Yellow are both warm/golden. Full opacity since a
-    // 1.5dp outline doesn't need to stay translucent for text underneath to stay legible.
-    val selectionColor = MaterialTheme.colorScheme.primary
+    // Neutral (achromatic), not any hue from HighlightColors.palette — every saved-highlight
+    // color is a distinct chroma, so "currently selecting" only reads unambiguously as its own
+    // *kind* of state, not "yet another highlight color," by not being a color at all.
+    val selectionColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.18f)
     val noteGlyphBadgeColor = MaterialTheme.colorScheme.primary
     val noteGlyphIconColor = MaterialTheme.colorScheme.onPrimary
     // A touch bigger than the old bare icon (which had no background of its own) since it now
@@ -573,10 +550,13 @@ private fun paragraphAnnotatedString(
                 // disappear for as long as it stays selected.
                 val highlightColor = highlightColorsByVerse[location]
                 if (highlightColor != null) {
-                    backgroundRegions += BackgroundRegion(verseStart, verseEnd, highlightColor, filled = true)
+                    backgroundRegions += BackgroundRegion(verseStart, verseEnd, highlightColor)
                 }
                 if (location in selectedVerses) {
-                    backgroundRegions += BackgroundRegion(verseStart, verseEnd, selectionColor, filled = false)
+                    // Drawn after (so on top of) any highlight fill above — a selected,
+                    // already-highlighted verse reads as its highlight color dimmed under a
+                    // selection scrim, rather than one hiding the other.
+                    backgroundRegions += BackgroundRegion(verseStart, verseEnd, selectionColor)
                 }
             }
         }

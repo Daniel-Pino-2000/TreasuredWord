@@ -87,7 +87,7 @@ fun LibraryView(
     bibleViewModel: BibleViewModel,
     modifier: Modifier = Modifier,
     initialTab: String? = null,
-    onNavigateToBible: () -> Unit
+    onOpenDetail: (type: String, localId: Long) -> Unit
 ) {
     LaunchedEffect(Unit) { bibleViewModel.loadLibrary() }
 
@@ -153,8 +153,7 @@ fun LibraryView(
                                     verseText = resolveVerseText(highlight.versionId, highlight.verses, verseTextByKey),
                                     bookName = bookName,
                                     onClick = {
-                                        bibleViewModel.openHighlightFromLibrary(highlight)
-                                        onNavigateToBible()
+                                        onOpenDetail(Screen.LibraryItemDetail.TYPE_HIGHLIGHT, highlight.localId)
                                     }
                                 )
                             }
@@ -189,8 +188,7 @@ fun LibraryView(
                                     verseText = resolveVerseText(note.versionId, note.verses, verseTextByKey),
                                     bookName = bookName,
                                     onClick = {
-                                        bibleViewModel.openNoteFromLibrary(note)
-                                        onNavigateToBible()
+                                        onOpenDetail(Screen.LibraryItemDetail.TYPE_NOTE, note.localId)
                                     }
                                 )
                             }
@@ -241,7 +239,7 @@ private fun SwipeToDeleteRow(onDelete: () -> Unit, content: @Composable () -> Un
  *  [textByKey] lookup (see [BibleViewModel.libraryVerseText]) — a bare number prefix per verse
  *  only when there's more than one, so a single-verse card (the overwhelming common case) reads
  *  as a clean quotation rather than "16 For God so loved...". */
-private fun resolveVerseText(versionId: String, verses: List<VerseLocationDto>, textByKey: Map<VerseTextKey, String>): String {
+internal fun resolveVerseText(versionId: String, verses: List<VerseLocationDto>, textByKey: Map<VerseTextKey, String>): String {
     val ordered = verses.sortedWith(compareBy({ it.chapter }, { it.verse }))
     if (ordered.size <= 1) {
         return ordered.firstOrNull()?.let { textByKey[VerseTextKey(versionId, it)] }.orEmpty()

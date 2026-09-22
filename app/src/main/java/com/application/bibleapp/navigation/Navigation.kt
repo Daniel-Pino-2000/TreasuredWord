@@ -15,6 +15,7 @@ import com.application.bibleapp.data.repository.BibleRepository
 import com.application.bibleapp.screens.BibleView
 import com.application.bibleapp.screens.BookPickerView
 import com.application.bibleapp.screens.HomeView
+import com.application.bibleapp.screens.LibraryItemDetailView
 import com.application.bibleapp.screens.LibraryView
 import com.application.bibleapp.screens.LoginView
 import com.application.bibleapp.screens.RegisterView
@@ -88,7 +89,36 @@ fun Navigation(
                 bibleViewModel = bibleViewModel,
                 modifier = Modifier.padding(padding),
                 initialTab = backStackEntry.arguments?.getString("tab"),
-                onNavigateToBible = { navController.navigate(Screen.Bible.route) }
+                onOpenDetail = { type, localId ->
+                    navController.navigate(Screen.LibraryItemDetail.createRoute(type, localId))
+                }
+            )
+        }
+
+        composable(
+            Screen.LibraryItemDetail.route,
+            arguments = listOf(
+                navArgument("type") { type = NavType.StringType },
+                navArgument("localId") { type = NavType.LongType }
+            )
+        ) { backStackEntry ->
+            val type = backStackEntry.arguments?.getString("type") ?: Screen.LibraryItemDetail.TYPE_HIGHLIGHT
+            val localId = backStackEntry.arguments?.getLong("localId") ?: -1L
+            LibraryItemDetailView(
+                bibleViewModel = bibleViewModel,
+                type = type,
+                localId = localId,
+                modifier = Modifier.padding(padding),
+                onOpenInBible = {
+                    if (type == Screen.LibraryItemDetail.TYPE_HIGHLIGHT) {
+                        bibleViewModel.libraryHighlights.value.firstOrNull { it.localId == localId }
+                            ?.let { bibleViewModel.openHighlightFromLibrary(it) }
+                    } else {
+                        bibleViewModel.libraryNotes.value.firstOrNull { it.localId == localId }
+                            ?.let { bibleViewModel.openNoteFromLibrary(it) }
+                    }
+                    navController.navigate(Screen.Bible.route)
+                }
             )
         }
 

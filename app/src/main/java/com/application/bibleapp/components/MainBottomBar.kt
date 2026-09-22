@@ -57,9 +57,11 @@ import kotlin.math.roundToInt
  * what makes this surface color the one that actually shows through behind the system bar,
  * so the transition into its own space is seamless rather than a color break.
  *
- * This composable is only ever placed in Scaffold's `bottomBar` slot when there's nothing more
- * pressing to show there — MainActivity swaps it out for [VerseSelectionToolbar] while a
- * selection is active, rather than stacking the toolbar on top of this as a separate overlay.
+ * Always occupies Scaffold's `bottomBar` slot on the reading screen, selection or not —
+ * [VerseSelectionToolbar] floats as a separate overlay above it instead of taking this slot over,
+ * so this bar's own height (and therefore Scaffold's content inset) never changes just because a
+ * selection started or ended. [modifier] carries [androidx.compose.ui.layout.onSizeChanged] from
+ * MainActivity so that overlay knows how high above this bar's current top edge to sit.
  */
 @Composable
 fun MainBottomBar(
@@ -67,9 +69,11 @@ fun MainBottomBar(
     bibleViewModel: BibleViewModel,
     chromeHiddenFraction: Float = 0f,
     onItemSelected: (String) -> Unit,
-    onBookPickerClicked: () -> Unit
+    onBookPickerClicked: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Surface(
+        modifier = modifier,
         color = MaterialTheme.colorScheme.surface,
         tonalElevation = NavigationBarDefaults.Elevation
     ) {
