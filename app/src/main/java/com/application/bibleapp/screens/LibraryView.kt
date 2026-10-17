@@ -1,22 +1,28 @@
 package com.application.bibleapp.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.StickyNote2
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.AutoStories
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -41,16 +47,32 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import com.application.bibleapp.components.SWATCH_NAMES
+import com.application.bibleapp.ui.theme.HighlightColors
+import com.application.bibleapp.ui.theme.toHighlightArgb
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.res.painterResource
+import com.application.bibleapp.R
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.application.bibleapp.data.model.BibleBooks
 import com.application.bibleapp.data.model.Highlight
 import com.application.bibleapp.data.model.Note
+import com.application.bibleapp.data.remote.VerseLocationDto
 import com.application.bibleapp.navigation.Screen
 import com.application.bibleapp.ui.theme.Spacing
 import com.application.bibleapp.utils.formatDisplayDate
 import com.application.bibleapp.utils.formatVerseRefs
 import com.application.bibleapp.viewmodel.BibleViewModel
+import com.application.bibleapp.viewmodel.VerseTextKey
 
 private enum class LibraryTab(val label: String, val routeArg: String) {
     HIGHLIGHTS("Highlights", Screen.Library.TAB_HIGHLIGHTS),
@@ -75,17 +97,20 @@ fun LibraryView(
     bibleViewModel: BibleViewModel,
     modifier: Modifier = Modifier,
     initialTab: String? = null,
-    onVerseClick: (bookId: Int, chapter: Int, verse: Int) -> Unit
+    onOpenDetail: (type: String, localId: Long) -> Unit
 ) {
     LaunchedEffect(Unit) { bibleViewModel.loadLibrary() }
 
     val highlights by bibleViewModel.libraryHighlights.collectAsState()
     val notes by bibleViewModel.libraryNotes.collectAsState()
+    val verseTextByKey by bibleViewModel.libraryVerseText.collectAsState()
     val bookNames by bibleViewModel.bookNames.collectAsState()
     val bookName = { bookId: Int -> bookNames[bookId] ?: BibleBooks.getBookById(bookId)?.name ?: "Unknown" }
 
     var selectedTab by rememberSaveable { mutableStateOf(LibraryTab.fromRouteArg(initialTab)) }
     var query by rememberSaveable { mutableStateOf("") }
+    // Stored highlight ARGBs to show; empty = every color. A List (not Set) so it's saveable.
+    var colorFilter by rememberSaveable { mutableStateOf(emptyList<Int>()) }
 
     Column(modifier = modifier.fillMaxSize()) {
         SingleChoiceSegmentedButtonRow(
@@ -110,6 +135,7 @@ fun LibraryView(
             placeholder = { Text(if (selectedTab == LibraryTab.HIGHLIGHTS) "Search by book" else "Search notes") },
             singleLine = true,
             leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+            shape = MaterialTheme.shapes.large,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = Spacing.lg)
@@ -117,30 +143,43 @@ fun LibraryView(
 
         when (selectedTab) {
             LibraryTab.HIGHLIGHTS -> {
-                val filtered = remember(highlights, query, bookNames) {
-                    if (query.isBlank()) highlights
-                    else highlights.filter { h -> h.verses.any { bookName(it.bookId).contains(query, ignoreCase = true) } }
+                if (highlights.isNotEmpty()) {
+                    HighlightColorFilterRow(
+                        selected = colorFilter,
+                        onToggle = { argb ->
+                            colorFilter = if (argb in colorFilter) colorFilter - argb else colorFilter + argb
+                        },
+                        modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.md)
+                    )
+                }
+                val filtered = remember(highlights, query, bookNames, colorFilter) {
+                    highlights.filter { h ->
+                        (colorFilter.isEmpty() || h.color in colorFilter) &&
+                            (query.isBlank() || h.verses.any { bookName(it.bookId).contains(query, ignoreCase = true) })
+                    }
                 }
                 if (filtered.isEmpty()) {
                     EmptyLibraryState(
-                        if (highlights.isEmpty()) "No highlights yet — long-press a verse while reading to add one."
-                        else "No highlights match \"$query\"."
+                        message = when {
+                            highlights.isEmpty() -> "No highlights yet — long-press a verse while reading to add one."
+                            query.isBlank() -> "No highlights in the selected colors."
+                            else -> "No highlights match \"$query\"."
+                        },
+                        icon = rememberVectorPainter(Icons.Outlined.AutoStories)
                     )
                 } else {
                     LazyColumn(
                         contentPadding = PaddingValues(Spacing.lg),
-                        verticalArrangement = Arrangement.spacedBy(Spacing.sm)
+                        verticalArrangement = Arrangement.spacedBy(Spacing.md)
                     ) {
                         items(filtered, key = { it.localId }) { highlight ->
                             SwipeToDeleteRow(onDelete = { bibleViewModel.deleteLibraryHighlight(highlight) }) {
                                 HighlightCard(
                                     highlight = highlight,
+                                    verseText = resolveVerseText(highlight.versionId, highlight.verses, verseTextByKey),
                                     bookName = bookName,
                                     onClick = {
-                                        val first = highlight.verses.minWithOrNull(
-                                            compareBy({ it.bookId }, { it.chapter }, { it.verse })
-                                        ) ?: return@HighlightCard
-                                        onVerseClick(first.bookId, first.chapter, first.verse)
+                                        onOpenDetail(Screen.LibraryItemDetail.TYPE_HIGHLIGHT, highlight.localId)
                                     }
                                 )
                             }
@@ -159,24 +198,23 @@ fun LibraryView(
                 }
                 if (filtered.isEmpty()) {
                     EmptyLibraryState(
-                        if (notes.isEmpty()) "No notes yet — select a verse while reading to add one."
-                        else "No notes match \"$query\"."
+                        message = if (notes.isEmpty()) "No notes yet — select a verse while reading to add one."
+                        else "No notes match \"$query\".",
+                        icon = painterResource(R.drawable.ic_stylus_note_outline)
                     )
                 } else {
                     LazyColumn(
                         contentPadding = PaddingValues(Spacing.lg),
-                        verticalArrangement = Arrangement.spacedBy(Spacing.sm)
+                        verticalArrangement = Arrangement.spacedBy(Spacing.md)
                     ) {
                         items(filtered, key = { it.localId }) { note ->
                             SwipeToDeleteRow(onDelete = { bibleViewModel.deleteLibraryNote(note) }) {
                                 NoteCard(
                                     note = note,
+                                    verseText = resolveVerseText(note.versionId, note.verses, verseTextByKey),
                                     bookName = bookName,
                                     onClick = {
-                                        val first = note.verses.minWithOrNull(
-                                            compareBy({ it.bookId }, { it.chapter }, { it.verse })
-                                        ) ?: return@NoteCard
-                                        onVerseClick(first.bookId, first.chapter, first.verse)
+                                        onOpenDetail(Screen.LibraryItemDetail.TYPE_NOTE, note.localId)
                                     }
                                 )
                             }
@@ -223,41 +261,72 @@ private fun SwipeToDeleteRow(onDelete: () -> Unit, content: @Composable () -> Un
     }
 }
 
+/** Joins one highlight/note's verse(s) into a single display string from the preloaded
+ *  [textByKey] lookup (see [BibleViewModel.libraryVerseText]) — a bare number prefix per verse
+ *  only when there's more than one, so a single-verse card (the overwhelming common case) reads
+ *  as a clean quotation rather than "16 For God so loved...". */
+internal fun resolveVerseText(versionId: String, verses: List<VerseLocationDto>, textByKey: Map<VerseTextKey, String>): String {
+    val ordered = verses.sortedWith(compareBy({ it.chapter }, { it.verse }))
+    if (ordered.size <= 1) {
+        return ordered.firstOrNull()?.let { textByKey[VerseTextKey(versionId, it)] }.orEmpty()
+    }
+    return ordered.joinToString(" ") { location ->
+        val text = textByKey[VerseTextKey(versionId, location)].orEmpty()
+        "${location.verse} $text"
+    }
+}
+
 @Composable
-private fun HighlightCard(highlight: Highlight, bookName: (Int) -> String, onClick: () -> Unit) {
+private fun HighlightCard(highlight: Highlight, verseText: String, bookName: (Int) -> String, onClick: () -> Unit) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.medium),
         onClick = onClick,
         color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 1.dp,
         shape = MaterialTheme.shapes.medium
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(Spacing.md),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.md)
+                .height(IntrinsicSize.Min),
+            verticalAlignment = Alignment.CenterVertically
         ) {
+            // A bookmark-tab accent rather than a small legend dot — reads at a glance from
+            // across the list, the way a real highlighter streak would down a book's margin.
+            // Full opacity, unlike the translucent text-background rendering in BibleText: this
+            // is a color swatch, not verse text to keep legible underneath.
             Box(
                 modifier = Modifier
-                    .size(20.dp)
-                    .clip(CircleShape)
-                    // Full opacity here, unlike the translucent text-background rendering in
-                    // BibleText — this dot is a color legend, not verse text to keep legible
-                    // underneath, so it should read as distinctly as the picker's own swatches.
+                    .fillMaxHeight()
+                    .width(6.dp)
                     .background(Color(highlight.color).copy(alpha = 1f))
             )
-            Column(modifier = Modifier.weight(1f)) {
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(Spacing.md)
+            ) {
                 Text(
                     text = formatVerseRefs(highlight.verses, bookName),
                     style = MaterialTheme.typography.bodyLarge
                 )
+                if (verseText.isNotBlank()) {
+                    Text(
+                        text = verseText,
+                        style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Serif),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 3,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(top = Spacing.xs)
+                    )
+                }
                 Text(
                     text = formatDisplayDate(highlight.createdAt),
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = Spacing.xs)
                 )
             }
         }
@@ -265,13 +334,14 @@ private fun HighlightCard(highlight: Highlight, bookName: (Int) -> String, onCli
 }
 
 @Composable
-private fun NoteCard(note: Note, bookName: (Int) -> String, onClick: () -> Unit) {
+private fun NoteCard(note: Note, verseText: String, bookName: (Int) -> String, onClick: () -> Unit) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.medium),
         onClick = onClick,
         color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 1.dp,
         shape = MaterialTheme.shapes.medium
     ) {
         Row(
@@ -281,24 +351,45 @@ private fun NoteCard(note: Note, bookName: (Int) -> String, onClick: () -> Unit)
             verticalAlignment = Alignment.Top,
             horizontalArrangement = Arrangement.spacedBy(Spacing.md)
         ) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.StickyNote2,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(20.dp)
-            )
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primaryContainer),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_stylus_note),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = formatVerseRefs(note.verses, bookName),
                     style = MaterialTheme.typography.bodyLarge
                 )
+                if (verseText.isNotBlank()) {
+                    Text(
+                        text = verseText,
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontFamily = FontFamily.Serif,
+                            fontStyle = FontStyle.Italic
+                        ),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(top = Spacing.xs)
+                    )
+                }
                 Text(
                     text = note.text,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(top = Spacing.xs)
+                    modifier = Modifier.padding(top = Spacing.sm)
                 )
                 Text(
                     text = formatDisplayDate(note.createdAt),
@@ -311,18 +402,69 @@ private fun NoteCard(note: Note, bookName: (Int) -> String, onClick: () -> Unit)
     }
 }
 
+/** Multi-select color filter for the Highlights tab — one toggle per [HighlightColors.palette]
+ *  swatch, matched against a highlight's stored (translucent) ARGB via [toHighlightArgb]. */
 @Composable
-private fun EmptyLibraryState(message: String) {
+private fun HighlightColorFilterRow(selected: List<Int>, onToggle: (Int) -> Unit, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.md),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = "Color",
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        HighlightColors.palette.forEachIndexed { index, swatch ->
+            val argb = swatch.toHighlightArgb()
+            val name = SWATCH_NAMES.getOrElse(index) { "Highlight color" }
+            val isSelected = argb in selected
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .clip(CircleShape)
+                    .background(swatch)
+                    .then(
+                        if (isSelected) Modifier.border(2.5.dp, MaterialTheme.colorScheme.onSurface, CircleShape)
+                        else Modifier
+                    )
+                    .toggleable(value = isSelected, role = Role.Checkbox, onValueChange = { onToggle(argb) })
+                    .semantics { contentDescription = "Show $name highlights" },
+                contentAlignment = Alignment.Center
+            ) {
+                if (isSelected) {
+                    Icon(Icons.Filled.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun EmptyLibraryState(message: String, icon: Painter) {
     Box(
         modifier = Modifier
             .fillMaxSize()
             .padding(Spacing.xl),
         contentAlignment = Alignment.Center
     ) {
-        Text(
-            text = message,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(Spacing.md)
+        ) {
+            Icon(
+                painter = icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                modifier = Modifier.size(48.dp)
+            )
+            Text(
+                text = message,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+        }
     }
 }

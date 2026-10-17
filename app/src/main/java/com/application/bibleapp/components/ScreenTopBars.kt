@@ -132,3 +132,16 @@ fun LibraryTopBar(onBackClick: () -> Unit) {
         }
     )
 }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun LibraryItemDetailTopBar(title: String, onBackClick: () -> Unit) {
+    TopBar(
+        title = { Text(title) },
+        navigationIcon = {
+            IconButton(onClick = onBackClick) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+            }
+        }
+    )
+}

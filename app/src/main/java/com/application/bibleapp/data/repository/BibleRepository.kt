@@ -100,6 +100,9 @@ class BibleRepository(
     suspend fun deleteHighlight(localId: Long) =
         withContext(Dispatchers.IO) { BibleDatabaseManager.softDeleteHighlight(context, localId) }
 
+    suspend fun restoreHighlight(highlight: Highlight) =
+        withContext(Dispatchers.IO) { BibleDatabaseManager.restoreHighlight(context, highlight) }
+
     suspend fun getNotesForChapter(bookId: Int, chapter: Int): List<Note> =
         withContext(Dispatchers.IO) { BibleDatabaseManager.getNotesForChapter(context, bookId, chapter) }
 
@@ -117,6 +120,9 @@ class BibleRepository(
 
     suspend fun deleteNote(localId: Long) =
         withContext(Dispatchers.IO) { BibleDatabaseManager.softDeleteNote(context, localId) }
+
+    suspend fun restoreNote(note: Note) =
+        withContext(Dispatchers.IO) { BibleDatabaseManager.restoreNote(context, note) }
 
     // ---- Sync worker support (Phase E) — see worker/SyncWorker.kt ----
 

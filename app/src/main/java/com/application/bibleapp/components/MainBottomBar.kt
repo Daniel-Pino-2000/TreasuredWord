@@ -56,17 +56,24 @@ import kotlin.math.roundToInt
  * nav bar sits over. Painting the [Surface] full-bleed and padding only its content is
  * what makes this surface color the one that actually shows through behind the system bar,
  * so the transition into its own space is seamless rather than a color break.
+ *
+ * Always occupies Scaffold's `bottomBar` slot on the reading screen, selection or not —
+ * [VerseSelectionToolbar] floats as a separate overlay above it instead of taking this slot over,
+ * so this bar's own height (and therefore Scaffold's content inset) never changes just because a
+ * selection started or ended. [modifier] carries [androidx.compose.ui.layout.onSizeChanged] from
+ * MainActivity so that overlay knows how high above this bar's current top edge to sit.
  */
 @Composable
 fun MainBottomBar(
     currentRoute: String?,
     bibleViewModel: BibleViewModel,
-    hideBar: Boolean,
     chromeHiddenFraction: Float = 0f,
     onItemSelected: (String) -> Unit,
-    onBookPickerClicked: () -> Unit
+    onBookPickerClicked: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Surface(
+        modifier = modifier,
         color = MaterialTheme.colorScheme.surface,
         tonalElevation = NavigationBarDefaults.Elevation
     ) {
