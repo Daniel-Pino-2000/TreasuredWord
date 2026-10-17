@@ -56,12 +56,12 @@ fun BibleView(
     val bookName = { bookId: Int -> bookNames[bookId] ?: BibleBooks.getBookById(bookId)?.name ?: "Unknown" }
 
     // Flattened lookup for BibleText's per-verse background rendering — one entry per verse a
-    // highlight covers, not per highlight, so a verse covered by more than one overlapping
-    // highlight just resolves to whichever was processed last (last-write-wins, same as the rest
-    // of this feature's conflict handling; overlapping highlights aren't disallowed by the API).
+    // highlight covers, not per highlight. New overlaps can't be created (api_contract.md decision
+    // 19), but one from another client/older sync resolves to the most recently created highlight,
+    // matching which one BibleViewModel.onVerseTap opens.
     val highlightColorsByVerse = remember(highlightsInChapter) {
         buildMap<VerseLocationDto, Color> {
-            highlightsInChapter.forEach { highlight ->
+            highlightsInChapter.sortedBy { it.createdAt }.forEach { highlight ->
                 val color = Color(highlight.color)
                 highlight.verses.forEach { put(it, color) }
             }
@@ -71,6 +71,16 @@ fun BibleView(
     // How many active notes cover each verse in this chapter — drives BibleText's inline badge.
     val noteCountsByVerse = remember(notesInChapter) {
         notesInChapter.flatMap { it.verses }.groupingBy { it }.eachCount()
+    }
+
+    // This chapter's plain verse text by location — for the sheets' verse previews.
+    val verseTextByLocation = remember(verses) {
+        verses.mapNotNull { verse ->
+            val bookId = verse.bookId ?: return@mapNotNull null
+            val chapter = verse.chapter ?: return@mapNotNull null
+            val number = verse.verse ?: return@mapNotNull null
+            VerseLocationDto(bookId, chapter, number) to verse.text.removePrefix("¶ ")
+        }.toMap()
     }
 
     Box(
@@ -136,6 +146,10 @@ fun BibleView(
         val notesOnSameVerses = notesInChapter.filter { note -> note.verses.any { it in highlight.verses } }
         HighlightActionSheet(
             highlight = highlight,
+            reference = formatVerseRefs(highlight.verses, bookName),
+            verseText = remember(highlight, verseTextByLocation) {
+                versePreviewText(highlight.verses, verseTextByLocation)
+            },
             notes = notesOnSameVerses,
             onColorSelected = { target, colorArgb -> bibleViewModel.recolorHighlight(target, colorArgb) },
             onRemove = { target -> bibleViewModel.removeHighlight(target) },
@@ -159,8 +173,12 @@ fun BibleView(
     }
 
     noteEditor?.let { editor ->
+        val editorVerseText = remember(editor.verses, verseTextByLocation) {
+            versePreviewText(editor.verses, verseTextByLocation)
+        }
         NoteEditorSheet(
             verses = editor.verses,
+            verseText = editorVerseText,
             text = editor.text,
             isEditingExisting = editor.existingNote != null,
             hasUnsavedChanges = editor.hasUnsavedChanges,
@@ -172,4 +190,13 @@ fun BibleView(
             onDismiss = { bibleViewModel.dismissNoteEditor() }
         )
     }
+}
+
+/** The given verses' text in Bible order — verse numbers inline only when there's more than one,
+ *  so a range still reads clearly. Verses not in [textByLocation] (another chapter) are skipped. */
+private fun versePreviewText(verses: List<VerseLocationDto>, textByLocation: Map<VerseLocationDto, String>): String {
+    val ordered = verses.sortedWith(compareBy({ it.bookId }, { it.chapter }, { it.verse }))
+    return ordered.mapNotNull { location ->
+        textByLocation[location]?.let { if (ordered.size > 1) "${location.verse} $it" else it }
+    }.joinToString(" ")
 }

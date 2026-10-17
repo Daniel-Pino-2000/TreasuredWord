@@ -18,6 +18,8 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.application.bibleapp.data.model.Highlight
 import com.application.bibleapp.data.model.Note
@@ -37,6 +39,10 @@ import com.application.bibleapp.ui.theme.Spacing
 @Composable
 fun HighlightActionSheet(
     highlight: Highlight,
+    /** e.g. "Romans 8:28-30" — names what this sheet acts on instead of a generic title. */
+    reference: String,
+    /** Preview of the highlighted verses; blank hides it. */
+    verseText: String,
     notes: List<Note>,
     onColorSelected: (Highlight, Int) -> Unit,
     onRemove: (Highlight) -> Unit,
@@ -54,10 +60,20 @@ fun HighlightActionSheet(
                 .navigationBarsPadding()
         ) {
             Text(
-                text = "Highlight",
+                text = reference,
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary
             )
+            if (verseText.isNotBlank()) {
+                Text(
+                    text = verseText,
+                    style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Serif),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = Spacing.xs)
+                )
+            }
             HighlightColorSwatchRow(
                 onColorSelected = { colorArgb -> onColorSelected(highlight, colorArgb) },
                 selectedColorArgb = highlight.color,

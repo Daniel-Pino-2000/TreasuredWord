@@ -1,5 +1,7 @@
 package com.application.bibleapp
 
+import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -14,6 +16,10 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -27,9 +33,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
+import kotlinx.coroutines.flow.collectLatest
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -183,6 +193,23 @@ class MainActivity : ComponentActivity() {
                 // collapses/reappears on scroll.
                 var bottomBarHeightPx by remember { mutableIntStateOf(0) }
 
+                // Deletion-undo and copy-confirmation messages from BibleViewModel. collectLatest
+                // so a newer message replaces (dismisses) one still showing instead of queueing.
+                val snackbarHostState = remember { SnackbarHostState() }
+                LaunchedEffect(Unit) {
+                    bibleViewModel.userMessages.collectLatest { message ->
+                        val result = snackbarHostState.showSnackbar(
+                            message = message.text,
+                            actionLabel = if (message.undo != null) "Undo" else null,
+                            // Long when there's an Undo — Short's ~4s is too little time to reach it.
+                            duration = if (message.undo != null) SnackbarDuration.Long else SnackbarDuration.Short
+                        )
+                        if (result == SnackbarResult.ActionPerformed) {
+                            message.undo?.let { bibleViewModel.undoDeletion(it) }
+                        }
+                    }
+                }
+
                 Box(modifier = Modifier.fillMaxSize()) {
                     Scaffold(
                         modifier = Modifier
@@ -223,6 +250,7 @@ class MainActivity : ComponentActivity() {
                             else -> TopBar()
                         }
                     },
+                    snackbarHost = { SnackbarHost(snackbarHostState) },
                     bottomBar = {
                         if (currentRoute !in listOf(
                                 Screen.BookPicker.route,
@@ -252,12 +280,32 @@ class MainActivity : ComponentActivity() {
                     }
 
                     val selectedVerses by bibleViewModel.selectedVerses.collectAsState()
+                    val clipboardManager = LocalClipboardManager.current
+                    val context = LocalContext.current
                     if (currentRoute == Screen.Bible.route && selectedVerses.isNotEmpty()) {
                         val gap = 12.dp
                         val bottomBarHeight = with(LocalDensity.current) { bottomBarHeightPx.toDp() }
                         VerseSelectionToolbar(
                             selectionCount = selectedVerses.size,
                             onColorSelected = { colorArgb -> bibleViewModel.highlightSelection(colorArgb) },
+                            onCopy = {
+                                bibleViewModel.takeSelectionShareText()?.let { text ->
+                                    clipboardManager.setText(AnnotatedString(text))
+                                    // Android 13+ shows its own clipboard confirmation; don't double it.
+                                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+                                        bibleViewModel.showMessage("Copied to clipboard")
+                                    }
+                                }
+                            },
+                            onShare = {
+                                bibleViewModel.takeSelectionShareText()?.let { text ->
+                                    val send = Intent(Intent.ACTION_SEND).apply {
+                                        type = "text/plain"
+                                        putExtra(Intent.EXTRA_TEXT, text)
+                                    }
+                                    context.startActivity(Intent.createChooser(send, null))
+                                }
+                            },
                             onAddNote = { bibleViewModel.openNoteEditorForSelection() },
                             onCancel = { bibleViewModel.clearSelection() },
                             modifier = Modifier

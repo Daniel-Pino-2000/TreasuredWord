@@ -1,5 +1,6 @@
 package com.application.bibleapp.components
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -35,6 +36,9 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.style.TextOverflow
 import com.application.bibleapp.data.remote.VerseLocationDto
 import kotlinx.coroutines.launch
 import com.application.bibleapp.ui.theme.Spacing
@@ -58,6 +62,9 @@ import com.application.bibleapp.ui.theme.Spacing
 @Composable
 fun NoteEditorSheet(
     verses: List<VerseLocationDto>,
+    /** The covered verses' scripture text, so the note isn't written blind with the sheet
+     *  covering the page — blank when it isn't loaded (e.g. a verse from another chapter). */
+    verseText: String,
     text: String,
     isEditingExisting: Boolean,
     hasUnsavedChanges: Boolean,
@@ -149,6 +156,27 @@ fun NoteEditorSheet(
                         } else null
                     )
                 }
+            }
+            if (verseText.isNotBlank()) {
+                var expanded by remember(verseText) { mutableStateOf(false) }
+                var overflows by remember(verseText) { mutableStateOf(false) }
+                Text(
+                    text = verseText,
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontFamily = FontFamily.Serif,
+                        fontStyle = FontStyle.Italic
+                    ),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = if (expanded) Int.MAX_VALUE else 4,
+                    overflow = TextOverflow.Ellipsis,
+                    onTextLayout = { layout -> if (!expanded) overflows = layout.hasVisualOverflow },
+                    modifier = Modifier
+                        .padding(bottom = Spacing.md)
+                        .then(
+                            if (overflows || expanded) Modifier.clickable { expanded = !expanded }
+                            else Modifier
+                        )
+                )
             }
             OutlinedTextField(
                 value = text,

@@ -26,7 +26,7 @@ import com.application.bibleapp.ui.theme.HighlightColors
 import com.application.bibleapp.ui.theme.toHighlightArgb
 
 /** Display name per [HighlightColors.palette] entry, in the same order — screen-reader label only. */
-private val SWATCH_NAMES = listOf("Yellow", "Green", "Blue", "Pink", "Purple")
+internal val SWATCH_NAMES = listOf("Yellow", "Green", "Blue", "Pink", "Purple")
 
 /**
  * A row of solid swatches from [HighlightColors.palette] — shared between [VerseSelectionToolbar]

@@ -26,10 +26,14 @@ import com.application.bibleapp.data.repository.NotificationTime
 import com.application.bibleapp.data.repository.ReadingProgressRepository
 import com.application.bibleapp.ui.theme.ThemeMode
 import com.application.bibleapp.ui.theme.VerseTextScale
+import com.application.bibleapp.utils.buildVerseShareText
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
@@ -54,6 +58,15 @@ data class NoteEditorState(
         get() = if (existingNote == null) text.isNotBlank()
         else text != existingNote.text || verses != existingNote.verses
 }
+
+/** Something deleted that a Snackbar's Undo can bring back — see [BibleViewModel.undoDeletion]. */
+sealed interface UndoableDeletion {
+    data class OfHighlight(val highlight: Highlight) : UndoableDeletion
+    data class OfNote(val note: Note) : UndoableDeletion
+}
+
+/** A one-shot message for MainActivity's Snackbar — with [undo], it gets an "Undo" action. */
+data class UserMessage(val text: String, val undo: UndoableDeletion? = null)
 
 /** Looks up one verse's cached scripture text (see [BibleViewModel.libraryVerseText]) — a location
  *  alone isn't a safe key since the same verse's text can differ across versions. */
@@ -127,6 +140,11 @@ class BibleViewModel(
     // The open note editor sheet's state, or null when it's closed — see [NoteEditorState].
     private val _noteEditor = MutableStateFlow<NoteEditorState?>(null)
     val noteEditor: StateFlow<NoteEditorState?> = _noteEditor.asStateFlow()
+
+    // One-shot Snackbar messages (deletion undo, copy confirmation) — a SharedFlow, not state,
+    // so a message is shown once rather than re-shown on every recomposition/config change.
+    private val _userMessages = MutableSharedFlow<UserMessage>(extraBufferCapacity = 4)
+    val userMessages: SharedFlow<UserMessage> = _userMessages.asSharedFlow()
 
     // The verse whose notes list sheet is open (a verse with 2+ notes was tapped), or null.
     private val _noteListVerse = MutableStateFlow<VerseLocationDto?>(null)
@@ -430,13 +448,22 @@ class BibleViewModel(
     }
 
     /** In selection mode, a tap toggles that verse. Outside selection mode, tapping an
-     *  already-highlighted verse opens its change-color/remove sheet; tapping a plain verse is a no-op. */
+     *  already-highlighted verse opens its change-color/remove sheet (which links its notes);
+     *  tapping a verse with only notes opens them the same way its badge does, so the small
+     *  badge isn't the only way in; tapping a plain verse is a no-op. */
     fun onVerseTap(location: VerseLocationDto) {
         if (_selectedVerses.value.isNotEmpty()) {
             toggleVerseSelection(location)
             return
         }
-        _highlightPopup.value = _highlightsInChapter.value.firstOrNull { location in it.verses }
+        // Most recent wins if an overlap from before decision 19 (or another client) survives —
+        // the same one BibleView paints, so the sheet matches the color on screen.
+        val highlight = _highlightsInChapter.value.filter { location in it.verses }.maxByOrNull { it.createdAt }
+        if (highlight != null) {
+            _highlightPopup.value = highlight
+        } else {
+            onNoteBadgeTap(location)
+        }
     }
 
     private fun toggleVerseSelection(location: VerseLocationDto) {
@@ -448,6 +475,33 @@ class BibleViewModel(
         }
     }
 
+    /** Copy/Share text for the current selection (see [buildVerseShareText]), or null when
+     *  nothing is selected. Ends selection mode — both actions hand the verses off and are done. */
+    fun takeSelectionShareText(): String? {
+        val selection = _selectedVerses.value.toList()
+        if (selection.isEmpty()) return null
+        val textByLocation = _verses.value.mapNotNull { verse ->
+            val bookId = verse.bookId ?: return@mapNotNull null
+            val chapter = verse.chapter ?: return@mapNotNull null
+            val number = verse.verse ?: return@mapNotNull null
+            VerseLocationDto(bookId, chapter, number) to verse.text.removePrefix(LEGACY_PARAGRAPH_MARKER)
+        }.toMap()
+        val names = _bookNames.value
+        val text = buildVerseShareText(
+            verses = selection,
+            textOf = textByLocation::get,
+            bookName = { id -> names[id] ?: BibleBooks.getBookById(id)?.name ?: "" },
+            versionLabel = currentVersionLabel.value
+        )
+        clearSelection()
+        return text
+    }
+
+    /** For confirmations the system doesn't already show (e.g. copy on Android 12 and older). */
+    fun showMessage(text: String) {
+        _userMessages.tryEmit(UserMessage(text))
+    }
+
     fun clearSelection() {
         _selectedVerses.value = emptySet()
         activeSelectionHighlightId = null
@@ -457,18 +511,35 @@ class BibleViewModel(
      *  selection creates a new highlight; picking a different color afterward, without
      *  cancelling first, recolors that same highlight instead of stacking a duplicate on top of
      *  it. Deliberately leaves the selection (and this toolbar) open afterward, so a note can
-     *  still be added to the same verses without having to reselect them. */
+     *  still be added to the same verses without having to reselect them.
+     *
+     *  A verse belongs to at most one highlight (api_contract.md decision 19): selecting exactly
+     *  one existing highlight's verses just recolors it; otherwise every highlight the selection
+     *  overlaps gives those verses up — deleted and re-created over its remaining verses, since a
+     *  highlight's verse list is immutable (decision 14) — before the new one is created. */
     fun highlightSelection(colorArgb: Int) {
-        val verses = _selectedVerses.value.toList()
-        if (verses.isEmpty()) return
+        val selection = _selectedVerses.value
+        if (selection.isEmpty()) return
         val versionId = _selectedVersion.value.id
         val existingId = activeSelectionHighlightId
         viewModelScope.launch {
             if (existingId != null) {
                 repository.recolorHighlight(existingId, colorArgb)
             } else {
-                activeSelectionHighlightId = repository.createHighlight(versionId, verses, colorArgb).localId
-                maybeOfferSignIn()
+                val overlapped = _highlightsInChapter.value.filter { h -> h.verses.any { it in selection } }
+                val exactMatch = overlapped.singleOrNull()?.takeIf { it.verses.toSet() == selection }
+                if (exactMatch != null) {
+                    repository.recolorHighlight(exactMatch.localId, colorArgb)
+                    activeSelectionHighlightId = exactMatch.localId
+                } else {
+                    overlapped.forEach { old ->
+                        repository.deleteHighlight(old.localId)
+                        val remaining = old.verses.filterNot { it in selection }
+                        if (remaining.isNotEmpty()) repository.createHighlight(old.versionId, remaining, old.color)
+                    }
+                    activeSelectionHighlightId = repository.createHighlight(versionId, selection.toList(), colorArgb).localId
+                    maybeOfferSignIn()
+                }
             }
             reloadHighlightsInChapter()
         }
@@ -487,6 +558,21 @@ class BibleViewModel(
         viewModelScope.launch {
             repository.deleteHighlight(highlight.localId)
             reloadHighlightsInChapter()
+        }
+        _userMessages.tryEmit(UserMessage("Highlight removed", UndoableDeletion.OfHighlight(highlight)))
+    }
+
+    /** The Snackbar's Undo after any highlight/note deletion — restores the soft-deleted row
+     *  (or re-creates it, if a sync already purged it) and refreshes both the reader and Library. */
+    fun undoDeletion(deletion: UndoableDeletion) {
+        viewModelScope.launch {
+            when (deletion) {
+                is UndoableDeletion.OfHighlight -> repository.restoreHighlight(deletion.highlight)
+                is UndoableDeletion.OfNote -> repository.restoreNote(deletion.note)
+            }
+            reloadHighlightsInChapter()
+            reloadNotesInChapter()
+            loadLibrary()
         }
     }
 
@@ -596,6 +682,7 @@ class BibleViewModel(
     fun deleteNoteEditor() {
         val existing = _noteEditor.value?.existingNote ?: return
         _noteEditor.value = null
+        _userMessages.tryEmit(UserMessage("Note deleted", UndoableDeletion.OfNote(existing)))
         viewModelScope.launch {
             repository.deleteNote(existing.localId)
             reloadNotesInChapter()
@@ -636,6 +723,7 @@ class BibleViewModel(
      *  shared across screens rather than recreated per navigation. */
     fun deleteLibraryHighlight(highlight: Highlight) {
         _libraryHighlights.update { it.filterNot { h -> h.localId == highlight.localId } }
+        _userMessages.tryEmit(UserMessage("Highlight removed", UndoableDeletion.OfHighlight(highlight)))
         viewModelScope.launch {
             repository.deleteHighlight(highlight.localId)
             reloadHighlightsInChapter()
@@ -644,6 +732,7 @@ class BibleViewModel(
 
     fun deleteLibraryNote(note: Note) {
         _libraryNotes.update { it.filterNot { n -> n.localId == note.localId } }
+        _userMessages.tryEmit(UserMessage("Note deleted", UndoableDeletion.OfNote(note)))
         viewModelScope.launch {
             repository.deleteNote(note.localId)
             reloadNotesInChapter()

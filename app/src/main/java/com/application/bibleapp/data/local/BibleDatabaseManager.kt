@@ -737,6 +737,21 @@ object BibleDatabaseManager {
         )
     }
 
+    /** Undo for [softDeleteHighlight]: clears the tombstone and re-queues the row for sync. If a
+     *  sync already purged the row (pushed delete → [purgeHighlight]) there's nothing to clear, so
+     *  it's re-created from [highlight] instead — same verses/color, new local id. */
+    fun restoreHighlight(context: Context, highlight: Highlight) {
+        val db = getDatabase(context)
+        val restored = db.compileStatement(
+            "UPDATE highlights SET deleted_at = NULL, updated_at = ?, sync_status = 'PENDING' WHERE local_id = ? AND deleted_at IS NOT NULL"
+        ).use { statement ->
+            statement.bindString(1, isoTimestampNow())
+            statement.bindLong(2, highlight.localId)
+            statement.executeUpdateDelete() > 0
+        }
+        if (!restored) insertHighlight(context, highlight.versionId, highlight.verses, highlight.color)
+    }
+
     /** Active highlights covering any verse in [bookId]/[chapter] — same "any entry matches" filter as the
      *  server's query params (contract decision 15), applied locally for rendering the reading view. */
     fun getHighlightsForChapter(context: Context, bookId: Int, chapter: Int): List<Highlight> =
@@ -802,6 +817,19 @@ object BibleDatabaseManager {
             "UPDATE notes SET deleted_at = ?, updated_at = ?, sync_status = 'PENDING' WHERE local_id = ?",
             arrayOf(now, now, localId)
         )
+    }
+
+    /** Undo for [softDeleteNote] — see [restoreHighlight]. */
+    fun restoreNote(context: Context, note: Note) {
+        val db = getDatabase(context)
+        val restored = db.compileStatement(
+            "UPDATE notes SET deleted_at = NULL, updated_at = ?, sync_status = 'PENDING' WHERE local_id = ? AND deleted_at IS NOT NULL"
+        ).use { statement ->
+            statement.bindString(1, isoTimestampNow())
+            statement.bindLong(2, note.localId)
+            statement.executeUpdateDelete() > 0
+        }
+        if (!restored) insertNote(context, note.versionId, note.verses, note.text)
     }
 
     /** Opened directly by a note's own editor screen, not just from an already-loaded list (contract's note-detail rationale). */

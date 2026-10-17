@@ -1,6 +1,8 @@
 package com.application.bibleapp.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,6 +19,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.AutoStories
@@ -44,6 +47,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import com.application.bibleapp.components.SWATCH_NAMES
+import com.application.bibleapp.ui.theme.HighlightColors
+import com.application.bibleapp.ui.theme.toHighlightArgb
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
@@ -100,6 +109,8 @@ fun LibraryView(
 
     var selectedTab by rememberSaveable { mutableStateOf(LibraryTab.fromRouteArg(initialTab)) }
     var query by rememberSaveable { mutableStateOf("") }
+    // Stored highlight ARGBs to show; empty = every color. A List (not Set) so it's saveable.
+    var colorFilter by rememberSaveable { mutableStateOf(emptyList<Int>()) }
 
     Column(modifier = modifier.fillMaxSize()) {
         SingleChoiceSegmentedButtonRow(
@@ -132,14 +143,28 @@ fun LibraryView(
 
         when (selectedTab) {
             LibraryTab.HIGHLIGHTS -> {
-                val filtered = remember(highlights, query, bookNames) {
-                    if (query.isBlank()) highlights
-                    else highlights.filter { h -> h.verses.any { bookName(it.bookId).contains(query, ignoreCase = true) } }
+                if (highlights.isNotEmpty()) {
+                    HighlightColorFilterRow(
+                        selected = colorFilter,
+                        onToggle = { argb ->
+                            colorFilter = if (argb in colorFilter) colorFilter - argb else colorFilter + argb
+                        },
+                        modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.md)
+                    )
+                }
+                val filtered = remember(highlights, query, bookNames, colorFilter) {
+                    highlights.filter { h ->
+                        (colorFilter.isEmpty() || h.color in colorFilter) &&
+                            (query.isBlank() || h.verses.any { bookName(it.bookId).contains(query, ignoreCase = true) })
+                    }
                 }
                 if (filtered.isEmpty()) {
                     EmptyLibraryState(
-                        message = if (highlights.isEmpty()) "No highlights yet — long-press a verse while reading to add one."
-                        else "No highlights match \"$query\".",
+                        message = when {
+                            highlights.isEmpty() -> "No highlights yet — long-press a verse while reading to add one."
+                            query.isBlank() -> "No highlights in the selected colors."
+                            else -> "No highlights match \"$query\"."
+                        },
                         icon = rememberVectorPainter(Icons.Outlined.AutoStories)
                     )
                 } else {
@@ -372,6 +397,45 @@ private fun NoteCard(note: Note, verseText: String, bookName: (Int) -> String, o
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = Spacing.xs)
                 )
+            }
+        }
+    }
+}
+
+/** Multi-select color filter for the Highlights tab — one toggle per [HighlightColors.palette]
+ *  swatch, matched against a highlight's stored (translucent) ARGB via [toHighlightArgb]. */
+@Composable
+private fun HighlightColorFilterRow(selected: List<Int>, onToggle: (Int) -> Unit, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.md),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = "Color",
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        HighlightColors.palette.forEachIndexed { index, swatch ->
+            val argb = swatch.toHighlightArgb()
+            val name = SWATCH_NAMES.getOrElse(index) { "Highlight color" }
+            val isSelected = argb in selected
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .clip(CircleShape)
+                    .background(swatch)
+                    .then(
+                        if (isSelected) Modifier.border(2.5.dp, MaterialTheme.colorScheme.onSurface, CircleShape)
+                        else Modifier
+                    )
+                    .toggleable(value = isSelected, role = Role.Checkbox, onValueChange = { onToggle(argb) })
+                    .semantics { contentDescription = "Show $name highlights" },
+                contentAlignment = Alignment.Center
+            ) {
+                if (isSelected) {
+                    Icon(Icons.Filled.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+                }
             }
         }
     }

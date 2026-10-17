@@ -27,6 +27,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,7 +38,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.ParagraphStyle
@@ -266,6 +269,9 @@ fun BibleText(
     // Create a new LazyListState each time the verses list changes
     val listState = remember(verses) { androidx.compose.foundation.lazy.LazyListState() }
     val paragraphs = remember(verses) { groupIntoParagraphs(verses) }
+    val haptics = LocalHapticFeedback.current
+    // Read inside long-lived pointerInput handlers, which don't restart when the selection changes.
+    val latestSelectedVerses by rememberUpdatedState(selectedVerses)
 
     // Scroll to the paragraph containing the desired verse whenever verses or the
     // scroll target changes — paragraphs, not verses, are the list's item granularity.
@@ -398,7 +404,9 @@ fun BibleText(
                                 val layout = layoutResult ?: return@drawBehind
                                 content.backgroundRegions.forEach { region -> drawHighlightRegion(layout, region) }
                             }
-                            .pointerInput(paragraph) {
+                            // Keyed on content too: it carries the tap-target spans, which shift
+                            // whenever a note badge is added or removed in this paragraph.
+                            .pointerInput(paragraph, content) {
                                 detectTapGestures(
                                     onTap = { offset ->
                                         val layout = layoutResult ?: return@detectTapGestures
@@ -420,7 +428,14 @@ fun BibleText(
                                         val layout = layoutResult ?: return@detectTapGestures
                                         val charOffset = layout.getOffsetForPosition(offset)
                                         val verse = content.verseSpans.firstOrNull { charOffset in it.range }
-                                        if (verse != null) onVerseLongPress(verse.location)
+                                        if (verse != null) {
+                                            // Only the long-press that *starts* selection buzzes —
+                                            // later toggles in selection mode are plain taps anyway.
+                                            if (latestSelectedVerses.isEmpty()) {
+                                                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                                            }
+                                            onVerseLongPress(verse.location)
+                                        }
                                     }
                                 )
                             },

@@ -95,6 +95,13 @@ before code.
     one deliberate exception, since a silent regression there is unusually annoying). Fine for
     one person syncing across their own devices; would need real thought if this ever became
     multi-user/collaborative.
+19. **A verse belongs to at most one highlight — enforced by the client, not the server.** Like
+    a real highlighter, highlighting an already-highlighted verse re-colors it rather than
+    stacking a second highlight on top. Since a highlight's verse list is immutable (decision 14),
+    the Android client does this by deleting each overlapped highlight and re-creating it over
+    its remaining verses, in its original color, before creating the new one. The server still
+    accepts overlaps (another client or an old sync could produce them); the reader then shows
+    the most recent one.
 
 ---
 
