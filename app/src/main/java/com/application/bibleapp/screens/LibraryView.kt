@@ -17,11 +17,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.StickyNote2
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.AutoStories
-import androidx.compose.material.icons.automirrored.outlined.StickyNote2
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -47,7 +45,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.res.painterResource
+import com.application.bibleapp.R
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
@@ -139,7 +140,7 @@ fun LibraryView(
                     EmptyLibraryState(
                         message = if (highlights.isEmpty()) "No highlights yet — long-press a verse while reading to add one."
                         else "No highlights match \"$query\".",
-                        icon = Icons.Outlined.AutoStories
+                        icon = rememberVectorPainter(Icons.Outlined.AutoStories)
                     )
                 } else {
                     LazyColumn(
@@ -174,7 +175,7 @@ fun LibraryView(
                     EmptyLibraryState(
                         message = if (notes.isEmpty()) "No notes yet — select a verse while reading to add one."
                         else "No notes match \"$query\".",
-                        icon = Icons.AutoMirrored.Outlined.StickyNote2
+                        icon = painterResource(R.drawable.ic_stylus_note_outline)
                     )
                 } else {
                     LazyColumn(
@@ -333,7 +334,7 @@ private fun NoteCard(note: Note, verseText: String, bookName: (Int) -> String, o
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = Icons.AutoMirrored.Filled.StickyNote2,
+                    painter = painterResource(R.drawable.ic_stylus_note),
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onPrimaryContainer,
                     modifier = Modifier.size(18.dp)
@@ -377,7 +378,7 @@ private fun NoteCard(note: Note, verseText: String, bookName: (Int) -> String, o
 }
 
 @Composable
-private fun EmptyLibraryState(message: String, icon: ImageVector) {
+private fun EmptyLibraryState(message: String, icon: Painter) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -389,7 +390,7 @@ private fun EmptyLibraryState(message: String, icon: ImageVector) {
             verticalArrangement = Arrangement.spacedBy(Spacing.md)
         ) {
             Icon(
-                imageVector = icon,
+                painter = icon,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                 modifier = Modifier.size(48.dp)

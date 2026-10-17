@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.NoteAdd
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilledTonalButton
@@ -20,6 +19,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
+import com.application.bibleapp.R
 import com.application.bibleapp.ui.theme.Spacing
 import androidx.compose.ui.unit.dp
 
@@ -72,7 +73,7 @@ fun VerseSelectionToolbar(
                         contentPadding = ButtonDefaults.ButtonWithIconContentPadding
                     ) {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Filled.NoteAdd,
+                            painter = painterResource(R.drawable.ic_stylus_note),
                             contentDescription = null,
                             modifier = Modifier.size(ButtonDefaults.IconSize)
                         )
