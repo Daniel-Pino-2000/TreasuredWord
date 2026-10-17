@@ -47,7 +47,13 @@ data class NoteEditorState(
     val existingNote: Note?,
     val verses: List<VerseLocationDto>,
     val text: String
-)
+) {
+    /** Whether closing the editor now would lose something — a non-blank new note, or any edit
+     *  to an existing note's text or verses. Drives NoteEditorSheet's "Discard note?" guard. */
+    val hasUnsavedChanges: Boolean
+        get() = if (existingNote == null) text.isNotBlank()
+        else text != existingNote.text || verses != existingNote.verses
+}
 
 /** Looks up one verse's cached scripture text (see [BibleViewModel.libraryVerseText]) — a location
  *  alone isn't a safe key since the same verse's text can differ across versions. */
@@ -121,6 +127,10 @@ class BibleViewModel(
     // The open note editor sheet's state, or null when it's closed — see [NoteEditorState].
     private val _noteEditor = MutableStateFlow<NoteEditorState?>(null)
     val noteEditor: StateFlow<NoteEditorState?> = _noteEditor.asStateFlow()
+
+    // The verse whose notes list sheet is open (a verse with 2+ notes was tapped), or null.
+    private val _noteListVerse = MutableStateFlow<VerseLocationDto?>(null)
+    val noteListVerse: StateFlow<VerseLocationDto?> = _noteListVerse.asStateFlow()
 
     // Every active highlight/note across all chapters — the Library screen's data, loaded on
     // demand (not kept live like _highlightsInChapter/_notesInChapter, since it's only ever
@@ -499,6 +509,31 @@ class BibleViewModel(
     /** Opens the editor on an existing note — reached from its inline glyph in the reading view. */
     fun openNoteEditorForNote(note: Note) {
         _noteEditor.value = NoteEditorState(existingNote = note, verses = note.verses, text = note.text)
+    }
+
+    /** A verse's note badge was tapped: one note opens straight into the editor; several open
+     *  the list sheet so every one of them is reachable, not just whichever came first. */
+    fun onNoteBadgeTap(location: VerseLocationDto) {
+        val notes = _notesInChapter.value.filter { location in it.verses }
+        when {
+            notes.size == 1 -> openNoteEditorForNote(notes.first())
+            notes.size > 1 -> _noteListVerse.value = location
+        }
+    }
+
+    fun dismissNoteList() {
+        _noteListVerse.value = null
+    }
+
+    fun openNoteFromList(note: Note) {
+        _noteListVerse.value = null
+        openNoteEditorForNote(note)
+    }
+
+    /** "Add another note" from a verse's notes list — a new note over just that verse. */
+    fun addNoteToVerse(location: VerseLocationDto) {
+        _noteListVerse.value = null
+        _noteEditor.value = NoteEditorState(existingNote = null, verses = listOf(location), text = "")
     }
 
     /** Reached from a Library highlight card: jumps to its chapter and arms selection mode over

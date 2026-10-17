@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
@@ -22,11 +23,20 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.application.bibleapp.data.remote.VerseLocationDto
+import kotlinx.coroutines.launch
 import com.application.bibleapp.ui.theme.Spacing
 
 /**
@@ -39,6 +49,10 @@ import com.application.bibleapp.ui.theme.Spacing
  * Each chip's whole tap area removes that verse (Material3's `InputChip` has one click slot, not
  * a separately-clickable trailing icon) — the trailing X is shown only as an affordance, and only
  * while more than one verse remains, since a note must cover at least one (contract decision 17).
+ *
+ * Opens fully expanded — the default half-expanded state left Save/Delete below the screen edge.
+ * With [hasUnsavedChanges], any dismiss (swipe down, scrim tap, back) asks "Discard note?" first
+ * instead of silently throwing the typed text away.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -46,6 +60,7 @@ fun NoteEditorSheet(
     verses: List<VerseLocationDto>,
     text: String,
     isEditingExisting: Boolean,
+    hasUnsavedChanges: Boolean,
     bookName: (Int) -> String,
     onTextChange: (String) -> Unit,
     onRemoveVerse: (VerseLocationDto) -> Unit,
@@ -53,7 +68,55 @@ fun NoteEditorSheet(
     onDelete: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    ModalBottomSheet(onDismissRequest = onDismiss, shape = MaterialTheme.shapes.large) {
+    val latestHasUnsavedChanges by rememberUpdatedState(hasUnsavedChanges)
+    var showDiscardDialog by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true,
+        // Blocks swipe-to-dismiss while there's something to lose; the dialog takes over.
+        confirmValueChange = { target ->
+            if (target == SheetValue.Hidden && latestHasUnsavedChanges) {
+                showDiscardDialog = true
+                false
+            } else {
+                true
+            }
+        }
+    )
+    val scope = rememberCoroutineScope()
+
+    if (showDiscardDialog) {
+        AlertDialog(
+            onDismissRequest = { showDiscardDialog = false },
+            title = { Text("Discard note?") },
+            text = { Text("Your changes to this note haven't been saved.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDiscardDialog = false
+                    onDismiss()
+                }) {
+                    Text("Discard", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showDiscardDialog = false
+                    // Back/scrim dismissals can already have animated the sheet away before
+                    // reaching onDismissRequest — bring it back up for "keep editing".
+                    scope.launch { sheetState.show() }
+                }) {
+                    Text("Keep editing")
+                }
+            }
+        )
+    }
+
+    ModalBottomSheet(
+        onDismissRequest = {
+            if (latestHasUnsavedChanges) showDiscardDialog = true else onDismiss()
+        },
+        sheetState = sheetState,
+        shape = MaterialTheme.shapes.large
+    ) {
         Column(
             modifier = Modifier
                 .padding(horizontal = Spacing.xl, vertical = Spacing.sm)

@@ -2,9 +2,13 @@ package com.application.bibleapp.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -42,6 +46,7 @@ import androidx.compose.ui.text.PlaceholderVerticalAlign
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.BaselineShift
 import androidx.compose.ui.text.style.TextIndent
 import androidx.compose.ui.text.withStyle
@@ -107,10 +112,17 @@ private data class FootnoteSpan(val range: IntRange, val noteId: Int)
  *  note editor instead of just registering as a plain verse tap. */
 private data class NoteSpan(val range: IntRange, val location: VerseLocationDto)
 
-/** Shared inline-content id for every note glyph in a paragraph — one [InlineTextContent]
+/** Shared inline-content id for every single-note glyph in a paragraph — one [InlineTextContent]
  *  definition reused at each occurrence; which verse a given glyph belongs to comes from
- *  [NoteSpan], not from the id itself. */
+ *  [NoteSpan], not from the id itself. A verse with several notes uses [noteGlyphId] instead,
+ *  which bakes the count into the id since a placeholder's content can't vary per occurrence. */
 private const val NOTE_GLYPH_ID = "note_glyph"
+
+/** Counts above this render as "9+" — keeps the multi-note pill a fixed, narrow width. */
+private const val MAX_NOTE_COUNT_SHOWN = 9
+
+private fun noteGlyphId(count: Int): String =
+    if (count <= 1) NOTE_GLYPH_ID else "${NOTE_GLYPH_ID}_${count.coerceAtMost(MAX_NOTE_COUNT_SHOWN + 1)}"
 
 /** A selection/highlight tint for the character range `[start, end)` — painted separately from
  *  [ParagraphContent.text]'s own [SpanStyle]s (see [drawHighlightRegion]) rather than as a
@@ -246,8 +258,9 @@ fun BibleText(
     selectedVerses: Set<VerseLocationDto> = emptySet(),
     onVerseTap: (VerseLocationDto) -> Unit = {},
     onVerseLongPress: (VerseLocationDto) -> Unit = {},
-    /** Verses that have an active note — rendered with an inline glyph right after the verse number. */
-    notedVerses: Set<VerseLocationDto> = emptySet(),
+    /** How many active notes each verse has — any verse present gets an inline glyph right after
+     *  its verse number, showing the count when there's more than one. */
+    noteCountsByVerse: Map<VerseLocationDto, Int> = emptyMap(),
     onNoteGlyphTap: (VerseLocationDto) -> Unit = {}
 ) {
     // Create a new LazyListState each time the verses list changes
@@ -285,35 +298,52 @@ fun BibleText(
     // A touch bigger than the old bare icon (which had no background of its own) since it now
     // needs to read as a small filled badge, not just a glyph the size of a superscript number.
     val noteGlyphSize = (15 * textScale).sp
-    val noteGlyphInlineContent = remember(noteGlyphBadgeColor, noteGlyphIconColor, noteGlyphSize) {
-        mapOf(
-            NOTE_GLYPH_ID to InlineTextContent(
+    // Every distinct glyph variant needed on this page: the plain badge, plus one pill per
+    // multi-note count actually present (capped at MAX_NOTE_COUNT_SHOWN + 1 → "9+").
+    val noteGlyphCounts = remember(noteCountsByVerse) {
+        noteCountsByVerse.values.map { it.coerceIn(1, MAX_NOTE_COUNT_SHOWN + 1) }.toSortedSet()
+    }
+    val noteGlyphInlineContent = remember(noteGlyphBadgeColor, noteGlyphIconColor, noteGlyphSize, noteGlyphCounts) {
+        noteGlyphCounts.associate { count ->
+            noteGlyphId(count) to InlineTextContent(
                 Placeholder(
-                    width = noteGlyphSize,
+                    // The multi-note pill is wider to fit the count beside the icon.
+                    width = if (count > 1) noteGlyphSize * 2 else noteGlyphSize,
                     height = noteGlyphSize,
                     placeholderVerticalAlign = PlaceholderVerticalAlign.TextCenter
                 )
             ) {
-                // An explicit filled circle behind the icon — rather than a bare tinted Icon
+                // An explicit filled shape behind the icon — rather than a bare tinted Icon
                 // (which is a transparent silhouette outside its glyph strokes) sitting directly
                 // over a highlighted verse's background, so there's never a gap of the page's
                 // own background color showing through as a stray square around the glyph.
-                Box(
+                Row(
                     modifier = Modifier
                         .fillMaxSize()
                         .clip(CircleShape)
                         .background(noteGlyphBadgeColor),
-                    contentAlignment = Alignment.Center
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.ic_stylus_note),
-                        contentDescription = "Note",
+                        contentDescription = if (count > 1) "$count notes" else "Note",
                         tint = noteGlyphIconColor,
-                        modifier = Modifier.fillMaxSize(0.62f)
+                        modifier = Modifier.fillMaxHeight(0.62f).aspectRatio(1f)
                     )
+                    if (count > 1) {
+                        Text(
+                            text = if (count > MAX_NOTE_COUNT_SHOWN) "$MAX_NOTE_COUNT_SHOWN+" else "$count",
+                            color = noteGlyphIconColor,
+                            fontSize = noteGlyphSize * 0.62f,
+                            fontWeight = FontWeight.Bold,
+                            lineHeight = noteGlyphSize * 0.62f,
+                            modifier = Modifier.padding(start = 1.dp)
+                        )
+                    }
                 }
             }
-        )
+        }
     }
 
     LazyColumn(
@@ -326,7 +356,7 @@ fun BibleText(
         }
         itemsIndexed(paragraphs) { index, paragraph ->
             val headings = paragraph.verses.first().richContent?.headings.orEmpty()
-            val content = remember(paragraph, highlightColorsByVerse, selectedVerses, notedVerses, textScale) {
+            val content = remember(paragraph, highlightColorsByVerse, selectedVerses, noteCountsByVerse, textScale) {
                 paragraphAnnotatedString(
                     paragraph.verses,
                     wordsOfJesusColor,
@@ -336,7 +366,7 @@ fun BibleText(
                     highlightColorsByVerse,
                     selectedVerses,
                     selectionColor,
-                    notedVerses
+                    noteCountsByVerse
                 )
             }
             var layoutResult by remember(paragraph) { mutableStateOf<TextLayoutResult?>(null) }
@@ -457,7 +487,7 @@ private fun HeadingText(heading: StoredHeading, textScale: Float) {
  * runs are colored, poem-tagged runs each get their own indented line via [ParagraphStyle],
  * and a clickable superscript marker follows any run with an attached footnote. Verses with
  * no rich content at all (legacy rows) fall back to their plain text. A verse with an active note
- * gets an inline glyph ([NOTE_GLYPH_ID]) right after its verse number. Alongside the text, tracks
+ * gets an inline glyph ([noteGlyphId]) right after its verse number. Alongside the text, tracks
  * each verse's, footnote marker's, and note glyph's character range ([VerseSpan]/[FootnoteSpan]/
  * [NoteSpan]) so a tap or long-press position (resolved to a character offset via the rendered
  * [TextLayoutResult]) can be mapped back to what was actually touched.
@@ -471,7 +501,7 @@ private fun paragraphAnnotatedString(
     highlightColorsByVerse: Map<VerseLocationDto, Color>,
     selectedVerses: Set<VerseLocationDto>,
     selectionColor: Color,
-    notedVerses: Set<VerseLocationDto>
+    noteCountsByVerse: Map<VerseLocationDto, Int>
 ): ParagraphContent {
     val verseNumberStyle = ReadingStyle.VerseNumber.scaledBy(textScale).toSpanStyle().copy(
         color = verseNumberColor,
@@ -494,12 +524,12 @@ private fun paragraphAnnotatedString(
         verses.forEach { verse ->
             val verseStart = length
             val location = verse.toLocationOrNull()
-            val hasNote = location != null && location in notedVerses
+            val noteCount = location?.let { noteCountsByVerse[it] } ?: 0
             val runs = verse.richContent?.runs
 
             fun appendVerseOpening() {
                 appendVerseNumber(verse.verse, verseNumberStyle)
-                if (hasNote) appendNoteGlyph(location!!, noteSpans)
+                if (noteCount > 0) appendNoteGlyph(location!!, noteCount, noteSpans)
             }
 
             if (runs.isNullOrEmpty()) {
@@ -570,9 +600,9 @@ private fun AnnotatedString.Builder.appendVerseNumber(verseNumber: Int?, style: 
     append(" ")
 }
 
-private fun AnnotatedString.Builder.appendNoteGlyph(location: VerseLocationDto, noteSpans: MutableList<NoteSpan>) {
+private fun AnnotatedString.Builder.appendNoteGlyph(location: VerseLocationDto, count: Int, noteSpans: MutableList<NoteSpan>) {
     val glyphStart = length
-    appendInlineContent(NOTE_GLYPH_ID, "[note]")
+    appendInlineContent(noteGlyphId(count), "[note]")
     append(" ")
     noteSpans += NoteSpan(glyphStart until length, location)
 }

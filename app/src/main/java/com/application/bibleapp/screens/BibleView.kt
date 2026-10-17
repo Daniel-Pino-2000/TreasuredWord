@@ -21,11 +21,13 @@ import androidx.compose.ui.graphics.Color
 import com.application.bibleapp.components.BibleText
 import com.application.bibleapp.components.HighlightActionSheet
 import com.application.bibleapp.components.NoteEditorSheet
+import com.application.bibleapp.components.NoteListSheet
 import com.application.bibleapp.components.SignInNudgeBanner
 import com.application.bibleapp.data.model.BibleBooks
 import com.application.bibleapp.data.remote.VerseLocationDto
 import com.application.bibleapp.ui.theme.ReadingStyle
 import com.application.bibleapp.ui.theme.Spacing
+import com.application.bibleapp.utils.formatVerseRefs
 import com.application.bibleapp.viewmodel.BibleViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -47,6 +49,7 @@ fun BibleView(
     val highlightPopup by bibleViewModel.highlightPopup.collectAsState()
     val notesInChapter by bibleViewModel.notesInChapter.collectAsState()
     val noteEditor by bibleViewModel.noteEditor.collectAsState()
+    val noteListVerse by bibleViewModel.noteListVerse.collectAsState()
     val bookNames by bibleViewModel.bookNames.collectAsState()
     val showSignInNudge by bibleViewModel.showSignInNudge.collectAsState()
     val chapterTitle = "$currentBookName $currentChapter"
@@ -65,9 +68,9 @@ fun BibleView(
         }
     }
 
-    // Every verse covered by an active note in this chapter — drives BibleText's inline glyph.
-    val notedVerses = remember(notesInChapter) {
-        notesInChapter.flatMapTo(mutableSetOf()) { it.verses }
+    // How many active notes cover each verse in this chapter — drives BibleText's inline badge.
+    val noteCountsByVerse = remember(notesInChapter) {
+        notesInChapter.flatMap { it.verses }.groupingBy { it }.eachCount()
     }
 
     Box(
@@ -86,11 +89,8 @@ fun BibleView(
             selectedVerses = selectedVerses,
             onVerseTap = { location -> bibleViewModel.onVerseTap(location) },
             onVerseLongPress = { location -> bibleViewModel.onVerseLongPress(location) },
-            notedVerses = notedVerses,
-            onNoteGlyphTap = { location ->
-                notesInChapter.firstOrNull { location in it.verses }
-                    ?.let { bibleViewModel.openNoteEditorForNote(it) }
-            }
+            noteCountsByVerse = noteCountsByVerse,
+            onNoteGlyphTap = { location -> bibleViewModel.onNoteBadgeTap(location) }
         )
 
         if (showSignInNudge) {
@@ -133,10 +133,10 @@ fun BibleView(
     }
 
     highlightPopup?.let { highlight ->
-        val noteOnSameVerse = notesInChapter.firstOrNull { note -> note.verses.any { it in highlight.verses } }
+        val notesOnSameVerses = notesInChapter.filter { note -> note.verses.any { it in highlight.verses } }
         HighlightActionSheet(
             highlight = highlight,
-            note = noteOnSameVerse,
+            notes = notesOnSameVerses,
             onColorSelected = { target, colorArgb -> bibleViewModel.recolorHighlight(target, colorArgb) },
             onRemove = { target -> bibleViewModel.removeHighlight(target) },
             onOpenNote = { note ->
@@ -147,11 +147,23 @@ fun BibleView(
         )
     }
 
+    noteListVerse?.let { location ->
+        val notesOnVerse = notesInChapter.filter { location in it.verses }
+        NoteListSheet(
+            title = formatVerseRefs(listOf(location), bookName),
+            notes = notesOnVerse,
+            onOpenNote = { note -> bibleViewModel.openNoteFromList(note) },
+            onAddNote = { bibleViewModel.addNoteToVerse(location) },
+            onDismiss = { bibleViewModel.dismissNoteList() }
+        )
+    }
+
     noteEditor?.let { editor ->
         NoteEditorSheet(
             verses = editor.verses,
             text = editor.text,
             isEditingExisting = editor.existingNote != null,
+            hasUnsavedChanges = editor.hasUnsavedChanges,
             bookName = bookName,
             onTextChange = { text -> bibleViewModel.updateNoteEditorText(text) },
             onRemoveVerse = { location -> bibleViewModel.removeVerseFromNoteEditor(location) },

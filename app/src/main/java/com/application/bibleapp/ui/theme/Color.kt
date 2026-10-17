@@ -26,6 +26,16 @@ val LightSecondary = LightPrimary
 val LightOnSecondary = LightOnPrimary
 val LightSecondaryContainer = LightPrimaryContainer
 val LightOnSecondaryContainer = LightOnPrimaryContainer
+// Surface-container ladder (lowest → highest) — ModalBottomSheet, menus, dialogs, search bars
+// and others default to these roles, not `surface`, so leaving them undefined painted every
+// bottom sheet in M3's template lavender.
+val LightSurfaceContainerLowest = Color(0xFFFFFDF8)
+val LightSurfaceContainerLow = Color(0xFFFBF6EC)
+val LightSurfaceContainer = Color(0xFFF5EFE2)
+val LightSurfaceContainerHigh = Color(0xFFF1EAD9)
+val LightSurfaceContainerHighest = Color(0xFFE8DFC9)
+val LightSurfaceBright = Color(0xFFFFFBF4)
+val LightSurfaceDim = Color(0xFFE3DAC4)
 val LightError = Color(0xFFB3423B)
 val LightOnError = Color(0xFFFFFBF2)
 
@@ -46,5 +56,12 @@ val DarkSecondary = DarkPrimary
 val DarkOnSecondary = DarkOnPrimary
 val DarkSecondaryContainer = DarkPrimaryContainer
 val DarkOnSecondaryContainer = DarkOnPrimaryContainer
+val DarkSurfaceContainerLowest = Color(0xFF1A1712)
+val DarkSurfaceContainerLow = Color(0xFF24201A)
+val DarkSurfaceContainer = Color(0xFF29241E)
+val DarkSurfaceContainerHigh = Color(0xFF2F2A22)
+val DarkSurfaceContainerHighest = Color(0xFF383127)
+val DarkSurfaceBright = Color(0xFF3A342A)
+val DarkSurfaceDim = Color(0xFF1A1712)
 val DarkError = Color(0xFFE08585)
 val DarkOnError = Color(0xFF2B1212)
