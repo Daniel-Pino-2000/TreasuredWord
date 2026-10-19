@@ -174,7 +174,14 @@ private fun DrawScope.drawHighlightRegion(layout: TextLayoutResult, region: Back
         val segmentEnd = end.coerceAtMost(lineEnd)
         if (segmentStart >= segmentEnd) continue
         var left = layout.getHorizontalPosition(segmentStart, usePrimaryDirection = true)
-        var right = layout.getHorizontalPosition(segmentEnd, usePrimaryDirection = true)
+        // A poem line is its own ParagraphStyle paragraph with no separator after it, so the
+        // offset at its line end is the *next* paragraph's first character — whose x is the next
+        // line's indent, not this line's right edge. Measure the last character on this line instead.
+        var right = if (segmentEnd >= lineEnd) {
+            layout.getBoundingBox(segmentEnd - 1).right
+        } else {
+            layout.getHorizontalPosition(segmentEnd, usePrimaryDirection = true)
+        }
         if (left > right) {
             val swap = left
             left = right
