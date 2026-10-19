@@ -21,9 +21,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.style.BaselineShift
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import com.application.bibleapp.data.model.DailyVerseUI
 import com.application.bibleapp.ui.theme.MaxContentWidth
 import com.application.bibleapp.ui.theme.ReadingStyle
 import com.application.bibleapp.ui.theme.Spacing
@@ -49,8 +54,7 @@ fun HomeView(
     val verseCard: @Composable (Modifier) -> Unit = { cardModifier ->
         verseOfTheDay?.let { verse ->
             VerseOfTheDayCard(
-                reference = verse.reference,
-                text = verse.text,
+                verse = verse,
                 textScale = verseTextScale.multiplier,
                 modifier = cardModifier
             )
@@ -114,7 +118,24 @@ fun HomeView(
 }
 
 @Composable
-private fun VerseOfTheDayCard(reference: String, text: String, textScale: Float, modifier: Modifier = Modifier) {
+private fun VerseOfTheDayCard(verse: DailyVerseUI, textScale: Float, modifier: Modifier = Modifier) {
+    // A range shows each verse's number as a superscript before its text, like the reader does.
+    val verseNumberStyle = ReadingStyle.VerseNumber.scaledBy(textScale).toSpanStyle().copy(
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        baselineShift = BaselineShift.Superscript
+    )
+    val verseText = remember(verse, verseNumberStyle) {
+        buildAnnotatedString {
+            verse.verses.forEachIndexed { index, line ->
+                if (index > 0) append(" ")
+                if (verse.hasVerseNumbers) {
+                    withStyle(verseNumberStyle) { append("${line.number}") }
+                    append(" ")
+                }
+                append(line.text)
+            }
+        }
+    }
     Surface(
         modifier = modifier,
         shape = MaterialTheme.shapes.large,
@@ -132,12 +153,12 @@ private fun VerseOfTheDayCard(reference: String, text: String, textScale: Float,
                 color = MaterialTheme.colorScheme.primary
             )
             Text(
-                text = text,
+                text = verseText,
                 style = ReadingStyle.VerseText.scaledBy(textScale),
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
-                text = reference,
+                text = verse.reference,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

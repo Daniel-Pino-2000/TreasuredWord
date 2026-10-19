@@ -1,7 +1,9 @@
 package com.application.bibleapp.data.model
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class VerseOfTheDayTest {
@@ -22,13 +24,15 @@ class VerseOfTheDayTest {
     }
 
     @Test
-    fun `verse range concatenates every verse's text in order and shows a dashed reference`() {
+    fun `verse range keeps every verse in order with its number and shows a dashed reference`() {
         val ref = DailyVerseRef(bookId = 43, chapter = 3, startVerse = 20, endVerse = 21)
 
         val result = resolveDailyVerseUI("John", ref, john3)
 
         assertEquals("John 3:20-21", result?.reference)
-        assertEquals("v20 text v21 text", result?.text)
+        assertEquals(listOf(DailyVerseLine(20, "v20 text"), DailyVerseLine(21, "v21 text")), result?.verses)
+        assertTrue(result!!.hasVerseNumbers)
+        assertEquals("²⁰ v20 text ²¹ v21 text", result.text)
     }
 
     @Test
@@ -37,7 +41,7 @@ class VerseOfTheDayTest {
 
         val result = resolveDailyVerseUI("John", ref, john3.shuffled())
 
-        assertEquals("v20 text v21 text v22 text", result?.text)
+        assertEquals(listOf(20, 21, 22), result?.verses?.map { it.number })
     }
 
     @Test
@@ -48,6 +52,19 @@ class VerseOfTheDayTest {
 
         assertEquals("John 3:16", result?.reference)
         assertEquals("v16 text", result?.text)
+    }
+
+    @Test
+    fun `legacy paragraph marker is stripped from the verse text`() {
+        val chapter = listOf(VerseUI(id = 1, text = "¶ v1 text", bookId = 43, chapter = 3, verse = 1))
+        val ref = DailyVerseRef(bookId = 43, chapter = 3, startVerse = 1)
+
+        assertEquals("v1 text", resolveDailyVerseUI("John", ref, chapter)?.text)
+    }
+
+    @Test
+    fun `superscript conversion handles multi-digit verse numbers`() {
+        assertEquals("¹⁰⁹", toSuperscript(109))
     }
 
     @Test

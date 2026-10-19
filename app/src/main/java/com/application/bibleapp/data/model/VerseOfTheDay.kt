@@ -40,18 +40,39 @@ object VerseOfTheDay {
     }
 }
 
-/** What the Home screen actually renders — a display-ready reference string and verse text. */
-data class DailyVerseUI(val reference: String, val text: String)
+/** One verse of the daily verse — its number and its text. */
+data class DailyVerseLine(val number: Int, val text: String)
+
+/**
+ * What the Home screen actually renders — a display-ready reference string and the verses in
+ * order. [hasVerseNumbers] is true for a range, where each verse's number is shown before its
+ * text so you can tell where one ends and the next begins; a single verse shows no number.
+ */
+data class DailyVerseUI(val reference: String, val verses: List<DailyVerseLine>) {
+    val hasVerseNumbers: Boolean get() = verses.size > 1
+
+    /** Plain text for places that can't style spans (the notification): verse numbers as
+     *  Unicode superscripts when [hasVerseNumbers], e.g. "²⁰ For every one… ²¹ But he…". */
+    val text: String
+        get() = verses.joinToString(" ") { line ->
+            if (hasVerseNumbers) "${toSuperscript(line.number)} ${line.text}" else line.text
+        }
+}
+
+private const val SUPERSCRIPT_DIGITS = "⁰¹²³⁴⁵⁶⁷⁸⁹"
+
+internal fun toSuperscript(number: Int): String =
+    number.toString().map { SUPERSCRIPT_DIGITS[it - '0'] }.joinToString("")
 
 /**
  * Resolves [ref] against [chapterVerses] (a whole chapter already loaded for the
- * currently selected translation): for a single verse, that verse's own text; for a
- * range ([DailyVerseRef.endVerse] set), every verse from [DailyVerseRef.startVerse] to
- * [DailyVerseRef.endVerse] concatenated in order. Returns null if the chapter doesn't
+ * currently selected translation): for a single verse, that verse alone; for a range
+ * ([DailyVerseRef.endVerse] set), every verse from [DailyVerseRef.startVerse] to
+ * [DailyVerseRef.endVerse] in order. Returns null if the chapter doesn't
  * contain [DailyVerseRef.startVerse] at all — e.g. the currently selected translation
  * doesn't include this book/chapter — so the caller can fall back to another reference.
  *
- * A pure function (no I/O) so the range-concatenation logic can be unit tested without
+ * A pure function (no I/O) so the range logic can be unit tested without
  * a database or network call.
  */
 fun resolveDailyVerseUI(bookName: String, ref: DailyVerseRef, chapterVerses: List<VerseUI>): DailyVerseUI? {
@@ -66,6 +87,7 @@ fun resolveDailyVerseUI(bookName: String, ref: DailyVerseRef, chapterVerses: Lis
     } else {
         "$bookName ${ref.chapter}:${ref.startVerse}"
     }
-    return DailyVerseUI(reference = reference, text = versesInRange.joinToString(" ") { it.text })
+    // Legacy (bundled KJV) verses can open with a paragraph marker — meaningless out of context.
+    val lines = versesInRange.map { DailyVerseLine(number = it.verse!!, text = it.text.removePrefix("¶ ")) }
+    return DailyVerseUI(reference = reference, verses = lines)
 }
-
