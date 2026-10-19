@@ -8,12 +8,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
@@ -39,9 +43,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import com.application.bibleapp.data.remote.VerseLocationDto
 import kotlinx.coroutines.launch
 import com.application.bibleapp.ui.theme.Spacing
+import com.application.bibleapp.ui.theme.isCompactHeight
 
 /**
  * Create/edit sheet for a note — reached either from [VerseSelectionToolbar]'s Note action (a
@@ -90,6 +96,7 @@ fun NoteEditorSheet(
         }
     )
     val scope = rememberCoroutineScope()
+    val compactHeight = isCompactHeight()
 
     if (showDiscardDialog) {
         AlertDialog(
@@ -117,84 +124,107 @@ fun NoteEditorSheet(
         )
     }
 
+    // Verse chips sit under the title in portrait; in compact height they share the title's row
+    // so the note field itself still fits on screen above the pinned buttons.
+    val verseChips: @Composable (Modifier) -> Unit = { modifier ->
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+            modifier = modifier
+        ) {
+            items(verses, key = { "${it.bookId}-${it.chapter}-${it.verse}" }) { location ->
+                val removable = verses.size > 1
+                InputChip(
+                    selected = false,
+                    onClick = { if (removable) onRemoveVerse(location) },
+                    label = { Text("${bookName(location.bookId)} ${location.chapter}:${location.verse}") },
+                    trailingIcon = if (removable) {
+                        {
+                            Icon(
+                                imageVector = Icons.Filled.Close,
+                                contentDescription = "Remove verse",
+                                modifier = Modifier.size(InputChipDefaults.IconSize)
+                            )
+                        }
+                    } else null
+                )
+            }
+        }
+    }
+
     ModalBottomSheet(
         onDismissRequest = {
             if (latestHasUnsavedChanges) showDiscardDialog = true else onDismiss()
         },
         sheetState = sheetState,
-        shape = MaterialTheme.shapes.large
+        shape = MaterialTheme.shapes.large,
+        // Only matters once the sheet is as tall as the window (landscape): stop below the
+        // status bar instead of running the drag handle up under it.
+        modifier = Modifier.statusBarsPadding(),
+        // Every dp counts in landscape; the sheet still drags/swipes without the handle.
+        dragHandle = if (compactHeight) null else ({ BottomSheetDefaults.DragHandle() })
     ) {
         Column(
             modifier = Modifier
-                .padding(horizontal = Spacing.xl, vertical = Spacing.sm)
+                .padding(horizontal = Spacing.xl, vertical = if (compactHeight) Spacing.md else Spacing.sm)
                 .navigationBarsPadding()
                 .imePadding()
         ) {
-            Text(
-                text = "Note",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.primary
-            )
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-                modifier = Modifier.padding(top = Spacing.md, bottom = Spacing.md)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = "Note",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                if (compactHeight) verseChips(Modifier.padding(start = Spacing.lg))
+            }
+            // Everything between the title and the button row scrolls, and only takes the room
+            // that's left — so Save/Delete stay pinned on screen even in landscape with the
+            // keyboard up, where the whole sheet is taller than the window.
+            Column(
+                modifier = Modifier
+                    .weight(1f, fill = false)
+                    .verticalScroll(rememberScrollState())
             ) {
-                items(verses, key = { "${it.bookId}-${it.chapter}-${it.verse}" }) { location ->
-                    val removable = verses.size > 1
-                    InputChip(
-                        selected = false,
-                        onClick = { if (removable) onRemoveVerse(location) },
-                        label = { Text("${bookName(location.bookId)} ${location.chapter}:${location.verse}") },
-                        trailingIcon = if (removable) {
-                            {
-                                Icon(
-                                    imageVector = Icons.Filled.Close,
-                                    contentDescription = "Remove verse",
-                                    modifier = Modifier.size(InputChipDefaults.IconSize)
-                                )
-                            }
-                        } else null
+                if (!compactHeight) verseChips(Modifier.padding(top = Spacing.md, bottom = Spacing.md))
+                if (verseText.isNotBlank()) {
+                    var expanded by remember(verseText) { mutableStateOf(false) }
+                    var overflows by remember(verseText) { mutableStateOf(false) }
+                    Text(
+                        text = verseText,
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontFamily = FontFamily.Serif,
+                            fontStyle = FontStyle.Italic
+                        ),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = if (expanded) Int.MAX_VALUE else if (compactHeight) 1 else 4,
+                        overflow = TextOverflow.Ellipsis,
+                        onTextLayout = { layout -> if (!expanded) overflows = layout.hasVisualOverflow },
+                        modifier = Modifier
+                            .padding(top = if (compactHeight) Spacing.sm else 0.dp, bottom = Spacing.md)
+                            .then(
+                                if (overflows || expanded) Modifier.clickable { expanded = !expanded }
+                                else Modifier
+                            )
                     )
                 }
-            }
-            if (verseText.isNotBlank()) {
-                var expanded by remember(verseText) { mutableStateOf(false) }
-                var overflows by remember(verseText) { mutableStateOf(false) }
-                Text(
-                    text = verseText,
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontFamily = FontFamily.Serif,
-                        fontStyle = FontStyle.Italic
-                    ),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = if (expanded) Int.MAX_VALUE else 4,
-                    overflow = TextOverflow.Ellipsis,
-                    onTextLayout = { layout -> if (!expanded) overflows = layout.hasVisualOverflow },
-                    modifier = Modifier
-                        .padding(bottom = Spacing.md)
-                        .then(
-                            if (overflows || expanded) Modifier.clickable { expanded = !expanded }
-                            else Modifier
-                        )
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = onTextChange,
+                    label = { Text("Note") },
+                    placeholder = { Text("Write your thoughts on this verse…") },
+                    minLines = if (compactHeight) 2 else 4,
+                    shape = MaterialTheme.shapes.medium,
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
-            OutlinedTextField(
-                value = text,
-                onValueChange = onTextChange,
-                label = { Text("Note") },
-                placeholder = { Text("Write your thoughts on this verse…") },
-                minLines = 4,
-                shape = MaterialTheme.shapes.medium,
-                modifier = Modifier.fillMaxWidth()
-            )
             HorizontalDivider(
                 color = MaterialTheme.colorScheme.outlineVariant,
-                modifier = Modifier.padding(top = Spacing.lg)
+                modifier = Modifier.padding(top = if (compactHeight) Spacing.sm else Spacing.lg)
             )
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = Spacing.md, bottom = Spacing.xl),
+                    .padding(top = Spacing.md, bottom = if (compactHeight) Spacing.sm else Spacing.xl),
                 horizontalArrangement = if (isEditingExisting) Arrangement.SpaceBetween else Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically
             ) {

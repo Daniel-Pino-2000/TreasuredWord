@@ -5,7 +5,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -24,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import com.application.bibleapp.data.model.Highlight
 import com.application.bibleapp.data.model.Note
 import com.application.bibleapp.ui.theme.Spacing
+import com.application.bibleapp.ui.theme.isCompactHeight
 
 /**
  * Shown when tapping (not long-pressing) an already-highlighted verse outside selection mode.
@@ -52,7 +56,10 @@ fun HighlightActionSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        shape = MaterialTheme.shapes.large
+        shape = MaterialTheme.shapes.large,
+        // Only matters once the sheet is as tall as the window (landscape): stop below the
+        // status bar instead of running the drag handle up under it.
+        modifier = Modifier.statusBarsPadding()
     ) {
         Column(
             modifier = Modifier
@@ -64,30 +71,38 @@ fun HighlightActionSheet(
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary
             )
-            if (verseText.isNotBlank()) {
-                Text(
-                    text = verseText,
-                    style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Serif),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(top = Spacing.xs)
+            // Preview, swatches and notes scroll in whatever room is left, so "Remove highlight"
+            // stays on screen in landscape even when the verses carry several notes.
+            Column(
+                modifier = Modifier
+                    .weight(1f, fill = false)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                if (verseText.isNotBlank()) {
+                    Text(
+                        text = verseText,
+                        style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Serif),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(top = Spacing.xs)
+                    )
+                }
+                HighlightColorSwatchRow(
+                    onColorSelected = { colorArgb -> onColorSelected(highlight, colorArgb) },
+                    selectedColorArgb = highlight.color,
+                    modifier = Modifier.padding(top = Spacing.lg, bottom = Spacing.lg)
                 )
-            }
-            HighlightColorSwatchRow(
-                onColorSelected = { colorArgb -> onColorSelected(highlight, colorArgb) },
-                selectedColorArgb = highlight.color,
-                modifier = Modifier.padding(top = Spacing.lg, bottom = Spacing.lg)
-            )
-            // Every note on these verses, not just the first — a verse can carry several.
-            notes.forEach { note ->
-                NotePreviewRow(note = note, onClick = { onOpenNote(note) })
-                Spacer(modifier = Modifier.height(Spacing.sm))
+                // Every note on these verses, not just the first — a verse can carry several.
+                notes.forEach { note ->
+                    NotePreviewRow(note = note, onClick = { onOpenNote(note) })
+                    Spacer(modifier = Modifier.height(Spacing.sm))
+                }
             }
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             TextButton(
                 onClick = { onRemove(highlight) },
-                modifier = Modifier.padding(top = Spacing.sm, bottom = Spacing.xl)
+                modifier = Modifier.padding(top = Spacing.sm, bottom = if (isCompactHeight()) Spacing.sm else Spacing.xl)
             ) {
                 Icon(
                     imageVector = Icons.Filled.Delete,
