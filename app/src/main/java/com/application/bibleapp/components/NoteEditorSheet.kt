@@ -3,9 +3,12 @@ package com.application.bibleapp.components
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -64,7 +67,7 @@ import com.application.bibleapp.ui.theme.isCompactHeight
  * With [hasUnsavedChanges], any dismiss (swipe down, scrim tap, back) asks "Discard note?" first
  * instead of silently throwing the typed text away.
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun NoteEditorSheet(
     verses: List<VerseLocationDto>,
@@ -97,6 +100,9 @@ fun NoteEditorSheet(
     )
     val scope = rememberCoroutineScope()
     val compactHeight = isCompactHeight()
+    // A landscape phone with the soft keyboard up leaves the sheet ~130dp: room for the title
+    // row and a one-line field, nothing else (#23).
+    val typingInCompactHeight = compactHeight && WindowInsets.isImeVisible
 
     if (showDiscardDialog) {
         AlertDialog(
@@ -151,6 +157,17 @@ fun NoteEditorSheet(
         }
     }
 
+    val actions: @Composable () -> Unit = {
+        if (isEditingExisting) {
+            TextButton(onClick = onDelete) {
+                Text("Delete", color = MaterialTheme.colorScheme.error)
+            }
+        }
+        FilledTonalButton(onClick = onSave, enabled = text.isNotBlank()) {
+            Text("Save")
+        }
+    }
+
     ModalBottomSheet(
         onDismissRequest = {
             if (latestHasUnsavedChanges) showDiscardDialog = true else onDismiss()
@@ -165,28 +182,37 @@ fun NoteEditorSheet(
     ) {
         Column(
             modifier = Modifier
-                .padding(horizontal = Spacing.xl, vertical = if (compactHeight) Spacing.md else Spacing.sm)
+                .padding(horizontal = Spacing.xl, vertical = Spacing.sm)
                 .navigationBarsPadding()
                 .imePadding()
         ) {
+            // In compact height Delete/Save share the title row too — a separate button row took
+            // all the room the keyboard leaves, squeezing the note field out entirely.
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = "Note",
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.primary
                 )
-                if (compactHeight) verseChips(Modifier.padding(start = Spacing.lg))
+                if (compactHeight) {
+                    verseChips(Modifier.weight(1f).padding(start = Spacing.lg, end = Spacing.sm))
+                    actions()
+                }
             }
-            // Everything between the title and the button row scrolls, and only takes the room
-            // that's left — so Save/Delete stay pinned on screen even in landscape with the
-            // keyboard up, where the whole sheet is taller than the window.
+            // Everything below the title (and above the portrait button row) scrolls, and only
+            // takes the room that's left — so Save/Delete stay pinned on screen even when the
+            // whole sheet is taller than the window. While typing in compact height the field
+            // alone takes that room instead: this column doesn't follow the cursor as the field
+            // grows, but a height-capped field scrolls its own text to keep the cursor in view.
+            // Only modifiers switch here, so the field keeps its focus (and the keyboard).
+            val scrollState = rememberScrollState()
             Column(
                 modifier = Modifier
                     .weight(1f, fill = false)
-                    .verticalScroll(rememberScrollState())
+                    .then(if (typingInCompactHeight) Modifier else Modifier.verticalScroll(scrollState))
             ) {
                 if (!compactHeight) verseChips(Modifier.padding(top = Spacing.md, bottom = Spacing.md))
-                if (verseText.isNotBlank()) {
+                if (verseText.isNotBlank() && !typingInCompactHeight) {
                     var expanded by remember(verseText) { mutableStateOf(false) }
                     var overflows by remember(verseText) { mutableStateOf(false) }
                     Text(
@@ -212,29 +238,28 @@ fun NoteEditorSheet(
                     onValueChange = onTextChange,
                     label = { Text("Note") },
                     placeholder = { Text("Write your thoughts on this verse…") },
-                    minLines = if (compactHeight) 2 else 4,
+                    minLines = when {
+                        !compactHeight -> 4
+                        typingInCompactHeight -> 1
+                        else -> 2
+                    },
                     shape = MaterialTheme.shapes.medium,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
-            HorizontalDivider(
-                color = MaterialTheme.colorScheme.outlineVariant,
-                modifier = Modifier.padding(top = if (compactHeight) Spacing.sm else Spacing.lg)
-            )
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = Spacing.md, bottom = if (compactHeight) Spacing.sm else Spacing.xl),
-                horizontalArrangement = if (isEditingExisting) Arrangement.SpaceBetween else Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                if (isEditingExisting) {
-                    TextButton(onClick = onDelete) {
-                        Text("Delete", color = MaterialTheme.colorScheme.error)
-                    }
-                }
-                FilledTonalButton(onClick = onSave, enabled = text.isNotBlank()) {
-                    Text("Save")
+            if (!compactHeight) {
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.outlineVariant,
+                    modifier = Modifier.padding(top = Spacing.lg)
+                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = Spacing.md, bottom = Spacing.xl),
+                    horizontalArrangement = if (isEditingExisting) Arrangement.SpaceBetween else Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    actions()
                 }
             }
         }
