@@ -52,6 +52,7 @@ fun BibleView(
     val noteListVerse by bibleViewModel.noteListVerse.collectAsState()
     val bookNames by bibleViewModel.bookNames.collectAsState()
     val showSignInNudge by bibleViewModel.showSignInNudge.collectAsState()
+    val scrollRequest by bibleViewModel.scrollRequest.collectAsState()
     val chapterTitle = "$currentBookName $currentChapter"
     val bookName = { bookId: Int -> bookNames[bookId] ?: BibleBooks.getBookById(bookId)?.name ?: "Unknown" }
 
@@ -100,7 +101,9 @@ fun BibleView(
             onVerseTap = { location -> bibleViewModel.onVerseTap(location) },
             onVerseLongPress = { location -> bibleViewModel.onVerseLongPress(location) },
             noteCountsByVerse = noteCountsByVerse,
-            onNoteGlyphTap = { location -> bibleViewModel.onNoteBadgeTap(location) }
+            onNoteGlyphTap = { location -> bibleViewModel.onNoteBadgeTap(location) },
+            scrollRequest = scrollRequest,
+            onTopVisibleVerseChange = { verse -> bibleViewModel.onTopVisibleVerseChange(verse) }
         )
 
         if (showSignInNudge) {

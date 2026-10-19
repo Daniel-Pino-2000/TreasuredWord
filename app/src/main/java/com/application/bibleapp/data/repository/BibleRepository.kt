@@ -385,6 +385,29 @@ class BibleRepository(
         verse = prefs.getInt(KEY_READING_VERSE, 1)
     )
 
+    /** The single reading bookmark — where the user marked they're actually reading, separate
+     *  from [loadReadingPosition], which follows every jump. Device-local and translation-independent. */
+    fun saveBookmark(position: ReadingPosition?) {
+        prefs.edit().apply {
+            if (position == null) {
+                remove(KEY_BOOKMARK_BOOK).remove(KEY_BOOKMARK_CHAPTER).remove(KEY_BOOKMARK_VERSE)
+            } else {
+                putInt(KEY_BOOKMARK_BOOK, position.bookId)
+                putInt(KEY_BOOKMARK_CHAPTER, position.chapter)
+                putInt(KEY_BOOKMARK_VERSE, position.verse)
+            }
+        }.apply()
+    }
+
+    fun loadBookmark(): ReadingPosition? {
+        if (!prefs.contains(KEY_BOOKMARK_BOOK)) return null
+        return ReadingPosition(
+            bookId = prefs.getInt(KEY_BOOKMARK_BOOK, 1),
+            chapter = prefs.getInt(KEY_BOOKMARK_CHAPTER, 1),
+            verse = prefs.getInt(KEY_BOOKMARK_VERSE, 1)
+        )
+    }
+
     // ---- Sync preferences (Phase G) — read by SyncScheduler/SyncWorker, written by Settings ----
 
     /** Defaults to on — matches Phase E's existing behavior before this preference existed. */
@@ -445,6 +468,9 @@ class BibleRepository(
         const val KEY_READING_BOOK = "reading_book_id"
         const val KEY_READING_CHAPTER = "reading_chapter"
         const val KEY_READING_VERSE = "reading_verse"
+        const val KEY_BOOKMARK_BOOK = "bookmark_book_id"
+        const val KEY_BOOKMARK_CHAPTER = "bookmark_chapter"
+        const val KEY_BOOKMARK_VERSE = "bookmark_verse"
         const val KEY_NOTIFICATION_ENABLED = "notification_enabled"
         const val KEY_NOTIFICATION_HOUR = "notification_hour"
         const val KEY_NOTIFICATION_MINUTE = "notification_minute"

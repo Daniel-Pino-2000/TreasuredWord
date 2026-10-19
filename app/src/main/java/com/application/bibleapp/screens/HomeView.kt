@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Search
@@ -36,12 +37,14 @@ fun HomeView(
     bibleViewModel: BibleViewModel,
     modifier: Modifier = Modifier,
     onContinueReadingClick: () -> Unit,
+    onBookmarkClick: () -> Unit,
     onSearchClick: () -> Unit
 ) {
     val verseOfTheDay by bibleViewModel.verseOfTheDay.collectAsState()
     val verseTextScale by bibleViewModel.verseTextScale.collectAsState()
     val currentBookName by bibleViewModel.currentBookName.collectAsState()
     val currentChapter by bibleViewModel.currentChapter.collectAsState()
+    val bookmarkLabel by bibleViewModel.bookmarkLabel.collectAsState()
 
     val verseCard: @Composable (Modifier) -> Unit = { cardModifier ->
         verseOfTheDay?.let { verse ->
@@ -60,6 +63,15 @@ fun HomeView(
             subtitle = "$currentBookName $currentChapter",
             onClick = onContinueReadingClick
         )
+
+        bookmarkLabel?.let { label ->
+            HomeShortcutRow(
+                icon = Icons.Filled.Bookmark,
+                title = "Bookmark",
+                subtitle = label,
+                onClick = onBookmarkClick
+            )
+        }
 
         HomeShortcutRow(
             icon = Icons.Filled.Search,

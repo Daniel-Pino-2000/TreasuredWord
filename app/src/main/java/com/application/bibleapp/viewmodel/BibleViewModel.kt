@@ -23,6 +23,7 @@ import com.application.bibleapp.data.remote.groupVersionsByLanguage
 import com.application.bibleapp.data.repository.AuthRepository
 import com.application.bibleapp.data.repository.BibleRepository
 import com.application.bibleapp.data.repository.NotificationTime
+import com.application.bibleapp.data.repository.ReadingPosition
 import com.application.bibleapp.data.repository.ReadingProgressRepository
 import com.application.bibleapp.ui.theme.ThemeMode
 import com.application.bibleapp.ui.theme.VerseTextScale
@@ -63,6 +64,7 @@ data class NoteEditorState(
 sealed interface UndoableDeletion {
     data class OfHighlight(val highlight: Highlight) : UndoableDeletion
     data class OfNote(val note: Note) : UndoableDeletion
+    data class OfBookmark(val bookmark: ReadingPosition) : UndoableDeletion
 }
 
 /** A one-shot message for MainActivity's Snackbar — with [undo], it gets an "Undo" action. */
@@ -212,6 +214,26 @@ class BibleViewModel(
 
     private val _currentVerse = MutableStateFlow(1)
     val currentVerse: StateFlow<Int> = _currentVerse
+
+    // Bumped to make the reader scroll to [currentVerse] again even when that value hasn't
+    // changed — e.g. jumping to a bookmark in the chapter already on screen after scrolling away.
+    private val _scrollRequest = MutableStateFlow(0)
+    val scrollRequest: StateFlow<Int> = _scrollRequest.asStateFlow()
+
+    // The verse at the top of the reader right now — what a new bookmark points at. Not state:
+    // nothing renders it, and it changes on every scroll.
+    private var topVisibleVerse = 1
+
+    private val _bookmark = MutableStateFlow(repository.loadBookmark())
+    val bookmark: StateFlow<ReadingPosition?> = _bookmark.asStateFlow()
+
+    /** The bookmark as a display reference ("John 3:16") in the current translation's book names. */
+    val bookmarkLabel: StateFlow<String?> =
+        combine(_bookmark, _bookNames) { bookmark, names -> bookmark?.let { bookmarkLabelFor(it, names) } }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    private fun bookmarkLabelFor(position: ReadingPosition, names: Map<Int, String> = _bookNames.value): String =
+        "${names[position.bookId] ?: BibleBooks.getBookById(position.bookId)?.name ?: "Unknown"} ${position.chapter}:${position.verse}"
 
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
@@ -569,6 +591,10 @@ class BibleViewModel(
             when (deletion) {
                 is UndoableDeletion.OfHighlight -> repository.restoreHighlight(deletion.highlight)
                 is UndoableDeletion.OfNote -> repository.restoreNote(deletion.note)
+                is UndoableDeletion.OfBookmark -> {
+                    setBookmark(deletion.bookmark)
+                    return@launch
+                }
             }
             reloadHighlightsInChapter()
             reloadNotesInChapter()
@@ -761,6 +787,40 @@ class BibleViewModel(
                 }
             }
         }
+    }
+
+    fun onTopVisibleVerseChange(verse: Int) {
+        topVisibleVerse = verse
+    }
+
+    /** Bookmarks the verse at the top of the reader, replacing any earlier bookmark. */
+    fun bookmarkCurrentPosition() {
+        val position = ReadingPosition(_currentBook.value, _currentChapter.value, topVisibleVerse)
+        setBookmark(position)
+        showMessage("Bookmarked ${bookmarkLabelFor(position)}")
+    }
+
+    fun removeBookmark() {
+        val removed = _bookmark.value ?: return
+        setBookmark(null)
+        _userMessages.tryEmit(UserMessage("Bookmark removed", UndoableDeletion.OfBookmark(removed)))
+    }
+
+    private fun setBookmark(position: ReadingPosition?) {
+        _bookmark.value = position
+        repository.saveBookmark(position)
+    }
+
+    /** Opens the reader at the bookmark — scrolling to it even within the chapter already on screen. */
+    fun goToBookmark() {
+        val bookmark = _bookmark.value ?: return
+        if (bookmark.bookId == _currentBook.value && bookmark.chapter == _currentChapter.value && _verses.value.isNotEmpty()) {
+            _currentVerse.value = bookmark.verse
+            repository.saveReadingPosition(bookmark.bookId, bookmark.chapter, bookmark.verse)
+        } else {
+            loadChapter(bookmark.bookId, bookmark.chapter, bookmark.verse)
+        }
+        _scrollRequest.update { it + 1 }
     }
 
     /** Opens the footnote bottom sheet for [noteId] in the chapter currently on screen, if found. */

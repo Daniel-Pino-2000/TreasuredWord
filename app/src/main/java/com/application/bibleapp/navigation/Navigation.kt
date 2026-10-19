@@ -50,6 +50,10 @@ fun Navigation(
                 // Home picks its own max width — wider in landscape, where it goes two-column.
                 modifier = Modifier.padding(padding),
                 onContinueReadingClick = { navController.navigate(Screen.Bible.route) },
+                onBookmarkClick = {
+                    bibleViewModel.goToBookmark()
+                    navController.navigate(Screen.Bible.route)
+                },
                 onSearchClick = { navController.navigate(Screen.Search.route) }
             )
         }

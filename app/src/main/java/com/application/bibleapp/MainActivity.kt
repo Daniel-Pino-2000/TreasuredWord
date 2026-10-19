@@ -56,6 +56,7 @@ import androidx.navigation.compose.rememberNavController
 import com.application.bibleapp.components.BibleChapterNav
 import com.application.bibleapp.components.BibleTopBar
 import com.application.bibleapp.components.BookPickerTopBar
+import com.application.bibleapp.components.BookmarkButtonState
 import com.application.bibleapp.components.HomeTopBar
 import com.application.bibleapp.components.LibraryItemDetailTopBar
 import com.application.bibleapp.components.LibraryTopBar
@@ -270,10 +271,21 @@ class MainActivity : ComponentActivity() {
                             when (currentRoute) {
                                 Screen.Bible.route -> {
                                     val versionLabel by bibleViewModel.currentVersionLabel.collectAsState()
+                                    val bookmark by bibleViewModel.bookmark.collectAsState()
+                                    val bookmarkLabel by bibleViewModel.bookmarkLabel.collectAsState()
+                                    val currentBook by bibleViewModel.currentBook.collectAsState()
+                                    val currentChapter by bibleViewModel.currentChapter.collectAsState()
                                     BibleTopBar(
                                         scrollBehavior = scrollBehavior,
                                         versionLabel = versionLabel,
                                         onVersionClick = { navController.navigate(Screen.VersionPicker.route) },
+                                        bookmark = BookmarkButtonState(
+                                            label = bookmarkLabel,
+                                            isInThisChapter = bookmark?.let { it.bookId == currentBook && it.chapter == currentChapter } == true,
+                                            onBookmarkHere = { bibleViewModel.bookmarkCurrentPosition() },
+                                            onGoToBookmark = { bibleViewModel.goToBookmark() },
+                                            onRemoveBookmark = { bibleViewModel.removeBookmark() }
+                                        ),
                                         chapterNav = if (compactHeight) {
                                             {
                                                 BibleChapterNav(
