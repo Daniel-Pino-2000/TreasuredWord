@@ -12,6 +12,14 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -45,6 +53,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.application.bibleapp.components.BibleChapterNav
 import com.application.bibleapp.components.BibleTopBar
 import com.application.bibleapp.components.BookPickerTopBar
 import com.application.bibleapp.components.HomeTopBar
@@ -52,6 +61,7 @@ import com.application.bibleapp.components.LibraryItemDetailTopBar
 import com.application.bibleapp.components.LibraryTopBar
 import com.application.bibleapp.components.LoginTopBar
 import com.application.bibleapp.components.MainBottomBar
+import com.application.bibleapp.components.MainNavigationRail
 import com.application.bibleapp.components.RegisterTopBar
 import com.application.bibleapp.components.SearchTopBar
 import com.application.bibleapp.components.SettingsTopBar
@@ -64,6 +74,7 @@ import com.application.bibleapp.navigation.Screen
 import com.application.bibleapp.ui.theme.BibleAppTheme
 import com.application.bibleapp.ui.theme.Spacing
 import com.application.bibleapp.ui.theme.ThemeMode
+import com.application.bibleapp.ui.theme.isCompactHeight
 import com.application.bibleapp.viewmodel.AuthViewModel
 import com.application.bibleapp.viewmodel.AuthViewModelFactory
 import com.application.bibleapp.viewmodel.BibleViewModel
@@ -170,6 +181,13 @@ class MainActivity : ComponentActivity() {
             // Guards against leaving the Bible screen mid-scroll with system bars still
             // hidden — every other screen always shows them, and starts fresh (not hidden)
             // if the reader comes back.
+            // In landscape the status bar alone is ~12% of the height, so the reader opens
+            // immersive there (system bars hidden, swipe to peek); a sustained scroll back up
+            // brings them back the same way as in portrait.
+            val compactHeightReader = isCompactHeight() && currentRoute == Screen.Bible.route
+            LaunchedEffect(compactHeightReader) {
+                barsHidden = compactHeightReader
+            }
             LaunchedEffect(currentRoute) {
                 if (currentRoute != Screen.Bible.route) {
                     barsHidden = false
@@ -210,109 +228,146 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                Box(modifier = Modifier.fillMaxSize()) {
-                    Scaffold(
+                // Compact height = a phone in landscape. There the tabs move to a side rail and the
+                // chapter controls into the top bar, since a bottom bar plus chapter strip left only
+                // ~50dp of a ~360dp-tall screen for actual reading.
+                val compactHeight = isCompactHeight()
+                val showNavigation = currentRoute !in listOf(
+                    Screen.BookPicker.route,
+                    Screen.VersePicker.route,
+                    Screen.Login.route,
+                    Screen.Register.route,
+                    Screen.Library.route,
+                    Screen.LibraryItemDetail.route
+                )
+                val useRail = compactHeight && showNavigation
+
+                Row(modifier = Modifier.fillMaxSize()) {
+                    if (useRail) {
+                        MainNavigationRail(
+                            currentRoute = currentRoute,
+                            onItemSelected = { route -> navController.navigate(route) }
+                        )
+                    }
+                    Box(
                         modifier = Modifier
-                            .fillMaxSize()
+                            .weight(1f)
+                            .fillMaxHeight()
+                            // The rail already pads for a start-side cutout; don't pad again in here.
                             .then(
-                                if (scrollBehavior != null) Modifier.nestedScroll(scrollBehavior.nestedScrollConnection)
+                                if (useRail) Modifier.consumeWindowInsets(WindowInsets.safeDrawing.only(WindowInsetsSides.Start))
                                 else Modifier
-                            ),
-                        topBar = {
-                        when (currentRoute) {
-                            Screen.Bible.route -> {
-                                val versionLabel by bibleViewModel.currentVersionLabel.collectAsState()
-                                BibleTopBar(
-                                    scrollBehavior = scrollBehavior,
-                                    versionLabel = versionLabel,
-                                    onVersionClick = { navController.navigate(Screen.VersionPicker.route) }
+                            )
+                    ) {
+                        Scaffold(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .then(
+                                    if (scrollBehavior != null) Modifier.nestedScroll(scrollBehavior.nestedScrollConnection)
+                                    else Modifier
+                                ),
+                            topBar = {
+                            when (currentRoute) {
+                                Screen.Bible.route -> {
+                                    val versionLabel by bibleViewModel.currentVersionLabel.collectAsState()
+                                    BibleTopBar(
+                                        scrollBehavior = scrollBehavior,
+                                        versionLabel = versionLabel,
+                                        onVersionClick = { navController.navigate(Screen.VersionPicker.route) },
+                                        chapterNav = if (compactHeight) {
+                                            {
+                                                BibleChapterNav(
+                                                    bibleViewModel = bibleViewModel,
+                                                    onSelectBook = { navController.navigate(Screen.BookPicker.route) },
+                                                    compact = true
+                                                )
+                                            }
+                                        } else {
+                                            null
+                                        }
+                                    )
+                                }
+                                Screen.Home.route -> HomeTopBar()
+                                Screen.Search.route -> SearchTopBar()
+                                Screen.BookPicker.route -> BookPickerTopBar { navController.popBackStack() }
+                                Screen.VersePicker.route -> VersePickerTopBar { navController.popBackStack() }
+                                Screen.VersionPicker.route -> VersionPickerTopBar { navController.popBackStack() }
+                                Screen.More.route -> SettingsTopBar()
+                                Screen.Login.route -> LoginTopBar { navController.popBackStack() }
+                                Screen.Register.route -> RegisterTopBar { navController.popBackStack() }
+                                Screen.Library.route -> LibraryTopBar { navController.popBackStack() }
+                                Screen.LibraryItemDetail.route -> {
+                                    val title = if (currentBackStackEntry?.arguments?.getString("type") ==
+                                        Screen.LibraryItemDetail.TYPE_NOTE
+                                    ) {
+                                        "Note"
+                                    } else {
+                                        "Highlight"
+                                    }
+                                    LibraryItemDetailTopBar(title) { navController.popBackStack() }
+                                }
+                                else -> TopBar()
+                            }
+                        },
+                        snackbarHost = { SnackbarHost(snackbarHostState) },
+                        bottomBar = {
+                            if (showNavigation && !compactHeight) {
+                                // Always the ordinary bar, even mid-selection — the selection
+                                // toolbar floats as a separate overlay above it (below), so this
+                                // slot's height never changes just because a selection started or
+                                // ended, which is what caused a reading-list layout jump before.
+                                MainBottomBar(
+                                    currentRoute = currentRoute,
+                                    bibleViewModel = bibleViewModel,
+                                    chromeHiddenFraction = chromeHiddenFraction,
+                                    onItemSelected = { route -> navController.navigate(route) },
+                                    onBookPickerClicked = { navController.navigate(Screen.BookPicker.route) },
+                                    modifier = Modifier.onSizeChanged { bottomBarHeightPx = it.height }
                                 )
                             }
-                            Screen.Home.route -> HomeTopBar()
-                            Screen.Search.route -> SearchTopBar()
-                            Screen.BookPicker.route -> BookPickerTopBar { navController.popBackStack() }
-                            Screen.VersePicker.route -> VersePickerTopBar { navController.popBackStack() }
-                            Screen.VersionPicker.route -> VersionPickerTopBar { navController.popBackStack() }
-                            Screen.More.route -> SettingsTopBar()
-                            Screen.Login.route -> LoginTopBar { navController.popBackStack() }
-                            Screen.Register.route -> RegisterTopBar { navController.popBackStack() }
-                            Screen.Library.route -> LibraryTopBar { navController.popBackStack() }
-                            Screen.LibraryItemDetail.route -> {
-                                val title = if (currentBackStackEntry?.arguments?.getString("type") ==
-                                    Screen.LibraryItemDetail.TYPE_NOTE
-                                ) {
-                                    "Note"
-                                } else {
-                                    "Highlight"
-                                }
-                                LibraryItemDetailTopBar(title) { navController.popBackStack() }
-                            }
-                            else -> TopBar()
                         }
-                    },
-                    snackbarHost = { SnackbarHost(snackbarHostState) },
-                    bottomBar = {
-                        if (currentRoute !in listOf(
-                                Screen.BookPicker.route,
-                                Screen.VersePicker.route,
-                                Screen.Login.route,
-                                Screen.Register.route,
-                                Screen.Library.route,
-                                Screen.LibraryItemDetail.route
-                            )
-                        ) {
-                            // Always the ordinary bar, even mid-selection — the selection
-                            // toolbar floats as a separate overlay above it (below), so this
-                            // slot's height never changes just because a selection started or
-                            // ended, which is what caused a reading-list layout jump before.
-                            MainBottomBar(
-                                currentRoute = currentRoute,
-                                bibleViewModel = bibleViewModel,
-                                chromeHiddenFraction = chromeHiddenFraction,
-                                onItemSelected = { route -> navController.navigate(route) },
-                                onBookPickerClicked = { navController.navigate(Screen.BookPicker.route) },
-                                modifier = Modifier.onSizeChanged { bottomBarHeightPx = it.height }
-                            )
+                        ) { paddingValues ->
+                            Navigation(navController, paddingValues, bibleViewModel, authViewModel)
                         }
-                    }
-                    ) { paddingValues ->
-                        Navigation(navController, paddingValues, bibleViewModel, authViewModel)
-                    }
 
-                    val selectedVerses by bibleViewModel.selectedVerses.collectAsState()
-                    val clipboardManager = LocalClipboardManager.current
-                    val context = LocalContext.current
-                    if (currentRoute == Screen.Bible.route && selectedVerses.isNotEmpty()) {
-                        val gap = 12.dp
-                        val bottomBarHeight = with(LocalDensity.current) { bottomBarHeightPx.toDp() }
-                        VerseSelectionToolbar(
-                            selectionCount = selectedVerses.size,
-                            onColorSelected = { colorArgb -> bibleViewModel.highlightSelection(colorArgb) },
-                            onCopy = {
-                                bibleViewModel.takeSelectionShareText()?.let { text ->
-                                    clipboardManager.setText(AnnotatedString(text))
-                                    // Android 13+ shows its own clipboard confirmation; don't double it.
-                                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-                                        bibleViewModel.showMessage("Copied to clipboard")
+                        val selectedVerses by bibleViewModel.selectedVerses.collectAsState()
+                        val clipboardManager = LocalClipboardManager.current
+                        val context = LocalContext.current
+                        if (currentRoute == Screen.Bible.route && selectedVerses.isNotEmpty()) {
+                            val gap = 12.dp
+                            // No bottom bar in compact height (bottomBarHeightPx would be stale from
+                            // portrait); sit above the system navigation bar instead.
+                            val bottomBarHeight = if (compactHeight) 0.dp else with(LocalDensity.current) { bottomBarHeightPx.toDp() }
+                            VerseSelectionToolbar(
+                                selectionCount = selectedVerses.size,
+                                onColorSelected = { colorArgb -> bibleViewModel.highlightSelection(colorArgb) },
+                                onCopy = {
+                                    bibleViewModel.takeSelectionShareText()?.let { text ->
+                                        clipboardManager.setText(AnnotatedString(text))
+                                        // Android 13+ shows its own clipboard confirmation; don't double it.
+                                        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+                                            bibleViewModel.showMessage("Copied to clipboard")
+                                        }
                                     }
-                                }
-                            },
-                            onShare = {
-                                bibleViewModel.takeSelectionShareText()?.let { text ->
-                                    val send = Intent(Intent.ACTION_SEND).apply {
-                                        type = "text/plain"
-                                        putExtra(Intent.EXTRA_TEXT, text)
+                                },
+                                onShare = {
+                                    bibleViewModel.takeSelectionShareText()?.let { text ->
+                                        val send = Intent(Intent.ACTION_SEND).apply {
+                                            type = "text/plain"
+                                            putExtra(Intent.EXTRA_TEXT, text)
+                                        }
+                                        context.startActivity(Intent.createChooser(send, null))
                                     }
-                                    context.startActivity(Intent.createChooser(send, null))
-                                }
-                            },
-                            onAddNote = { bibleViewModel.openNoteEditorForSelection() },
-                            onCancel = { bibleViewModel.clearSelection() },
-                            modifier = Modifier
-                                .align(Alignment.BottomCenter)
-                                .padding(horizontal = Spacing.lg)
-                                .offset(y = -(bottomBarHeight + gap))
-                        )
+                                },
+                                onAddNote = { bibleViewModel.openNoteEditorForSelection() },
+                                onCancel = { bibleViewModel.clearSelection() },
+                                modifier = Modifier
+                                    .align(Alignment.BottomCenter)
+                                    .then(if (compactHeight) Modifier.navigationBarsPadding() else Modifier)
+                                    .padding(horizontal = Spacing.lg)
+                                    .offset(y = -(bottomBarHeight + gap))
+                            )
+                        }
                     }
                 }
             }

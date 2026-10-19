@@ -2,6 +2,7 @@ package com.application.bibleapp.components
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -11,8 +12,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarDefaults
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -79,14 +83,6 @@ fun MainBottomBar(
     ) {
         Column(modifier = Modifier.navigationBarsPadding()) {
             if (currentRoute == Screen.Bible.route) {
-                val currentBook by bibleViewModel.currentBook.collectAsState()
-                val currentChapter by bibleViewModel.currentChapter.collectAsState()
-                val bookNames by bibleViewModel.bookNames.collectAsState()
-                val chapterStructure by bibleViewModel.chapterStructure.collectAsState()
-                val canGoPrevious = currentBook > 1 || currentChapter > 1
-                val canGoNext = currentChapter < chapterStructure.chapterCount(currentBook) ||
-                    currentBook < BibleBooks.allBooks.size
-
                 // A touch more tonal elevation than its surroundings — the row reads as
                 // slightly "raised" relative to the tab row around it, the same system M3
                 // already uses to signal elevation, no new color introduced.
@@ -94,16 +90,7 @@ fun MainBottomBar(
                     color = MaterialTheme.colorScheme.surface,
                     tonalElevation = NavigationBarDefaults.Elevation + 2.dp
                 ) {
-                    ChapterNavBar(
-                        currentBook = currentBook,
-                        bookName = { bookId -> bookNames[bookId] ?: BibleBooks.getBookById(bookId)?.name ?: "Unknown" },
-                        currentChapter = currentChapter,
-                        canGoPrevious = canGoPrevious,
-                        canGoNext = canGoNext,
-                        onPrevious = { bibleViewModel.previousChapter() },
-                        onNext = { bibleViewModel.nextChapter() },
-                        onSelectBook = onBookPickerClicked
-                    )
+                    BibleChapterNav(bibleViewModel = bibleViewModel, onSelectBook = onBookPickerClicked)
                 }
 
                 HorizontalDivider(
@@ -144,6 +131,71 @@ fun MainBottomBar(
                 }
             }
         }
+    }
+}
+
+/**
+ * [ChapterNavBar] wired to [bibleViewModel]'s current position — shared by [MainBottomBar]
+ * (portrait) and the Bible top bar's title slot in compact height ([compact], see MainActivity).
+ */
+@Composable
+fun BibleChapterNav(
+    bibleViewModel: BibleViewModel,
+    onSelectBook: () -> Unit,
+    compact: Boolean = false
+) {
+    val currentBook by bibleViewModel.currentBook.collectAsState()
+    val currentChapter by bibleViewModel.currentChapter.collectAsState()
+    val bookNames by bibleViewModel.bookNames.collectAsState()
+    val chapterStructure by bibleViewModel.chapterStructure.collectAsState()
+    val canGoPrevious = currentBook > 1 || currentChapter > 1
+    val canGoNext = currentChapter < chapterStructure.chapterCount(currentBook) ||
+        currentBook < BibleBooks.allBooks.size
+
+    ChapterNavBar(
+        currentBook = currentBook,
+        bookName = { bookId -> bookNames[bookId] ?: BibleBooks.getBookById(bookId)?.name ?: "Unknown" },
+        currentChapter = currentChapter,
+        canGoPrevious = canGoPrevious,
+        canGoNext = canGoNext,
+        onPrevious = { bibleViewModel.previousChapter() },
+        onNext = { bibleViewModel.nextChapter() },
+        onSelectBook = onSelectBook,
+        compact = compact
+    )
+}
+
+/**
+ * [MainBottomBar]'s tabs as a side rail, used instead of it when the window height is compact
+ * (a phone in landscape) — a bottom bar there eats a quarter of the height, a rail only some of
+ * the far more plentiful width. Items are centered vertically so they're within thumb reach.
+ * The rail's own default insets cover the status bar and a start-side display cutout.
+ */
+@Composable
+fun MainNavigationRail(
+    currentRoute: String?,
+    onItemSelected: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    NavigationRail(
+        modifier = modifier,
+        containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(NavigationBarDefaults.Elevation)
+    ) {
+        Spacer(modifier = Modifier.weight(1f))
+        bottomNavigationItems.forEach { item ->
+            NavigationRailItem(
+                selected = currentRoute == item.route,
+                onClick = { onItemSelected(item.route) },
+                icon = {
+                    Icon(
+                        imageVector = if (currentRoute == item.route) item.selectedIcon else item.unselectedIcon,
+                        contentDescription = item.title
+                    )
+                },
+                label = { Text(item.title) }
+            )
+        }
+        Spacer(modifier = Modifier.weight(1f))
     }
 }
 

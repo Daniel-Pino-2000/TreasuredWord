@@ -43,6 +43,10 @@ private const val CHAPTER_LABEL_ANIM_MS = 180
  * follows the book/chapter delta (forward navigation slides left, matching how the arrow
  * that was tapped points), not just whichever arrow was tapped, so a jump from the
  * book/chapter picker still animates sensibly.
+ *
+ * [compact] is the landscape variant that lives in the top app bar's title slot (see
+ * MainActivity): the three pieces sit snugly together at the start instead of spreading across
+ * the full width, with smaller arrow buttons so it fits the bar's height.
  */
 @Composable
 fun ChapterNavBar(
@@ -53,19 +57,25 @@ fun ChapterNavBar(
     canGoNext: Boolean,
     onPrevious: () -> Unit,
     onNext: () -> Unit,
-    onSelectBook: () -> Unit
+    onSelectBook: () -> Unit,
+    compact: Boolean = false
 ) {
+    val arrowSize = if (compact) 40.dp else 48.dp
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = Spacing.lg, vertical = Spacing.sm),
+        modifier = if (compact) {
+            Modifier
+        } else {
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = Spacing.lg, vertical = Spacing.sm)
+        },
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = if (compact) Arrangement.spacedBy(Spacing.sm) else Arrangement.SpaceBetween
     ) {
         FilledTonalIconButton(
             onClick = onPrevious,
             enabled = canGoPrevious,
-            modifier = Modifier.size(48.dp),
+            modifier = Modifier.size(arrowSize),
             colors = IconButtonDefaults.filledTonalIconButtonColors(
                 containerColor = MaterialTheme.colorScheme.surfaceVariant,
                 contentColor = MaterialTheme.colorScheme.primary
@@ -103,7 +113,7 @@ fun ChapterNavBar(
         FilledTonalIconButton(
             onClick = onNext,
             enabled = canGoNext,
-            modifier = Modifier.size(48.dp),
+            modifier = Modifier.size(arrowSize),
             colors = IconButtonDefaults.filledTonalIconButtonColors(
                 containerColor = MaterialTheme.colorScheme.surfaceVariant,
                 contentColor = MaterialTheme.colorScheme.primary

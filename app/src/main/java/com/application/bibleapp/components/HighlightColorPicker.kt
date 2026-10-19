@@ -21,6 +21,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.application.bibleapp.ui.theme.HighlightColors
 import com.application.bibleapp.ui.theme.toHighlightArgb
@@ -39,7 +40,8 @@ internal val SWATCH_NAMES = listOf("Yellow", "Green", "Blue", "Pink", "Purple")
 fun HighlightColorSwatchRow(
     onColorSelected: (Int) -> Unit,
     modifier: Modifier = Modifier,
-    selectedColorArgb: Int? = null
+    selectedColorArgb: Int? = null,
+    swatchSize: Dp = 40.dp
 ) {
     Row(
         modifier = modifier.fillMaxWidth().selectableGroup(),
@@ -51,7 +53,7 @@ fun HighlightColorSwatchRow(
             val name = SWATCH_NAMES.getOrElse(index) { "Highlight color" }
             Box(
                 modifier = Modifier
-                    .size(40.dp)
+                    .size(swatchSize)
                     .clip(CircleShape)
                     .background(swatch)
                     .then(
