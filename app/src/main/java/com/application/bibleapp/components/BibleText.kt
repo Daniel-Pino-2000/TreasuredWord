@@ -32,6 +32,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -70,6 +71,9 @@ import com.application.bibleapp.ui.theme.ReadingStyle
 import com.application.bibleapp.ui.theme.Spacing
 import com.application.bibleapp.ui.theme.isCompactHeight
 import com.application.bibleapp.ui.theme.scaledBy
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 /** Indentation per poem nesting level — enough to read as a poetry line, not just a wrapped paragraph. */
@@ -283,7 +287,11 @@ fun BibleText(
     /** How many active notes each verse has — any verse present gets an inline glyph right after
      *  its verse number, showing the count when there's more than one. */
     noteCountsByVerse: Map<VerseLocationDto, Int> = emptyMap(),
-    onNoteGlyphTap: (VerseLocationDto) -> Unit = {}
+    onNoteGlyphTap: (VerseLocationDto) -> Unit = {},
+    /** Changing this re-scrolls to [scrollToIndex] even when that verse number is unchanged. */
+    scrollRequest: Int = 0,
+    /** The first verse of the paragraph at the top of the screen, reported as the user scrolls. */
+    onTopVisibleVerseChange: (Int) -> Unit = {}
 ) {
     // Create a new LazyListState each time the verses list changes
     val listState = remember(verses) { androidx.compose.foundation.lazy.LazyListState() }
@@ -303,13 +311,29 @@ fun BibleText(
     // to item 0 instead of item 1, so the title is the thing snapped to the top of the
     // viewport — not pushed off-screen above whatever paragraph verse 1 sits in — matching
     // every other paragraph, which does scroll flush to the top of the viewport.
-    LaunchedEffect(paragraphs, scrollToIndex) {
+    LaunchedEffect(paragraphs, scrollToIndex, scrollRequest) {
         if (paragraphs.isEmpty()) return@LaunchedEffect
         val targetIndex = paragraphs.indexOfFirst { paragraph ->
             paragraph.verses.any { it.verse == scrollToIndex }
         }.coerceIn(paragraphs.indices)
         val listItemIndex = if (targetIndex == 0) 0 else targetIndex + 1
         listState.scrollToItem(listItemIndex)
+    }
+
+    // Item 0 is the chapter title, so it maps to the first paragraph like item 1 does. A paragraph
+    // already more than half scrolled off the top doesn't count — the reader has moved past it.
+    val latestOnTopVisibleVerseChange by rememberUpdatedState(onTopVisibleVerseChange)
+    LaunchedEffect(listState, paragraphs) {
+        if (paragraphs.isEmpty()) return@LaunchedEffect
+        snapshotFlow {
+            val first = listState.layoutInfo.visibleItemsInfo.firstOrNull()
+            val mostlyHidden = first != null && listState.firstVisibleItemScrollOffset > first.size / 2
+            listState.firstVisibleItemIndex + if (mostlyHidden) 1 else 0
+        }
+            .map { index -> paragraphs[(index - 1).coerceIn(paragraphs.indices)].verses.firstNotNullOfOrNull { it.verse } }
+            .filterNotNull()
+            .distinctUntilChanged()
+            .collect { latestOnTopVisibleVerseChange(it) }
     }
 
     // Material's "error" role is spec'd to always be a red-family tone in both light
