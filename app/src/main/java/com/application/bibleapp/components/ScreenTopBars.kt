@@ -1,5 +1,6 @@
 package com.application.bibleapp.components
 
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
@@ -9,20 +10,26 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import com.application.bibleapp.ui.theme.Spacing
 
 /** [versionLabel] is the active translation's short code (e.g. "KJV", "ESV") — see
- *  [com.application.bibleapp.viewmodel.BibleViewModel.currentVersionLabel]. */
+ *  [com.application.bibleapp.viewmodel.BibleViewModel.currentVersionLabel].
+ *  [chapterNav], when given (compact height — see MainActivity), takes the title's place so the
+ *  chapter controls ride in this bar instead of a separate strip at the bottom. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BibleTopBar(
     scrollBehavior: TopAppBarScrollBehavior?,
     versionLabel: String,
-    onVersionClick: () -> Unit
+    onVersionClick: () -> Unit,
+    chapterNav: (@Composable () -> Unit)? = null
 ) {
     TopBar(
-        title = { Text("Bible") },
+        title = chapterNav ?: { Text("Bible") },
         actions = {
-            Button(onClick = onVersionClick) {
+            // Without the end margin the pill sits flush against the screen edge.
+            Button(onClick = onVersionClick, modifier = Modifier.padding(end = Spacing.sm)) {
                 Text(versionLabel)
             }
         },

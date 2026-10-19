@@ -27,6 +27,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.unit.dp
 import com.application.bibleapp.components.ChapterGrid
 import com.application.bibleapp.components.SearchBar
@@ -53,6 +55,8 @@ fun BookPickerView(
     val expandedBookId = rememberSaveable { mutableStateOf<Int?>(null) }
 
     var searchText by rememberSaveable { mutableStateOf("") }
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
 
 
     Column(
@@ -119,6 +123,10 @@ fun BookPickerView(
                         .clickable(true, onClick = {
                             expandedBookId.value =
                                 if (expandedBookId.value == book.id) null else book.id
+                            // Picking a book (usually right after searching for it) is the end
+                            // of typing — otherwise the keyboard stays up over the chapter grid.
+                            focusManager.clearFocus()
+                            keyboardController?.hide()
                         })
                         .padding(horizontal = Spacing.lg, vertical = Spacing.md)
                 )

@@ -1,6 +1,7 @@
 package com.application.bibleapp.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,8 +26,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -40,6 +43,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
@@ -62,7 +68,9 @@ import com.application.bibleapp.data.model.VerseUI
 import com.application.bibleapp.data.remote.VerseLocationDto
 import com.application.bibleapp.ui.theme.ReadingStyle
 import com.application.bibleapp.ui.theme.Spacing
+import com.application.bibleapp.ui.theme.isCompactHeight
 import com.application.bibleapp.ui.theme.scaledBy
+import kotlinx.coroutines.launch
 
 /** Indentation per poem nesting level — enough to read as a poetry line, not just a wrapped paragraph. */
 private val POEM_INDENT_STEP = 20.sp
@@ -140,6 +148,10 @@ private data class ParagraphContent(
     val backgroundRegions: List<BackgroundRegion>
 )
 
+/** Room kept clear above the bottom of the reading list for the floating selection toolbar in
+ *  compact height: its single-row height (~67dp) plus the gap MainActivity leaves under it. */
+private val SELECTION_TOOLBAR_RESERVE = 96.dp
+
 /** Rounding on a highlight/selection stroke — enough to read as a felt-tip pen, not a text-editor
  *  selection rectangle. */
 private val HIGHLIGHT_CORNER_RADIUS = 3.dp
@@ -174,7 +186,14 @@ private fun DrawScope.drawHighlightRegion(layout: TextLayoutResult, region: Back
         val segmentEnd = end.coerceAtMost(lineEnd)
         if (segmentStart >= segmentEnd) continue
         var left = layout.getHorizontalPosition(segmentStart, usePrimaryDirection = true)
-        var right = layout.getHorizontalPosition(segmentEnd, usePrimaryDirection = true)
+        // A poem line is its own ParagraphStyle paragraph with no separator after it, so the
+        // offset at its line end is the *next* paragraph's first character — whose x is the next
+        // line's indent, not this line's right edge. Measure the last character on this line instead.
+        var right = if (segmentEnd >= lineEnd) {
+            layout.getBoundingBox(segmentEnd - 1).right
+        } else {
+            layout.getHorizontalPosition(segmentEnd, usePrimaryDirection = true)
+        }
         if (left > right) {
             val swap = left
             left = right
@@ -272,6 +291,10 @@ fun BibleText(
     val haptics = LocalHapticFeedback.current
     // Read inside long-lived pointerInput handlers, which don't restart when the selection changes.
     val latestSelectedVerses by rememberUpdatedState(selectedVerses)
+    val scope = rememberCoroutineScope()
+    // Bottom edge of the list in root coordinates — compared against a long-pressed verse's
+    // bottom to tell whether the floating selection toolbar is about to cover it.
+    var listBottomInRoot by remember { mutableFloatStateOf(0f) }
 
     // Scroll to the paragraph containing the desired verse whenever verses or the
     // scroll target changes — paragraphs, not verses, are the list's item granularity.
@@ -352,13 +375,27 @@ fun BibleText(
         }
     }
 
+    // In compact height (landscape phone) the top bar's chapter pill already names the chapter,
+    // so the big in-text title and its divider go — they alone ate a third of the reading space.
+    // The (empty) item stays so list indices, and the scroll-target math above, don't shift.
+    val compactHeight = isCompactHeight()
+    // Landscape only: the selection toolbar floats over the bottom of the reading area with no
+    // bottom bar beneath it, so reserve room for it while selecting (lets the last verses scroll
+    // clear of it) and nudge a newly long-pressed verse up out from under it (see onLongPress).
+    val selectionToolbarReserve = if (compactHeight) SELECTION_TOOLBAR_RESERVE else 0.dp
+    val verticalPadding = if (compactHeight) Spacing.md else Spacing.xl
     LazyColumn(
-        modifier = modifier,
+        modifier = modifier.onGloballyPositioned { listBottomInRoot = it.boundsInRoot().bottom },
         state = listState,
-        contentPadding = PaddingValues(vertical = Spacing.xl, horizontal = READING_HORIZONTAL_MARGIN)
+        contentPadding = PaddingValues(
+            start = READING_HORIZONTAL_MARGIN,
+            end = READING_HORIZONTAL_MARGIN,
+            top = verticalPadding,
+            bottom = verticalPadding + if (selectedVerses.isNotEmpty()) selectionToolbarReserve else 0.dp
+        )
     ) {
         item {
-            ChapterHeader(chapterTitle, textScale)
+            if (!compactHeight) ChapterHeader(chapterTitle, textScale)
         }
         itemsIndexed(paragraphs) { index, paragraph ->
             val headings = paragraph.verses.first().richContent?.headings.orEmpty()
@@ -376,6 +413,7 @@ fun BibleText(
                 )
             }
             var layoutResult by remember(paragraph) { mutableStateOf<TextLayoutResult?>(null) }
+            var textCoordinates by remember(paragraph) { mutableStateOf<LayoutCoordinates?>(null) }
 
             Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
                 Column(modifier = Modifier.widthIn(max = MAX_READING_WIDTH).fillMaxWidth()) {
@@ -400,6 +438,7 @@ fun BibleText(
                                 },
                                 bottom = Spacing.xs
                             )
+                            .onGloballyPositioned { textCoordinates = it }
                             .drawBehind {
                                 val layout = layoutResult ?: return@drawBehind
                                 content.backgroundRegions.forEach { region -> drawHighlightRegion(layout, region) }
@@ -434,7 +473,17 @@ fun BibleText(
                                             if (latestSelectedVerses.isEmpty()) {
                                                 haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                                             }
+                                            val adding = verse.location !in latestSelectedVerses
                                             onVerseLongPress(verse.location)
+                                            val coordinates = textCoordinates
+                                            if (adding && selectionToolbarReserve > 0.dp && coordinates != null) {
+                                                val lastLine = layout.getLineForOffset(verse.range.last)
+                                                val verseBottom = coordinates
+                                                    .localToRoot(Offset(0f, layout.getLineBottom(lastLine)))
+                                                    .y
+                                                val overlap = verseBottom - (listBottomInRoot - selectionToolbarReserve.toPx())
+                                                if (overlap > 0f) scope.launch { listState.animateScrollBy(overlap) }
+                                            }
                                         }
                                     }
                                 )

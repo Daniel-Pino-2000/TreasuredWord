@@ -12,6 +12,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.unit.dp
+import com.application.bibleapp.ui.theme.isCompactHeight
+
+private val COMPACT_TOP_BAR_HEIGHT = 56.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,6 +46,9 @@ fun TopBar(
         title = title,
         navigationIcon = navigationIcon ?: {},
         actions = actions,
+        // A phone in landscape has ~360dp of height in total; the slimmer bar hands 8dp back
+        // to the content on every screen.
+        expandedHeight = if (isCompactHeight()) COMPACT_TOP_BAR_HEIGHT else TopAppBarDefaults.TopAppBarExpandedHeight,
         scrollBehavior = scrollBehavior,
         modifier = modifier.background(backgroundColor),
         colors = TopAppBarDefaults.topAppBarColors(

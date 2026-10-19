@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -31,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import com.application.bibleapp.R
 import com.application.bibleapp.data.model.Note
 import com.application.bibleapp.ui.theme.Spacing
+import com.application.bibleapp.ui.theme.isCompactHeight
 import com.application.bibleapp.utils.formatDisplayDate
 
 /**
@@ -50,7 +52,10 @@ fun NoteListSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        shape = MaterialTheme.shapes.large
+        shape = MaterialTheme.shapes.large,
+        // Only matters once the sheet is as tall as the window (landscape): stop below the
+        // status bar instead of running the drag handle up under it.
+        modifier = Modifier.statusBarsPadding()
     ) {
         Column(
             modifier = Modifier
@@ -69,7 +74,9 @@ fun NoteListSheet(
             )
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+                // Shrinks to the room left in landscape so "Add another note" stays on screen.
                 modifier = Modifier
+                    .weight(1f, fill = false)
                     .padding(top = Spacing.md)
                     .heightIn(max = 420.dp)
             ) {
@@ -82,7 +89,7 @@ fun NoteListSheet(
                 contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
                 modifier = Modifier
                     .align(Alignment.End)
-                    .padding(top = Spacing.lg, bottom = Spacing.xl)
+                    .padding(top = Spacing.lg, bottom = if (isCompactHeight()) Spacing.sm else Spacing.xl)
             ) {
                 Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
                 Text("Add another note", modifier = Modifier.padding(start = ButtonDefaults.IconSpacing))
