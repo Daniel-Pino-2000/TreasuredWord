@@ -1,6 +1,7 @@
 package com.application.bibleapp.ui.theme
 
 import android.app.Activity
+import android.content.res.Configuration
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -11,7 +12,10 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
@@ -139,10 +143,29 @@ fun BibleAppTheme(
         }
     }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        shapes = BibleAppShapes,
-        content = content
-    )
+    // Material3's ModalBottomSheet opens its own window and sets *that* window's bar icon
+    // appearance from isSystemInDarkTheme() — the phone's setting, not the ThemeMode override —
+    // so with the app on Dark and the phone on Light every sheet got dark status icons and a
+    // light nav bar (#24). isSystemInDarkTheme() reads LocalConfiguration's night bits, so make
+    // those match the resolved theme for everything inside the app.
+    val configuration = LocalConfiguration.current
+    val nightMode = if (darkTheme) Configuration.UI_MODE_NIGHT_YES else Configuration.UI_MODE_NIGHT_NO
+    val themedConfiguration = remember(configuration, nightMode) {
+        if (configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == nightMode) {
+            configuration
+        } else {
+            Configuration(configuration).apply {
+                uiMode = (uiMode and Configuration.UI_MODE_NIGHT_MASK.inv()) or nightMode
+            }
+        }
+    }
+
+    CompositionLocalProvider(LocalConfiguration provides themedConfiguration) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = Typography,
+            shapes = BibleAppShapes,
+            content = content
+        )
+    }
 }
