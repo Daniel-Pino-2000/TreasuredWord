@@ -287,7 +287,9 @@ class MainActivity : ComponentActivity() {
                                         }
                                     )
                                 }
-                                Screen.Home.route -> HomeTopBar()
+                                // In landscape the rail already says where you are; the bar's height
+                                // goes to the Verse of the Day card instead, so it fits unscrolled.
+                                Screen.Home.route -> if (!compactHeight) HomeTopBar()
                                 Screen.Search.route -> SearchTopBar()
                                 Screen.BookPicker.route -> BookPickerTopBar { navController.popBackStack() }
                                 Screen.VersePicker.route -> VersePickerTopBar { navController.popBackStack() }

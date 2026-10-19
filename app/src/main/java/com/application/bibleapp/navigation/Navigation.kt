@@ -1,7 +1,6 @@
 package com.application.bibleapp.navigation
 
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -23,6 +22,7 @@ import com.application.bibleapp.screens.SearchView
 import com.application.bibleapp.screens.SettingsView
 import com.application.bibleapp.screens.VersePickerView
 import com.application.bibleapp.screens.VersionPickerView
+import com.application.bibleapp.ui.theme.centeredContentWidth
 import com.application.bibleapp.viewmodel.AuthViewModel
 import com.application.bibleapp.viewmodel.BibleViewModel
 import com.application.bibleapp.worker.SyncScheduler
@@ -35,6 +35,9 @@ fun Navigation(
     authViewModel: AuthViewModel
 ) {
     val context = LocalContext.current
+    // Every screen but the reader (which caps its own reading column) is laid out in a centered,
+    // max-width column, so nothing stretches edge to edge in landscape.
+    val screenModifier = Modifier.padding(padding).centeredContentWidth()
 
     NavHost(
         navController = navController,
@@ -44,6 +47,7 @@ fun Navigation(
         composable(Screen.Home.route) {
             HomeView(
                 bibleViewModel = bibleViewModel,
+                // Home picks its own max width — wider in landscape, where it goes two-column.
                 modifier = Modifier.padding(padding),
                 onContinueReadingClick = { navController.navigate(Screen.Bible.route) },
                 onSearchClick = { navController.navigate(Screen.Search.route) }
@@ -59,7 +63,7 @@ fun Navigation(
         }
 
         composable(Screen.Search.route) {
-            SearchView(bibleViewModel, modifier = Modifier.padding(padding)) { bookId, chapter, verse ->
+            SearchView(bibleViewModel, modifier = screenModifier) { bookId, chapter, verse ->
                 // Clear search first to avoid rendering issues
                 bibleViewModel.clearSearchResults()
                 bibleViewModel.setBook(bookId, chapter, verse)
@@ -74,7 +78,7 @@ fun Navigation(
             SettingsView(
                 bibleViewModel = bibleViewModel,
                 authViewModel = authViewModel,
-                modifier = Modifier.padding(padding),
+                modifier = screenModifier,
                 onSignInClick = { navController.navigate(Screen.Login.route) },
                 onLibraryClick = { tab -> navController.navigate(Screen.Library.createRoute(tab)) },
                 onContinueReadingClick = { navController.navigate(Screen.Bible.route) }
@@ -87,7 +91,7 @@ fun Navigation(
         ) { backStackEntry ->
             LibraryView(
                 bibleViewModel = bibleViewModel,
-                modifier = Modifier.padding(padding),
+                modifier = screenModifier,
                 initialTab = backStackEntry.arguments?.getString("tab"),
                 onOpenDetail = { type, localId ->
                     navController.navigate(Screen.LibraryItemDetail.createRoute(type, localId))
@@ -108,7 +112,7 @@ fun Navigation(
                 bibleViewModel = bibleViewModel,
                 type = type,
                 localId = localId,
-                modifier = Modifier.padding(padding),
+                modifier = screenModifier,
                 onOpenInBible = {
                     if (type == Screen.LibraryItemDetail.TYPE_HIGHLIGHT) {
                         bibleViewModel.libraryHighlights.value.firstOrNull { it.localId == localId }
@@ -125,7 +129,7 @@ fun Navigation(
         composable(Screen.Login.route) {
             LoginView(
                 authViewModel = authViewModel,
-                modifier = Modifier.padding(padding),
+                modifier = screenModifier,
                 onLoginSuccess = {
                     bibleViewModel.syncReadingProgressFromServer()
                     bibleViewModel.dismissSignInNudge()
@@ -139,7 +143,7 @@ fun Navigation(
         composable(Screen.Register.route) {
             RegisterView(
                 authViewModel = authViewModel,
-                modifier = Modifier.padding(padding),
+                modifier = screenModifier,
                 onRegisterSuccess = {
                     bibleViewModel.syncReadingProgressFromServer()
                     bibleViewModel.dismissSignInNudge()
@@ -153,7 +157,7 @@ fun Navigation(
         composable(Screen.BookPicker.route) {
             BookPickerView(
                 bibleViewModel,
-                modifier = Modifier.padding(padding),
+                modifier = screenModifier,
                 onBackClick = {
                     navController.popBackStack()
                 },
@@ -176,7 +180,7 @@ fun Navigation(
                 bibleViewModel,
                 bookId = bookId,
                 chapter = chapter,
-                modifier = Modifier.padding(padding),
+                modifier = screenModifier,
                 onBackClick = {
                     navController.popBackStack()
                 } ,
@@ -195,7 +199,7 @@ fun Navigation(
         composable(Screen.VersionPicker.route) {
             VersionPickerView(
                 bibleViewModel,
-                modifier = Modifier.fillMaxSize().padding(padding),
+                modifier = screenModifier,
                 onVersionClicked = {
                     navController.navigate(Screen.Bible.route)
                 }

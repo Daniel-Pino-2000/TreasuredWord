@@ -5,7 +5,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -24,8 +23,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.application.bibleapp.ui.theme.MaxContentWidth
 import com.application.bibleapp.ui.theme.ReadingStyle
 import com.application.bibleapp.ui.theme.Spacing
+import com.application.bibleapp.ui.theme.centeredContentWidth
+import com.application.bibleapp.ui.theme.isCompactHeight
 import com.application.bibleapp.ui.theme.scaledBy
 import com.application.bibleapp.viewmodel.BibleViewModel
 
@@ -41,21 +43,17 @@ fun HomeView(
     val currentBookName by bibleViewModel.currentBookName.collectAsState()
     val currentChapter by bibleViewModel.currentChapter.collectAsState()
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(Spacing.lg),
-        verticalArrangement = Arrangement.spacedBy(Spacing.lg)
-    ) {
+    val verseCard: @Composable (Modifier) -> Unit = { cardModifier ->
         verseOfTheDay?.let { verse ->
             VerseOfTheDayCard(
                 reference = verse.reference,
                 text = verse.text,
-                textScale = verseTextScale.multiplier
+                textScale = verseTextScale.multiplier,
+                modifier = cardModifier
             )
         }
-
+    }
+    val shortcuts: @Composable () -> Unit = {
         HomeShortcutRow(
             icon = Icons.Filled.MenuBook,
             title = "Continue Reading",
@@ -70,18 +68,50 @@ fun HomeView(
             onClick = onSearchClick
         )
     }
+
+    if (isCompactHeight()) {
+        // Landscape: verse card on the left, shortcuts on the right, so the whole card fits
+        // without scrolling. Each column stays well under MaxContentWidth.
+        Row(
+            modifier = modifier
+                .centeredContentWidth(maxWidth = MaxContentWidth * 1.4f)
+                .verticalScroll(rememberScrollState())
+                .padding(Spacing.lg),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.lg)
+        ) {
+            verseCard(Modifier.weight(1.6f))
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(Spacing.lg)
+            ) {
+                shortcuts()
+            }
+        }
+    } else {
+        Column(
+            modifier = modifier
+                .centeredContentWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(Spacing.lg),
+            verticalArrangement = Arrangement.spacedBy(Spacing.lg)
+        ) {
+            verseCard(Modifier.fillMaxWidth())
+            shortcuts()
+        }
+    }
 }
 
 @Composable
-private fun VerseOfTheDayCard(reference: String, text: String, textScale: Float) {
+private fun VerseOfTheDayCard(reference: String, text: String, textScale: Float, modifier: Modifier = Modifier) {
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier,
         shape = MaterialTheme.shapes.large,
         color = MaterialTheme.colorScheme.surface,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
     ) {
         Column(
-            modifier = Modifier.padding(Spacing.xl),
+            // Tighter in landscape, where the card has to fit the short screen without scrolling.
+            modifier = Modifier.padding(if (isCompactHeight()) Spacing.lg else Spacing.xl),
             verticalArrangement = Arrangement.spacedBy(Spacing.sm)
         ) {
             Text(
