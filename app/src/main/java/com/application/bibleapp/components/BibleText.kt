@@ -75,6 +75,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlin.math.abs
 
 /** Indentation per poem nesting level — enough to read as a poetry line, not just a wrapped paragraph. */
 private val POEM_INDENT_STEP = 20.sp
@@ -82,6 +83,10 @@ private val POEM_INDENT_STEP = 20.sp
 /** Generic marker for every footnote — the API's `caller` is usually just "auto-generate", so a
  *  fixed symbol avoids the complexity of sequential per-chapter lettering for a first pass. */
 private const val FOOTNOTE_MARKER = "†"
+
+/** Extra tap room on each side of a footnote marker — the glyph itself is only a few dp wide.
+ *  Horizontal only: the marker's line box already gives it a full line of height. */
+private val FOOTNOTE_TOUCH_SLOP = 12.dp
 
 /** Comfortable line length on wide/tablet screens — text doesn't stretch edge to edge.
  *  ~600dp keeps body copy (18sp serif, ~0.55em average glyph width) around 65-70
@@ -473,12 +478,12 @@ fun BibleText(
                                 detectTapGestures(
                                     onTap = { offset ->
                                         val layout = layoutResult ?: return@detectTapGestures
-                                        val charOffset = layout.getOffsetForPosition(offset)
-                                        val footnote = content.footnoteSpans.firstOrNull { charOffset in it.range }
+                                        val footnote = content.footnoteAt(layout, offset, FOOTNOTE_TOUCH_SLOP.toPx())
                                         if (footnote != null) {
                                             onFootnoteClick(footnote.noteId)
                                             return@detectTapGestures
                                         }
+                                        val charOffset = layout.getOffsetForPosition(offset)
                                         val noteGlyph = content.noteSpans.firstOrNull { charOffset in it.range }
                                         if (noteGlyph != null) {
                                             onNoteGlyphTap(noteGlyph.location)
@@ -682,6 +687,19 @@ private fun paragraphAnnotatedString(
 
     return ParagraphContent(text, verseSpans, footnoteSpans, noteSpans, backgroundRegions)
 }
+
+/** The footnote whose marker is under [position], or within [slopPx] beside it on the same line —
+ *  the nearest if two qualify. Hit-tested against the glyph's box, not the caret offset:
+ *  [TextLayoutResult.getOffsetForPosition] resolves a tap on the marker's right half to the
+ *  position *after* it, which misses the one-character [FootnoteSpan.range]. */
+private fun ParagraphContent.footnoteAt(layout: TextLayoutResult, position: Offset, slopPx: Float): FootnoteSpan? =
+    footnoteSpans
+        .map { span -> span to layout.getBoundingBox(span.range.first) }
+        .filter { (_, box) ->
+            position.y in box.top..box.bottom && position.x in (box.left - slopPx)..(box.right + slopPx)
+        }
+        .minByOrNull { (_, box) -> abs(position.x - box.center.x) }
+        ?.first
 
 private fun AnnotatedString.Builder.appendVerseNumber(verseNumber: Int?, style: SpanStyle) {
     withStyle(style) { append("${verseNumber ?: ""}") }
