@@ -33,7 +33,7 @@ import com.application.bibleapp.R
 import com.application.bibleapp.data.model.Note
 import com.application.bibleapp.ui.theme.Spacing
 import com.application.bibleapp.ui.theme.isCompactHeight
-import com.application.bibleapp.utils.formatDisplayDate
+import com.application.bibleapp.utils.displayDate
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.pluralStringResource
 
@@ -131,7 +131,7 @@ internal fun NotePreviewRow(note: Note, onClick: () -> Unit, maxLines: Int = 1, 
                 )
                 if (showDate) {
                     Text(
-                        text = formatDisplayDate(note.createdAt),
+                        text = displayDate(note.createdAt),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = Spacing.xs)

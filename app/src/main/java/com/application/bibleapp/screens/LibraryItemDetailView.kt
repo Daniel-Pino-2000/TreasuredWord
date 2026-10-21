@@ -37,7 +37,7 @@ import androidx.compose.ui.unit.dp
 import com.application.bibleapp.data.model.BibleBooks
 import com.application.bibleapp.navigation.Screen
 import com.application.bibleapp.ui.theme.Spacing
-import com.application.bibleapp.utils.formatDisplayDate
+import com.application.bibleapp.utils.displayDate
 import com.application.bibleapp.utils.verseRefsText
 import com.application.bibleapp.viewmodel.BibleViewModel
 import com.application.bibleapp.R
@@ -105,7 +105,7 @@ fun LibraryItemDetailView(
                             .background(Color(highlight.color).copy(alpha = 1f))
                     )
                     Text(
-                        text = stringResource(R.string.library_highlighted_on, formatDisplayDate(highlight.createdAt)),
+                        text = stringResource(R.string.library_highlighted_on, displayDate(highlight.createdAt)),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -151,7 +151,7 @@ fun LibraryItemDetailView(
                     style = MaterialTheme.typography.headlineSmall
                 )
                 Text(
-                    text = stringResource(R.string.library_noted_on, formatDisplayDate(note.createdAt)),
+                    text = stringResource(R.string.library_noted_on, displayDate(note.createdAt)),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = Spacing.xs)

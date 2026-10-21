@@ -21,6 +21,7 @@ import com.application.bibleapp.data.model.resolveDailyVerseUI
 import com.application.bibleapp.data.remote.HelloAoBibleDataSource
 import com.application.bibleapp.data.remote.OurMannaBibleDataSource
 import com.application.bibleapp.data.repository.BibleRepository
+import com.application.bibleapp.utils.AppLanguage
 
 /**
  * Runs at the user's chosen local time (see [DailyVerseScheduler]) and posts a
@@ -104,7 +105,8 @@ class DailyVerseNotificationWorker(
         val notification = NotificationCompat.Builder(applicationContext, DailyVerseScheduler.NOTIFICATION_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification_daily_verse)
             .setColor(BRAND_COLOR)
-            .setContentTitle(applicationContext.getString(R.string.daily_verse_notification_title))
+            // Workers run without an activity, so below Android 13 the app language has to be applied here.
+            .setContentTitle(AppLanguage.localizedContext(applicationContext).getString(R.string.daily_verse_notification_title))
             .setContentText(verse.reference)
             .setStyle(
                 NotificationCompat.BigTextStyle()

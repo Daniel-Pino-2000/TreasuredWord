@@ -34,6 +34,17 @@
             </intent-filter>
         </activity>
 
+        <!-- Below Android 13, AppCompat stores the in-app language choice itself and re-applies
+             it on launch (Android 13+ keeps it in the system instead and syncs it over once). -->
+        <service
+            android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"
+            android:enabled="false"
+            android:exported="false">
+            <meta-data
+                android:name="autoStoreLocales"
+                android:value="true" />
+        </service>
+
         <!-- exported="true": required for the system to be able to deliver these
              protected broadcasts, which only the OS itself is allowed to send. -->
         <receiver

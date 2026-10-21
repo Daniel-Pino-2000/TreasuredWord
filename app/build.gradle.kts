@@ -47,6 +47,12 @@ android {
     buildFeatures {
         compose = true
     }
+    androidResources {
+        // Lists the languages the app has resources for (plus res/resources.properties' default)
+        // in a generated locales_config.xml, so Android 13+ offers them in the system's
+        // per-app language settings.
+        generateLocaleConfig = true
+    }
 }
 
 dependencies {
@@ -92,6 +98,8 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
+    // Per-app language below Android 13 (AppCompatDelegate.setApplicationLocales) - see utils/AppLanguage.kt
+    implementation(libs.androidx.appcompat)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
