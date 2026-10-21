@@ -173,7 +173,7 @@ fun YouTopBar(onSettingsClick: () -> Unit) {
     )
 }
 
-/** The settings hub and every page under it — [title] is that page's Screen title. */
+/** Settings, and any future page under it (e.g. a language picker) — [title] is its Screen title. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsTopBar(title: String, onBackClick: () -> Unit) {

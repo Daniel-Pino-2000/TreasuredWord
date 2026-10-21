@@ -15,6 +15,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.outlined.AutoStories
+import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.BorderColor
 import androidx.compose.material.icons.outlined.EditNote
 import androidx.compose.material.icons.outlined.Person
@@ -54,7 +55,8 @@ fun YouView(
     modifier: Modifier = Modifier,
     onSignInClick: () -> Unit,
     onLibraryClick: (tab: String) -> Unit,
-    onContinueReadingClick: () -> Unit
+    onContinueReadingClick: () -> Unit,
+    onBookmarkClick: () -> Unit
 ) {
     val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
     val currentUser by authViewModel.currentUser.collectAsState()
@@ -64,6 +66,7 @@ fun YouView(
     val currentChapter by bibleViewModel.currentChapter.collectAsState()
     val highlights by bibleViewModel.libraryHighlights.collectAsState()
     val notes by bibleViewModel.libraryNotes.collectAsState()
+    val bookmarkLabel by bibleViewModel.bookmarkLabel.collectAsState()
 
     // For the library counts — and refreshes the sync line if a background sync finished while
     // this tab sat in the back stack.
@@ -100,6 +103,15 @@ fun YouView(
         }
 
         GroupedSection(title = "Your library") {
+            // Always listed, even with no bookmark yet, so the feature is discoverable from here.
+            GroupedRow(
+                title = "Bookmark",
+                icon = Icons.Outlined.BookmarkBorder,
+                subtitle = if (bookmarkLabel == null) "Tap the bookmark icon while reading to save your place" else null,
+                value = bookmarkLabel,
+                onClick = if (bookmarkLabel != null) onBookmarkClick else null
+            )
+            GroupedDivider()
             GroupedRow(
                 title = "Highlights",
                 icon = Icons.Outlined.BorderColor,
