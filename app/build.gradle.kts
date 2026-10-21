@@ -99,7 +99,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
     // Per-app language below Android 13 (AppCompatDelegate.setApplicationLocales) - see utils/AppLanguage.kt
-    implementation(libs.androidx.appcompat)
+    implementation("androidx.appcompat:appcompat:1.7.0")
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
