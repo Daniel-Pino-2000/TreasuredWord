@@ -42,18 +42,6 @@ sealed class Screen(val route: String, val title: String) {
         fun createRoute(type: String, localId: Long) = "library_item/$type/$localId"
     }
 
-    /** The settings hub — an index of the pages below, reached from the You tab's gear. */
+    /** Every setting on one grouped page, reached from the You tab's gear. */
     object Settings: Screen("settings", "Settings")
-    object SettingsAppearance: Screen("settings/appearance", "Appearance")
-    object SettingsNotifications: Screen("settings/notifications", "Notifications")
-    object SettingsSync: Screen("settings/sync", "Sync and backup")
-    object SettingsAccount: Screen("settings/account", "Account")
-    object SettingsAbout: Screen("settings/about", "About")
-
-    companion object {
-        /** Every page under the settings hub — they share one back-arrow top bar titled [title]. */
-        val settingsPages: List<Screen> by lazy {
-            listOf(SettingsAppearance, SettingsNotifications, SettingsSync, SettingsAccount, SettingsAbout)
-        }
-    }
 }

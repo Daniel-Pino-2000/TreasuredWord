@@ -242,7 +242,7 @@ class MainActivity : ComponentActivity() {
                     Screen.Library.route,
                     Screen.LibraryItemDetail.route,
                     Screen.Settings.route
-                ) + Screen.settingsPages.map { it.route }
+                )
                 val useRail = compactHeight && showNavigation
 
                 Row(modifier = Modifier.fillMaxSize()) {
@@ -323,14 +323,7 @@ class MainActivity : ComponentActivity() {
                                     }
                                     LibraryItemDetailTopBar(title) { navController.popBackStack() }
                                 }
-                                else -> {
-                                    val settingsPage = Screen.settingsPages.firstOrNull { it.route == currentRoute }
-                                    if (settingsPage != null) {
-                                        SettingsTopBar(settingsPage.title) { navController.popBackStack() }
-                                    } else {
-                                        TopBar()
-                                    }
-                                }
+                                else -> TopBar()
                             }
                         },
                         snackbarHost = { SnackbarHost(snackbarHostState) },

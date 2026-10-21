@@ -1,20 +1,12 @@
 package com.application.bibleapp.screens.settings
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.material.icons.outlined.CloudDone
+import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.Sync
 import androidx.compose.material.icons.outlined.Wifi
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -37,48 +29,14 @@ import com.application.bibleapp.components.GroupedDivider
 import com.application.bibleapp.components.GroupedRow
 import com.application.bibleapp.components.GroupedSection
 import com.application.bibleapp.components.GroupedSwitchRow
-import com.application.bibleapp.ui.theme.Spacing
 import com.application.bibleapp.utils.NetworkUtils
 import com.application.bibleapp.utils.formatRelativeSyncTime
-import com.application.bibleapp.viewmodel.AuthViewModel
 import com.application.bibleapp.viewmodel.BibleViewModel
 import com.application.bibleapp.worker.SyncScheduler
 
+/** Signed-in only — [SettingsView] leaves it out otherwise. */
 @Composable
-fun SyncSettingsView(
-    bibleViewModel: BibleViewModel,
-    authViewModel: AuthViewModel,
-    modifier: Modifier = Modifier,
-    onSignInClick: () -> Unit
-) {
-    val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
-
-    // Reflects a background periodic sync's timestamp even if this screen was already open
-    // when it completed, rather than only ever showing whatever was true on first composition.
-    LaunchedEffect(Unit) {
-        bibleViewModel.refreshSyncStatus()
-    }
-
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(Spacing.lg),
-        verticalArrangement = Arrangement.spacedBy(Spacing.xl)
-    ) {
-        if (!isLoggedIn) {
-            SignInPrompt(
-                text = "Sign in to sync your highlights, notes, and reading progress across devices.",
-                onSignInClick = onSignInClick
-            )
-        } else {
-            SyncControls(bibleViewModel)
-        }
-    }
-}
-
-@Composable
-private fun SyncControls(bibleViewModel: BibleViewModel) {
+internal fun SyncSettings(bibleViewModel: BibleViewModel) {
     val context = LocalContext.current
     val autoSyncEnabled by bibleViewModel.autoSyncEnabled.collectAsState()
     val wifiOnlySync by bibleViewModel.wifiOnlySync.collectAsState()
@@ -86,10 +44,16 @@ private fun SyncControls(bibleViewModel: BibleViewModel) {
     val lastSyncFailed by bibleViewModel.lastSyncFailed.collectAsState()
     val isSyncing by bibleViewModel.isSyncing.collectAsState()
 
+    // Reflects a background periodic sync's timestamp even if this screen was already open
+    // when it completed, rather than only ever showing whatever was true on first composition.
+    LaunchedEffect(Unit) {
+        bibleViewModel.refreshSyncStatus()
+    }
+
     // Checked on resume rather than via a live NetworkCallback — a connectivity flip while
     // this screen is sitting in the foreground is rare enough that "catches up next time you
-    // look at it" is good enough, and it's the same pattern the battery-optimization check on
-    // the Notifications page uses (Phase H).
+    // look at it" is good enough, and it's the same pattern the Daily verse section's
+    // battery-optimization check uses (Phase H).
     var isOffline by remember { mutableStateOf(!NetworkUtils.isOnline(context)) }
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
@@ -107,7 +71,7 @@ private fun SyncControls(bibleViewModel: BibleViewModel) {
         SyncScheduler.triggerImmediateSync(context)
     }
 
-    GroupedSection(title = "Status") {
+    GroupedSection(title = "Sync and backup") {
         when {
             isOffline -> GroupedRow(
                 title = "You're offline",
@@ -137,9 +101,7 @@ private fun SyncControls(bibleViewModel: BibleViewModel) {
                 }
             )
         }
-    }
-
-    GroupedSection(title = "Options") {
+        GroupedDivider()
         GroupedSwitchRow(
             title = "Auto-sync",
             subtitle = "Back up changes in the background",
@@ -161,20 +123,5 @@ private fun SyncControls(bibleViewModel: BibleViewModel) {
                 SyncScheduler.schedulePeriodicSync(context)
             }
         )
-    }
-}
-
-/** Shown in place of a page's controls when they only make sense signed in (Sync, Account). */
-@Composable
-internal fun SignInPrompt(text: String, onSignInClick: () -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Button(onClick = onSignInClick, modifier = Modifier.fillMaxWidth()) {
-            Text("Sign in")
-        }
     }
 }

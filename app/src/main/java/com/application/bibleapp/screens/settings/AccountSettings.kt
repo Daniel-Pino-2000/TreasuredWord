@@ -2,12 +2,9 @@ package com.application.bibleapp.screens.settings
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Login
 import androidx.compose.material.icons.automirrored.outlined.Logout
 import androidx.compose.material.icons.outlined.DeleteForever
 import androidx.compose.material.icons.outlined.Person
@@ -32,53 +29,45 @@ import com.application.bibleapp.viewmodel.AuthViewModel
 import com.application.bibleapp.viewmodel.BibleViewModel
 
 @Composable
-fun AccountSettingsView(
+internal fun AccountSettings(
     authViewModel: AuthViewModel,
     bibleViewModel: BibleViewModel,
-    modifier: Modifier = Modifier,
     onSignInClick: () -> Unit
 ) {
     val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
     val currentUser by authViewModel.currentUser.collectAsState()
     var showDeleteDialog by remember { mutableStateOf(false) }
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(Spacing.lg),
-        verticalArrangement = Arrangement.spacedBy(Spacing.xl)
-    ) {
+    GroupedSection(title = "Account") {
         if (!isLoggedIn) {
-            SignInPrompt(
-                text = "Sign in to sync your highlights, notes, and reading progress across devices.",
-                onSignInClick = onSignInClick
+            GroupedRow(
+                title = "Sign in",
+                subtitle = "Sync your highlights, notes, and reading progress across devices",
+                icon = Icons.AutoMirrored.Outlined.Login,
+                onClick = onSignInClick
             )
         } else {
-            GroupedSection(title = "Signed in as") {
-                GroupedRow(
-                    title = currentUser?.email ?: "Your account",
-                    icon = Icons.Outlined.Person
-                )
-            }
-
-            GroupedSection(title = null) {
-                GroupedRow(
-                    title = "Sign out",
-                    icon = Icons.AutoMirrored.Outlined.Logout,
-                    showChevron = false,
-                    onClick = { authViewModel.logout() }
-                )
-                GroupedDivider()
-                GroupedRow(
-                    title = "Delete account",
-                    titleColor = MaterialTheme.colorScheme.error,
-                    icon = Icons.Outlined.DeleteForever,
-                    iconTint = MaterialTheme.colorScheme.error,
-                    showChevron = false,
-                    onClick = { showDeleteDialog = true }
-                )
-            }
+            GroupedRow(
+                title = currentUser?.email ?: "Your account",
+                subtitle = "Signed in",
+                icon = Icons.Outlined.Person
+            )
+            GroupedDivider()
+            GroupedRow(
+                title = "Sign out",
+                icon = Icons.AutoMirrored.Outlined.Logout,
+                showChevron = false,
+                onClick = { authViewModel.logout() }
+            )
+            GroupedDivider()
+            GroupedRow(
+                title = "Delete account",
+                titleColor = MaterialTheme.colorScheme.error,
+                icon = Icons.Outlined.DeleteForever,
+                iconTint = MaterialTheme.colorScheme.error,
+                showChevron = false,
+                onClick = { showDeleteDialog = true }
+            )
         }
     }
 

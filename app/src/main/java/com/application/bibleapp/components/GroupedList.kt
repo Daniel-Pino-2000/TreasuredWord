@@ -11,14 +11,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.RadioButton
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -31,7 +33,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.application.bibleapp.ui.theme.Spacing
 
-// Grouped-list building blocks shared by the You tab and every Settings page, so both read as
+// Grouped-list building blocks shared by the You tab and the Settings page, so both read as
 // one design: related rows share a single framed panel (same surface + outline as Home's Verse of
 // the Day card), split by hairlines, each led by a gold icon in a small tinted square.
 
@@ -139,23 +141,45 @@ fun GroupedSwitchRow(
     }
 }
 
-/** One choice of a single-choice group (theme, text size). */
+/** A short single choice (2–4 options) picked right in the row, via a segmented bar under its
+ *  title. A longer list (e.g. languages) should be a [GroupedRow] with a [value] that opens its
+ *  own picker page instead — a segmented bar stops fitting a phone's width past ~4 options. */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun GroupedRadioRow(
+fun <T> GroupedChoiceRow(
     title: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    options: List<T>,
+    selected: T,
+    optionLabel: (T) -> String,
+    onSelect: (T) -> Unit,
+    modifier: Modifier = Modifier,
+    icon: ImageVector? = null
 ) {
-    GroupedRowLayout(
-        modifier = modifier.selectable(selected = selected, role = Role.RadioButton, onClick = onClick),
-        icon = null,
-        iconTint = MaterialTheme.colorScheme.primary,
-        title = title,
-        titleColor = MaterialTheme.colorScheme.onSurface,
-        subtitle = null
-    ) {
-        RadioButton(selected = selected, onClick = null)
+    Column(modifier = modifier.fillMaxWidth()) {
+        GroupedRowLayout(
+            modifier = Modifier,
+            icon = icon,
+            iconTint = MaterialTheme.colorScheme.primary,
+            title = title,
+            titleColor = MaterialTheme.colorScheme.onSurface,
+            subtitle = null
+        ) {}
+        SingleChoiceSegmentedButtonRow(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = Spacing.lg, end = Spacing.lg, bottom = Spacing.md)
+        ) {
+            options.forEachIndexed { index, option ->
+                SegmentedButton(
+                    selected = option == selected,
+                    onClick = { onSelect(option) },
+                    shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
+                    icon = {}
+                ) {
+                    Text(optionLabel(option), maxLines = 1)
+                }
+            }
+        }
     }
 }
 
