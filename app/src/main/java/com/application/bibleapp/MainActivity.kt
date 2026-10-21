@@ -70,6 +70,7 @@ import com.application.bibleapp.components.TopBar
 import com.application.bibleapp.components.VersePickerTopBar
 import com.application.bibleapp.components.VersionPickerTopBar
 import com.application.bibleapp.components.VerseSelectionToolbar
+import com.application.bibleapp.components.YouTopBar
 import com.application.bibleapp.navigation.Navigation
 import com.application.bibleapp.navigation.Screen
 import com.application.bibleapp.ui.theme.BibleAppTheme
@@ -239,8 +240,9 @@ class MainActivity : ComponentActivity() {
                     Screen.Login.route,
                     Screen.Register.route,
                     Screen.Library.route,
-                    Screen.LibraryItemDetail.route
-                )
+                    Screen.LibraryItemDetail.route,
+                    Screen.Settings.route
+                ) + Screen.settingsPages.map { it.route }
                 val useRail = compactHeight && showNavigation
 
                 Row(modifier = Modifier.fillMaxSize()) {
@@ -306,7 +308,8 @@ class MainActivity : ComponentActivity() {
                                 Screen.BookPicker.route -> BookPickerTopBar { navController.popBackStack() }
                                 Screen.VersePicker.route -> VersePickerTopBar { navController.popBackStack() }
                                 Screen.VersionPicker.route -> VersionPickerTopBar { navController.popBackStack() }
-                                Screen.More.route -> SettingsTopBar()
+                                Screen.You.route -> YouTopBar { navController.navigate(Screen.Settings.route) }
+                                Screen.Settings.route -> SettingsTopBar(Screen.Settings.title) { navController.popBackStack() }
                                 Screen.Login.route -> LoginTopBar { navController.popBackStack() }
                                 Screen.Register.route -> RegisterTopBar { navController.popBackStack() }
                                 Screen.Library.route -> LibraryTopBar { navController.popBackStack() }
@@ -320,7 +323,14 @@ class MainActivity : ComponentActivity() {
                                     }
                                     LibraryItemDetailTopBar(title) { navController.popBackStack() }
                                 }
-                                else -> TopBar()
+                                else -> {
+                                    val settingsPage = Screen.settingsPages.firstOrNull { it.route == currentRoute }
+                                    if (settingsPage != null) {
+                                        SettingsTopBar(settingsPage.title) { navController.popBackStack() }
+                                    } else {
+                                        TopBar()
+                                    }
+                                }
                             }
                         },
                         snackbarHost = { SnackbarHost(snackbarHostState) },

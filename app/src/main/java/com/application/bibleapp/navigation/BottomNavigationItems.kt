@@ -3,11 +3,11 @@ package com.application.bibleapp.navigation
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.Book
 import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Menu
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Search
 import com.application.bibleapp.navigation.BottomNavigationItem
 
@@ -31,10 +31,10 @@ val bottomNavigationItems = listOf(
         unselectedIcon = Icons.Outlined.Search,
     ),
     BottomNavigationItem(
-        Screen.More.title,
-        Screen.More.route,
-        selectedIcon = Icons.Filled.Menu,
-        unselectedIcon = Icons.Outlined.Menu,
+        Screen.You.title,
+        Screen.You.route,
+        selectedIcon = Icons.Filled.Person,
+        unselectedIcon = Icons.Outlined.Person,
     )
 
 )

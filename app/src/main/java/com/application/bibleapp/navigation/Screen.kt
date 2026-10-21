@@ -4,7 +4,9 @@ sealed class Screen(val route: String, val title: String) {
     object Home : Screen("home", "Home")
     object Bible : Screen("bible", "Bible")
     object Search : Screen("search", "Search")
-    object More : Screen("more", "More")
+    /** The personal tab: profile, continue reading, and the library. Settings sit one level
+     *  below it, behind the top bar's gear. */
+    object You : Screen("you", "You")
     object BookPicker: Screen("book_picker", "Select Book")
 
     /**
@@ -23,7 +25,7 @@ sealed class Screen(val route: String, val title: String) {
     object Register: Screen("register", "Create Account")
 
     /** [tab] is "highlights" or "notes" — which of Library's segmented tabs opens pre-selected,
-     *  so Settings' "My Library" rows (Phase G) can deep-link straight to either one. */
+     *  so the You tab's library rows can deep-link straight to either one. */
     object Library: Screen("library/{tab}", "Library") {
         const val TAB_HIGHLIGHTS = "highlights"
         const val TAB_NOTES = "notes"
@@ -38,5 +40,20 @@ sealed class Screen(val route: String, val title: String) {
         const val TYPE_HIGHLIGHT = "highlight"
         const val TYPE_NOTE = "note"
         fun createRoute(type: String, localId: Long) = "library_item/$type/$localId"
+    }
+
+    /** The settings hub — an index of the pages below, reached from the You tab's gear. */
+    object Settings: Screen("settings", "Settings")
+    object SettingsAppearance: Screen("settings/appearance", "Appearance")
+    object SettingsNotifications: Screen("settings/notifications", "Notifications")
+    object SettingsSync: Screen("settings/sync", "Sync and backup")
+    object SettingsAccount: Screen("settings/account", "Account")
+    object SettingsAbout: Screen("settings/about", "About")
+
+    companion object {
+        /** Every page under the settings hub — they share one back-arrow top bar titled [title]. */
+        val settingsPages: List<Screen> by lazy {
+            listOf(SettingsAppearance, SettingsNotifications, SettingsSync, SettingsAccount, SettingsAbout)
+        }
     }
 }

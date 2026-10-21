@@ -1,0 +1,205 @@
+package com.application.bibleapp.screens.settings
+
+import android.Manifest
+import android.app.ActivityManager
+import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Build
+import android.os.PowerManager
+import android.provider.Settings
+import android.text.format.DateFormat
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.BatteryAlert
+import androidx.compose.material.icons.outlined.NotificationsActive
+import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.rememberTimePickerState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import com.application.bibleapp.components.GroupedDivider
+import com.application.bibleapp.components.GroupedRow
+import com.application.bibleapp.components.GroupedSection
+import com.application.bibleapp.components.GroupedSwitchRow
+import com.application.bibleapp.ui.theme.Spacing
+import com.application.bibleapp.viewmodel.BibleViewModel
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun NotificationSettingsView(
+    bibleViewModel: BibleViewModel,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val notificationEnabled by bibleViewModel.notificationEnabled.collectAsState()
+    val notificationTime by bibleViewModel.notificationTime.collectAsState()
+    var showTimePicker by remember { mutableStateOf(false) }
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted -> if (granted) bibleViewModel.setNotificationEnabled(true) }
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(Spacing.lg),
+        verticalArrangement = Arrangement.spacedBy(Spacing.xl)
+    ) {
+        GroupedSection(title = "Daily verse") {
+            GroupedSwitchRow(
+                title = "Daily verse reminder",
+                subtitle = "A verse to start your day",
+                icon = Icons.Outlined.NotificationsActive,
+                checked = notificationEnabled,
+                onCheckedChange = { checked ->
+                    val needsPermission = checked &&
+                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                        ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
+                            PackageManager.PERMISSION_GRANTED
+                    if (needsPermission) {
+                        permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    } else {
+                        bibleViewModel.setNotificationEnabled(checked)
+                    }
+                }
+            )
+            if (notificationEnabled) {
+                GroupedDivider()
+                GroupedRow(
+                    title = "Time",
+                    icon = Icons.Outlined.Schedule,
+                    value = formatNotificationTime(
+                        notificationTime.hour, notificationTime.minute, DateFormat.is24HourFormat(context)
+                    ),
+                    onClick = { showTimePicker = true }
+                )
+            }
+        }
+
+        if (notificationEnabled) {
+            // Passive nudge, not an automatic system prompt: Play policy reserves the
+            // "ignore battery optimizations" dialog for apps whose core function needs
+            // guaranteed background execution, which a devotional reminder isn't. This
+            // just points the user at the OS's own App Info screen and lets them decide
+            // whether to grant it — re-checked on resume so it disappears on its own
+            // once they've turned it on there.
+            var batteryUnrestricted by remember { mutableStateOf(isIgnoringBatteryOptimizations(context)) }
+            // A separate, stricter OS-level toggle from battery optimization ("Restrict
+            // background usage" in App Info, or an OEM's own "sleeping apps" equivalent
+            // on top of it): when set, WorkManager's queued jobs simply don't run until
+            // the app is opened again, which is exactly "reminder works while the app is
+            // open, never fires once it's closed" — this app's actual reported symptom.
+            var backgroundRestricted by remember { mutableStateOf(isBackgroundRestricted(context)) }
+            val lifecycleOwner = LocalLifecycleOwner.current
+            DisposableEffect(lifecycleOwner) {
+                val observer = LifecycleEventObserver { _, event ->
+                    if (event == Lifecycle.Event.ON_RESUME) {
+                        batteryUnrestricted = isIgnoringBatteryOptimizations(context)
+                        backgroundRestricted = isBackgroundRestricted(context)
+                    }
+                }
+                lifecycleOwner.lifecycle.addObserver(observer)
+                onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+            }
+
+            if (backgroundRestricted) {
+                GroupedSection(title = "Needs attention") {
+                    GroupedRow(
+                        title = "Background activity is restricted",
+                        subtitle = "The reminder can only arrive while the app is open. " +
+                            "Turn this off in your phone's settings.",
+                        icon = Icons.Outlined.BatteryAlert,
+                        iconTint = MaterialTheme.colorScheme.error,
+                        onClick = { openAppSettings(context) }
+                    )
+                }
+            } else if (!batteryUnrestricted) {
+                GroupedSection(title = "Reminders arriving late?") {
+                    GroupedRow(
+                        title = "Check battery settings",
+                        subtitle = "Some phones hold back background apps.",
+                        icon = Icons.Outlined.BatteryAlert,
+                        onClick = { openAppSettings(context) }
+                    )
+                }
+            }
+        }
+    }
+
+    if (showTimePicker) {
+        val pickerState = rememberTimePickerState(
+            initialHour = notificationTime.hour,
+            initialMinute = notificationTime.minute,
+            is24Hour = DateFormat.is24HourFormat(context)
+        )
+        AlertDialog(
+            onDismissRequest = { showTimePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    bibleViewModel.setNotificationTime(pickerState.hour, pickerState.minute)
+                    showTimePicker = false
+                }) { Text("OK") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showTimePicker = false }) { Text("Cancel") }
+            },
+            text = { TimePicker(state = pickerState) }
+        )
+    }
+}
+
+/** "8:05 AM" when the device uses a 12-hour clock, "08:05" when it uses 24-hour —
+ *  matches [DateFormat.is24HourFormat] rather than hardcoding either format. */
+internal fun formatNotificationTime(hour: Int, minute: Int, is24Hour: Boolean): String {
+    if (is24Hour) return "%02d:%02d".format(hour, minute)
+    val displayHour = when (val h = hour % 12) { 0 -> 12; else -> h }
+    val period = if (hour < 12) "AM" else "PM"
+    return "%d:%02d %s".format(displayHour, minute, period)
+}
+
+private fun isIgnoringBatteryOptimizations(context: Context): Boolean {
+    val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+    return powerManager.isIgnoringBatteryOptimizations(context.packageName)
+}
+
+/** API 28+ only; below that OS-level background restriction doesn't exist as a user toggle. */
+private fun isBackgroundRestricted(context: Context): Boolean {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) return false
+    val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+    return activityManager.isBackgroundRestricted
+}
+
+/** Opens this app's own App Info screen (has a "Battery" entry on every OEM skin) rather
+ *  than requesting ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS directly — the user takes
+ *  the final step themselves instead of the app auto-prompting for the exemption. */
+private fun openAppSettings(context: Context) {
+    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+        data = Uri.fromParts("package", context.packageName, null)
+    }
+    context.startActivity(intent)
+}
