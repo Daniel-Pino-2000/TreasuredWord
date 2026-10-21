@@ -8,6 +8,7 @@ import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.outlined.BookmarkAdd
 import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.BookmarkRemove
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -161,9 +162,28 @@ fun VersionPickerTopBar(onBackClick: () -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsTopBar() {
+fun YouTopBar(onSettingsClick: () -> Unit) {
     TopBar(
-        title = { Text("Settings") }
+        title = { Text("You") },
+        actions = {
+            IconButton(onClick = onSettingsClick) {
+                Icon(Icons.Outlined.Settings, contentDescription = "Settings")
+            }
+        }
+    )
+}
+
+/** The settings hub and every page under it — [title] is that page's Screen title. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SettingsTopBar(title: String, onBackClick: () -> Unit) {
+    TopBar(
+        title = { Text(title) },
+        navigationIcon = {
+            IconButton(onClick = onBackClick) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+            }
+        }
     )
 }
 

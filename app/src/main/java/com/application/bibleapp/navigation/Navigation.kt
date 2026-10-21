@@ -19,9 +19,15 @@ import com.application.bibleapp.screens.LibraryView
 import com.application.bibleapp.screens.LoginView
 import com.application.bibleapp.screens.RegisterView
 import com.application.bibleapp.screens.SearchView
-import com.application.bibleapp.screens.SettingsView
 import com.application.bibleapp.screens.VersePickerView
 import com.application.bibleapp.screens.VersionPickerView
+import com.application.bibleapp.screens.YouView
+import com.application.bibleapp.screens.settings.AboutView
+import com.application.bibleapp.screens.settings.AccountSettingsView
+import com.application.bibleapp.screens.settings.AppearanceSettingsView
+import com.application.bibleapp.screens.settings.NotificationSettingsView
+import com.application.bibleapp.screens.settings.SettingsView
+import com.application.bibleapp.screens.settings.SyncSettingsView
 import com.application.bibleapp.ui.theme.centeredContentWidth
 import com.application.bibleapp.viewmodel.AuthViewModel
 import com.application.bibleapp.viewmodel.BibleViewModel
@@ -78,8 +84,8 @@ fun Navigation(
         }
 
 
-        composable(Screen.More.route) {
-            SettingsView(
+        composable(Screen.You.route) {
+            YouView(
                 bibleViewModel = bibleViewModel,
                 authViewModel = authViewModel,
                 modifier = screenModifier,
@@ -87,6 +93,45 @@ fun Navigation(
                 onLibraryClick = { tab -> navController.navigate(Screen.Library.createRoute(tab)) },
                 onContinueReadingClick = { navController.navigate(Screen.Bible.route) }
             )
+        }
+
+        composable(Screen.Settings.route) {
+            SettingsView(
+                bibleViewModel = bibleViewModel,
+                authViewModel = authViewModel,
+                modifier = screenModifier,
+                onPageClick = { route -> navController.navigate(route) }
+            )
+        }
+
+        composable(Screen.SettingsAppearance.route) {
+            AppearanceSettingsView(bibleViewModel, modifier = screenModifier)
+        }
+
+        composable(Screen.SettingsNotifications.route) {
+            NotificationSettingsView(bibleViewModel, modifier = screenModifier)
+        }
+
+        composable(Screen.SettingsSync.route) {
+            SyncSettingsView(
+                bibleViewModel = bibleViewModel,
+                authViewModel = authViewModel,
+                modifier = screenModifier,
+                onSignInClick = { navController.navigate(Screen.Login.route) }
+            )
+        }
+
+        composable(Screen.SettingsAccount.route) {
+            AccountSettingsView(
+                authViewModel = authViewModel,
+                bibleViewModel = bibleViewModel,
+                modifier = screenModifier,
+                onSignInClick = { navController.navigate(Screen.Login.route) }
+            )
+        }
+
+        composable(Screen.SettingsAbout.route) {
+            AboutView(modifier = screenModifier)
         }
 
         composable(
@@ -152,7 +197,9 @@ fun Navigation(
                     bibleViewModel.syncReadingProgressFromServer()
                     bibleViewModel.dismissSignInNudge()
                     SyncScheduler.triggerImmediateSync(context)
-                    navController.popBackStack(Screen.More.route, inclusive = false)
+                    // Back past Login too, to wherever sign-in started (You tab, a settings page,
+                    // the reader's nudge) rather than a fixed screen that may not be on the stack.
+                    navController.popBackStack(Screen.Login.route, inclusive = true)
                 },
                 onNavigateToLogin = { navController.popBackStack() }
             )
