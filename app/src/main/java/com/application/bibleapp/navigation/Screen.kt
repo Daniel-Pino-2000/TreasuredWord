@@ -47,4 +47,7 @@ sealed class Screen(val route: String, @StringRes val titleRes: Int) {
 
     /** Every setting on one grouped page, reached from the You tab's gear. */
     object Settings: Screen("settings", R.string.title_settings)
+
+    /** The app's UI language, one level below Settings. */
+    object LanguagePicker: Screen("settings/language", R.string.title_language)
 }

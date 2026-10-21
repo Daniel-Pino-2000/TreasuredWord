@@ -3,7 +3,7 @@ package com.application.bibleapp
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
-import androidx.activity.ComponentActivity
+import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -88,11 +88,16 @@ import com.application.bibleapp.utils.UiText
  *  chrome commits to hiding or showing — see the effect in [MainActivity.onCreate]. */
 private const val SCROLL_COMMIT_DP = 120
 
-class MainActivity : ComponentActivity() {
+/** An AppCompatActivity (not a plain ComponentActivity) so the in-app language applies below
+ *  Android 13 too — see [com.application.bibleapp.utils.AppLanguage]. */
+class MainActivity : AppCompatActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        // A language change recreates this activity; renames the channel in the system's
+        // notification settings to match.
+        createDailyVerseNotificationChannel(this)
 
         setContent {
             val bibleViewModel: BibleViewModel = viewModel(
@@ -244,7 +249,8 @@ class MainActivity : ComponentActivity() {
                     Screen.Register.route,
                     Screen.Library.route,
                     Screen.LibraryItemDetail.route,
-                    Screen.Settings.route
+                    Screen.Settings.route,
+                    Screen.LanguagePicker.route
                 )
                 val useRail = compactHeight && showNavigation
 
@@ -313,6 +319,7 @@ class MainActivity : ComponentActivity() {
                                 Screen.VersionPicker.route -> VersionPickerTopBar { navController.popBackStack() }
                                 Screen.You.route -> YouTopBar { navController.navigate(Screen.Settings.route) }
                                 Screen.Settings.route -> SettingsTopBar(stringResource(Screen.Settings.titleRes)) { navController.popBackStack() }
+                                Screen.LanguagePicker.route -> SettingsTopBar(stringResource(Screen.LanguagePicker.titleRes)) { navController.popBackStack() }
                                 Screen.Login.route -> LoginTopBar { navController.popBackStack() }
                                 Screen.Register.route -> RegisterTopBar { navController.popBackStack() }
                                 Screen.Library.route -> LibraryTopBar { navController.popBackStack() }

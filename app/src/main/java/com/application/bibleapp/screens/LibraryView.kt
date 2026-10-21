@@ -69,7 +69,7 @@ import com.application.bibleapp.data.model.Note
 import com.application.bibleapp.data.remote.VerseLocationDto
 import com.application.bibleapp.navigation.Screen
 import com.application.bibleapp.ui.theme.Spacing
-import com.application.bibleapp.utils.formatDisplayDate
+import com.application.bibleapp.utils.displayDate
 import com.application.bibleapp.utils.verseRefsText
 import com.application.bibleapp.viewmodel.BibleViewModel
 import com.application.bibleapp.viewmodel.VerseTextKey
@@ -331,7 +331,7 @@ private fun HighlightCard(highlight: Highlight, verseText: String, bookName: (In
                     )
                 }
                 Text(
-                    text = formatDisplayDate(highlight.createdAt),
+                    text = displayDate(highlight.createdAt),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = Spacing.xs)
@@ -400,7 +400,7 @@ private fun NoteCard(note: Note, verseText: String, bookName: (Int) -> String, o
                     modifier = Modifier.padding(top = Spacing.sm)
                 )
                 Text(
-                    text = formatDisplayDate(note.createdAt),
+                    text = displayDate(note.createdAt),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = Spacing.xs)
