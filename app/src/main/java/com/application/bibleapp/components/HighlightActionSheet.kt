@@ -28,6 +28,8 @@ import com.application.bibleapp.data.model.Highlight
 import com.application.bibleapp.data.model.Note
 import com.application.bibleapp.ui.theme.Spacing
 import com.application.bibleapp.ui.theme.isCompactHeight
+import com.application.bibleapp.R
+import androidx.compose.ui.res.stringResource
 
 /**
  * Shown when tapping (not long-pressing) an already-highlighted verse outside selection mode.
@@ -111,7 +113,7 @@ fun HighlightActionSheet(
                     modifier = Modifier.size(18.dp)
                 )
                 Text(
-                    text = "Remove highlight",
+                    text = stringResource(R.string.highlight_remove),
                     color = MaterialTheme.colorScheme.error,
                     modifier = Modifier.padding(start = Spacing.sm)
                 )

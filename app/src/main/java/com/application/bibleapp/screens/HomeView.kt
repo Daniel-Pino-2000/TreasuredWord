@@ -36,6 +36,8 @@ import com.application.bibleapp.ui.theme.centeredContentWidth
 import com.application.bibleapp.ui.theme.isCompactHeight
 import com.application.bibleapp.ui.theme.scaledBy
 import com.application.bibleapp.viewmodel.BibleViewModel
+import com.application.bibleapp.R
+import androidx.compose.ui.res.stringResource
 
 @Composable
 fun HomeView(
@@ -63,7 +65,7 @@ fun HomeView(
     val shortcuts: @Composable () -> Unit = {
         HomeShortcutRow(
             icon = Icons.Filled.MenuBook,
-            title = "Continue Reading",
+            title = stringResource(R.string.home_continue_reading),
             subtitle = "$currentBookName $currentChapter",
             onClick = onContinueReadingClick
         )
@@ -71,7 +73,7 @@ fun HomeView(
         bookmarkLabel?.let { label ->
             HomeShortcutRow(
                 icon = Icons.Filled.Bookmark,
-                title = "Bookmark",
+                title = stringResource(R.string.label_bookmark),
                 subtitle = label,
                 onClick = onBookmarkClick
             )
@@ -79,8 +81,8 @@ fun HomeView(
 
         HomeShortcutRow(
             icon = Icons.Filled.Search,
-            title = "Search the Bible",
-            subtitle = "Find a verse by keyword",
+            title = stringResource(R.string.home_search_bible),
+            subtitle = stringResource(R.string.home_search_bible_subtitle),
             onClick = onSearchClick
         )
     }
@@ -148,7 +150,7 @@ private fun VerseOfTheDayCard(verse: DailyVerseUI, textScale: Float, modifier: M
             verticalArrangement = Arrangement.spacedBy(Spacing.sm)
         ) {
             Text(
-                text = "Verse of the Day",
+                text = stringResource(R.string.verse_of_the_day),
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.primary
             )

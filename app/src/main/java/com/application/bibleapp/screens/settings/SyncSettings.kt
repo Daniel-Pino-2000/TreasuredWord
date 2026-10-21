@@ -30,9 +30,11 @@ import com.application.bibleapp.components.GroupedRow
 import com.application.bibleapp.components.GroupedSection
 import com.application.bibleapp.components.GroupedSwitchRow
 import com.application.bibleapp.utils.NetworkUtils
-import com.application.bibleapp.utils.formatRelativeSyncTime
+import com.application.bibleapp.utils.formatSyncedStatus
 import com.application.bibleapp.viewmodel.BibleViewModel
 import com.application.bibleapp.worker.SyncScheduler
+import com.application.bibleapp.R
+import androidx.compose.ui.res.stringResource
 
 /** Signed-in only — [SettingsView] leaves it out otherwise. */
 @Composable
@@ -71,40 +73,40 @@ internal fun SyncSettings(bibleViewModel: BibleViewModel) {
         SyncScheduler.triggerImmediateSync(context)
     }
 
-    GroupedSection(title = "Sync and backup") {
+    GroupedSection(title = stringResource(R.string.settings_section_sync)) {
         when {
             isOffline -> GroupedRow(
-                title = "You're offline",
-                subtitle = "Highlights and notes will sync once you're back online.",
+                title = stringResource(R.string.sync_offline_title),
+                subtitle = stringResource(R.string.sync_offline_subtitle),
                 icon = Icons.Outlined.CloudOff
             )
             lastSyncFailed && !isSyncing -> GroupedRow(
-                title = "Sync failed",
+                title = stringResource(R.string.sync_failed),
                 titleColor = MaterialTheme.colorScheme.error,
                 icon = Icons.Outlined.ErrorOutline,
                 iconTint = MaterialTheme.colorScheme.error,
-                trailing = { TextButton(onClick = syncNow) { Text("Retry") } }
+                trailing = { TextButton(onClick = syncNow) { Text(stringResource(R.string.action_retry)) } }
             )
             else -> GroupedRow(
                 title = when {
-                    isSyncing -> "Syncing…"
-                    lastSyncCompletedAt != null -> "Synced " + formatRelativeSyncTime(lastSyncCompletedAt!!)
-                    else -> "Not synced yet"
+                    isSyncing -> stringResource(R.string.sync_status_syncing)
+                    lastSyncCompletedAt != null -> formatSyncedStatus(context.resources, lastSyncCompletedAt!!)
+                    else -> stringResource(R.string.sync_status_not_synced)
                 },
                 icon = Icons.Outlined.CloudDone,
                 trailing = {
                     if (isSyncing) {
                         CircularProgressIndicator(modifier = Modifier.size(20.dp))
                     } else {
-                        TextButton(onClick = syncNow) { Text("Sync now") }
+                        TextButton(onClick = syncNow) { Text(stringResource(R.string.sync_now)) }
                     }
                 }
             )
         }
         GroupedDivider()
         GroupedSwitchRow(
-            title = "Auto-sync",
-            subtitle = "Back up changes in the background",
+            title = stringResource(R.string.sync_auto),
+            subtitle = stringResource(R.string.sync_auto_subtitle),
             icon = Icons.Outlined.Sync,
             checked = autoSyncEnabled,
             onCheckedChange = { enabled ->
@@ -114,8 +116,8 @@ internal fun SyncSettings(bibleViewModel: BibleViewModel) {
         )
         GroupedDivider()
         GroupedSwitchRow(
-            title = "Wi-Fi only",
-            subtitle = "Don't use mobile data to sync",
+            title = stringResource(R.string.sync_wifi_only),
+            subtitle = stringResource(R.string.sync_wifi_only_subtitle),
             icon = Icons.Outlined.Wifi,
             checked = wifiOnlySync,
             onCheckedChange = { enabled ->

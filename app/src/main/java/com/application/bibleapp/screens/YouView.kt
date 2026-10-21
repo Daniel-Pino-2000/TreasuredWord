@@ -38,9 +38,12 @@ import com.application.bibleapp.components.GroupedRow
 import com.application.bibleapp.components.GroupedSection
 import com.application.bibleapp.navigation.Screen
 import com.application.bibleapp.ui.theme.Spacing
-import com.application.bibleapp.utils.formatRelativeSyncTime
+import com.application.bibleapp.utils.formatSyncedStatus
 import com.application.bibleapp.viewmodel.AuthViewModel
 import com.application.bibleapp.viewmodel.BibleViewModel
+import com.application.bibleapp.R
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalContext
 
 /**
  * The personal tab: who you are, where you left off, and what you've saved. Configuration lives
@@ -87,9 +90,10 @@ fun YouView(
                 ProfileRow(
                     email = currentUser?.email,
                     status = when {
-                        isSyncing -> "Syncing…"
-                        lastSyncCompletedAt != null -> "Synced " + formatRelativeSyncTime(lastSyncCompletedAt!!)
-                        else -> "Not synced yet"
+                        isSyncing -> stringResource(R.string.sync_status_syncing)
+                        lastSyncCompletedAt != null ->
+                            formatSyncedStatus(LocalContext.current.resources, lastSyncCompletedAt!!)
+                        else -> stringResource(R.string.sync_status_not_synced)
                     }
                 )
             } else {
@@ -102,25 +106,25 @@ fun YouView(
             )
         }
 
-        GroupedSection(title = "Your library") {
+        GroupedSection(title = stringResource(R.string.you_section_library)) {
             // Always listed, even with no bookmark yet, so the feature is discoverable from here.
             GroupedRow(
-                title = "Bookmark",
+                title = stringResource(R.string.label_bookmark),
                 icon = Icons.Outlined.BookmarkBorder,
-                subtitle = if (bookmarkLabel == null) "Tap the bookmark icon while reading to save your place" else null,
+                subtitle = if (bookmarkLabel == null) stringResource(R.string.you_bookmark_hint) else null,
                 value = bookmarkLabel,
                 onClick = if (bookmarkLabel != null) onBookmarkClick else null
             )
             GroupedDivider()
             GroupedRow(
-                title = "Highlights",
+                title = stringResource(R.string.label_highlights),
                 icon = Icons.Outlined.BorderColor,
                 value = highlights.size.toString(),
                 onClick = { onLibraryClick(Screen.Library.TAB_HIGHLIGHTS) }
             )
             GroupedDivider()
             GroupedRow(
-                title = "Notes",
+                title = stringResource(R.string.label_notes),
                 icon = Icons.Outlined.EditNote,
                 value = notes.size.toString(),
                 onClick = { onLibraryClick(Screen.Library.TAB_NOTES) }
@@ -154,7 +158,7 @@ private fun ProfileRow(email: String?, status: String) {
             }
         }
         Column {
-            Text(text = email ?: "Signed in", style = MaterialTheme.typography.titleMedium)
+            Text(text = email ?: stringResource(R.string.label_signed_in), style = MaterialTheme.typography.titleMedium)
             Text(
                 text = status,
                 style = MaterialTheme.typography.bodyMedium,
@@ -190,16 +194,16 @@ private fun SignedOutProfile(onSignInClick: () -> Unit) {
                 }
             }
             Column {
-                Text(text = "Not signed in", style = MaterialTheme.typography.titleMedium)
+                Text(text = stringResource(R.string.you_not_signed_in), style = MaterialTheme.typography.titleMedium)
                 Text(
-                    text = "Sign in to keep your highlights, notes, and reading progress on every device.",
+                    text = stringResource(R.string.you_sign_in_prompt),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
         Button(onClick = onSignInClick, modifier = Modifier.fillMaxWidth()) {
-            Text("Sign in")
+            Text(stringResource(R.string.action_sign_in))
         }
     }
 }
@@ -217,7 +221,7 @@ private fun ContinueReadingRow(reference: String, onClick: () -> Unit) {
         GroupedIcon(Icons.Outlined.AutoStories)
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = "Continue reading",
+                text = stringResource(R.string.you_continue_reading),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

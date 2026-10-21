@@ -8,6 +8,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
+import androidx.annotation.StringRes
+import com.application.bibleapp.R
 
 /**
  * Dedicated text styles for the reading surface (verse body, headings, footnotes) —
@@ -88,10 +90,10 @@ object ReadingStyle {
  *  constant names still line up with their own labels (and [DEFAULT] — the fallback both here and
  *  in [com.application.bibleapp.data.repository.BibleRepository.loadVerseTextScale] — is still the
  *  option actually labeled "Default", not the smallest one). */
-enum class VerseTextScale(val multiplier: Float, val label: String) {
-    SMALL(1f, "Small"),
-    DEFAULT(1.15f, "Default"),
-    LARGE(1.3f, "Large");
+enum class VerseTextScale(val multiplier: Float, @StringRes val labelRes: Int) {
+    SMALL(1f, R.string.text_size_small),
+    DEFAULT(1.15f, R.string.text_size_default),
+    LARGE(1.3f, R.string.text_size_large);
 
     companion object {
         fun fromMultiplier(value: Float): VerseTextScale =

@@ -19,6 +19,8 @@ import androidx.compose.ui.text.style.TextAlign
 import com.application.bibleapp.ui.theme.Spacing
 import com.application.bibleapp.viewmodel.AuthViewModel
 import com.application.bibleapp.viewmodel.BibleViewModel
+import com.application.bibleapp.R
+import androidx.compose.ui.res.stringResource
 
 /**
  * Every setting on one grouped page — at this size (~10 settings) a single screen is quicker to
@@ -51,7 +53,7 @@ fun SettingsView(
         AccountSettings(authViewModel, bibleViewModel, onSignInClick)
 
         Text(
-            text = "TreasuredWord · Version ${appVersionName(context)}",
+            text = stringResource(R.string.settings_app_version, stringResource(R.string.app_name), appVersionName(context)),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,

@@ -37,6 +37,8 @@ import com.application.bibleapp.data.model.chapterCount
 import com.application.bibleapp.data.model.oldTestamentBooks
 import com.application.bibleapp.ui.theme.Spacing
 import com.application.bibleapp.viewmodel.BibleViewModel
+import com.application.bibleapp.R
+import androidx.compose.ui.res.stringResource
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -70,7 +72,7 @@ fun BookPickerView(
             onSearchClick = {
                 bibleViewModel.onSearchButtonClick()
             },
-            placeholder = "Search Book"
+            placeholder = stringResource(R.string.search_book_placeholder)
         )
 
         val filteredBooks = BibleBooks.allBooks.filter {

@@ -27,6 +27,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.application.bibleapp.ui.theme.Spacing
+import com.application.bibleapp.R
+import androidx.compose.ui.res.stringResource
 
 /** Quick, subtle — reads as a nudge in the direction of travel, not a distraction. */
 private const val CHAPTER_LABEL_ANIM_MS = 180
@@ -81,7 +83,7 @@ fun ChapterNavBar(
                 contentColor = MaterialTheme.colorScheme.primary
             )
         ) {
-            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Previous Chapter")
+            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.chapter_previous))
         }
 
         AnimatedContent(
@@ -119,7 +121,7 @@ fun ChapterNavBar(
                 contentColor = MaterialTheme.colorScheme.primary
             )
         ) {
-            Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Next Chapter")
+            Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = stringResource(R.string.chapter_next))
         }
     }
 }

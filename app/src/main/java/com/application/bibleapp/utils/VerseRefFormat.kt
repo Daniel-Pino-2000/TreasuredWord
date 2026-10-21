@@ -1,14 +1,23 @@
 package com.application.bibleapp.utils
 
 import com.application.bibleapp.data.remote.VerseLocationDto
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
+import com.application.bibleapp.R
 
 /**
  * Human-readable reference for a highlight/note's verse list, e.g. "Juan 3:16", a contiguous
  * "Juan 3:16-18", or "Juan 3:16 +2 more" for a scattered selection — verse order in storage
  * isn't guaranteed (server/docs/api_contract.md decision 12), so this always sorts by
  * (bookId, chapter, verse) first, matching Bible order rather than insertion order.
+ * [withMore] adds the app-language "+2 more" to a reference, given how many verses it leaves out.
  */
-fun formatVerseRefs(verses: List<VerseLocationDto>, bookName: (Int) -> String): String {
+fun formatVerseRefs(
+    verses: List<VerseLocationDto>,
+    bookName: (Int) -> String,
+    withMore: (ref: String, moreCount: Int) -> String
+): String {
     if (verses.isEmpty()) return ""
     val sorted = verses.sortedWith(compareBy({ it.bookId }, { it.chapter }, { it.verse }))
     val first = sorted.first()
@@ -21,7 +30,17 @@ fun formatVerseRefs(verses: List<VerseLocationDto>, bookName: (Int) -> String): 
     return if (isContiguousRun) {
         "$ref-${sorted.last().verse}"
     } else {
-        "$ref +${sorted.size - 1} more"
+        withMore(ref, sorted.size - 1)
+    }
+}
+
+/** [formatVerseRefs] with the app language's "+2 more". */
+@Composable
+fun verseRefsText(verses: List<VerseLocationDto>, bookName: (Int) -> String): String {
+    LocalConfiguration.current // recompose on a language change, like stringResource
+    val resources = LocalContext.current.resources
+    return formatVerseRefs(verses, bookName) { ref, moreCount ->
+        resources.getQuantityString(R.plurals.verse_ref_with_more, moreCount, ref, moreCount)
     }
 }
 

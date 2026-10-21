@@ -32,6 +32,9 @@ import androidx.compose.ui.unit.dp
 import com.application.bibleapp.ui.theme.Spacing
 import com.application.bibleapp.utils.isValidEmailFormat
 import com.application.bibleapp.viewmodel.AuthViewModel
+import com.application.bibleapp.R
+import androidx.compose.ui.res.stringResource
+import com.application.bibleapp.utils.asString
 
 @Composable
 fun LoginView(
@@ -56,9 +59,9 @@ fun LoginView(
             .padding(Spacing.lg),
         verticalArrangement = Arrangement.spacedBy(Spacing.md)
     ) {
-        Text("Sign in", style = MaterialTheme.typography.headlineSmall)
+        Text(stringResource(R.string.action_sign_in), style = MaterialTheme.typography.headlineSmall)
         Text(
-            text = "Sign in to sync your highlights, notes, and reading progress across devices.",
+            text = stringResource(R.string.login_subtitle),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -69,10 +72,10 @@ fun LoginView(
                 email = it
                 authViewModel.clearError()
             },
-            label = { Text("Email") },
+            label = { Text(stringResource(R.string.auth_email)) },
             isError = !emailFormatValid,
             supportingText = if (!emailFormatValid) {
-                { Text("Enter a valid email address") }
+                { Text(stringResource(R.string.auth_invalid_email)) }
             } else null,
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
@@ -85,14 +88,14 @@ fun LoginView(
                 password = it
                 authViewModel.clearError()
             },
-            label = { Text("Password") },
+            label = { Text(stringResource(R.string.auth_password)) },
             singleLine = true,
             visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             trailingIcon = {
                 IconButton(onClick = { passwordVisible = !passwordVisible }) {
                     Icon(
                         imageVector = if (passwordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
-                        contentDescription = if (passwordVisible) "Hide password" else "Show password"
+                        contentDescription = stringResource(if (passwordVisible) R.string.auth_hide_password else R.string.auth_show_password)
                     )
                 }
             },
@@ -105,7 +108,7 @@ fun LoginView(
         // ambiguity (server/docs/api_contract.md decision 4).
         errorMessage?.let {
             Text(
-                text = it,
+                text = it.asString(),
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodySmall
             )
@@ -123,12 +126,12 @@ fun LoginView(
                     color = MaterialTheme.colorScheme.onPrimary
                 )
             } else {
-                Text("Sign in")
+                Text(stringResource(R.string.action_sign_in))
             }
         }
 
         TextButton(onClick = onNavigateToRegister, modifier = Modifier.fillMaxWidth()) {
-            Text("Don't have an account? Create one")
+            Text(stringResource(R.string.login_no_account))
         }
     }
 }

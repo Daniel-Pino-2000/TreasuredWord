@@ -70,13 +70,15 @@ import com.application.bibleapp.data.remote.VerseLocationDto
 import com.application.bibleapp.navigation.Screen
 import com.application.bibleapp.ui.theme.Spacing
 import com.application.bibleapp.utils.formatDisplayDate
-import com.application.bibleapp.utils.formatVerseRefs
+import com.application.bibleapp.utils.verseRefsText
 import com.application.bibleapp.viewmodel.BibleViewModel
 import com.application.bibleapp.viewmodel.VerseTextKey
+import androidx.annotation.StringRes
+import androidx.compose.ui.res.stringResource
 
-private enum class LibraryTab(val label: String, val routeArg: String) {
-    HIGHLIGHTS("Highlights", Screen.Library.TAB_HIGHLIGHTS),
-    NOTES("Notes", Screen.Library.TAB_NOTES);
+private enum class LibraryTab(@StringRes val labelRes: Int, val routeArg: String) {
+    HIGHLIGHTS(R.string.label_highlights, Screen.Library.TAB_HIGHLIGHTS),
+    NOTES(R.string.label_notes, Screen.Library.TAB_NOTES);
 
     companion object {
         fun fromRouteArg(arg: String?): LibraryTab = entries.firstOrNull { it.routeArg == arg } ?: HIGHLIGHTS
@@ -124,7 +126,7 @@ fun LibraryView(
                     onClick = { selectedTab = tab },
                     shape = SegmentedButtonDefaults.itemShape(index = index, count = LibraryTab.entries.size)
                 ) {
-                    Text(tab.label)
+                    Text(stringResource(tab.labelRes))
                 }
             }
         }
@@ -132,7 +134,13 @@ fun LibraryView(
         OutlinedTextField(
             value = query,
             onValueChange = { query = it },
-            placeholder = { Text(if (selectedTab == LibraryTab.HIGHLIGHTS) "Search by book" else "Search notes") },
+            placeholder = {
+                Text(
+                    stringResource(
+                        if (selectedTab == LibraryTab.HIGHLIGHTS) R.string.library_search_by_book else R.string.library_search_notes
+                    )
+                )
+            },
             singleLine = true,
             leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
             shape = MaterialTheme.shapes.large,
@@ -161,9 +169,9 @@ fun LibraryView(
                 if (filtered.isEmpty()) {
                     EmptyLibraryState(
                         message = when {
-                            highlights.isEmpty() -> "No highlights yet — long-press a verse while reading to add one."
-                            query.isBlank() -> "No highlights in the selected colors."
-                            else -> "No highlights match \"$query\"."
+                            highlights.isEmpty() -> stringResource(R.string.library_empty_highlights)
+                            query.isBlank() -> stringResource(R.string.library_no_highlights_in_colors)
+                            else -> stringResource(R.string.library_no_highlights_match, query)
                         },
                         icon = rememberVectorPainter(Icons.Outlined.AutoStories)
                     )
@@ -198,8 +206,8 @@ fun LibraryView(
                 }
                 if (filtered.isEmpty()) {
                     EmptyLibraryState(
-                        message = if (notes.isEmpty()) "No notes yet — select a verse while reading to add one."
-                        else "No notes match \"$query\".",
+                        message = if (notes.isEmpty()) stringResource(R.string.library_empty_notes)
+                        else stringResource(R.string.library_no_notes_match, query),
                         icon = painterResource(R.drawable.ic_stylus_note_outline)
                     )
                 } else {
@@ -253,7 +261,7 @@ private fun SwipeToDeleteRow(onDelete: () -> Unit, content: @Composable () -> Un
                 horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(Icons.Filled.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.onError)
+                Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.action_delete), tint = MaterialTheme.colorScheme.onError)
             }
         }
     ) {
@@ -309,7 +317,7 @@ private fun HighlightCard(highlight: Highlight, verseText: String, bookName: (In
                     .padding(Spacing.md)
             ) {
                 Text(
-                    text = formatVerseRefs(highlight.verses, bookName),
+                    text = verseRefsText(highlight.verses, bookName),
                     style = MaterialTheme.typography.bodyLarge
                 )
                 if (verseText.isNotBlank()) {
@@ -367,7 +375,7 @@ private fun NoteCard(note: Note, verseText: String, bookName: (Int) -> String, o
             }
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = formatVerseRefs(note.verses, bookName),
+                    text = verseRefsText(note.verses, bookName),
                     style = MaterialTheme.typography.bodyLarge
                 )
                 if (verseText.isNotBlank()) {
@@ -412,13 +420,14 @@ private fun HighlightColorFilterRow(selected: List<Int>, onToggle: (Int) -> Unit
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = "Color",
+            text = stringResource(R.string.library_color_filter),
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         HighlightColors.palette.forEachIndexed { index, swatch ->
             val argb = swatch.toHighlightArgb()
-            val name = SWATCH_NAMES.getOrElse(index) { "Highlight color" }
+            val name = stringResource(SWATCH_NAMES.getOrElse(index) { R.string.highlight_color_generic })
+            val filterLabel = stringResource(R.string.library_show_color_highlights, name)
             val isSelected = argb in selected
             Box(
                 modifier = Modifier
@@ -430,7 +439,7 @@ private fun HighlightColorFilterRow(selected: List<Int>, onToggle: (Int) -> Unit
                         else Modifier
                     )
                     .toggleable(value = isSelected, role = Role.Checkbox, onValueChange = { onToggle(argb) })
-                    .semantics { contentDescription = "Show $name highlights" },
+                    .semantics { contentDescription = filterLabel },
                 contentAlignment = Alignment.Center
             ) {
                 if (isSelected) {

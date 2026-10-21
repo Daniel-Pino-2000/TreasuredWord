@@ -19,23 +19,27 @@ import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
+import com.application.bibleapp.R
+import com.application.bibleapp.utils.UiText
 
 /**
  * A specific, user-facing failure reason for an auth action, extracted from the backend's
  * ErrorResponse.code (server/docs/api_contract.md) rather than left as a raw HTTP status —
  * so the UI can show "Invalid email or password" instead of "request failed: 401".
  */
-sealed class AuthError(val displayMessage: String) {
-    data object InvalidCredentials : AuthError("Invalid email or password")
-    data object EmailAlreadyRegistered : AuthError("An account with that email already exists")
+sealed class AuthError(val displayMessage: UiText) {
+    data object InvalidCredentials : AuthError(UiText.Res(R.string.auth_error_invalid_credentials))
+    data object EmailAlreadyRegistered : AuthError(UiText.Res(R.string.auth_error_email_registered))
+    // The server's own field messages are English-only; the client validates the same rules
+    // first (utils/AuthValidation.kt), so these are rarely seen.
     data class Validation(val fieldErrors: Map<String, String>) :
-        AuthError(fieldErrors.values.firstOrNull() ?: "Invalid input")
-    data class Unknown(val text: String) : AuthError(text)
+        AuthError(fieldErrors.values.firstOrNull()?.let { UiText.Raw(it) } ?: UiText.Res(R.string.auth_error_invalid_input))
+    data class Unknown(val text: UiText) : AuthError(text)
 }
 
 /** Wraps an [AuthError] as a throwable so it can travel through [Result.failure] and be
  *  pattern-matched back out in the UI layer via [AuthException.error]. */
-class AuthException(val error: AuthError) : Exception(error.displayMessage)
+class AuthException(val error: AuthError) : Exception(error.toString())
 
 /**
  * Handles register/login/logout and the current account, talking to the backend's Auth and
@@ -113,7 +117,10 @@ class AuthRepository(context: Context) {
             "INVALID_CREDENTIALS" -> AuthError.InvalidCredentials
             "EMAIL_ALREADY_REGISTERED" -> AuthError.EmailAlreadyRegistered
             "VALIDATION_ERROR" -> AuthError.Validation(error.fieldErrors ?: emptyMap())
-            else -> AuthError.Unknown(error?.message ?: "Something went wrong (${response.status.value})")
+            else -> AuthError.Unknown(
+                error?.message?.let { UiText.Raw(it) }
+                    ?: UiText.Res(R.string.auth_error_status, response.status.value)
+            )
         }
         return AuthException(authError)
     }

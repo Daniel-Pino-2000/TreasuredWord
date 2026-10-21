@@ -4,6 +4,8 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
+import android.content.res.Resources
+import com.application.bibleapp.R
 
 /**
  * ISO-8601 UTC instant, matching server/docs/api_contract.md's timestamp convention. This app's
@@ -29,19 +31,22 @@ fun formatDisplayDate(iso: String): String {
     return runCatching { display.format(parser.parse(iso)!!) }.getOrDefault(iso)
 }
 
-/** A stored ISO-8601 UTC timestamp (see [isoTimestampNow]) as a short relative phrase — "just
- *  now", "5m ago", "3h ago" — for Settings' sync status line (Phase G). Falls back to
+/** A stored ISO-8601 UTC timestamp (see [isoTimestampNow]) as the sync status line — "Synced just
+ *  now", "Synced 5m ago", "Synced 3h ago" — for Settings and the You tab (Phase G). Falls back to
  *  [formatDisplayDate] past a day, since "37h ago" reads worse than a calendar date. */
-fun formatRelativeSyncTime(iso: String): String {
+fun formatSyncedStatus(resources: Resources, iso: String): String {
     val parser = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).apply {
         timeZone = TimeZone.getTimeZone("UTC")
     }
-    val parsed = runCatching { parser.parse(iso) }.getOrNull() ?: return formatDisplayDate(iso)
-    val minutes = (Date().time - parsed.time) / 60000
+    val parsed = runCatching { parser.parse(iso) }.getOrNull()
+        ?: return resources.getString(R.string.sync_status_on_date, formatDisplayDate(iso))
+    val minutes = ((Date().time - parsed.time) / 60000).toInt()
     return when {
-        minutes < 1 -> "just now"
-        minutes < 60 -> "${minutes}m ago"
-        minutes < 24 * 60 -> "${minutes / 60}h ago"
-        else -> formatDisplayDate(iso)
+        minutes < 1 -> resources.getString(R.string.sync_status_just_now)
+        minutes < 60 -> resources.getQuantityString(R.plurals.sync_status_minutes_ago, minutes, minutes)
+        minutes < 24 * 60 -> (minutes / 60).let { hours ->
+            resources.getQuantityString(R.plurals.sync_status_hours_ago, hours, hours)
+        }
+        else -> resources.getString(R.string.sync_status_on_date, formatDisplayDate(iso))
     }
 }

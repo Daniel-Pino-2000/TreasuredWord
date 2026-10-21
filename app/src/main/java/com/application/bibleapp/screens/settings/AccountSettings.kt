@@ -27,6 +27,10 @@ import com.application.bibleapp.components.GroupedSection
 import com.application.bibleapp.ui.theme.Spacing
 import com.application.bibleapp.viewmodel.AuthViewModel
 import com.application.bibleapp.viewmodel.BibleViewModel
+import com.application.bibleapp.R
+import androidx.compose.ui.res.stringResource
+import com.application.bibleapp.utils.UiText
+import com.application.bibleapp.utils.asString
 
 @Composable
 internal fun AccountSettings(
@@ -38,30 +42,30 @@ internal fun AccountSettings(
     val currentUser by authViewModel.currentUser.collectAsState()
     var showDeleteDialog by remember { mutableStateOf(false) }
 
-    GroupedSection(title = "Account") {
+    GroupedSection(title = stringResource(R.string.settings_section_account)) {
         if (!isLoggedIn) {
             GroupedRow(
-                title = "Sign in",
-                subtitle = "Sync your highlights, notes, and reading progress across devices",
+                title = stringResource(R.string.action_sign_in),
+                subtitle = stringResource(R.string.account_sign_in_subtitle),
                 icon = Icons.AutoMirrored.Outlined.Login,
                 onClick = onSignInClick
             )
         } else {
             GroupedRow(
-                title = currentUser?.email ?: "Your account",
-                subtitle = "Signed in",
+                title = currentUser?.email ?: stringResource(R.string.account_your_account),
+                subtitle = stringResource(R.string.label_signed_in),
                 icon = Icons.Outlined.Person
             )
             GroupedDivider()
             GroupedRow(
-                title = "Sign out",
+                title = stringResource(R.string.account_sign_out),
                 icon = Icons.AutoMirrored.Outlined.Logout,
                 showChevron = false,
                 onClick = { authViewModel.logout() }
             )
             GroupedDivider()
             GroupedRow(
-                title = "Delete account",
+                title = stringResource(R.string.account_delete),
                 titleColor = MaterialTheme.colorScheme.error,
                 icon = Icons.Outlined.DeleteForever,
                 iconTint = MaterialTheme.colorScheme.error,
@@ -101,35 +105,31 @@ internal fun AccountSettings(
 @Composable
 private fun DeleteAccountDialog(
     onDismiss: () -> Unit,
-    onConfirm: (password: String, onError: (String) -> Unit) -> Unit
+    onConfirm: (password: String, onError: (UiText) -> Unit) -> Unit
 ) {
     var password by remember { mutableStateOf("") }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var errorMessage by remember { mutableStateOf<UiText?>(null) }
     var isSubmitting by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Delete account?") },
+        title = { Text(stringResource(R.string.account_delete_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                Text(
-                    "This permanently deletes your account and everything backed up to it. " +
-                        "This can't be undone. Highlights and notes already on this device " +
-                        "will stay here, but won't sync anywhere else."
-                )
+                Text(stringResource(R.string.account_delete_message))
                 OutlinedTextField(
                     value = password,
                     onValueChange = {
                         password = it
                         errorMessage = null
                     },
-                    label = { Text("Confirm your password") },
+                    label = { Text(stringResource(R.string.account_confirm_password)) },
                     singleLine = true,
                     visualTransformation = PasswordVisualTransformation(),
                     modifier = Modifier.fillMaxWidth()
                 )
                 errorMessage?.let {
-                    Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                    Text(it.asString(), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
                 }
             }
         },
@@ -144,11 +144,11 @@ private fun DeleteAccountDialog(
                     }
                 }
             ) {
-                Text("Delete", color = MaterialTheme.colorScheme.error)
+                Text(stringResource(R.string.action_delete), color = MaterialTheme.colorScheme.error)
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
         }
     )
 }

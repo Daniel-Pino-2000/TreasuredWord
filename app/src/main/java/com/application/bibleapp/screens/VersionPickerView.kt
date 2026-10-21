@@ -21,6 +21,9 @@ import com.application.bibleapp.data.model.DownloadedVersionInfo
 import com.application.bibleapp.data.model.SelectedBibleVersion
 import com.application.bibleapp.ui.theme.Spacing
 import com.application.bibleapp.viewmodel.BibleViewModel
+import com.application.bibleapp.R
+import androidx.compose.ui.res.stringResource
+import com.application.bibleapp.utils.asString
 
 /**
  * Renders each translation with one of three states, purely from what
@@ -66,19 +69,19 @@ fun VersionPickerView(
     versionPendingDelete?.let { version ->
         AlertDialog(
             onDismissRequest = { versionPendingDelete = null },
-            title = { Text("Remove ${version.displayName}?") },
-            text = { Text("This deletes the downloaded text from your device. You can download it again later.") },
+            title = { Text(stringResource(R.string.version_remove_title, version.displayName)) },
+            text = { Text(stringResource(R.string.version_remove_message)) },
             confirmButton = {
                 TextButton(onClick = {
                     bibleViewModel.deleteVersion(version.id)
                     versionPendingDelete = null
                 }) {
-                    Text("Remove", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.action_remove), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { versionPendingDelete = null }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.action_cancel))
                 }
             }
         )
@@ -96,9 +99,9 @@ fun VersionPickerView(
         if (error != null) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("Failed to load versions", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.version_load_failed), color = MaterialTheme.colorScheme.error)
                     Text(
-                        text = "Tap to retry",
+                        text = stringResource(R.string.tap_to_retry),
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier
                             .padding(top = Spacing.sm)
@@ -112,9 +115,9 @@ fun VersionPickerView(
         if (versions.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("No versions available")
+                    Text(stringResource(R.string.version_none_available))
                     Text(
-                        text = "Tap to retry",
+                        text = stringResource(R.string.tap_to_retry),
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier
                             .padding(top = Spacing.sm)
@@ -131,7 +134,7 @@ fun VersionPickerView(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = Spacing.lg, vertical = Spacing.sm),
-            placeholder = { Text("Search by language or version") },
+            placeholder = { Text(stringResource(R.string.version_search_placeholder)) },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
             singleLine = true
         )
@@ -139,9 +142,9 @@ fun VersionPickerView(
         // Download error banner
         downloadError?.let {
             Column(modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.sm)) {
-                Text(text = "Download failed: $it", color = MaterialTheme.colorScheme.error)
+                Text(text = stringResource(R.string.version_download_failed, it.asString()), color = MaterialTheme.colorScheme.error)
                 Text(
-                    text = "Tap a version below to retry",
+                    text = stringResource(R.string.version_download_retry_hint),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -151,7 +154,7 @@ fun VersionPickerView(
         // Download info banner (success, but some content wasn't available for this version)
         downloadInfo?.let {
             Text(
-                text = it,
+                text = it.asString(),
                 color = MaterialTheme.colorScheme.primary,
                 style = MaterialTheme.typography.labelSmall,
                 modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.sm)
@@ -160,7 +163,7 @@ fun VersionPickerView(
 
         if (groupedVersions.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("No versions match \"$searchQuery\"")
+                Text(stringResource(R.string.version_no_match, searchQuery))
             }
             return@Column
         }
@@ -185,7 +188,7 @@ fun VersionPickerView(
                 stickyHeader {
                     Surface(color = MaterialTheme.colorScheme.surfaceVariant) {
                         Text(
-                            text = "Downloaded",
+                            text = stringResource(R.string.version_section_downloaded),
                             style = MaterialTheme.typography.titleMedium,
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -285,7 +288,7 @@ private fun VersionRow(
                 }
                 if (needsUpdate) {
                     Text(
-                        text = "Update available — tap ⟳ for footnotes and formatting",
+                        text = stringResource(R.string.version_update_available),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -295,7 +298,7 @@ private fun VersionRow(
                     // change the row's height (it used to disappear on selection, which
                     // made the list visibly jump).
                     Text(
-                        text = if (isSelected) "Active version" else "Downloaded",
+                        text = stringResource(if (isSelected) R.string.version_status_active else R.string.version_status_downloaded),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -307,7 +310,7 @@ private fun VersionRow(
                         modifier = Modifier.fillMaxWidth()
                     )
                     Text(
-                        text = "${(downloadProgress * 100).toInt()}%",
+                        text = stringResource(R.string.version_download_progress, (downloadProgress * 100).toInt()),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -321,7 +324,7 @@ private fun VersionRow(
                 ) {
                     Icon(
                         Icons.Default.Refresh,
-                        contentDescription = "Re-download ${version.displayName} for footnotes and formatting added since it was downloaded",
+                        contentDescription = stringResource(R.string.version_redownload, version.displayName),
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }
@@ -334,7 +337,7 @@ private fun VersionRow(
                 ) {
                     Icon(
                         Icons.Default.Delete,
-                        contentDescription = "Remove downloaded ${version.displayName}",
+                        contentDescription = stringResource(R.string.version_remove_downloaded, version.displayName),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -347,7 +350,7 @@ private fun VersionRow(
                 ) {
                     Icon(
                         Icons.Default.Download,
-                        contentDescription = "Download ${version.displayName}",
+                        contentDescription = stringResource(R.string.version_download, version.displayName),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -360,7 +363,7 @@ private fun VersionRow(
                 Box(modifier = Modifier.size(48.dp), contentAlignment = Alignment.Center) {
                     Icon(
                         Icons.Default.CheckCircle,
-                        contentDescription = "Currently active",
+                        contentDescription = stringResource(R.string.version_currently_active),
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }

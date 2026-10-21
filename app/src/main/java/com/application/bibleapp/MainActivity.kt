@@ -81,6 +81,8 @@ import com.application.bibleapp.viewmodel.AuthViewModel
 import com.application.bibleapp.viewmodel.AuthViewModelFactory
 import com.application.bibleapp.viewmodel.BibleViewModel
 import com.application.bibleapp.viewmodel.BibleViewModelFactory
+import androidx.compose.ui.res.stringResource
+import com.application.bibleapp.utils.UiText
 
 /** Cumulative scroll distance, in one sustained direction, required before the reading
  *  chrome commits to hiding or showing — see the effect in [MainActivity.onCreate]. */
@@ -216,11 +218,12 @@ class MainActivity : ComponentActivity() {
                 // Deletion-undo and copy-confirmation messages from BibleViewModel. collectLatest
                 // so a newer message replaces (dismisses) one still showing instead of queueing.
                 val snackbarHostState = remember { SnackbarHostState() }
+                // Resolved when shown, not when emitted, so a message follows the current language.
                 LaunchedEffect(Unit) {
                     bibleViewModel.userMessages.collectLatest { message ->
                         val result = snackbarHostState.showSnackbar(
-                            message = message.text,
-                            actionLabel = if (message.undo != null) "Undo" else null,
+                            message = message.text.resolve(resources),
+                            actionLabel = if (message.undo != null) resources.getString(R.string.action_undo) else null,
                             // Long when there's an Undo — Short's ~4s is too little time to reach it.
                             duration = if (message.undo != null) SnackbarDuration.Long else SnackbarDuration.Short
                         )
@@ -309,7 +312,7 @@ class MainActivity : ComponentActivity() {
                                 Screen.VersePicker.route -> VersePickerTopBar { navController.popBackStack() }
                                 Screen.VersionPicker.route -> VersionPickerTopBar { navController.popBackStack() }
                                 Screen.You.route -> YouTopBar { navController.navigate(Screen.Settings.route) }
-                                Screen.Settings.route -> SettingsTopBar(Screen.Settings.title) { navController.popBackStack() }
+                                Screen.Settings.route -> SettingsTopBar(stringResource(Screen.Settings.titleRes)) { navController.popBackStack() }
                                 Screen.Login.route -> LoginTopBar { navController.popBackStack() }
                                 Screen.Register.route -> RegisterTopBar { navController.popBackStack() }
                                 Screen.Library.route -> LibraryTopBar { navController.popBackStack() }
@@ -317,9 +320,9 @@ class MainActivity : ComponentActivity() {
                                     val title = if (currentBackStackEntry?.arguments?.getString("type") ==
                                         Screen.LibraryItemDetail.TYPE_NOTE
                                     ) {
-                                        "Note"
+                                        stringResource(R.string.title_note)
                                     } else {
-                                        "Highlight"
+                                        stringResource(R.string.title_highlight)
                                     }
                                     LibraryItemDetailTopBar(title) { navController.popBackStack() }
                                 }
@@ -363,7 +366,7 @@ class MainActivity : ComponentActivity() {
                                         clipboardManager.setText(AnnotatedString(text))
                                         // Android 13+ shows its own clipboard confirmation; don't double it.
                                         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-                                            bibleViewModel.showMessage("Copied to clipboard")
+                                            bibleViewModel.showMessage(UiText.Res(R.string.message_copied))
                                         }
                                     }
                                 },

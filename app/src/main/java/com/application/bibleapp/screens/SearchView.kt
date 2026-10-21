@@ -33,6 +33,8 @@ import com.application.bibleapp.data.model.VerseUI
 import com.application.bibleapp.ui.theme.Spacing
 import com.application.bibleapp.viewmodel.BibleViewModel
 import androidx.compose.foundation.lazy.items
+import com.application.bibleapp.R
+import androidx.compose.ui.res.stringResource
 
 /** A handful of common topics to search for before the user has typed anything themselves. */
 private val SUGGESTED_SEARCHES = listOf("love", "faith", "hope", "grace", "peace", "joy", "forgiveness")
@@ -58,7 +60,7 @@ fun SearchView(
             onTextChange = { bibleViewModel.onSearchQueryChange(it) },
             onSearchClick = { bibleViewModel.onSearchButtonClick() },
             modifier = Modifier.fillMaxWidth(),
-            placeholder = "Search Bible Verse"
+            placeholder = stringResource(R.string.search_verse_placeholder)
         )
 
         when {
@@ -93,13 +95,13 @@ private fun SearchEmptyState(onSuggestionClick: (String) -> Unit) {
             tint = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Text(
-            text = "Search for a verse, keyword, or reference",
+            text = stringResource(R.string.search_empty_prompt),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = Spacing.lg, bottom = Spacing.xl)
         )
         Text(
-            text = "Try one of these",
+            text = stringResource(R.string.search_suggestions_title),
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.padding(bottom = Spacing.sm)
@@ -138,7 +140,7 @@ private fun SearchNoResultsState(query: String) {
             tint = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Text(
-            text = "No results for \"$query\"",
+            text = stringResource(R.string.search_no_results, query),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = Spacing.lg)

@@ -38,8 +38,10 @@ import com.application.bibleapp.data.model.BibleBooks
 import com.application.bibleapp.navigation.Screen
 import com.application.bibleapp.ui.theme.Spacing
 import com.application.bibleapp.utils.formatDisplayDate
-import com.application.bibleapp.utils.formatVerseRefs
+import com.application.bibleapp.utils.verseRefsText
 import com.application.bibleapp.viewmodel.BibleViewModel
+import com.application.bibleapp.R
+import androidx.compose.ui.res.stringResource
 
 /**
  * One Library card's full detail — the card preview truncates the verse text to keep the list
@@ -88,7 +90,7 @@ fun LibraryItemDetailView(
             highlight != null -> {
                 val verseText = resolveVerseText(highlight.versionId, highlight.verses, verseTextByKey)
                 Text(
-                    text = formatVerseRefs(highlight.verses, bookName),
+                    text = verseRefsText(highlight.verses, bookName),
                     style = MaterialTheme.typography.headlineSmall
                 )
                 Row(
@@ -103,7 +105,7 @@ fun LibraryItemDetailView(
                             .background(Color(highlight.color).copy(alpha = 1f))
                     )
                     Text(
-                        text = "Highlighted " + formatDisplayDate(highlight.createdAt),
+                        text = stringResource(R.string.library_highlighted_on, formatDisplayDate(highlight.createdAt)),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -135,7 +137,7 @@ fun LibraryItemDetailView(
                         modifier = Modifier.size(18.dp)
                     )
                     Text(
-                        text = "Remove highlight",
+                        text = stringResource(R.string.highlight_remove),
                         color = MaterialTheme.colorScheme.error,
                         modifier = Modifier.padding(start = Spacing.sm)
                     )
@@ -145,11 +147,11 @@ fun LibraryItemDetailView(
             note != null -> {
                 val verseText = resolveVerseText(note.versionId, note.verses, verseTextByKey)
                 Text(
-                    text = formatVerseRefs(note.verses, bookName),
+                    text = verseRefsText(note.verses, bookName),
                     style = MaterialTheme.typography.headlineSmall
                 )
                 Text(
-                    text = "Noted " + formatDisplayDate(note.createdAt),
+                    text = stringResource(R.string.library_noted_on, formatDisplayDate(note.createdAt)),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = Spacing.xs)
@@ -192,7 +194,7 @@ fun LibraryItemDetailView(
                         modifier = Modifier.size(18.dp)
                     )
                     Text(
-                        text = "Delete note",
+                        text = stringResource(R.string.library_delete_note),
                         color = MaterialTheme.colorScheme.error,
                         modifier = Modifier.padding(start = Spacing.sm)
                     )
@@ -203,7 +205,7 @@ fun LibraryItemDetailView(
                 // Deleted from another screen (or mid-sync) between opening the list and this
                 // detail screen — nothing to show, so say so rather than rendering an empty page.
                 Text(
-                    text = "This item is no longer available.",
+                    text = stringResource(R.string.library_item_unavailable),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -215,7 +217,7 @@ fun LibraryItemDetailView(
 @Composable
 private fun OpenInBibleButton(onClick: () -> Unit) {
     FilledTonalButton(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
-        Text("Open in Bible")
+        Text(stringResource(R.string.library_open_in_bible))
         Icon(
             imageVector = Icons.AutoMirrored.Filled.ArrowForward,
             contentDescription = null,

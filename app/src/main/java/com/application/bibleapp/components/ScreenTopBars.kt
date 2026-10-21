@@ -24,6 +24,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.application.bibleapp.ui.theme.Spacing
+import com.application.bibleapp.R
+import androidx.compose.ui.res.stringResource
 
 /** [versionLabel] is the active translation's short code (e.g. "KJV", "ESV") — see
  *  [com.application.bibleapp.viewmodel.BibleViewModel.currentVersionLabel].
@@ -40,7 +42,7 @@ fun BibleTopBar(
     chapterNav: (@Composable () -> Unit)? = null
 ) {
     TopBar(
-        title = chapterNav ?: { Text("Bible") },
+        title = chapterNav ?: { Text(stringResource(R.string.title_bible)) },
         actions = {
             BookmarkButton(bookmark)
             // Without the end margin the pill sits flush against the screen edge.
@@ -72,12 +74,16 @@ private fun BookmarkButton(state: BookmarkButtonState) {
         IconButton(onClick = { if (state.label == null) state.onBookmarkHere() else menuOpen = true }) {
             Icon(
                 imageVector = if (state.isInThisChapter) Icons.Filled.Bookmark else Icons.Outlined.BookmarkBorder,
-                contentDescription = if (state.label == null) "Bookmark this place" else "Bookmark: ${state.label}"
+                contentDescription = if (state.label == null) {
+                    stringResource(R.string.bookmark_this_place)
+                } else {
+                    stringResource(R.string.bookmark_content_description, state.label)
+                }
             )
         }
         DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
             DropdownMenuItem(
-                text = { Text("Go to ${state.label}") },
+                text = { Text(stringResource(R.string.bookmark_go_to, state.label.orEmpty())) },
                 leadingIcon = { Icon(Icons.Filled.Bookmark, contentDescription = null) },
                 onClick = {
                     menuOpen = false
@@ -85,7 +91,7 @@ private fun BookmarkButton(state: BookmarkButtonState) {
                 }
             )
             DropdownMenuItem(
-                text = { Text("Move bookmark here") },
+                text = { Text(stringResource(R.string.bookmark_move_here)) },
                 leadingIcon = { Icon(Icons.Outlined.BookmarkAdd, contentDescription = null) },
                 onClick = {
                     menuOpen = false
@@ -93,7 +99,7 @@ private fun BookmarkButton(state: BookmarkButtonState) {
                 }
             )
             DropdownMenuItem(
-                text = { Text("Remove bookmark") },
+                text = { Text(stringResource(R.string.bookmark_remove)) },
                 leadingIcon = { Icon(Icons.Outlined.BookmarkRemove, contentDescription = null) },
                 onClick = {
                     menuOpen = false
@@ -108,7 +114,7 @@ private fun BookmarkButton(state: BookmarkButtonState) {
 @Composable
 fun HomeTopBar() {
     TopBar(
-        title = { Text("Home") }
+        title = { Text(stringResource(R.string.title_home)) }
     )
 }
 
@@ -117,7 +123,7 @@ fun HomeTopBar() {
 @Composable
 fun SearchTopBar() {
     TopBar(
-        title = { Text("Search") }
+        title = { Text(stringResource(R.string.title_search)) }
     )
 }
 
@@ -125,10 +131,10 @@ fun SearchTopBar() {
 @Composable
 fun BookPickerTopBar(onBackClick: () -> Unit) {
     TopBar(
-        title = { Text("Select Book") },
+        title = { Text(stringResource(R.string.title_select_book)) },
         navigationIcon = {
             IconButton(onClick = onBackClick) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
             }
         }
     )
@@ -138,10 +144,10 @@ fun BookPickerTopBar(onBackClick: () -> Unit) {
 @Composable
 fun VersePickerTopBar(onBackClick: () -> Unit) {
     TopBar(
-        title = { Text("Select Verse") },
+        title = { Text(stringResource(R.string.title_select_verse)) },
         navigationIcon = {
             IconButton(onClick = onBackClick) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
             }
         }
     )
@@ -151,10 +157,10 @@ fun VersePickerTopBar(onBackClick: () -> Unit) {
 @Composable
 fun VersionPickerTopBar(onBackClick: () -> Unit) {
     TopBar(
-        title = { Text("Select Version") },
+        title = { Text(stringResource(R.string.title_select_version)) },
         navigationIcon = {
             IconButton(onClick = onBackClick) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
             }
         }
     )
@@ -164,16 +170,17 @@ fun VersionPickerTopBar(onBackClick: () -> Unit) {
 @Composable
 fun YouTopBar(onSettingsClick: () -> Unit) {
     TopBar(
-        title = { Text("You") },
+        title = { Text(stringResource(R.string.title_you)) },
         actions = {
             IconButton(onClick = onSettingsClick) {
-                Icon(Icons.Outlined.Settings, contentDescription = "Settings")
+                Icon(Icons.Outlined.Settings, contentDescription = stringResource(R.string.title_settings))
             }
         }
     )
 }
 
-/** Settings, and any future page under it (e.g. a language picker) — [title] is its Screen title. */
+/** Settings, and any future page under it (e.g. a language picker) — [title] is its Screen title,
+ *  already resolved (see [com.application.bibleapp.navigation.Screen.titleRes]). */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsTopBar(title: String, onBackClick: () -> Unit) {
@@ -181,7 +188,7 @@ fun SettingsTopBar(title: String, onBackClick: () -> Unit) {
         title = { Text(title) },
         navigationIcon = {
             IconButton(onClick = onBackClick) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
             }
         }
     )
@@ -191,10 +198,10 @@ fun SettingsTopBar(title: String, onBackClick: () -> Unit) {
 @Composable
 fun LoginTopBar(onBackClick: () -> Unit) {
     TopBar(
-        title = { Text("Sign In") },
+        title = { Text(stringResource(R.string.title_sign_in)) },
         navigationIcon = {
             IconButton(onClick = onBackClick) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
             }
         }
     )
@@ -204,10 +211,10 @@ fun LoginTopBar(onBackClick: () -> Unit) {
 @Composable
 fun RegisterTopBar(onBackClick: () -> Unit) {
     TopBar(
-        title = { Text("Create Account") },
+        title = { Text(stringResource(R.string.title_create_account)) },
         navigationIcon = {
             IconButton(onClick = onBackClick) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
             }
         }
     )
@@ -217,10 +224,10 @@ fun RegisterTopBar(onBackClick: () -> Unit) {
 @Composable
 fun LibraryTopBar(onBackClick: () -> Unit) {
     TopBar(
-        title = { Text("Library") },
+        title = { Text(stringResource(R.string.title_library)) },
         navigationIcon = {
             IconButton(onClick = onBackClick) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
             }
         }
     )
@@ -233,7 +240,7 @@ fun LibraryItemDetailTopBar(title: String, onBackClick: () -> Unit) {
         title = { Text(title) },
         navigationIcon = {
             IconButton(onClick = onBackClick) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
             }
         }
     )

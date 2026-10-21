@@ -16,6 +16,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.application.bibleapp.ui.theme.Spacing
+import com.application.bibleapp.R
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 
 @Composable
 fun SearchBar(
@@ -23,7 +26,7 @@ fun SearchBar(
     onTextChange: (String) -> Unit,
     onSearchClick: () -> Unit,
     modifier: Modifier = Modifier,
-    placeholder: String = "Search"
+    placeholder: String = stringResource(R.string.title_search)
 ) {
     OutlinedTextField(
         value = searchText,
@@ -31,13 +34,13 @@ fun SearchBar(
         modifier = modifier
             .fillMaxWidth()
             .padding(Spacing.sm),
-        label = { Text(placeholder) },
+        label = { Text(placeholder, maxLines = 1, overflow = TextOverflow.Ellipsis) },
         leadingIcon = {
-            Icon(Icons.Default.Search, contentDescription = "Search Icon")
+            Icon(Icons.Default.Search, contentDescription = stringResource(R.string.search_icon))
         },
         trailingIcon = {
             IconButton(onClick = { onSearchClick() }) {
-                Icon(Icons.Default.ArrowForward, contentDescription = "Search")
+                Icon(Icons.Default.ArrowForward, contentDescription = stringResource(R.string.title_search))
             }
         },
         singleLine = true,

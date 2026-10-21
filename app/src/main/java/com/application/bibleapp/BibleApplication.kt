@@ -39,10 +39,10 @@ class BibleApplication : Application() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val channel = NotificationChannel(
             DailyVerseScheduler.NOTIFICATION_CHANNEL_ID,
-            "Daily Verse",
+            getString(R.string.notification_channel_daily_verse),
             NotificationManager.IMPORTANCE_DEFAULT
         ).apply {
-            description = "Your daily Bible verse reminder"
+            description = getString(R.string.notification_channel_daily_verse_description)
         }
         getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
     }

@@ -32,6 +32,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.application.bibleapp.ui.theme.Spacing
+import androidx.compose.ui.text.style.TextOverflow
 
 // Grouped-list building blocks shared by the You tab and the Settings page, so both read as
 // one design: related rows share a single framed panel (same surface + outline as Home's Verse of
@@ -150,7 +151,7 @@ fun <T> GroupedChoiceRow(
     title: String,
     options: List<T>,
     selected: T,
-    optionLabel: (T) -> String,
+    optionLabel: @Composable (T) -> String,
     onSelect: (T) -> Unit,
     modifier: Modifier = Modifier,
     icon: ImageVector? = null
@@ -176,7 +177,7 @@ fun <T> GroupedChoiceRow(
                     shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
                     icon = {}
                 ) {
-                    Text(optionLabel(option), maxLines = 1)
+                    Text(optionLabel(option), maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
             }
         }

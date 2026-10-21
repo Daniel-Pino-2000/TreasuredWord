@@ -24,6 +24,11 @@ android {
     }
 
     buildTypes {
+        debug {
+            // en-XA (accented, longer text) and ar-XB (mirrored, right-to-left) show up in the
+            // device's language list, to catch hard-coded strings and labels that don't fit.
+            isPseudoLocalesEnabled = true
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(

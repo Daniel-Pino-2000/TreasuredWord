@@ -51,6 +51,8 @@ import com.application.bibleapp.data.remote.VerseLocationDto
 import kotlinx.coroutines.launch
 import com.application.bibleapp.ui.theme.Spacing
 import com.application.bibleapp.ui.theme.isCompactHeight
+import com.application.bibleapp.R
+import androidx.compose.ui.res.stringResource
 
 /**
  * Create/edit sheet for a note — reached either from [VerseSelectionToolbar]'s Note action (a
@@ -107,14 +109,14 @@ fun NoteEditorSheet(
     if (showDiscardDialog) {
         AlertDialog(
             onDismissRequest = { showDiscardDialog = false },
-            title = { Text("Discard note?") },
-            text = { Text("Your changes to this note haven't been saved.") },
+            title = { Text(stringResource(R.string.note_discard_title)) },
+            text = { Text(stringResource(R.string.note_discard_message)) },
             confirmButton = {
                 TextButton(onClick = {
                     showDiscardDialog = false
                     onDismiss()
                 }) {
-                    Text("Discard", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.note_discard), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
@@ -124,7 +126,7 @@ fun NoteEditorSheet(
                     // reaching onDismissRequest — bring it back up for "keep editing".
                     scope.launch { sheetState.show() }
                 }) {
-                    Text("Keep editing")
+                    Text(stringResource(R.string.note_keep_editing))
                 }
             }
         )
@@ -147,7 +149,7 @@ fun NoteEditorSheet(
                         {
                             Icon(
                                 imageVector = Icons.Filled.Close,
-                                contentDescription = "Remove verse",
+                                contentDescription = stringResource(R.string.note_remove_verse),
                                 modifier = Modifier.size(InputChipDefaults.IconSize)
                             )
                         }
@@ -160,11 +162,11 @@ fun NoteEditorSheet(
     val actions: @Composable () -> Unit = {
         if (isEditingExisting) {
             TextButton(onClick = onDelete) {
-                Text("Delete", color = MaterialTheme.colorScheme.error)
+                Text(stringResource(R.string.action_delete), color = MaterialTheme.colorScheme.error)
             }
         }
         FilledTonalButton(onClick = onSave, enabled = text.isNotBlank()) {
-            Text("Save")
+            Text(stringResource(R.string.action_save))
         }
     }
 
@@ -190,7 +192,7 @@ fun NoteEditorSheet(
             // all the room the keyboard leaves, squeezing the note field out entirely.
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = "Note",
+                    text = stringResource(R.string.title_note),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -236,8 +238,8 @@ fun NoteEditorSheet(
                 OutlinedTextField(
                     value = text,
                     onValueChange = onTextChange,
-                    label = { Text("Note") },
-                    placeholder = { Text("Write your thoughts on this verse…") },
+                    label = { Text(stringResource(R.string.title_note)) },
+                    placeholder = { Text(stringResource(R.string.note_placeholder)) },
                     minLines = when {
                         !compactHeight -> 4
                         typingInCompactHeight -> 1

@@ -1,5 +1,262 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Every user-facing UI string. Scripture text, Bible book names and translation names are not here
+  on purpose: they come from the selected Bible translation, not the app language.
+-->
 <resources>
-    <string name="app_name">TreasuredWord</string>
+    <string name="app_name" translatable="false">TreasuredWord</string>
+    <!-- Launcher label under the app icon -->
     <string name="app_short_name">Bible</string>
+
+    <!-- Common actions -->
+    <string name="action_back">Back</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_ok">OK</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_remove">Remove</string>
+    <string name="action_save">Save</string>
+    <string name="action_undo">Undo</string>
+    <string name="action_retry">Retry</string>
+    <string name="action_dismiss">Dismiss</string>
+    <string name="action_sign_in">Sign in</string>
+    <string name="action_copy">Copy</string>
+    <string name="action_share">Share</string>
+    <string name="tap_to_retry">Tap to retry</string>
+    <string name="error_generic">Something went wrong</string>
+
+    <!-- Screen titles (top bars and bottom navigation) -->
+    <string name="title_home">Home</string>
+    <string name="title_bible">Bible</string>
+    <string name="title_search">Search</string>
+    <string name="title_you">You</string>
+    <string name="title_select_book">Select Book</string>
+    <string name="title_select_verse">Select Verse</string>
+    <string name="title_select_version">Select Version</string>
+    <string name="title_sign_in">Sign In</string>
+    <string name="title_create_account">Create Account</string>
+    <string name="title_library">Library</string>
+    <string name="title_library_item">Detail</string>
+    <string name="title_settings">Settings</string>
+    <string name="title_note">Note</string>
+    <string name="title_highlight">Highlight</string>
+
+    <!-- Shared labels -->
+    <string name="label_bookmark">Bookmark</string>
+    <string name="label_highlights">Highlights</string>
+    <string name="label_notes">Notes</string>
+    <string name="label_signed_in">Signed in</string>
+    <string name="verse_of_the_day">Verse of the Day</string>
+
+    <!-- Bookmark button in the reader's top bar. %1$s is a verse reference, e.g. "John 3:16". -->
+    <string name="bookmark_this_place">Bookmark this place</string>
+    <string name="bookmark_content_description">Bookmark: %1$s</string>
+    <string name="bookmark_go_to">Go to %1$s</string>
+    <string name="bookmark_move_here">Move bookmark here</string>
+    <string name="bookmark_remove">Remove bookmark</string>
+
+    <!-- Chapter navigation -->
+    <string name="chapter_previous">Previous Chapter</string>
+    <string name="chapter_next">Next Chapter</string>
+
+    <!-- Snackbar messages -->
+    <string name="message_copied">Copied to clipboard</string>
+    <string name="message_highlight_removed">Highlight removed</string>
+    <string name="message_note_deleted">Note deleted</string>
+    <!-- %1$s is a verse reference, e.g. "John 3:16" -->
+    <string name="message_bookmarked">Bookmarked %1$s</string>
+    <string name="message_bookmark_removed">Bookmark removed</string>
+
+    <!-- Home -->
+    <string name="home_continue_reading">Continue Reading</string>
+    <string name="home_search_bible">Search the Bible</string>
+    <string name="home_search_bible_subtitle">Find a verse by keyword</string>
+
+    <!-- Reader -->
+    <!-- %1$d is a verse number -->
+    <string name="footnote_verse">Verse %1$d</string>
+    <plurals name="selection_verses_selected">
+        <item quantity="one">%d verse selected</item>
+        <item quantity="other">%d verses selected</item>
+    </plurals>
+    <string name="selection_cancel">Cancel selection</string>
+
+    <!-- Highlights -->
+    <string name="highlight_remove">Remove highlight</string>
+    <string name="highlight_color_generic">Highlight color</string>
+    <string name="highlight_color_yellow">Yellow</string>
+    <string name="highlight_color_green">Green</string>
+    <string name="highlight_color_blue">Blue</string>
+    <string name="highlight_color_pink">Pink</string>
+    <string name="highlight_color_purple">Purple</string>
+
+    <!-- Notes -->
+    <string name="note_discard_title">Discard note?</string>
+    <string name="note_discard_message">Your changes to this note haven\'t been saved.</string>
+    <string name="note_discard">Discard</string>
+    <string name="note_keep_editing">Keep editing</string>
+    <string name="note_remove_verse">Remove verse</string>
+    <string name="note_placeholder">Write your thoughts on this verse…</string>
+    <string name="note_add_another">Add another note</string>
+    <string name="note_open">Open note</string>
+    <plurals name="note_count">
+        <item quantity="one">%d note</item>
+        <item quantity="other">%d notes</item>
+    </plurals>
+    <string name="sign_in_nudge_message">Sign in to back this up and sync it across your devices.</string>
+
+    <!-- Search -->
+    <string name="search_book_placeholder">Search Book</string>
+    <string name="search_verse_placeholder">Search Bible Verse</string>
+    <string name="search_icon">Search Icon</string>
+    <string name="search_empty_prompt">Search for a verse, keyword, or reference</string>
+    <string name="search_suggestions_title">Try one of these</string>
+    <string name="search_no_results">No results for \"%1$s\"</string>
+
+    <!-- Version picker. %1$s is always a Bible translation's name. -->
+    <string name="version_remove_title">Remove %1$s?</string>
+    <string name="version_remove_message">This deletes the downloaded text from your device. You can download it again later.</string>
+    <string name="version_load_failed">Failed to load versions</string>
+    <string name="version_none_available">No versions available</string>
+    <string name="version_search_placeholder">Search by language or version</string>
+    <!-- %1$s is the error detail -->
+    <string name="version_download_failed">Download failed: %1$s</string>
+    <string name="version_download_retry_hint">Tap a version below to retry</string>
+    <string name="version_no_match">No versions match \"%1$s\"</string>
+    <!-- Section header above the downloaded translations -->
+    <string name="version_section_downloaded">Downloaded</string>
+    <!-- Status line under one downloaded translation -->
+    <string name="version_status_downloaded">Downloaded</string>
+    <string name="version_status_active">Active version</string>
+    <string name="version_update_available">Update available — tap ⟳ for footnotes and formatting</string>
+    <string name="version_download_progress">%1$d%%</string>
+    <string name="version_redownload">Re-download %1$s for footnotes and formatting added since it was downloaded</string>
+    <string name="version_remove_downloaded">Remove downloaded %1$s</string>
+    <string name="version_download">Download %1$s</string>
+    <string name="version_currently_active">Currently active</string>
+    <string name="download_failed">Download failed</string>
+    <string name="download_error_offline">No internet connection. Connect to the internet and try again.</string>
+    <string name="download_error_no_content">No content is available for this translation.</string>
+    <!-- %1$s is download_verse_count, %2$s is download_chapter_count -->
+    <string name="download_partial_summary">Downloaded %1$s across %2$s — some books aren\'t available in this translation.</string>
+    <plurals name="download_verse_count">
+        <item quantity="one">%d verse</item>
+        <item quantity="other">%d verses</item>
+    </plurals>
+    <plurals name="download_chapter_count">
+        <item quantity="one">%d chapter</item>
+        <item quantity="other">%d chapters</item>
+    </plurals>
+
+    <!-- Library -->
+    <string name="library_search_by_book">Search by book</string>
+    <string name="library_search_notes">Search notes</string>
+    <string name="library_empty_highlights">No highlights yet — long-press a verse while reading to add one.</string>
+    <string name="library_no_highlights_in_colors">No highlights in the selected colors.</string>
+    <string name="library_no_highlights_match">No highlights match \"%1$s\".</string>
+    <string name="library_empty_notes">No notes yet — select a verse while reading to add one.</string>
+    <string name="library_no_notes_match">No notes match \"%1$s\".</string>
+    <string name="library_color_filter">Color</string>
+    <!-- %1$s is a highlight color name, e.g. "Yellow" -->
+    <string name="library_show_color_highlights">Show %1$s highlights</string>
+    <!-- %1$s is a date -->
+    <string name="library_highlighted_on">Highlighted %1$s</string>
+    <string name="library_noted_on">Noted %1$s</string>
+    <string name="library_delete_note">Delete note</string>
+    <string name="library_item_unavailable">This item is no longer available.</string>
+    <string name="library_open_in_bible">Open in Bible</string>
+    <!-- A verse reference followed by how many more verses it covers, e.g. "John 3:16 +2 more" -->
+    <plurals name="verse_ref_with_more">
+        <item quantity="one">%1$s +%2$d more</item>
+        <item quantity="other">%1$s +%2$d more</item>
+    </plurals>
+
+    <!-- You tab -->
+    <string name="you_section_library">Your library</string>
+    <string name="you_bookmark_hint">Tap the bookmark icon while reading to save your place</string>
+    <string name="you_not_signed_in">Not signed in</string>
+    <string name="you_sign_in_prompt">Sign in to keep your highlights, notes, and reading progress on every device.</string>
+    <string name="you_continue_reading">Continue reading</string>
+
+    <!-- Sync status -->
+    <string name="sync_status_syncing">Syncing…</string>
+    <string name="sync_status_not_synced">Not synced yet</string>
+    <string name="sync_status_just_now">Synced just now</string>
+    <plurals name="sync_status_minutes_ago">
+        <item quantity="one">Synced %dm ago</item>
+        <item quantity="other">Synced %dm ago</item>
+    </plurals>
+    <plurals name="sync_status_hours_ago">
+        <item quantity="one">Synced %dh ago</item>
+        <item quantity="other">Synced %dh ago</item>
+    </plurals>
+    <!-- %1$s is a date, e.g. "Sep 18, 2026" -->
+    <string name="sync_status_on_date">Synced %1$s</string>
+
+    <!-- Sign in and create account -->
+    <string name="auth_email">Email</string>
+    <string name="auth_password">Password</string>
+    <string name="auth_confirm_password">Confirm password</string>
+    <string name="auth_invalid_email">Enter a valid email address</string>
+    <string name="auth_show_password">Show password</string>
+    <string name="auth_hide_password">Hide password</string>
+    <string name="login_subtitle">Sign in to sync your highlights, notes, and reading progress across devices.</string>
+    <string name="login_no_account">Don\'t have an account? Create one</string>
+    <string name="register_heading">Create an account</string>
+    <string name="register_subtitle">Your highlights, notes, and reading progress will sync across every device you sign in on.</string>
+    <plurals name="register_password_hint">
+        <item quantity="one">At least %d character</item>
+        <item quantity="other">At least %d characters</item>
+    </plurals>
+    <string name="register_passwords_mismatch">Passwords don\'t match</string>
+    <string name="register_submit">Create account</string>
+    <string name="register_have_account">Already have an account? Sign in</string>
+    <string name="auth_error_invalid_credentials">Invalid email or password</string>
+    <string name="auth_error_email_registered">An account with that email already exists</string>
+    <string name="auth_error_invalid_input">Invalid input</string>
+    <!-- %1$d is an HTTP status code -->
+    <string name="auth_error_status">Something went wrong (%1$d)</string>
+    <string name="auth_error_unreachable">Couldn\'t reach the server. Check your connection and try again.</string>
+
+    <!-- Settings -->
+    <!-- %1$s is the app name, %2$s its version number -->
+    <string name="settings_app_version">%1$s · Version %2$s</string>
+    <string name="settings_section_appearance">Appearance</string>
+    <string name="settings_theme">Theme</string>
+    <string name="theme_system">System</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="settings_verse_text_size">Verse text size</string>
+    <string name="text_size_small">Small</string>
+    <string name="text_size_default">Default</string>
+    <string name="text_size_large">Large</string>
+    <string name="settings_section_daily_verse">Daily verse</string>
+    <string name="settings_daily_reminder">Daily verse reminder</string>
+    <string name="settings_daily_reminder_subtitle">A verse to start your day</string>
+    <string name="settings_reminder_time">Time</string>
+    <string name="settings_background_restricted">Background activity is restricted</string>
+    <string name="settings_background_restricted_subtitle">The reminder can only arrive while the app is open. Turn this off in your phone\'s settings.</string>
+    <string name="settings_reminders_late">Reminders arriving late?</string>
+    <string name="settings_reminders_late_subtitle">Some phones hold back background apps. Check battery settings.</string>
+    <string name="settings_section_sync">Sync and backup</string>
+    <string name="sync_offline_title">You\'re offline</string>
+    <string name="sync_offline_subtitle">Highlights and notes will sync once you\'re back online.</string>
+    <string name="sync_failed">Sync failed</string>
+    <string name="sync_now">Sync now</string>
+    <string name="sync_auto">Auto-sync</string>
+    <string name="sync_auto_subtitle">Back up changes in the background</string>
+    <string name="sync_wifi_only">Wi-Fi only</string>
+    <string name="sync_wifi_only_subtitle">Don\'t use mobile data to sync</string>
+    <string name="settings_section_account">Account</string>
+    <string name="account_sign_in_subtitle">Sync your highlights, notes, and reading progress across devices</string>
+    <string name="account_your_account">Your account</string>
+    <string name="account_sign_out">Sign out</string>
+    <string name="account_delete">Delete account</string>
+    <string name="account_delete_title">Delete account?</string>
+    <string name="account_delete_message">This permanently deletes your account and everything backed up to it. This can\'t be undone. Highlights and notes already on this device will stay here, but won\'t sync anywhere else.</string>
+    <string name="account_confirm_password">Confirm your password</string>
+
+    <!-- Daily verse notification -->
     <string name="daily_verse_notification_title">Verse of the Day</string>
+    <string name="notification_channel_daily_verse">Daily Verse</string>
+    <string name="notification_channel_daily_verse_description">Your daily Bible verse reminder</string>
 </resources>
