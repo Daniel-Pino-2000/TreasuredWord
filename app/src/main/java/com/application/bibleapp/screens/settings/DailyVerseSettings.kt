@@ -40,6 +40,9 @@ import com.application.bibleapp.components.GroupedRow
 import com.application.bibleapp.components.GroupedSection
 import com.application.bibleapp.components.GroupedSwitchRow
 import com.application.bibleapp.viewmodel.BibleViewModel
+import com.application.bibleapp.R
+import androidx.compose.ui.res.stringResource
+import java.util.Calendar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -77,10 +80,10 @@ internal fun DailyVerseSettings(bibleViewModel: BibleViewModel) {
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    GroupedSection(title = "Daily verse") {
+    GroupedSection(title = stringResource(R.string.settings_section_daily_verse)) {
         GroupedSwitchRow(
-            title = "Daily verse reminder",
-            subtitle = "A verse to start your day",
+            title = stringResource(R.string.settings_daily_reminder),
+            subtitle = stringResource(R.string.settings_daily_reminder_subtitle),
             icon = Icons.Outlined.NotificationsActive,
             checked = notificationEnabled,
             onCheckedChange = { checked ->
@@ -98,20 +101,17 @@ internal fun DailyVerseSettings(bibleViewModel: BibleViewModel) {
         if (notificationEnabled) {
             GroupedDivider()
             GroupedRow(
-                title = "Time",
+                title = stringResource(R.string.settings_reminder_time),
                 icon = Icons.Outlined.Schedule,
-                value = formatNotificationTime(
-                    notificationTime.hour, notificationTime.minute, DateFormat.is24HourFormat(context)
-                ),
+                value = formatNotificationTime(context, notificationTime.hour, notificationTime.minute),
                 onClick = { showTimePicker = true }
             )
             if (backgroundRestricted) {
                 GroupedDivider()
                 GroupedRow(
-                    title = "Background activity is restricted",
+                    title = stringResource(R.string.settings_background_restricted),
                     titleColor = MaterialTheme.colorScheme.error,
-                    subtitle = "The reminder can only arrive while the app is open. " +
-                        "Turn this off in your phone's settings.",
+                    subtitle = stringResource(R.string.settings_background_restricted_subtitle),
                     icon = Icons.Outlined.BatteryAlert,
                     iconTint = MaterialTheme.colorScheme.error,
                     onClick = { openAppSettings(context) }
@@ -119,8 +119,8 @@ internal fun DailyVerseSettings(bibleViewModel: BibleViewModel) {
             } else if (!batteryUnrestricted) {
                 GroupedDivider()
                 GroupedRow(
-                    title = "Reminders arriving late?",
-                    subtitle = "Some phones hold back background apps. Check battery settings.",
+                    title = stringResource(R.string.settings_reminders_late),
+                    subtitle = stringResource(R.string.settings_reminders_late_subtitle),
                     icon = Icons.Outlined.BatteryAlert,
                     onClick = { openAppSettings(context) }
                 )
@@ -140,23 +140,24 @@ internal fun DailyVerseSettings(bibleViewModel: BibleViewModel) {
                 TextButton(onClick = {
                     bibleViewModel.setNotificationTime(pickerState.hour, pickerState.minute)
                     showTimePicker = false
-                }) { Text("OK") }
+                }) { Text(stringResource(R.string.action_ok)) }
             },
             dismissButton = {
-                TextButton(onClick = { showTimePicker = false }) { Text("Cancel") }
+                TextButton(onClick = { showTimePicker = false }) { Text(stringResource(R.string.action_cancel)) }
             },
             text = { TimePicker(state = pickerState) }
         )
     }
 }
 
-/** "8:05 AM" when the device uses a 12-hour clock, "08:05" when it uses 24-hour —
- *  matches [DateFormat.is24HourFormat] rather than hardcoding either format. */
-private fun formatNotificationTime(hour: Int, minute: Int, is24Hour: Boolean): String {
-    if (is24Hour) return "%02d:%02d".format(hour, minute)
-    val displayHour = when (val h = hour % 12) { 0 -> 12; else -> h }
-    val period = if (hour < 12) "AM" else "PM"
-    return "%d:%02d %s".format(displayHour, minute, period)
+/** "8:05 AM" or "08:05", per the device's 12/24-hour setting and the app language — the
+ *  platform's own time format, so the AM/PM marker is translated too. */
+private fun formatNotificationTime(context: Context, hour: Int, minute: Int): String {
+    val time = Calendar.getInstance().apply {
+        set(Calendar.HOUR_OF_DAY, hour)
+        set(Calendar.MINUTE, minute)
+    }
+    return DateFormat.getTimeFormat(context).format(time.time)
 }
 
 private fun isIgnoringBatteryOptimizations(context: Context): Boolean {

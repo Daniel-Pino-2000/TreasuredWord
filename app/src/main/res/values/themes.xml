@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.BibleApp" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- AppCompat, because MainActivity is an AppCompatActivity (per-app language below Android 13).
+         Compose draws everything, including dark mode, so this only sets the window's starting look. -->
+    <style name="Theme.BibleApp" parent="Theme.AppCompat.Light.NoActionBar" />
 </resources>

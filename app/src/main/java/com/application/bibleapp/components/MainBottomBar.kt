@@ -33,6 +33,8 @@ import com.application.bibleapp.navigation.Screen
 import com.application.bibleapp.navigation.bottomNavigationItems
 import com.application.bibleapp.viewmodel.BibleViewModel
 import kotlin.math.roundToInt
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 
 /**
  * The whole bottom-of-screen chrome — the chapter nav row and the tab navigation row —
@@ -119,11 +121,12 @@ fun MainBottomBar(
                             icon = {
                                 Icon(
                                     imageVector = if (currentRoute == item.route) item.selectedIcon else item.unselectedIcon,
-                                    contentDescription = item.title
+                                    contentDescription = stringResource(item.titleRes)
                                 )
                             },
                             label = {
-                                Text(item.title)
+                                // One line: a longer translation ellipsizes instead of pushing the bar taller.
+                                Text(stringResource(item.titleRes), maxLines = 1, overflow = TextOverflow.Ellipsis)
                             },
 
                             )
@@ -189,10 +192,10 @@ fun MainNavigationRail(
                 icon = {
                     Icon(
                         imageVector = if (currentRoute == item.route) item.selectedIcon else item.unselectedIcon,
-                        contentDescription = item.title
+                        contentDescription = stringResource(item.titleRes)
                     )
                 },
-                label = { Text(item.title) }
+                label = { Text(stringResource(item.titleRes), maxLines = 1, overflow = TextOverflow.Ellipsis) }
             )
         }
         Spacer(modifier = Modifier.weight(1f))

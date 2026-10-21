@@ -20,6 +20,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
+import androidx.annotation.StringRes
+import com.application.bibleapp.R
 
 private val DarkColorScheme = darkColorScheme(
     primary = DarkPrimary,
@@ -102,10 +104,10 @@ val BibleAppShapes = Shapes(
 )
 
 /** User-selectable theme preference, persisted via [com.application.bibleapp.data.repository.BibleRepository]. */
-enum class ThemeMode(val label: String) {
-    SYSTEM("System"),
-    LIGHT("Light"),
-    DARK("Dark")
+enum class ThemeMode(@StringRes val labelRes: Int) {
+    SYSTEM(R.string.theme_system),
+    LIGHT(R.string.theme_light),
+    DARK(R.string.theme_dark)
 }
 
 @Composable

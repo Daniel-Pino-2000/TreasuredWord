@@ -19,32 +19,34 @@ import com.application.bibleapp.ui.theme.ThemeMode
 import com.application.bibleapp.ui.theme.VerseTextScale
 import com.application.bibleapp.ui.theme.scaledBy
 import com.application.bibleapp.viewmodel.BibleViewModel
+import com.application.bibleapp.R
+import androidx.compose.ui.res.stringResource
 
 @Composable
 internal fun AppearanceSettings(bibleViewModel: BibleViewModel) {
     val themeMode by bibleViewModel.themeMode.collectAsState()
     val verseTextScale by bibleViewModel.verseTextScale.collectAsState()
 
-    GroupedSection(title = "Appearance") {
+    GroupedSection(title = stringResource(R.string.settings_section_appearance)) {
         GroupedChoiceRow(
-            title = "Theme",
+            title = stringResource(R.string.settings_theme),
             icon = Icons.Outlined.Palette,
             options = ThemeMode.entries,
             selected = themeMode,
-            optionLabel = { it.label },
+            optionLabel = { stringResource(it.labelRes) },
             onSelect = { bibleViewModel.setThemeMode(it) }
         )
         GroupedDivider()
         GroupedChoiceRow(
-            title = "Verse text size",
+            title = stringResource(R.string.settings_verse_text_size),
             icon = Icons.Outlined.FormatSize,
             options = VerseTextScale.entries,
             selected = verseTextScale,
-            optionLabel = { it.label },
+            optionLabel = { stringResource(it.labelRes) },
             onSelect = { bibleViewModel.setVerseTextScale(it) }
         )
         // Below the size bar, not above it — a preview that grows above would push the bar
-        // you just tapped out from under your finger.
+        // you just tapped out from under your finger. Scripture, so not a string resource.
         Text(
             text = "1 In the beginning God created the heavens and the earth.",
             style = ReadingStyle.VerseText.scaledBy(verseTextScale.multiplier),

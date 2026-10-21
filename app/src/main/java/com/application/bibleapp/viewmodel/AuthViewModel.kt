@@ -9,6 +9,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import com.application.bibleapp.R
+import com.application.bibleapp.utils.UiText
 
 /**
  * Backs the login/register screens and the account section in Settings. [isLoggedIn] is
@@ -24,8 +26,8 @@ class AuthViewModel(private val authRepository: AuthRepository) : ViewModel() {
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
-    private val _errorMessage = MutableStateFlow<String?>(null)
-    val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
+    private val _errorMessage = MutableStateFlow<UiText?>(null)
+    val errorMessage: StateFlow<UiText?> = _errorMessage.asStateFlow()
 
     private val _currentUser = MutableStateFlow<UserResponseDto?>(null)
     val currentUser: StateFlow<UserResponseDto?> = _currentUser.asStateFlow()
@@ -53,7 +55,7 @@ class AuthViewModel(private val authRepository: AuthRepository) : ViewModel() {
     /** [onResult] receives null on success, or a message to show on failure (e.g. the
      *  password was wrong) — the caller (Settings' delete-account dialog) decides how to
      *  present that rather than this ViewModel owning dialog-specific error state. */
-    fun deleteAccount(password: String, onResult: (errorMessage: String?) -> Unit) {
+    fun deleteAccount(password: String, onResult: (errorMessage: UiText?) -> Unit) {
         viewModelScope.launch {
             authRepository.deleteAccount(password).fold(
                 onSuccess = {
@@ -103,12 +105,12 @@ class AuthViewModel(private val authRepository: AuthRepository) : ViewModel() {
         }
     }
 
-    private fun errorText(throwable: Throwable): String = when {
+    private fun errorText(throwable: Throwable): UiText = when {
         throwable is AuthException -> throwable.error.displayMessage
         // Covers Ktor's ConnectTimeoutException/SocketTimeoutException and plain
         // UnknownHostException — anything where the request never actually reached the
         // server, as opposed to the server responding with an error.
-        throwable is java.io.IOException -> "Couldn't reach the server. Check your connection and try again."
-        else -> throwable.message ?: "Something went wrong"
+        throwable is java.io.IOException -> UiText.Res(R.string.auth_error_unreachable)
+        else -> throwable.message?.let { UiText.Raw(it) } ?: UiText.Res(R.string.error_generic)
     }
 }

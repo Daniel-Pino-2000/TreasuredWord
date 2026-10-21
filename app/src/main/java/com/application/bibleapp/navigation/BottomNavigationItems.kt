@@ -13,25 +13,25 @@ import com.application.bibleapp.navigation.BottomNavigationItem
 
 val bottomNavigationItems = listOf(
     BottomNavigationItem(
-        Screen.Home.title,
+        Screen.Home.titleRes,
         Screen.Home.route,
         selectedIcon = Icons.Filled.Home,
         unselectedIcon = Icons.Outlined.Home,
     ),
     BottomNavigationItem(
-        Screen.Bible.title,
+        Screen.Bible.titleRes,
         Screen.Bible.route,
         selectedIcon = Icons.Filled.Book,
         unselectedIcon = Icons.Outlined.Book,
     ),
     BottomNavigationItem(
-        Screen.Search.title,
+        Screen.Search.titleRes,
         Screen.Search.route,
         selectedIcon = Icons.Filled.Search,
         unselectedIcon = Icons.Outlined.Search,
     ),
     BottomNavigationItem(
-        Screen.You.title,
+        Screen.You.titleRes,
         Screen.You.route,
         selectedIcon = Icons.Filled.Person,
         unselectedIcon = Icons.Outlined.Person,

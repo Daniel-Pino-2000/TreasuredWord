@@ -19,12 +19,19 @@ import androidx.compose.ui.text.style.TextAlign
 import com.application.bibleapp.ui.theme.Spacing
 import com.application.bibleapp.viewmodel.AuthViewModel
 import com.application.bibleapp.viewmodel.BibleViewModel
+import com.application.bibleapp.R
+import androidx.compose.ui.res.stringResource
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Language
+import com.application.bibleapp.components.GroupedRow
+import com.application.bibleapp.components.GroupedSection
+import com.application.bibleapp.utils.AppLanguage
 
 /**
  * Every setting on one grouped page — at this size (~10 settings) a single screen is quicker to
  * scan than an index of near-empty sub-pages. Simple choices stay inline (switches, segmented
- * bars); a choice from a long list, like a future Language setting, goes in as a row with its
- * current value that opens its own picker page. If one section outgrows the page, it becomes a
+ * bars); a choice from a long list, like Language, goes in as a row with its current value that
+ * opens its own picker page. If one section outgrows the page, it becomes a
  * row that opens its own page the same way.
  */
 @Composable
@@ -32,7 +39,8 @@ fun SettingsView(
     bibleViewModel: BibleViewModel,
     authViewModel: AuthViewModel,
     modifier: Modifier = Modifier,
-    onSignInClick: () -> Unit
+    onSignInClick: () -> Unit,
+    onLanguageClick: () -> Unit
 ) {
     val context = LocalContext.current
     val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
@@ -44,6 +52,15 @@ fun SettingsView(
             .padding(Spacing.lg),
         verticalArrangement = Arrangement.spacedBy(Spacing.xl)
     ) {
+        GroupedSection(title = stringResource(R.string.settings_section_general)) {
+            GroupedRow(
+                title = stringResource(R.string.title_language),
+                icon = Icons.Outlined.Language,
+                value = AppLanguage.currentTag()?.let { AppLanguage.displayName(it) }
+                    ?: stringResource(R.string.language_system_default),
+                onClick = onLanguageClick
+            )
+        }
         AppearanceSettings(bibleViewModel)
         DailyVerseSettings(bibleViewModel)
         // Sync's switches mean nothing signed out — the Account section's sign-in row covers it.
@@ -51,7 +68,7 @@ fun SettingsView(
         AccountSettings(authViewModel, bibleViewModel, onSignInClick)
 
         Text(
-            text = "TreasuredWord · Version ${appVersionName(context)}",
+            text = stringResource(R.string.settings_app_version, stringResource(R.string.app_name), appVersionName(context)),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,

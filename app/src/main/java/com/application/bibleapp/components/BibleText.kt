@@ -76,6 +76,8 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlin.math.abs
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
 
 /** Indentation per poem nesting level — enough to read as a poetry line, not just a wrapped paragraph. */
 private val POEM_INDENT_STEP = 20.sp
@@ -385,7 +387,11 @@ fun BibleText(
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.ic_stylus_note),
-                        contentDescription = if (count > 1) "$count notes" else "Note",
+                        contentDescription = if (count > 1) {
+                            pluralStringResource(R.plurals.note_count, count, count)
+                        } else {
+                            stringResource(R.string.title_note)
+                        },
                         tint = noteGlyphIconColor,
                         modifier = Modifier.fillMaxHeight(0.62f).aspectRatio(1f)
                     )

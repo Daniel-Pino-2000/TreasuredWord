@@ -27,6 +27,8 @@ import androidx.compose.ui.unit.dp
 import com.application.bibleapp.R
 import com.application.bibleapp.ui.theme.Spacing
 import com.application.bibleapp.ui.theme.isCompactHeight
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
 
 /** Keeps the card from stretching edge to edge in landscape. */
 private val MAX_TOOLBAR_WIDTH = 480.dp
@@ -79,11 +81,11 @@ fun VerseSelectionToolbar(
                     modifier = Modifier.weight(1f)
                 )
                 val actionModifier = Modifier.widthIn(min = 64.dp)
-                SelectionAction("Copy", rememberVectorPainter(Icons.Outlined.ContentCopy), onCopy, actionModifier)
-                SelectionAction("Share", rememberVectorPainter(Icons.Outlined.Share), onShare, actionModifier)
-                SelectionAction("Note", painterResource(R.drawable.ic_stylus_note), onAddNote, actionModifier, emphasized = true)
+                SelectionAction(stringResource(R.string.action_copy), rememberVectorPainter(Icons.Outlined.ContentCopy), onCopy, actionModifier)
+                SelectionAction(stringResource(R.string.action_share), rememberVectorPainter(Icons.Outlined.Share), onShare, actionModifier)
+                SelectionAction(stringResource(R.string.title_note), painterResource(R.drawable.ic_stylus_note), onAddNote, actionModifier, emphasized = true)
                 IconButton(onClick = onCancel) {
-                    Icon(Icons.Default.Close, contentDescription = "Cancel selection")
+                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.selection_cancel))
                 }
             }
         } else {
@@ -97,12 +99,12 @@ fun VerseSelectionToolbar(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = if (selectionCount == 1) "1 verse selected" else "$selectionCount verses selected",
+                        text = pluralStringResource(R.plurals.selection_verses_selected, selectionCount, selectionCount),
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     IconButton(onClick = onCancel) {
-                        Icon(Icons.Default.Close, contentDescription = "Cancel selection")
+                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.selection_cancel))
                     }
                 }
                 HighlightColorSwatchRow(
@@ -118,9 +120,9 @@ fun VerseSelectionToolbar(
                     horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
                 ) {
                     val actionModifier = Modifier.weight(1f)
-                    SelectionAction("Copy", rememberVectorPainter(Icons.Outlined.ContentCopy), onCopy, actionModifier)
-                    SelectionAction("Share", rememberVectorPainter(Icons.Outlined.Share), onShare, actionModifier)
-                    SelectionAction("Note", painterResource(R.drawable.ic_stylus_note), onAddNote, actionModifier, emphasized = true)
+                    SelectionAction(stringResource(R.string.action_copy), rememberVectorPainter(Icons.Outlined.ContentCopy), onCopy, actionModifier)
+                    SelectionAction(stringResource(R.string.action_share), rememberVectorPainter(Icons.Outlined.Share), onShare, actionModifier)
+                    SelectionAction(stringResource(R.string.title_note), painterResource(R.drawable.ic_stylus_note), onAddNote, actionModifier, emphasized = true)
                 }
             }
         }

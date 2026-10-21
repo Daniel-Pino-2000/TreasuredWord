@@ -14,13 +14,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.unit.dp
 import com.application.bibleapp.ui.theme.isCompactHeight
+import com.application.bibleapp.R
+import androidx.compose.ui.res.stringResource
 
 private val COMPACT_TOP_BAR_HEIGHT = 56.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TopBar(
-    title: @Composable () -> Unit = { Text("BibleApp") },
+    title: @Composable () -> Unit = { Text(stringResource(R.string.app_name)) },
     navigationIcon: (@Composable () -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = {},
     scrollBehavior: TopAppBarScrollBehavior? = null,

@@ -383,7 +383,7 @@ object BibleDatabaseManager {
         }
 
         if (!NetworkUtils.isOnline(context)) {
-            return@withContext Result.failure(IOException("No internet connection. Connect to the internet and try again."))
+            return@withContext Result.failure(NoInternetException())
         }
 
         val downloaded: DownloadedTranslation = try {
@@ -395,7 +395,7 @@ object BibleDatabaseManager {
 
         if (downloaded.verses.isEmpty()) {
             Log.e("BibleDB", "Translation $translationId has no usable content")
-            return@withContext Result.failure(IOException("No content is available for this translation."))
+            return@withContext Result.failure(NoContentException())
         }
 
         if (downloaded.skippedBookCount > 0) {
@@ -990,3 +990,10 @@ object BibleDatabaseManager {
         db.execSQL("UPDATE notes SET remote_id = NULL, sync_status = 'PENDING' WHERE remote_id IS NOT NULL")
     }
 }
+
+/** A version download was refused because the device is offline. The UI shows its own,
+ *  translated message for it; [message] is for logs. */
+class NoInternetException : IOException("No internet connection")
+
+/** A version downloaded fine but held no usable verses. */
+class NoContentException : IOException("No content is available for this translation")

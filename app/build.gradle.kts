@@ -24,6 +24,11 @@ android {
     }
 
     buildTypes {
+        debug {
+            // en-XA (accented, longer text) and ar-XB (mirrored, right-to-left) show up in the
+            // device's language list, to catch hard-coded strings and labels that don't fit.
+            isPseudoLocalesEnabled = true
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(
@@ -41,6 +46,12 @@ android {
     }
     buildFeatures {
         compose = true
+    }
+    androidResources {
+        // Lists the languages the app has resources for (plus res/resources.properties' default)
+        // in a generated locales_config.xml, so Android 13+ offers them in the system's
+        // per-app language settings.
+        generateLocaleConfig = true
     }
 }
 
@@ -87,6 +98,8 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
+    // Per-app language below Android 13 (AppCompatDelegate.setApplicationLocales) - see utils/AppLanguage.kt
+    implementation("androidx.appcompat:appcompat:1.7.0")
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)

@@ -33,6 +33,10 @@ import com.application.bibleapp.ui.theme.Spacing
 import com.application.bibleapp.utils.MIN_PASSWORD_LENGTH
 import com.application.bibleapp.utils.isValidEmailFormat
 import com.application.bibleapp.viewmodel.AuthViewModel
+import com.application.bibleapp.R
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
+import com.application.bibleapp.utils.asString
 
 @Composable
 fun RegisterView(
@@ -63,10 +67,9 @@ fun RegisterView(
             .padding(Spacing.lg),
         verticalArrangement = Arrangement.spacedBy(Spacing.md)
     ) {
-        Text("Create an account", style = MaterialTheme.typography.headlineSmall)
+        Text(stringResource(R.string.register_heading), style = MaterialTheme.typography.headlineSmall)
         Text(
-            text = "Your highlights, notes, and reading progress will sync across every " +
-                "device you sign in on.",
+            text = stringResource(R.string.register_subtitle),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -77,10 +80,10 @@ fun RegisterView(
                 email = it
                 authViewModel.clearError()
             },
-            label = { Text("Email") },
+            label = { Text(stringResource(R.string.auth_email)) },
             isError = !emailFormatValid,
             supportingText = if (!emailFormatValid) {
-                { Text("Enter a valid email address") }
+                { Text(stringResource(R.string.auth_invalid_email)) }
             } else null,
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
@@ -93,16 +96,16 @@ fun RegisterView(
                 password = it
                 authViewModel.clearError()
             },
-            label = { Text("Password") },
+            label = { Text(stringResource(R.string.auth_password)) },
             isError = !passwordLengthValid,
-            supportingText = { Text("At least $MIN_PASSWORD_LENGTH characters") },
+            supportingText = { Text(pluralStringResource(R.plurals.register_password_hint, MIN_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH)) },
             singleLine = true,
             visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             trailingIcon = {
                 IconButton(onClick = { passwordVisible = !passwordVisible }) {
                     Icon(
                         imageVector = if (passwordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
-                        contentDescription = if (passwordVisible) "Hide password" else "Show password"
+                        contentDescription = stringResource(if (passwordVisible) R.string.auth_hide_password else R.string.auth_show_password)
                     )
                 }
             },
@@ -116,10 +119,10 @@ fun RegisterView(
                 confirmPassword = it
                 authViewModel.clearError()
             },
-            label = { Text("Confirm password") },
+            label = { Text(stringResource(R.string.auth_confirm_password)) },
             isError = !passwordsMatch,
             supportingText = if (!passwordsMatch) {
-                { Text("Passwords don't match") }
+                { Text(stringResource(R.string.register_passwords_mismatch)) }
             } else null,
             singleLine = true,
             visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
@@ -129,7 +132,7 @@ fun RegisterView(
 
         remoteError?.let {
             Text(
-                text = it,
+                text = it.asString(),
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodySmall
             )
@@ -147,12 +150,12 @@ fun RegisterView(
                     color = MaterialTheme.colorScheme.onPrimary
                 )
             } else {
-                Text("Create account")
+                Text(stringResource(R.string.register_submit))
             }
         }
 
         TextButton(onClick = onNavigateToLogin, modifier = Modifier.fillMaxWidth()) {
-            Text("Already have an account? Sign in")
+            Text(stringResource(R.string.register_have_account))
         }
     }
 }

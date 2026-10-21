@@ -33,7 +33,9 @@ import com.application.bibleapp.R
 import com.application.bibleapp.data.model.Note
 import com.application.bibleapp.ui.theme.Spacing
 import com.application.bibleapp.ui.theme.isCompactHeight
-import com.application.bibleapp.utils.formatDisplayDate
+import com.application.bibleapp.utils.displayDate
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
 
 /**
  * Every note on one verse — opened when a verse with 2+ notes has its badge tapped, since a
@@ -68,7 +70,7 @@ fun NoteListSheet(
                 color = MaterialTheme.colorScheme.primary
             )
             Text(
-                text = "${notes.size} notes",
+                text = pluralStringResource(R.plurals.note_count, notes.size, notes.size),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -92,7 +94,7 @@ fun NoteListSheet(
                     .padding(top = Spacing.lg, bottom = if (isCompactHeight()) Spacing.sm else Spacing.xl)
             ) {
                 Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
-                Text("Add another note", modifier = Modifier.padding(start = ButtonDefaults.IconSpacing))
+                Text(stringResource(R.string.note_add_another), modifier = Modifier.padding(start = ButtonDefaults.IconSpacing))
             }
         }
     }
@@ -129,7 +131,7 @@ internal fun NotePreviewRow(note: Note, onClick: () -> Unit, maxLines: Int = 1, 
                 )
                 if (showDate) {
                     Text(
-                        text = formatDisplayDate(note.createdAt),
+                        text = displayDate(note.createdAt),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = Spacing.xs)
@@ -138,7 +140,7 @@ internal fun NotePreviewRow(note: Note, onClick: () -> Unit, maxLines: Int = 1, 
             }
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                contentDescription = "Open note",
+                contentDescription = stringResource(R.string.note_open),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(16.dp)
             )

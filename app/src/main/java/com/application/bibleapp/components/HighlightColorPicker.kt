@@ -25,9 +25,17 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.application.bibleapp.ui.theme.HighlightColors
 import com.application.bibleapp.ui.theme.toHighlightArgb
+import com.application.bibleapp.R
+import androidx.compose.ui.res.stringResource
 
 /** Display name per [HighlightColors.palette] entry, in the same order — screen-reader label only. */
-internal val SWATCH_NAMES = listOf("Yellow", "Green", "Blue", "Pink", "Purple")
+internal val SWATCH_NAMES = listOf(
+    R.string.highlight_color_yellow,
+    R.string.highlight_color_green,
+    R.string.highlight_color_blue,
+    R.string.highlight_color_pink,
+    R.string.highlight_color_purple
+)
 
 /**
  * A row of solid swatches from [HighlightColors.palette] — shared between [VerseSelectionToolbar]
@@ -50,7 +58,7 @@ fun HighlightColorSwatchRow(
         HighlightColors.palette.forEachIndexed { index, swatch ->
             val swatchArgb = swatch.toHighlightArgb()
             val isSelected = selectedColorArgb != null && selectedColorArgb == swatchArgb
-            val name = SWATCH_NAMES.getOrElse(index) { "Highlight color" }
+            val name = stringResource(SWATCH_NAMES.getOrElse(index) { R.string.highlight_color_generic })
             Box(
                 modifier = Modifier
                     .size(swatchSize)

@@ -27,8 +27,10 @@ import com.application.bibleapp.data.model.BibleBooks
 import com.application.bibleapp.data.remote.VerseLocationDto
 import com.application.bibleapp.ui.theme.ReadingStyle
 import com.application.bibleapp.ui.theme.Spacing
-import com.application.bibleapp.utils.formatVerseRefs
+import com.application.bibleapp.utils.verseRefsText
 import com.application.bibleapp.viewmodel.BibleViewModel
+import com.application.bibleapp.R
+import androidx.compose.ui.res.stringResource
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -131,7 +133,7 @@ fun BibleView(
                     .navigationBarsPadding()
             ) {
                 Text(
-                    text = "Verse ${footnote.verse}",
+                    text = stringResource(R.string.footnote_verse, footnote.verse),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -149,7 +151,7 @@ fun BibleView(
         val notesOnSameVerses = notesInChapter.filter { note -> note.verses.any { it in highlight.verses } }
         HighlightActionSheet(
             highlight = highlight,
-            reference = formatVerseRefs(highlight.verses, bookName),
+            reference = verseRefsText(highlight.verses, bookName),
             verseText = remember(highlight, verseTextByLocation) {
                 versePreviewText(highlight.verses, verseTextByLocation)
             },
@@ -167,7 +169,7 @@ fun BibleView(
     noteListVerse?.let { location ->
         val notesOnVerse = notesInChapter.filter { location in it.verses }
         NoteListSheet(
-            title = formatVerseRefs(listOf(location), bookName),
+            title = verseRefsText(listOf(location), bookName),
             notes = notesOnVerse,
             onOpenNote = { note -> bibleViewModel.openNoteFromList(note) },
             onAddNote = { bibleViewModel.addNoteToVerse(location) },

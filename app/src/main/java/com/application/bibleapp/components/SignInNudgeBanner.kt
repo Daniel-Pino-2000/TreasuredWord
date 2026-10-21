@@ -16,6 +16,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.application.bibleapp.ui.theme.Spacing
+import com.application.bibleapp.R
+import androidx.compose.ui.res.stringResource
 
 /**
  * A one-time nudge, not a wall — shown after the first highlight/note created while signed out
@@ -39,18 +41,18 @@ fun SignInNudgeBanner(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                text = "Sign in to back this up and sync it across your devices.",
+                text = stringResource(R.string.sign_in_nudge_message),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
                 modifier = Modifier.weight(1f)
             )
             TextButton(onClick = onSignInClick) {
-                Text("Sign in")
+                Text(stringResource(R.string.action_sign_in))
             }
             IconButton(onClick = onDismiss) {
                 Icon(
                     imageVector = Icons.Filled.Close,
-                    contentDescription = "Dismiss",
+                    contentDescription = stringResource(R.string.action_dismiss),
                     tint = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             }

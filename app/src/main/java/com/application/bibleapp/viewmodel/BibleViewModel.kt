@@ -40,6 +40,10 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import com.application.bibleapp.R
+import com.application.bibleapp.utils.UiText
+import com.application.bibleapp.data.local.NoContentException
+import com.application.bibleapp.data.local.NoInternetException
 
 /**
  * State for the open note editor sheet — either a new note being composed from the current
@@ -68,7 +72,7 @@ sealed interface UndoableDeletion {
 }
 
 /** A one-shot message for MainActivity's Snackbar — with [undo], it gets an "Undo" action. */
-data class UserMessage(val text: String, val undo: UndoableDeletion? = null)
+data class UserMessage(val text: UiText, val undo: UndoableDeletion? = null)
 
 /** Looks up one verse's cached scripture text (see [BibleViewModel.libraryVerseText]) — a location
  *  alone isn't a safe key since the same verse's text can differ across versions. */
@@ -384,13 +388,13 @@ class BibleViewModel(
     private val _downloadProgress = MutableStateFlow(0f)
     val downloadProgress: StateFlow<Float> = _downloadProgress.asStateFlow()
 
-    private val _downloadError = MutableStateFlow<String?>(null)
-    val downloadError: StateFlow<String?> = _downloadError.asStateFlow()
+    private val _downloadError = MutableStateFlow<UiText?>(null)
+    val downloadError: StateFlow<UiText?> = _downloadError.asStateFlow()
 
     // Informational (not an error): set when a download succeeded but some content
     // wasn't available for this version (e.g. an NT-only translation).
-    private val _downloadInfo = MutableStateFlow<String?>(null)
-    val downloadInfo: StateFlow<String?> = _downloadInfo.asStateFlow()
+    private val _downloadInfo = MutableStateFlow<UiText?>(null)
+    val downloadInfo: StateFlow<UiText?> = _downloadInfo.asStateFlow()
 
     init {
         // The last version the user picked is persisted across process restarts. Only
@@ -520,7 +524,7 @@ class BibleViewModel(
     }
 
     /** For confirmations the system doesn't already show (e.g. copy on Android 12 and older). */
-    fun showMessage(text: String) {
+    fun showMessage(text: UiText) {
         _userMessages.tryEmit(UserMessage(text))
     }
 
@@ -581,7 +585,7 @@ class BibleViewModel(
             repository.deleteHighlight(highlight.localId)
             reloadHighlightsInChapter()
         }
-        _userMessages.tryEmit(UserMessage("Highlight removed", UndoableDeletion.OfHighlight(highlight)))
+        _userMessages.tryEmit(UserMessage(UiText.Res(R.string.message_highlight_removed), UndoableDeletion.OfHighlight(highlight)))
     }
 
     /** The Snackbar's Undo after any highlight/note deletion — restores the soft-deleted row
@@ -708,7 +712,7 @@ class BibleViewModel(
     fun deleteNoteEditor() {
         val existing = _noteEditor.value?.existingNote ?: return
         _noteEditor.value = null
-        _userMessages.tryEmit(UserMessage("Note deleted", UndoableDeletion.OfNote(existing)))
+        _userMessages.tryEmit(UserMessage(UiText.Res(R.string.message_note_deleted), UndoableDeletion.OfNote(existing)))
         viewModelScope.launch {
             repository.deleteNote(existing.localId)
             reloadNotesInChapter()
@@ -749,7 +753,7 @@ class BibleViewModel(
      *  shared across screens rather than recreated per navigation. */
     fun deleteLibraryHighlight(highlight: Highlight) {
         _libraryHighlights.update { it.filterNot { h -> h.localId == highlight.localId } }
-        _userMessages.tryEmit(UserMessage("Highlight removed", UndoableDeletion.OfHighlight(highlight)))
+        _userMessages.tryEmit(UserMessage(UiText.Res(R.string.message_highlight_removed), UndoableDeletion.OfHighlight(highlight)))
         viewModelScope.launch {
             repository.deleteHighlight(highlight.localId)
             reloadHighlightsInChapter()
@@ -758,7 +762,7 @@ class BibleViewModel(
 
     fun deleteLibraryNote(note: Note) {
         _libraryNotes.update { it.filterNot { n -> n.localId == note.localId } }
-        _userMessages.tryEmit(UserMessage("Note deleted", UndoableDeletion.OfNote(note)))
+        _userMessages.tryEmit(UserMessage(UiText.Res(R.string.message_note_deleted), UndoableDeletion.OfNote(note)))
         viewModelScope.launch {
             repository.deleteNote(note.localId)
             reloadNotesInChapter()
@@ -797,13 +801,13 @@ class BibleViewModel(
     fun bookmarkCurrentPosition() {
         val position = ReadingPosition(_currentBook.value, _currentChapter.value, topVisibleVerse)
         setBookmark(position)
-        showMessage("Bookmarked ${bookmarkLabelFor(position)}")
+        showMessage(UiText.Res(R.string.message_bookmarked, bookmarkLabelFor(position)))
     }
 
     fun removeBookmark() {
         val removed = _bookmark.value ?: return
         setBookmark(null)
-        _userMessages.tryEmit(UserMessage("Bookmark removed", UndoableDeletion.OfBookmark(removed)))
+        _userMessages.tryEmit(UserMessage(UiText.Res(R.string.message_bookmark_removed), UndoableDeletion.OfBookmark(removed)))
     }
 
     private fun setBookmark(position: ReadingPosition?) {
@@ -985,7 +989,7 @@ class BibleViewModel(
                         loadChapter(_currentBook.value, _currentChapter.value)
                     }
                 },
-                onFailure = { _downloadError.value = it.message ?: "Download failed" }
+                onFailure = { _downloadError.value = downloadErrorText(it) }
             )
         }
     }
@@ -1055,17 +1059,28 @@ class BibleViewModel(
         return result.fold(
             onSuccess = { summary ->
                 if (summary.skippedBookCount > 0) {
-                    _downloadInfo.value = "Downloaded ${summary.downloadedVerseCount} verses across " +
-                        "${summary.downloadedChapterCount} chapters — some books aren't available in this translation."
+                    _downloadInfo.value = UiText.Res(
+                        R.string.download_partial_summary,
+                        UiText.Plural(R.plurals.download_verse_count, summary.downloadedVerseCount),
+                        UiText.Plural(R.plurals.download_chapter_count, summary.downloadedChapterCount)
+                    )
                 }
                 if (switchAfter) switchToVersion(versionId)
                 refreshDownloadedVersions()
                 true
             },
             onFailure = {
-                _downloadError.value = it.message ?: "Download failed"
+                _downloadError.value = downloadErrorText(it)
                 false
             }
         )
+    }
+
+    /** The two failures a reader can act on get their own message; anything else (a server or
+     *  parsing error) shows its technical detail, as before. */
+    private fun downloadErrorText(error: Throwable): UiText = when (error) {
+        is NoInternetException -> UiText.Res(R.string.download_error_offline)
+        is NoContentException -> UiText.Res(R.string.download_error_no_content)
+        else -> error.message?.let { UiText.Raw(it) } ?: UiText.Res(R.string.download_failed)
     }
 }
