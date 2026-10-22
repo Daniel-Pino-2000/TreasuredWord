@@ -277,13 +277,14 @@ class BibleViewModel(
      * Short label for the version button (e.g. "KJV", "ESV") — looked up from the
      * translation catalog by id. Falls back to "KJV" for the bundled default (it has no
      * catalog entry, it isn't a real helloao translation id) and to the raw id, uppercased,
-     * if the catalog hasn't loaded yet.
+     * if the catalog hasn't loaded yet. Started eagerly: share text reads `.value` from screens
+     * that never collect it (Home's verse card), where it would otherwise still be "KJV".
      */
     val currentVersionLabel: StateFlow<String> =
         combine(_selectedVersion, _availableVersions) { selected, versions ->
             versions.firstOrNull { it.id == selected.id }?.displayName
                 ?: if (selected.id == DEFAULT_VERSION.id) "KJV" else selected.id.uppercase()
-        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), "KJV")
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, "KJV")
 
     private val _themeMode = MutableStateFlow(repository.loadThemeMode())
     val themeMode: StateFlow<ThemeMode> = _themeMode.asStateFlow()
@@ -544,6 +545,12 @@ class BibleViewModel(
         return text
     }
 
+    /** The Home verse card's Copy/Share text, in the same `"…" — Ref (VER)` shape as a reader
+     *  selection (see [buildVerseShareText]). Null until the daily verse has loaded. */
+    fun verseOfTheDayShareText(): String? = _verseOfTheDay.value?.let { verse ->
+        "\"${verse.text.trim()}\"\n— ${verse.reference} (${currentVersionLabel.value})"
+    }
+
     /** For confirmations the system doesn't already show (e.g. copy on Android 12 and older). */
     fun showMessage(text: UiText) {
         _userMessages.tryEmit(UserMessage(text))
@@ -683,6 +690,8 @@ class BibleViewModel(
         setBook(first.bookId, first.chapter, first.verse)
         _selectedVerses.value = highlight.verses.toSet()
         activeSelectionHighlightId = highlight.localId
+        // Scroll even when that chapter is already open, where reloading it alone doesn't move.
+        _scrollRequest.update { it + 1 }
     }
 
     /** Reached from a Library note card: jumps to its chapter and opens the note straight into
@@ -693,6 +702,7 @@ class BibleViewModel(
         val first = note.verses.minWithOrNull(compareBy({ it.bookId }, { it.chapter }, { it.verse })) ?: return
         setBook(first.bookId, first.chapter, first.verse)
         openNoteEditorForNote(note)
+        _scrollRequest.update { it + 1 }
     }
 
     fun updateNoteEditorText(text: String) {

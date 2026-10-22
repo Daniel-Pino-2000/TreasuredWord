@@ -58,8 +58,13 @@
     <string name="message_bookmark_removed">Lesezeichen entfernt</string>
 
     <string name="home_continue_reading">Weiterlesen</string>
-    <string name="home_search_bible">In der Bibel suchen</string>
-    <string name="home_search_bible_subtitle">Finde einen Vers per Stichwort</string>
+    <string name="home_greeting_morning">Guten Morgen</string>
+    <string name="home_greeting_afternoon">Guten Tag</string>
+    <string name="home_greeting_evening">Guten Abend</string>
+    <string name="home_chapter_progress">Kapitel %1$d von %2$d</string>
+    <string name="home_recent_highlights">Deine letzten Markierungen</string>
+    <string name="home_see_all">Alle anzeigen</string>
+    <string name="home_highlights_empty">Markiere beim Lesen einen Vers, dann erscheint er hier.</string>
 
     <string name="footnote_verse">Vers %1$d</string>
     <plurals name="selection_verses_selected">

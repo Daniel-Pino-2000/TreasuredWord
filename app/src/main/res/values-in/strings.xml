@@ -59,8 +59,13 @@
     <string name="message_bookmark_removed">Penanda dihapus</string>
 
     <string name="home_continue_reading">Lanjutkan Membaca</string>
-    <string name="home_search_bible">Cari di Alkitab</string>
-    <string name="home_search_bible_subtitle">Temukan ayat dengan kata kunci</string>
+    <string name="home_greeting_morning">Selamat pagi</string>
+    <string name="home_greeting_afternoon">Selamat siang</string>
+    <string name="home_greeting_evening">Selamat malam</string>
+    <string name="home_chapter_progress">Pasal %1$d dari %2$d</string>
+    <string name="home_recent_highlights">Sorotan terbaru Anda</string>
+    <string name="home_see_all">Lihat semua</string>
+    <string name="home_highlights_empty">Sorot ayat saat membaca dan ayat itu akan muncul di sini.</string>
 
     <string name="footnote_verse">Ayat %1$d</string>
     <plurals name="selection_verses_selected">

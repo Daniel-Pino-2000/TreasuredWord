@@ -60,8 +60,13 @@
     <string name="message_bookmark_removed">Inalis ang bookmark</string>
 
     <string name="home_continue_reading">Ituloy ang Pagbasa</string>
-    <string name="home_search_bible">Maghanap sa Bibliya</string>
-    <string name="home_search_bible_subtitle">Maghanap ng talata gamit ang keyword</string>
+    <string name="home_greeting_morning">Magandang umaga</string>
+    <string name="home_greeting_afternoon">Magandang hapon</string>
+    <string name="home_greeting_evening">Magandang gabi</string>
+    <string name="home_chapter_progress">Kabanata %1$d ng %2$d</string>
+    <string name="home_recent_highlights">Mga kamakailang highlight mo</string>
+    <string name="home_see_all">Tingnan lahat</string>
+    <string name="home_highlights_empty">Mag-highlight ng talata habang nagbabasa at lalabas ito rito.</string>
 
     <string name="footnote_verse">Talata %1$d</string>
     <plurals name="selection_verses_selected">

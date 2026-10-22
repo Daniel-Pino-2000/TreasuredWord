@@ -1,43 +1,76 @@
 package com.application.bibleapp.screens
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
+import android.content.Intent
+import android.os.Build
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.MenuBook
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.BaselineShift
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import com.application.bibleapp.R
+import com.application.bibleapp.data.model.BibleBooks
 import com.application.bibleapp.data.model.DailyVerseUI
+import com.application.bibleapp.data.model.Highlight
+import com.application.bibleapp.data.model.chapterCount
 import com.application.bibleapp.ui.theme.MaxContentWidth
 import com.application.bibleapp.ui.theme.ReadingStyle
 import com.application.bibleapp.ui.theme.Spacing
 import com.application.bibleapp.ui.theme.centeredContentWidth
 import com.application.bibleapp.ui.theme.isCompactHeight
 import com.application.bibleapp.ui.theme.scaledBy
+import com.application.bibleapp.utils.UiText
+import com.application.bibleapp.utils.verseRefsText
 import com.application.bibleapp.viewmodel.BibleViewModel
-import com.application.bibleapp.R
-import androidx.compose.ui.res.stringResource
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+
+/** How many of the newest highlights the Home strip shows before "See all". */
+private const val RECENT_HIGHLIGHT_COUNT = 5
 
 @Composable
 fun HomeView(
@@ -45,31 +78,67 @@ fun HomeView(
     modifier: Modifier = Modifier,
     onContinueReadingClick: () -> Unit,
     onBookmarkClick: () -> Unit,
-    onSearchClick: () -> Unit
+    onHighlightClick: (Highlight) -> Unit,
+    onSeeAllHighlightsClick: () -> Unit
 ) {
+    // The recent-highlights strip reads the Library's data; reload on every visit so a highlight
+    // made or removed in the reader shows up here straight away.
+    LaunchedEffect(Unit) { bibleViewModel.loadLibrary() }
+
     val verseOfTheDay by bibleViewModel.verseOfTheDay.collectAsState()
     val verseTextScale by bibleViewModel.verseTextScale.collectAsState()
+    val currentBook by bibleViewModel.currentBook.collectAsState()
     val currentBookName by bibleViewModel.currentBookName.collectAsState()
     val currentChapter by bibleViewModel.currentChapter.collectAsState()
+    val chapterStructure by bibleViewModel.chapterStructure.collectAsState()
     val bookmarkLabel by bibleViewModel.bookmarkLabel.collectAsState()
+    val highlights by bibleViewModel.libraryHighlights.collectAsState()
+    val verseTextByKey by bibleViewModel.libraryVerseText.collectAsState()
+    val bookNames by bibleViewModel.bookNames.collectAsState()
 
-    val verseCard: @Composable (Modifier) -> Unit = { cardModifier ->
+    // ISO-8601 UTC timestamps sort chronologically as plain strings.
+    val recentHighlights = remember(highlights) {
+        highlights.sortedByDescending { it.createdAt }.take(RECENT_HIGHLIGHT_COUNT)
+    }
+    val bookName = { bookId: Int -> bookNames[bookId] ?: BibleBooks.getBookById(bookId)?.name ?: "" }
+
+    val clipboardManager = LocalClipboardManager.current
+    val context = LocalContext.current
+
+    val greeting: @Composable () -> Unit = { HomeGreeting() }
+    val verseCard: @Composable () -> Unit = {
         verseOfTheDay?.let { verse ->
             VerseOfTheDayCard(
                 verse = verse,
                 textScale = verseTextScale.multiplier,
-                modifier = cardModifier
+                onCopy = {
+                    bibleViewModel.verseOfTheDayShareText()?.let { text ->
+                        clipboardManager.setText(AnnotatedString(text))
+                        // Android 13+ shows its own clipboard confirmation; don't double it.
+                        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+                            bibleViewModel.showMessage(UiText.Res(R.string.message_copied))
+                        }
+                    }
+                },
+                onShare = {
+                    bibleViewModel.verseOfTheDayShareText()?.let { text ->
+                        val send = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_TEXT, text)
+                        }
+                        context.startActivity(Intent.createChooser(send, null))
+                    }
+                }
             )
         }
     }
-    val shortcuts: @Composable () -> Unit = {
-        HomeShortcutRow(
-            icon = Icons.Filled.MenuBook,
-            title = stringResource(R.string.home_continue_reading),
-            subtitle = "$currentBookName $currentChapter",
+    val readingSection: @Composable () -> Unit = {
+        ContinueReadingCard(
+            reference = "$currentBookName $currentChapter",
+            chapter = currentChapter,
+            chapterCount = chapterStructure.chapterCount(currentBook),
             onClick = onContinueReadingClick
         )
-
         bookmarkLabel?.let { label ->
             HomeShortcutRow(
                 icon = Icons.Filled.Bookmark,
@@ -78,18 +147,18 @@ fun HomeView(
                 onClick = onBookmarkClick
             )
         }
-
-        HomeShortcutRow(
-            icon = Icons.Filled.Search,
-            title = stringResource(R.string.home_search_bible),
-            subtitle = stringResource(R.string.home_search_bible_subtitle),
-            onClick = onSearchClick
+        RecentHighlightsSection(
+            highlights = recentHighlights,
+            verseText = { highlight -> resolveVerseText(highlight.versionId, highlight.verses, verseTextByKey) },
+            bookName = bookName,
+            onHighlightClick = onHighlightClick,
+            onSeeAllClick = onSeeAllHighlightsClick
         )
     }
 
     if (isCompactHeight()) {
-        // Landscape: verse card on the left, shortcuts on the right, so the whole card fits
-        // without scrolling. Each column stays well under MaxContentWidth.
+        // Landscape: verse card on the left, greeting, reading and highlights on the right, so
+        // the verse fits without scrolling. Each column stays well under MaxContentWidth.
         Row(
             modifier = modifier
                 .centeredContentWidth(maxWidth = MaxContentWidth * 1.4f)
@@ -97,12 +166,18 @@ fun HomeView(
                 .padding(Spacing.lg),
             horizontalArrangement = Arrangement.spacedBy(Spacing.lg)
         ) {
-            verseCard(Modifier.weight(1.6f))
+            Column(
+                modifier = Modifier.weight(1.3f),
+                verticalArrangement = Arrangement.spacedBy(Spacing.md)
+            ) {
+                verseCard()
+            }
             Column(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(Spacing.lg)
+                verticalArrangement = Arrangement.spacedBy(Spacing.md)
             ) {
-                shortcuts()
+                greeting()
+                readingSection()
             }
         }
     } else {
@@ -111,19 +186,54 @@ fun HomeView(
                 .centeredContentWidth()
                 .verticalScroll(rememberScrollState())
                 .padding(Spacing.lg),
-            verticalArrangement = Arrangement.spacedBy(Spacing.lg)
+            verticalArrangement = Arrangement.spacedBy(Spacing.md)
         ) {
-            verseCard(Modifier.fillMaxWidth())
-            shortcuts()
+            greeting()
+            verseCard()
+            readingSection()
         }
     }
 }
 
+/** "Good morning" (afternoon / evening by the clock) over today's date in the app's language. */
 @Composable
-private fun VerseOfTheDayCard(verse: DailyVerseUI, textScale: Float, modifier: Modifier = Modifier) {
+private fun HomeGreeting() {
+    val locale = LocalConfiguration.current.locales[0]
+    val hour = remember { Calendar.getInstance().get(Calendar.HOUR_OF_DAY) }
+    val greetingRes = when (hour) {
+        in 5..11 -> R.string.home_greeting_morning
+        in 12..17 -> R.string.home_greeting_afternoon
+        else -> R.string.home_greeting_evening
+    }
+    val date = remember(locale) {
+        val pattern = android.text.format.DateFormat.getBestDateTimePattern(locale, "EEEEMMMMd")
+        SimpleDateFormat(pattern, locale).format(Date())
+    }
+    Column(modifier = Modifier.padding(top = Spacing.xs, bottom = Spacing.xs)) {
+        Text(
+            text = stringResource(greetingRes),
+            style = MaterialTheme.typography.headlineSmall.copy(fontFamily = FontFamily.Serif),
+            color = MaterialTheme.colorScheme.onBackground
+        )
+        Text(
+            text = date,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+@Composable
+private fun VerseOfTheDayCard(
+    verse: DailyVerseUI,
+    textScale: Float,
+    onCopy: () -> Unit,
+    onShare: () -> Unit
+) {
+    val contentColor = MaterialTheme.colorScheme.onPrimaryContainer
     // A range shows each verse's number as a superscript before its text, like the reader does.
     val verseNumberStyle = ReadingStyle.VerseNumber.scaledBy(textScale).toSpanStyle().copy(
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        color = MaterialTheme.colorScheme.primary,
         baselineShift = BaselineShift.Superscript
     )
     val verseText = remember(verse, verseNumberStyle) {
@@ -132,21 +242,25 @@ private fun VerseOfTheDayCard(verse: DailyVerseUI, textScale: Float, modifier: M
                 if (index > 0) append(" ")
                 if (verse.hasVerseNumbers) {
                     withStyle(verseNumberStyle) { append("${line.number}") }
-                    append(" ")
+                    append(" ")
                 }
                 append(line.text)
             }
         }
     }
     Surface(
-        modifier = modifier,
+        modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+        color = MaterialTheme.colorScheme.primaryContainer,
+        contentColor = contentColor
     ) {
         Column(
-            // Tighter in landscape, where the card has to fit the short screen without scrolling.
-            modifier = Modifier.padding(if (isCompactHeight()) Spacing.lg else Spacing.xl),
+            modifier = Modifier.padding(
+                start = Spacing.xl,
+                end = Spacing.sm,
+                top = if (isCompactHeight()) Spacing.lg else Spacing.xl,
+                bottom = Spacing.sm
+            ),
             verticalArrangement = Arrangement.spacedBy(Spacing.sm)
         ) {
             Text(
@@ -157,12 +271,176 @@ private fun VerseOfTheDayCard(verse: DailyVerseUI, textScale: Float, modifier: M
             Text(
                 text = verseText,
                 style = ReadingStyle.VerseText.scaledBy(textScale),
-                color = MaterialTheme.colorScheme.onSurface
+                modifier = Modifier.padding(end = Spacing.lg)
+            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = verse.reference,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = contentColor.copy(alpha = 0.75f),
+                    modifier = Modifier.weight(1f)
+                )
+                IconButton(onClick = onCopy) {
+                    Icon(
+                        Icons.Filled.ContentCopy,
+                        contentDescription = stringResource(R.string.action_copy),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+                IconButton(onClick = onShare) {
+                    Icon(
+                        Icons.Filled.Share,
+                        contentDescription = stringResource(R.string.action_share),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** Where you left off, with how far into the book that chapter is. */
+@Composable
+private fun ContinueReadingCard(reference: String, chapter: Int, chapterCount: Int, onClick: () -> Unit) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surface,
+        onClick = onClick
+    ) {
+        Column(modifier = Modifier.padding(Spacing.lg)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = stringResource(R.string.home_continue_reading),
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Text(
+                        text = reference,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(MaterialTheme.colorScheme.primary, CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowForward,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimary
+                    )
+                }
+            }
+            if (chapterCount > 1) {
+                Row(
+                    modifier = Modifier.padding(top = Spacing.md),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.md)
+                ) {
+                    LinearProgressIndicator(
+                        progress = { (chapter.toFloat() / chapterCount).coerceIn(0f, 1f) },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(6.dp),
+                        color = MaterialTheme.colorScheme.primary,
+                        trackColor = MaterialTheme.colorScheme.outline,
+                        strokeCap = StrokeCap.Round,
+                        gapSize = 0.dp,
+                        drawStopIndicator = {}
+                    )
+                    Text(
+                        text = stringResource(R.string.home_chapter_progress, chapter, chapterCount),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** The newest few highlights as a sideways strip, or a hint about highlighting when there are none. */
+@Composable
+private fun RecentHighlightsSection(
+    highlights: List<Highlight>,
+    verseText: (Highlight) -> String,
+    bookName: (Int) -> String,
+    onHighlightClick: (Highlight) -> Unit,
+    onSeeAllClick: () -> Unit
+) {
+    Column {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = stringResource(R.string.home_recent_highlights),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.weight(1f)
+            )
+            if (highlights.isNotEmpty()) {
+                TextButton(onClick = onSeeAllClick) {
+                    Text(stringResource(R.string.home_see_all))
+                }
+            }
+        }
+        if (highlights.isEmpty()) {
+            Text(
+                text = stringResource(R.string.home_highlights_empty),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = Spacing.xs)
+            )
+        } else {
+            LazyRow(
+                modifier = Modifier.padding(top = Spacing.xs),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                contentPadding = PaddingValues(end = Spacing.sm)
+            ) {
+                items(highlights, key = { it.localId }) { highlight ->
+                    RecentHighlightCard(
+                        reference = verseRefsText(highlight.verses, bookName),
+                        text = verseText(highlight),
+                        color = Color(highlight.color),
+                        onClick = { onHighlightClick(highlight) }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RecentHighlightCard(reference: String, text: String, color: Color, onClick: () -> Unit) {
+    // The stored color is already translucent (see toHighlightArgb), so over `surface` it reads
+    // as the same tint the verse has in the reader, in light and dark alike.
+    Surface(
+        modifier = Modifier.width(176.dp),
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surface,
+        onClick = onClick
+    ) {
+        Column(
+            modifier = Modifier
+                .background(color)
+                .padding(Spacing.md),
+            verticalArrangement = Arrangement.spacedBy(Spacing.sm)
+        ) {
+            // Always three lines tall, so every card in the strip matches without a fixed height
+            // that taller scripts' line spacing (e.g. Korean) would overflow.
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Serif),
+                minLines = 3,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis
             )
             Text(
-                text = verse.reference,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                text = reference,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }
