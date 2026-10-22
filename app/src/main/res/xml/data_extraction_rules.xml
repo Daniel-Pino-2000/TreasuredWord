@@ -1,19 +1,33 @@
-<?xml version="1.0" encoding="utf-8"?><!--
-   Sample data extraction rules file; uncomment and customize as necessary.
-   See https://developer.android.com/about/versions/12/backup-restore#xml-changes
-   for details.
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+   What Auto Backup (cloud-backup) and device-to-device transfer copy on Android 12+.
+   Older versions read backup_rules.xml instead; keep both in step.
+
+   Only the files listed here are copied:
+   - bible_prefs.xml (reading position, bookmark, theme, text size, reminder, sync settings)
+     and app_language.xml are small and worth keeping.
+   - databases/bible_default.db holds downloaded translations and local highlights/notes. With
+     a few versions downloaded it's well past cloud backup's 25 MB per-app limit, and going over
+     drops the whole backup, so it only goes on device transfer, which has no such limit. Its
+     .ver file goes with it, or the app would replace the restored DB with the bundled copy.
+     On a cloud restore, signing in pulls synced highlights/notes back from the server.
+
+   Never copied:
+   - shared_prefs/auth_tokens.xml: TokenStore encrypts it with an Android Keystore key that
+     can't leave the device, so a copy is unreadable anywhere else (issue #50). The user signs
+     in again on the new phone.
+   - files/translations_cache.json (re-fetched), and no_backup/ (WorkManager's DB) and cache/,
+     which the system never backs up.
 -->
 <data-extraction-rules>
     <cloud-backup>
-        <!-- TODO: Use <include> and <exclude> to control what is backed up.
-        <include .../>
-        <exclude .../>
-        -->
+        <include domain="sharedpref" path="bible_prefs.xml" />
+        <include domain="sharedpref" path="app_language.xml" />
     </cloud-backup>
-    <!--
     <device-transfer>
-        <include .../>
-        <exclude .../>
+        <include domain="sharedpref" path="bible_prefs.xml" />
+        <include domain="sharedpref" path="app_language.xml" />
+        <include domain="database" path="bible_default.db" />
+        <include domain="database" path="bible_default.db.ver" />
     </device-transfer>
-    -->
 </data-extraction-rules>

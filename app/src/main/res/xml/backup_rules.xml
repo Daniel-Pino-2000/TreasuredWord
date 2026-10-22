@@ -1,13 +1,11 @@
-<?xml version="1.0" encoding="utf-8"?><!--
-   Sample backup rules file; uncomment and customize as necessary.
-   See https://developer.android.com/guide/topics/data/autobackup
-   for details.
-   Note: This file is ignored for devices older than API 31
-   See https://developer.android.com/about/versions/12/backup-restore
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+   Auto Backup rules for Android 7-8.1 (Android 12+ reads data_extraction_rules.xml, and
+   9-11 read xml-v28/backup_rules.xml). See data_extraction_rules.xml for why each file is
+   in or out. These versions can't tell cloud backup from device transfer, so the Bible DB
+   stays out: it would push the backup past the 25 MB cloud limit and drop all of it.
 -->
 <full-backup-content>
-    <!--
-   <include domain="sharedpref" path="."/>
-   <exclude domain="sharedpref" path="device.xml"/>
--->
+    <include domain="sharedpref" path="bible_prefs.xml" />
+    <include domain="sharedpref" path="app_language.xml" />
 </full-backup-content>
