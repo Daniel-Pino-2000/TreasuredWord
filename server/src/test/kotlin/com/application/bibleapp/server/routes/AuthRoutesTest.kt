@@ -72,8 +72,9 @@ class AuthRoutesTest {
         // would fail almost every run even for a correct implementation: the server signs
         // its token at one millisecond and the test would sign its own comparison token at a
         // later millisecond, so the "exp" claim - and therefore the whole signed token -
-        // would practically never match byte-for-byte.
-        val decoded = JWT.require(Algorithm.HMAC256("changeme-dev-secret"))
+        // would practically never match byte-for-byte. The secret mirrors application.conf:
+        // the dev default unless JWT_SECRET is set (as it is in CI).
+        val decoded = JWT.require(Algorithm.HMAC256(System.getenv("JWT_SECRET") ?: "changeme-dev-secret"))
             .withIssuer("bibleapp-server")
             .withAudience("bibleapp-users")
             .build()
