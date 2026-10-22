@@ -90,10 +90,11 @@
 
     <string name="search_book_placeholder">搜索书卷</string>
     <string name="search_verse_placeholder">搜索经文</string>
-    <string name="search_icon">搜索图标</string>
     <string name="search_empty_prompt">搜索经文、关键词或章节</string>
     <string name="search_suggestions_title">试试这些</string>
     <string name="search_no_results">没有找到“%1$s”的结果</string>
+    <string name="search_error">暂时无法搜索，请重试。</string>
+    <string name="search_clear">清除搜索</string>
 
     <string name="version_remove_title">移除 %1$s？</string>
     <string name="version_remove_message">这会从设备上删除已下载的经文。之后可以重新下载。</string>

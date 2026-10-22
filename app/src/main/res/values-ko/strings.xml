@@ -91,10 +91,11 @@
 
     <string name="search_book_placeholder">책 검색</string>
     <string name="search_verse_placeholder">성경 구절 검색</string>
-    <string name="search_icon">검색 아이콘</string>
     <string name="search_empty_prompt">구절, 키워드 또는 장절을 검색하세요</string>
     <string name="search_suggestions_title">이런 단어는 어때요?</string>
     <string name="search_no_results">\'%1$s\'에 대한 결과가 없어요</string>
+    <string name="search_error">지금은 검색할 수 없어요. 다시 시도해 주세요.</string>
+    <string name="search_clear">검색어 지우기</string>
 
     <string name="version_remove_title">%1$s을(를) 삭제할까요?</string>
     <string name="version_remove_message">다운로드한 본문이 기기에서 삭제돼요. 나중에 다시 다운로드할 수 있어요.</string>

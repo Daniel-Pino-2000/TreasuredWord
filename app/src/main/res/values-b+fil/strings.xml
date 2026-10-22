@@ -94,10 +94,11 @@
 
     <string name="search_book_placeholder">Maghanap ng Aklat</string>
     <string name="search_verse_placeholder">Maghanap ng Talata</string>
-    <string name="search_icon">Icon ng paghahanap</string>
     <string name="search_empty_prompt">Maghanap ng talata, keyword, o reference</string>
     <string name="search_suggestions_title">Subukan ang isa sa mga ito</string>
     <string name="search_no_results">Walang resulta para sa \"%1$s\"</string>
+    <string name="search_error">Hindi makapaghanap ngayon. Pakisubukan ulit.</string>
+    <string name="search_clear">I-clear ang paghahanap</string>
 
     <string name="version_remove_title">Alisin ang %1$s?</string>
     <string name="version_remove_message">Buburahin nito ang na-download na teksto sa iyong device. Puwede mo itong i-download ulit mamaya.</string>

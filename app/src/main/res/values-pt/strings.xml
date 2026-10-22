@@ -95,10 +95,11 @@
 
     <string name="search_book_placeholder">Buscar livro</string>
     <string name="search_verse_placeholder">Buscar versículo</string>
-    <string name="search_icon">Ícone de busca</string>
     <string name="search_empty_prompt">Busque um versículo, uma palavra-chave ou uma referência</string>
     <string name="search_suggestions_title">Experimente uma destas</string>
     <string name="search_no_results">Nenhum resultado para \"%1$s\"</string>
+    <string name="search_error">Não foi possível pesquisar agora. Tente novamente.</string>
+    <string name="search_clear">Limpar pesquisa</string>
 
     <string name="version_remove_title">Remover %1$s?</string>
     <string name="version_remove_message">O texto baixado será apagado do seu dispositivo. Você pode baixá-lo de novo depois.</string>

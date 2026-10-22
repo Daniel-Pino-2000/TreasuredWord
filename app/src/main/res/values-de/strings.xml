@@ -92,10 +92,11 @@
 
     <string name="search_book_placeholder">Buch suchen</string>
     <string name="search_verse_placeholder">Bibelvers suchen</string>
-    <string name="search_icon">Suchsymbol</string>
     <string name="search_empty_prompt">Suche nach einem Vers, einem Stichwort oder einer Bibelstelle</string>
     <string name="search_suggestions_title">Probier eins davon</string>
     <string name="search_no_results">Keine Ergebnisse für „%1$s“</string>
+    <string name="search_error">Die Suche hat gerade nicht geklappt. Bitte versuch es noch einmal.</string>
+    <string name="search_clear">Suche löschen</string>
 
     <string name="version_remove_title">%1$s entfernen?</string>
     <string name="version_remove_message">Der heruntergeladene Text wird von deinem Gerät gelöscht. Du kannst ihn später erneut herunterladen.</string>

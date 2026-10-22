@@ -107,10 +107,11 @@
     <!-- Search -->
     <string name="search_book_placeholder">Search Book</string>
     <string name="search_verse_placeholder">Search Bible Verse</string>
-    <string name="search_icon">Search Icon</string>
     <string name="search_empty_prompt">Search for a verse, keyword, or reference</string>
     <string name="search_suggestions_title">Try one of these</string>
     <string name="search_no_results">No results for \"%1$s\"</string>
+    <string name="search_error">Couldn\'t search right now. Please try again.</string>
+    <string name="search_clear">Clear search</string>
 
     <!-- Version picker. %1$s is always a Bible translation's name. -->
     <string name="version_remove_title">Remove %1$s?</string>

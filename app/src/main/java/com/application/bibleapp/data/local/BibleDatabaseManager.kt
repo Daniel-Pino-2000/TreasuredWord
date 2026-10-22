@@ -676,8 +676,9 @@ object BibleDatabaseManager {
             }
             results
         } catch (e: Exception) {
+            // Rethrown so the Search screen can show an error instead of a misleading "no results".
             Log.e("BibleDB", "Search error: ${e.message}")
-            emptyList()
+            throw e
         }
     }
 

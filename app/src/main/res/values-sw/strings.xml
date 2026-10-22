@@ -93,10 +93,11 @@
 
     <string name="search_book_placeholder">Tafuta Kitabu</string>
     <string name="search_verse_placeholder">Tafuta Mstari wa Biblia</string>
-    <string name="search_icon">Aikoni ya kutafuta</string>
     <string name="search_empty_prompt">Tafuta mstari, neno kuu au rejeleo</string>
     <string name="search_suggestions_title">Jaribu mojawapo ya haya</string>
     <string name="search_no_results">Hakuna matokeo ya \"%1$s\"</string>
+    <string name="search_error">Imeshindwa kutafuta kwa sasa. Tafadhali jaribu tena.</string>
+    <string name="search_clear">Futa utafutaji</string>
 
     <string name="version_remove_title">Ondoa %1$s?</string>
     <string name="version_remove_message">Maandishi yaliyopakuliwa yatafutwa kwenye kifaa chako. Unaweza kuyapakua tena baadaye.</string>

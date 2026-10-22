@@ -2,6 +2,16 @@ package com.application.bibleapp.screens
 
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.icons.outlined.ErrorOutline
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.key
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -47,8 +57,7 @@ fun SearchView(
 ) {
 
     val searchText by bibleViewModel.searchQuery.collectAsState()
-
-    val searchedVerses by bibleViewModel.searchResults.collectAsState()
+    val searchState by bibleViewModel.searchState.collectAsState()
     val bookNames by bibleViewModel.bookNames.collectAsState()
 
     Column(
@@ -58,25 +67,31 @@ fun SearchView(
         SearchBar(
             searchText = searchText,
             onTextChange = { bibleViewModel.onSearchQueryChange(it) },
-            onSearchClick = { bibleViewModel.onSearchButtonClick() },
+            onSearch = { bibleViewModel.onSearchSubmit() },
             modifier = Modifier.fillMaxWidth(),
             placeholder = stringResource(R.string.search_verse_placeholder)
         )
 
+        // Always reserves its height so results don't jump when a search starts or ends.
+        Box(modifier = Modifier.fillMaxWidth().height(4.dp)) {
+            if (searchState.isSearching) LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+        }
+
+        // Driven only by searchState (what was actually searched), never by the live text.
         when {
-            searchText.isBlank() -> SearchEmptyState(
+            searchState.results.isNotEmpty() ->
+                SearchResultsList(searchState.query, searchState.results, bookNames, onVerseClicked)
+            searchState.isSearching -> Unit
+            searchState.hasError -> SearchErrorState(onRetry = { bibleViewModel.onSearchSubmit() })
+            searchState.query.isEmpty() -> SearchEmptyState(
                 onSuggestionClick = { keyword ->
                     bibleViewModel.onSearchQueryChange(keyword)
-                    bibleViewModel.onSearchButtonClick()
+                    bibleViewModel.onSearchSubmit()
                 }
             )
-            searchedVerses.isEmpty() -> SearchNoResultsState(query = searchText)
-            else -> SearchResultsList(searchedVerses, bookNames, onVerseClicked)
+            else -> SearchNoResultsState(query = searchState.query)
         }
     }
-
-
-
 }
 
 @Composable
@@ -149,39 +164,80 @@ private fun SearchNoResultsState(query: String) {
 }
 
 @Composable
+private fun SearchErrorState(onRetry: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(Spacing.xl),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            imageVector = Icons.Outlined.ErrorOutline,
+            contentDescription = null,
+            modifier = Modifier.size(48.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            text = stringResource(R.string.search_error),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = Spacing.lg, bottom = Spacing.md)
+        )
+        TextButton(onClick = onRetry) {
+            Text(stringResource(R.string.action_retry))
+        }
+    }
+}
+
+@Composable
 private fun SearchResultsList(
+    query: String,
     searchedVerses: List<VerseUI>,
     bookNames: Map<Int, String>,
     onVerseClicked: (bookId: Int, chapter: Int, verse: Int) -> Unit
 ) {
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-    ) {
-        items(searchedVerses, key = { it.id ?: 0 }) { verse ->
-            val bookName = bookNames[verse.bookId ?: 0] ?: BibleBooks.getBookById(verse.bookId ?: 0)?.name ?: "Unknown"
+    // A fresh scroll position per query: new results start at the top, while Back from a verse
+    // still restores where the user was in these results.
+    key(query) {
+        val listState = rememberLazyListState()
+        val keyboardController = LocalSoftwareKeyboardController.current
+        LaunchedEffect(listState.isScrollInProgress) {
+            if (listState.isScrollInProgress) keyboardController?.hide()
+        }
 
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable {
-                        onVerseClicked(verse.bookId!!, verse.chapter!!, verse.verse!!)
-                    }
-                    .padding(horizontal = Spacing.lg, vertical = Spacing.md)
-            ) {
-                Text(
-                    text = "$bookName ${verse.chapter}:${verse.verse}",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Text(
-                    text = verse.text,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(top = Spacing.xs)
-                )
+        LazyColumn(
+            state = listState,
+            modifier = Modifier
+                .fillMaxSize()
+        ) {
+            // GROUP BY book/chapter/verse makes this unique, unlike VerseUI.id's string hash.
+            items(searchedVerses, key = { "${it.bookId}_${it.chapter}_${it.verse}" }) { verse ->
+                val bookName = bookNames[verse.bookId ?: 0] ?: BibleBooks.getBookById(verse.bookId ?: 0)?.name ?: "Unknown"
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            onVerseClicked(verse.bookId!!, verse.chapter!!, verse.verse!!)
+                        }
+                        .padding(horizontal = Spacing.lg, vertical = Spacing.md)
+                ) {
+                    Text(
+                        text = "$bookName ${verse.chapter}:${verse.verse}",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = verse.text,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.padding(top = Spacing.xs)
+                    )
+                }
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             }
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         }
     }
 }

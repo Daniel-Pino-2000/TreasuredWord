@@ -69,12 +69,9 @@ fun Navigation(
         }
 
         composable(Screen.Search.route) {
+            // The search is kept (it lives in the ViewModel), so Back returns to the same results.
             SearchView(bibleViewModel, modifier = screenModifier) { bookId, chapter, verse ->
-                // Clear search first to avoid rendering issues
-                bibleViewModel.clearSearchResults()
                 bibleViewModel.setBook(bookId, chapter, verse)
-
-                // Navigate safely after clearing
                 navController.navigate(Screen.Bible.route)
             }
         }
