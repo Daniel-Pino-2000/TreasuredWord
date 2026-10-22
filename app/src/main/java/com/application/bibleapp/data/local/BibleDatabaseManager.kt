@@ -56,12 +56,19 @@ data class VersionDownloadSummary(
 object BibleDatabaseManager {
 
     private const val DB_NAME = "bible_default.db"
-    private const val DB_VERSION = 2 // bump this whenever you change the schema
-    private var dbInstance: SQLiteDatabase? = null
+    // Bump this whenever the bundled asset changes (e.g. a corrected KJV_verses). Existing
+    // installs then refresh just the asset's own tables — see [refreshBundledTables].
+    private const val DB_VERSION = 2
+    @Volatile private var dbInstance: SQLiteDatabase? = null
 
     /**
-     * Copies DB from assets if it doesn't exist, or if the stored version is outdated.
-     * Version is tracked in a separate tiny file next to the DB so we don't touch the DB itself.
+     * Makes sure the on-device DB exists and matches [DB_VERSION]. The version is tracked in a
+     * tiny file next to the DB, written only once the DB is fully in place, so a crash halfway
+     * through just means the same step runs again on the next launch.
+     *
+     * - No DB yet (fresh install): copy the asset into place.
+     * - Older version: the file also holds highlights, notes and downloaded translations, so it's
+     *   never replaced. Only the tables the asset ships are refreshed in place.
      */
     private fun copyDatabaseIfNeeded(context: Context): File {
         val dbFile = context.getDatabasePath(DB_NAME)
@@ -69,44 +76,110 @@ object BibleDatabaseManager {
 
         val installedVersion = if (versionFile.exists()) versionFile.readText().trim().toIntOrNull() ?: 0 else 0
 
-        if (!dbFile.exists() || installedVersion < DB_VERSION) {
-            dbFile.parentFile?.mkdirs()
-            try {
-                context.assets.open(DB_NAME).use { input ->
-                    FileOutputStream(dbFile).use { output ->
-                        input.copyTo(output)
-                    }
-                }
+        try {
+            if (!dbFile.exists()) {
+                copyAsset(context, dbFile)
                 versionFile.writeText(DB_VERSION.toString())
                 // The fresh copy has no highlights or notes, so any sync watermark left in prefs
                 // (e.g. restored from a cloud backup, which doesn't carry this DB) is stale.
                 BibleRepository.clearSyncState(context)
                 Log.d("BibleDB", "Database copied (schema version $DB_VERSION)")
-            } catch (e: Exception) {
-                Log.e("BibleDB", "Error copying database: ${e.message}")
-                throw e
+            } else if (installedVersion < DB_VERSION) {
+                refreshBundledTables(context, dbFile)
+                versionFile.writeText(DB_VERSION.toString())
+                Log.d("BibleDB", "Bundled tables refreshed (schema version $installedVersion -> $DB_VERSION)")
+            } else {
+                Log.d("BibleDB", "Database up to date (version $installedVersion)")
             }
-        } else {
-            Log.d("BibleDB", "Database up to date (version $installedVersion)")
+        } catch (e: Exception) {
+            Log.e("BibleDB", "Error installing database: ${e.message}")
+            throw e
         }
 
         return dbFile
     }
 
-    fun getDatabase(context: Context): SQLiteDatabase {
-        if (dbInstance == null || dbInstance?.isOpen == false) {
-            // Close stale instance before reopening
-            dbInstance?.close()
-            val dbFile = copyDatabaseIfNeeded(context)
-            dbInstance = SQLiteDatabase.openDatabase(
-                dbFile.path,
-                null,
-                SQLiteDatabase.OPEN_READWRITE
-            )
-            ensureDownloadedVersionsTable(dbInstance!!)
-            ensureUserContentTables(dbInstance!!)
+    /** Copies the asset to [target] via a temp file and a rename, so [target] never exists half-written. */
+    private fun copyAsset(context: Context, target: File) {
+        target.parentFile?.mkdirs()
+        val temp = File(target.parent, "${target.name}.tmp")
+        context.assets.open(DB_NAME).use { input ->
+            FileOutputStream(temp).use { output -> input.copyTo(output) }
         }
-        return dbInstance!!
+        if (!temp.renameTo(target)) {
+            temp.delete()
+            throw IOException("Couldn't move ${temp.name} to ${target.name}")
+        }
+    }
+
+    /**
+     * Replaces every table the asset ships (today `KJV_verses`, `KJV_books`, `translations`)
+     * with the new asset's copy, in one transaction, leaving every other table untouched.
+     * Which tables count as "bundled" is read from the asset itself, so the asset must never
+     * contain the app's own tables (highlights, notes, downloaded_*): they'd be overwritten.
+     *
+     * Runs on its own short-lived connection, since ATTACH would otherwise stick to the shared one.
+     */
+    private fun refreshBundledTables(context: Context, dbFile: File) {
+        val bundledFile = File(context.cacheDir, "$DB_NAME.bundled")
+        copyAsset(context, bundledFile)
+        try {
+            val db = SQLiteDatabase.openDatabase(dbFile.path, null, SQLiteDatabase.OPEN_READWRITE)
+            try {
+                db.execSQL("ATTACH DATABASE ? AS bundled", arrayOf(bundledFile.path))
+                // sqlite_sequence is maintained by SQLite itself (refilled by the inserts below);
+                // autoindexes have no SQL and come back with their table.
+                val schema = db.rawQuery(
+                    "SELECT type, name, sql FROM bundled.sqlite_master " +
+                        "WHERE sql IS NOT NULL AND name NOT LIKE 'sqlite_%' " +
+                        "ORDER BY CASE type WHEN 'table' THEN 0 ELSE 1 END",
+                    null
+                ).use { c -> buildList { while (c.moveToNext()) add(Triple(c.getString(0), c.getString(1), c.getString(2))) } }
+
+                db.beginTransaction()
+                try {
+                    for ((type, name, sql) in schema) {
+                        if (type == "table") {
+                            db.execSQL("DROP TABLE IF EXISTS main.\"$name\"")
+                            db.execSQL(sql)
+                            db.execSQL("INSERT INTO main.\"$name\" SELECT * FROM bundled.\"$name\"")
+                        } else {
+                            db.execSQL("DROP ${type.uppercase()} IF EXISTS main.\"$name\"")
+                            db.execSQL(sql)
+                        }
+                    }
+                    db.setTransactionSuccessful()
+                } finally {
+                    db.endTransaction()
+                }
+                db.execSQL("DETACH DATABASE bundled")
+            } finally {
+                db.close()
+            }
+        } finally {
+            bundledFile.delete()
+        }
+    }
+
+    /**
+     * Synchronized because the UI and background workers all reach for the DB at startup;
+     * without it, each one copied the asset over the same file and opened its own connection.
+     */
+    @Synchronized
+    fun getDatabase(context: Context): SQLiteDatabase {
+        dbInstance?.takeIf { it.isOpen }?.let { return it }
+        // Close stale instance before reopening
+        dbInstance?.close()
+        val dbFile = copyDatabaseIfNeeded(context)
+        val db = SQLiteDatabase.openDatabase(
+            dbFile.path,
+            null,
+            SQLiteDatabase.OPEN_READWRITE
+        )
+        ensureDownloadedVersionsTable(db)
+        ensureUserContentTables(db)
+        dbInstance = db
+        return db
     }
 
     /**
