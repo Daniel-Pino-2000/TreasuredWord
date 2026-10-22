@@ -423,13 +423,15 @@ private fun RecentHighlightCard(reference: String, text: String, color: Color, o
         Column(
             modifier = Modifier
                 .background(color)
-                .padding(Spacing.md)
-                .height(96.dp),
-            verticalArrangement = Arrangement.SpaceBetween
+                .padding(Spacing.md),
+            verticalArrangement = Arrangement.spacedBy(Spacing.sm)
         ) {
+            // Always three lines tall, so every card in the strip matches without a fixed height
+            // that taller scripts' line spacing (e.g. Korean) would overflow.
             Text(
                 text = text,
                 style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Serif),
+                minLines = 3,
                 maxLines = 3,
                 overflow = TextOverflow.Ellipsis
             )

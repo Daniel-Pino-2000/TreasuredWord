@@ -277,13 +277,14 @@ class BibleViewModel(
      * Short label for the version button (e.g. "KJV", "ESV") — looked up from the
      * translation catalog by id. Falls back to "KJV" for the bundled default (it has no
      * catalog entry, it isn't a real helloao translation id) and to the raw id, uppercased,
-     * if the catalog hasn't loaded yet.
+     * if the catalog hasn't loaded yet. Started eagerly: share text reads `.value` from screens
+     * that never collect it (Home's verse card), where it would otherwise still be "KJV".
      */
     val currentVersionLabel: StateFlow<String> =
         combine(_selectedVersion, _availableVersions) { selected, versions ->
             versions.firstOrNull { it.id == selected.id }?.displayName
                 ?: if (selected.id == DEFAULT_VERSION.id) "KJV" else selected.id.uppercase()
-        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), "KJV")
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, "KJV")
 
     private val _themeMode = MutableStateFlow(repository.loadThemeMode())
     val themeMode: StateFlow<ThemeMode> = _themeMode.asStateFlow()
