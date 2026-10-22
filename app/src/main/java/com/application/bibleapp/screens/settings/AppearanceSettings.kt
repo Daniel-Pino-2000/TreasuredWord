@@ -26,6 +26,7 @@ import androidx.compose.ui.res.stringResource
 internal fun AppearanceSettings(bibleViewModel: BibleViewModel) {
     val themeMode by bibleViewModel.themeMode.collectAsState()
     val verseTextScale by bibleViewModel.verseTextScale.collectAsState()
+    val textSizeSample by bibleViewModel.textSizeSample.collectAsState()
 
     GroupedSection(title = stringResource(R.string.settings_section_appearance)) {
         GroupedChoiceRow(
@@ -46,9 +47,10 @@ internal fun AppearanceSettings(bibleViewModel: BibleViewModel) {
             onSelect = { bibleViewModel.setVerseTextScale(it) }
         )
         // Below the size bar, not above it — a preview that grows above would push the bar
-        // you just tapped out from under your finger. Scripture, so not a string resource.
+        // you just tapped out from under your finger. Scripture from the selected version,
+        // not a string resource; the English line only covers a version with neither verse.
         Text(
-            text = "1 In the beginning God created the heavens and the earth.",
+            text = "1 ${textSizeSample ?: "In the beginning God created the heavens and the earth."}",
             style = ReadingStyle.VerseText.scaledBy(verseTextScale.multiplier),
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(start = Spacing.lg, end = Spacing.lg, bottom = Spacing.lg)

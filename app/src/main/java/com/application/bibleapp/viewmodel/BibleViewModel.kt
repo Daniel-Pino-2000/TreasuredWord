@@ -37,6 +37,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -82,6 +83,9 @@ data class VerseTextKey(val versionId: String, val location: VerseLocationDto)
  *  break — same marker BibleText strips for the reading view; the Library screen's verse
  *  previews need the same cleanup. */
 private const val LEGACY_PARAGRAPH_MARKER = "¶ "
+
+/** (bookId, chapter) to take verse 1 from for [BibleViewModel.textSizeSample]: Genesis 1, then John 1. */
+private val TEXT_SIZE_SAMPLE_CHAPTERS = listOf(1 to 1, 43 to 1)
 
 /**
  * Version state is split across three flows that the version picker composes
@@ -286,6 +290,20 @@ class BibleViewModel(
 
     private val _verseTextScale = MutableStateFlow(repository.loadVerseTextScale())
     val verseTextScale: StateFlow<VerseTextScale> = _verseTextScale.asStateFlow()
+
+    /**
+     * The Settings text-size preview's verse, in the selected version, so it shows the language
+     * and script you actually read in. Genesis 1:1, or John 1:1 for NT-only translations; null
+     * until loaded or if neither exists. Eager so Settings doesn't open on a blank preview.
+     */
+    val textSizeSample: StateFlow<String?> =
+        _selectedVersion.map { version ->
+            TEXT_SIZE_SAMPLE_CHAPTERS.firstNotNullOfOrNull { (bookId, chapter) ->
+                repository.getChapter(bookId, chapter, version.id)
+                    .firstOrNull { it.verse == 1 }
+                    ?.text?.removePrefix(LEGACY_PARAGRAPH_MARKER)
+            }
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     // Shown on Home — fetched independently of currentBook/currentChapter so it
     // doesn't disturb the user's actual reading position.
