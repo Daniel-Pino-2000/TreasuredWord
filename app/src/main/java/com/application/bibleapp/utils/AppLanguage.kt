@@ -17,8 +17,14 @@ import java.util.Locale
  * to each activity it creates.
  */
 object AppLanguage {
-    /** Languages with a translated values-xx folder, in picker order. Keep in step with res/. */
-    val supportedTags = listOf("en", "es")
+    /**
+     * Languages with a translated values folder, in picker order (alphabetical by their own name).
+     * Keep in step with res/. Some folders don't spell the tag the same way: Indonesian "id" is
+     * values-in, Filipino "fil" is values-b+fil (values-tl would only match the old "tl"), and
+     * Simplified Chinese "zh-Hans" is values-b+zh+Hans. Portuguese is "pt-BR" here because
+     * values-pt is written in Brazilian Portuguese.
+     */
+    val supportedTags = listOf("de", "en", "es", "fil", "fr", "id", "sw", "pt-BR", "ko", "zh-Hans")
 
     private const val PREFS = "app_language"
     private const val KEY_TAG = "tag"
@@ -27,8 +33,20 @@ object AppLanguage {
      *  regional choice made in the phone's settings ("es-419") matches its base language ("es"). */
     fun currentTag(): String? {
         val chosen = AppCompatDelegate.getApplicationLocales()[0] ?: return null
-        return supportedTags.firstOrNull { Locale.forLanguageTag(it).language == chosen.language }
+        return supportedTags.firstOrNull { matches(Locale.forLanguageTag(it), chosen) }
             ?: chosen.toLanguageTag()
+    }
+
+    /** Same language, and same script when the supported one names it — so Traditional Chinese
+     *  ("zh-TW", "zh-Hant") isn't shown as Simplified. A chosen locale without a script counts
+     *  as Simplified unless its region writes Traditional. */
+    private fun matches(supported: Locale, chosen: Locale): Boolean {
+        if (supported.language != chosen.language) return false
+        if (supported.script.isEmpty()) return true
+        val chosenScript = chosen.script.ifEmpty {
+            if (chosen.language == "zh" && chosen.country in setOf("TW", "HK", "MO")) "Hant" else "Hans"
+        }
+        return chosenScript == supported.script
     }
 
     /** [tag] null means "System default". MainActivity switches in place, without being recreated
@@ -42,10 +60,16 @@ object AppLanguage {
         )
     }
 
-    /** A language's name written in that language — "English", "Español". */
+    /** A language's name written in that language — "English", "Español". A tag that names a
+     *  script goes by the script's own name, "简体中文", rather than the doubled "中文 (简体中文)". */
     fun displayName(tag: String): String {
         val locale = Locale.forLanguageTag(tag)
-        return locale.getDisplayName(locale).replaceFirstChar { it.titlecase(locale) }
+        val name = if (locale.script.isNotEmpty() && locale.country.isEmpty()) {
+            locale.getDisplayScript(locale)
+        } else {
+            locale.getDisplayName(locale)
+        }
+        return name.replaceFirstChar { it.titlecase(locale) }
     }
 
     /** [context] in the app language, for text built outside an activity (notifications). On

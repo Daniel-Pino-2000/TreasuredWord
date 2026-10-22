@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  German. DRAFT by Claude, pending review by a fluent speaker before release.
+  Informal "du" throughout. Scripture, book names and translation names never go here.
+-->
+<resources>
+    <string name="app_short_name">Bibel</string>
+
+    <string name="action_back">Zurück</string>
+    <string name="action_cancel">Abbrechen</string>
+    <string name="action_ok">OK</string>
+    <string name="action_delete">Löschen</string>
+    <string name="action_remove">Entfernen</string>
+    <string name="action_save">Speichern</string>
+    <string name="action_undo">Rückgängig</string>
+    <string name="action_retry">Wiederholen</string>
+    <string name="action_dismiss">Schließen</string>
+    <string name="action_sign_in">Anmelden</string>
+    <string name="action_copy">Kopieren</string>
+    <string name="action_share">Teilen</string>
+    <string name="tap_to_retry">Tippe, um es erneut zu versuchen</string>
+    <string name="error_generic">Etwas ist schiefgelaufen</string>
+
+    <string name="title_home">Start</string>
+    <string name="title_bible">Bibel</string>
+    <string name="title_search">Suche</string>
+    <string name="title_you">Du</string>
+    <string name="title_select_book">Buch wählen</string>
+    <string name="title_select_verse">Vers wählen</string>
+    <string name="title_select_version">Übersetzung wählen</string>
+    <string name="title_sign_in">Anmelden</string>
+    <string name="title_create_account">Konto erstellen</string>
+    <string name="title_library">Bibliothek</string>
+    <string name="title_library_item">Details</string>
+    <string name="title_settings">Einstellungen</string>
+    <string name="title_note">Notiz</string>
+    <string name="title_highlight">Markierung</string>
+
+    <string name="label_bookmark">Lesezeichen</string>
+    <string name="label_highlights">Markierungen</string>
+    <string name="label_notes">Notizen</string>
+    <string name="label_signed_in">Angemeldet</string>
+    <string name="verse_of_the_day">Vers des Tages</string>
+
+    <string name="bookmark_this_place">Diese Stelle merken</string>
+    <string name="bookmark_content_description">Lesezeichen: %1$s</string>
+    <string name="bookmark_go_to">Zu %1$s</string>
+    <string name="bookmark_move_here">Lesezeichen hierher verschieben</string>
+    <string name="bookmark_remove">Lesezeichen entfernen</string>
+
+    <string name="chapter_previous">Vorheriges Kapitel</string>
+    <string name="chapter_next">Nächstes Kapitel</string>
+
+    <string name="message_copied">In die Zwischenablage kopiert</string>
+    <string name="message_highlight_removed">Markierung entfernt</string>
+    <string name="message_note_deleted">Notiz gelöscht</string>
+    <string name="message_bookmarked">Lesezeichen bei %1$s gesetzt</string>
+    <string name="message_bookmark_removed">Lesezeichen entfernt</string>
+
+    <string name="home_continue_reading">Weiterlesen</string>
+    <string name="home_search_bible">In der Bibel suchen</string>
+    <string name="home_search_bible_subtitle">Finde einen Vers per Stichwort</string>
+
+    <string name="footnote_verse">Vers %1$d</string>
+    <plurals name="selection_verses_selected">
+        <item quantity="one">%d Vers ausgewählt</item>
+        <item quantity="other">%d Verse ausgewählt</item>
+    </plurals>
+    <string name="selection_cancel">Auswahl aufheben</string>
+
+    <string name="highlight_remove">Markierung entfernen</string>
+    <string name="highlight_color_generic">Markierungsfarbe</string>
+    <string name="highlight_color_yellow">Gelb</string>
+    <string name="highlight_color_green">Grün</string>
+    <string name="highlight_color_blue">Blau</string>
+    <string name="highlight_color_pink">Rosa</string>
+    <string name="highlight_color_purple">Lila</string>
+
+    <string name="note_discard_title">Notiz verwerfen?</string>
+    <string name="note_discard_message">Deine Änderungen an dieser Notiz wurden nicht gespeichert.</string>
+    <string name="note_discard">Verwerfen</string>
+    <string name="note_keep_editing">Weiter bearbeiten</string>
+    <string name="note_remove_verse">Vers entfernen</string>
+    <string name="note_placeholder">Schreib deine Gedanken zu diesem Vers auf…</string>
+    <string name="note_add_another">Weitere Notiz hinzufügen</string>
+    <string name="note_open">Notiz öffnen</string>
+    <plurals name="note_count">
+        <item quantity="one">%d Notiz</item>
+        <item quantity="other">%d Notizen</item>
+    </plurals>
+    <string name="sign_in_nudge_message">Melde dich an, um das zu sichern und auf all deinen Geräten zu synchronisieren.</string>
+
+    <string name="search_book_placeholder">Buch suchen</string>
+    <string name="search_verse_placeholder">Bibelvers suchen</string>
+    <string name="search_icon">Suchsymbol</string>
+    <string name="search_empty_prompt">Suche nach einem Vers, einem Stichwort oder einer Bibelstelle</string>
+    <string name="search_suggestions_title">Probier eins davon</string>
+    <string name="search_no_results">Keine Ergebnisse für „%1$s“</string>
+
+    <string name="version_remove_title">%1$s entfernen?</string>
+    <string name="version_remove_message">Der heruntergeladene Text wird von deinem Gerät gelöscht. Du kannst ihn später erneut herunterladen.</string>
+    <string name="version_load_failed">Übersetzungen konnten nicht geladen werden</string>
+    <string name="version_none_available">Keine Übersetzungen verfügbar</string>
+    <string name="version_search_placeholder">Nach Sprache oder Übersetzung suchen</string>
+    <string name="version_download_failed">Download fehlgeschlagen: %1$s</string>
+    <string name="version_download_retry_hint">Tippe unten auf eine Übersetzung, um es erneut zu versuchen</string>
+    <string name="version_no_match">Keine Übersetzung passt zu „%1$s“</string>
+    <string name="version_section_downloaded">Heruntergeladen</string>
+    <string name="version_status_downloaded">Heruntergeladen</string>
+    <string name="version_status_active">Aktive Übersetzung</string>
+    <string name="version_update_available">Update verfügbar – tippe auf ⟳ für Fußnoten und Formatierung</string>
+    <string name="version_download_progress">%1$d %%</string>
+    <string name="version_redownload">%1$s erneut herunterladen, um seither ergänzte Fußnoten und Formatierung zu erhalten</string>
+    <string name="version_remove_downloaded">Heruntergeladene Übersetzung %1$s entfernen</string>
+    <string name="version_download">%1$s herunterladen</string>
+    <string name="version_currently_active">Gerade aktiv</string>
+    <string name="download_failed">Download fehlgeschlagen</string>
+    <string name="download_error_offline">Keine Internetverbindung. Verbinde dich mit dem Internet und versuche es erneut.</string>
+    <string name="download_error_no_content">Für diese Übersetzung sind keine Inhalte verfügbar.</string>
+    <string name="download_partial_summary">%1$s in %2$s heruntergeladen – einige Bücher gibt es in dieser Übersetzung nicht.</string>
+    <plurals name="download_verse_count">
+        <item quantity="one">%d Vers</item>
+        <item quantity="other">%d Verse</item>
+    </plurals>
+    <plurals name="download_chapter_count">
+        <item quantity="one">%d Kapitel</item>
+        <item quantity="other">%d Kapiteln</item>
+    </plurals>
+
+    <string name="library_search_by_book">Nach Buch suchen</string>
+    <string name="library_search_notes">Notizen durchsuchen</string>
+    <string name="library_empty_highlights">Noch keine Markierungen – halte beim Lesen einen Vers gedrückt, um einen zu markieren.</string>
+    <string name="library_no_highlights_in_colors">Keine Markierungen in den gewählten Farben.</string>
+    <string name="library_no_highlights_match">Keine Markierung passt zu „%1$s“.</string>
+    <string name="library_empty_notes">Noch keine Notizen – wähle beim Lesen einen Vers aus, um eine hinzuzufügen.</string>
+    <string name="library_no_notes_match">Keine Notiz passt zu „%1$s“.</string>
+    <string name="library_color_filter">Farbe</string>
+    <string name="library_show_color_highlights">Markierungen in %1$s anzeigen</string>
+    <string name="library_highlighted_on">Markiert am %1$s</string>
+    <string name="library_noted_on">Notiert am %1$s</string>
+    <string name="library_delete_note">Notiz löschen</string>
+    <string name="library_item_unavailable">Dieser Eintrag ist nicht mehr verfügbar.</string>
+    <string name="library_open_in_bible">In der Bibel öffnen</string>
+    <plurals name="verse_ref_with_more">
+        <item quantity="one">%1$s +%2$d weiterer</item>
+        <item quantity="other">%1$s +%2$d weitere</item>
+    </plurals>
+
+    <string name="you_section_library">Deine Bibliothek</string>
+    <string name="you_bookmark_hint">Tippe beim Lesen auf das Lesezeichen-Symbol, um deine Stelle zu speichern</string>
+    <string name="you_not_signed_in">Nicht angemeldet</string>
+    <string name="you_sign_in_prompt">Melde dich an, um deine Markierungen, Notizen und deinen Lesefortschritt auf jedem Gerät zu haben.</string>
+    <string name="you_continue_reading">Weiterlesen</string>
+
+    <string name="sync_status_syncing">Wird synchronisiert…</string>
+    <string name="sync_status_not_synced">Noch nicht synchronisiert</string>
+    <string name="sync_status_just_now">Gerade eben synchronisiert</string>
+    <plurals name="sync_status_minutes_ago">
+        <item quantity="one">Vor %d Min. synchronisiert</item>
+        <item quantity="other">Vor %d Min. synchronisiert</item>
+    </plurals>
+    <plurals name="sync_status_hours_ago">
+        <item quantity="one">Vor %d Std. synchronisiert</item>
+        <item quantity="other">Vor %d Std. synchronisiert</item>
+    </plurals>
+    <string name="sync_status_on_date">Am %1$s synchronisiert</string>
+
+    <string name="auth_email">E-Mail</string>
+    <string name="auth_password">Passwort</string>
+    <string name="auth_confirm_password">Passwort bestätigen</string>
+    <string name="auth_invalid_email">Gib eine gültige E-Mail-Adresse ein</string>
+    <string name="auth_show_password">Passwort anzeigen</string>
+    <string name="auth_hide_password">Passwort ausblenden</string>
+    <string name="login_subtitle">Melde dich an, um deine Markierungen, Notizen und deinen Lesefortschritt geräteübergreifend zu synchronisieren.</string>
+    <string name="login_no_account">Noch kein Konto? Jetzt erstellen</string>
+    <string name="register_heading">Konto erstellen</string>
+    <string name="register_subtitle">Deine Markierungen, Notizen und dein Lesefortschritt werden auf jedem Gerät synchronisiert, auf dem du dich anmeldest.</string>
+    <plurals name="register_password_hint">
+        <item quantity="one">Mindestens %d Zeichen</item>
+        <item quantity="other">Mindestens %d Zeichen</item>
+    </plurals>
+    <string name="register_passwords_mismatch">Die Passwörter stimmen nicht überein</string>
+    <string name="register_submit">Konto erstellen</string>
+    <string name="register_have_account">Schon ein Konto? Anmelden</string>
+    <string name="auth_error_invalid_credentials">E-Mail oder Passwort ist falsch</string>
+    <string name="auth_error_email_registered">Mit dieser E-Mail-Adresse gibt es bereits ein Konto</string>
+    <string name="auth_error_invalid_input">Ungültige Eingabe</string>
+    <string name="auth_error_status">Etwas ist schiefgelaufen (%1$d)</string>
+    <string name="auth_error_unreachable">Der Server ist nicht erreichbar. Prüfe deine Verbindung und versuche es erneut.</string>
+
+    <string name="settings_app_version">%1$s · Version %2$s</string>
+    <string name="settings_section_general">Allgemein</string>
+    <string name="title_language">Sprache</string>
+    <string name="language_system_default">Systemstandard</string>
+    <string name="settings_section_appearance">Darstellung</string>
+    <string name="settings_theme">Design</string>
+    <string name="theme_system">System</string>
+    <string name="theme_light">Hell</string>
+    <string name="theme_dark">Dunkel</string>
+    <string name="settings_verse_text_size">Textgröße</string>
+    <string name="text_size_small">Klein</string>
+    <string name="text_size_default">Normal</string>
+    <string name="text_size_large">Groß</string>
+    <string name="settings_section_daily_verse">Tagesvers</string>
+    <string name="settings_daily_reminder">Tägliche Erinnerung</string>
+    <string name="settings_daily_reminder_subtitle">Ein Vers zum Start in den Tag</string>
+    <string name="settings_reminder_time">Uhrzeit</string>
+    <string name="settings_background_restricted">Hintergrundaktivität ist eingeschränkt</string>
+    <string name="settings_background_restricted_subtitle">Die Erinnerung kommt nur an, solange die App geöffnet ist. Schalte die Einschränkung in den Einstellungen deines Telefons aus.</string>
+    <string name="settings_reminders_late">Kommen Erinnerungen zu spät?</string>
+    <string name="settings_reminders_late_subtitle">Manche Telefone bremsen Apps im Hintergrund. Prüfe die Akku-Einstellungen.</string>
+    <string name="settings_section_sync">Synchronisierung und Sicherung</string>
+    <string name="sync_offline_title">Du bist offline</string>
+    <string name="sync_offline_subtitle">Markierungen und Notizen werden synchronisiert, sobald du wieder online bist.</string>
+    <string name="sync_failed">Synchronisierung fehlgeschlagen</string>
+    <string name="sync_now">Jetzt synchronisieren</string>
+    <string name="sync_auto">Automatisch synchronisieren</string>
+    <string name="sync_auto_subtitle">Änderungen im Hintergrund sichern</string>
+    <string name="sync_wifi_only">Nur über WLAN</string>
+    <string name="sync_wifi_only_subtitle">Keine mobilen Daten zum Synchronisieren verwenden</string>
+    <string name="settings_section_account">Konto</string>
+    <string name="account_sign_in_subtitle">Synchronisiere deine Markierungen, Notizen und deinen Lesefortschritt geräteübergreifend</string>
+    <string name="account_your_account">Dein Konto</string>
+    <string name="account_sign_out">Abmelden</string>
+    <string name="account_delete">Konto löschen</string>
+    <string name="account_delete_title">Konto löschen?</string>
+    <string name="account_delete_message">Dein Konto und alles, was darin gesichert ist, werden endgültig gelöscht. Das lässt sich nicht rückgängig machen. Markierungen und Notizen auf diesem Gerät bleiben hier, werden aber nicht mehr synchronisiert.</string>
+    <string name="account_confirm_password">Bestätige dein Passwort</string>
+
+    <string name="daily_verse_notification_title">Vers des Tages</string>
+    <string name="notification_channel_daily_verse">Tagesvers</string>
+    <string name="notification_channel_daily_verse_description">Deine tägliche Erinnerung mit einem Bibelvers</string>
+</resources>

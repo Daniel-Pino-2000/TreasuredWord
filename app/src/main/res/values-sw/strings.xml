@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Swahili. DRAFT by Claude, pending review by a fluent speaker before release. Terms used:
+  mstari/mistari (verse), sura (chapter), kiangazio/viangazio (highlight), dokezo/madokezo
+  (note), alamisho (bookmark). Scripture, book names and translation names never go here.
+-->
+<resources>
+    <string name="app_short_name">Biblia</string>
+
+    <string name="action_back">Rudi</string>
+    <string name="action_cancel">Ghairi</string>
+    <string name="action_ok">Sawa</string>
+    <string name="action_delete">Futa</string>
+    <string name="action_remove">Ondoa</string>
+    <string name="action_save">Hifadhi</string>
+    <string name="action_undo">Tendua</string>
+    <string name="action_retry">Jaribu tena</string>
+    <string name="action_dismiss">Funga</string>
+    <string name="action_sign_in">Ingia</string>
+    <string name="action_copy">Nakili</string>
+    <string name="action_share">Shiriki</string>
+    <string name="tap_to_retry">Gusa ili ujaribu tena</string>
+    <string name="error_generic">Hitilafu fulani imetokea</string>
+
+    <string name="title_home">Nyumbani</string>
+    <string name="title_bible">Biblia</string>
+    <string name="title_search">Tafuta</string>
+    <string name="title_you">Wewe</string>
+    <string name="title_select_book">Chagua Kitabu</string>
+    <string name="title_select_verse">Chagua Mstari</string>
+    <string name="title_select_version">Chagua Tafsiri</string>
+    <string name="title_sign_in">Ingia</string>
+    <string name="title_create_account">Fungua Akaunti</string>
+    <string name="title_library">Maktaba</string>
+    <string name="title_library_item">Maelezo</string>
+    <string name="title_settings">Mipangilio</string>
+    <string name="title_note">Dokezo</string>
+    <string name="title_highlight">Kiangazio</string>
+
+    <string name="label_bookmark">Alamisho</string>
+    <string name="label_highlights">Viangazio</string>
+    <string name="label_notes">Madokezo</string>
+    <string name="label_signed_in">Umeingia</string>
+    <string name="verse_of_the_day">Mstari wa Siku</string>
+
+    <string name="bookmark_this_place">Weka alamisho hapa</string>
+    <string name="bookmark_content_description">Alamisho: %1$s</string>
+    <string name="bookmark_go_to">Nenda %1$s</string>
+    <string name="bookmark_move_here">Hamishia alamisho hapa</string>
+    <string name="bookmark_remove">Ondoa alamisho</string>
+
+    <string name="chapter_previous">Sura iliyotangulia</string>
+    <string name="chapter_next">Sura inayofuata</string>
+
+    <string name="message_copied">Imenakiliwa kwenye ubao wa kunakili</string>
+    <string name="message_highlight_removed">Kiangazio kimeondolewa</string>
+    <string name="message_note_deleted">Dokezo limefutwa</string>
+    <string name="message_bookmarked">Alamisho imewekwa %1$s</string>
+    <string name="message_bookmark_removed">Alamisho imeondolewa</string>
+
+    <string name="home_continue_reading">Endelea Kusoma</string>
+    <string name="home_search_bible">Tafuta katika Biblia</string>
+    <string name="home_search_bible_subtitle">Pata mstari kwa neno kuu</string>
+
+    <string name="footnote_verse">Mstari %1$d</string>
+    <plurals name="selection_verses_selected">
+        <item quantity="one">Mstari %d umechaguliwa</item>
+        <item quantity="other">Mistari %d imechaguliwa</item>
+    </plurals>
+    <string name="selection_cancel">Ghairi uteuzi</string>
+
+    <string name="highlight_remove">Ondoa kiangazio</string>
+    <string name="highlight_color_generic">Rangi ya kiangazio</string>
+    <string name="highlight_color_yellow">Njano</string>
+    <string name="highlight_color_green">Kijani</string>
+    <string name="highlight_color_blue">Bluu</string>
+    <string name="highlight_color_pink">Waridi</string>
+    <string name="highlight_color_purple">Zambarau</string>
+
+    <string name="note_discard_title">Tupa dokezo?</string>
+    <string name="note_discard_message">Mabadiliko yako kwenye dokezo hili hayajahifadhiwa.</string>
+    <string name="note_discard">Tupa</string>
+    <string name="note_keep_editing">Endelea kuhariri</string>
+    <string name="note_remove_verse">Ondoa mstari</string>
+    <string name="note_placeholder">Andika mawazo yako kuhusu mstari huu…</string>
+    <string name="note_add_another">Ongeza dokezo lingine</string>
+    <string name="note_open">Fungua dokezo</string>
+    <plurals name="note_count">
+        <item quantity="one">Dokezo %d</item>
+        <item quantity="other">Madokezo %d</item>
+    </plurals>
+    <string name="sign_in_nudge_message">Ingia ili uhifadhi nakala ya hili na kulisawazisha kwenye vifaa vyako vyote.</string>
+
+    <string name="search_book_placeholder">Tafuta Kitabu</string>
+    <string name="search_verse_placeholder">Tafuta Mstari wa Biblia</string>
+    <string name="search_icon">Aikoni ya kutafuta</string>
+    <string name="search_empty_prompt">Tafuta mstari, neno kuu au rejeleo</string>
+    <string name="search_suggestions_title">Jaribu mojawapo ya haya</string>
+    <string name="search_no_results">Hakuna matokeo ya \"%1$s\"</string>
+
+    <string name="version_remove_title">Ondoa %1$s?</string>
+    <string name="version_remove_message">Maandishi yaliyopakuliwa yatafutwa kwenye kifaa chako. Unaweza kuyapakua tena baadaye.</string>
+    <string name="version_load_failed">Imeshindwa kupakia tafsiri</string>
+    <string name="version_none_available">Hakuna tafsiri zinazopatikana</string>
+    <string name="version_search_placeholder">Tafuta kwa lugha au tafsiri</string>
+    <string name="version_download_failed">Upakuaji umeshindwa: %1$s</string>
+    <string name="version_download_retry_hint">Gusa tafsiri hapa chini ili ujaribu tena</string>
+    <string name="version_no_match">Hakuna tafsiri inayolingana na \"%1$s\"</string>
+    <string name="version_section_downloaded">Zilizopakuliwa</string>
+    <string name="version_status_downloaded">Imepakuliwa</string>
+    <string name="version_status_active">Tafsiri inayotumika</string>
+    <string name="version_update_available">Sasisho linapatikana — gusa ⟳ upate tanbihi na mpangilio</string>
+    <string name="version_download_progress">%1$d%%</string>
+    <string name="version_redownload">Pakua %1$s tena upate tanbihi na mpangilio ulioongezwa tangu ilipopakuliwa</string>
+    <string name="version_remove_downloaded">Ondoa %1$s iliyopakuliwa</string>
+    <string name="version_download">Pakua %1$s</string>
+    <string name="version_currently_active">Inatumika sasa</string>
+    <string name="download_failed">Upakuaji umeshindwa</string>
+    <string name="download_error_offline">Hakuna muunganisho wa intaneti. Unganisha kwenye intaneti kisha ujaribu tena.</string>
+    <string name="download_error_no_content">Hakuna maudhui yanayopatikana kwa tafsiri hii.</string>
+    <string name="download_partial_summary">Imepakua %1$s katika %2$s — baadhi ya vitabu havipatikani katika tafsiri hii.</string>
+    <plurals name="download_verse_count">
+        <item quantity="one">mstari %d</item>
+        <item quantity="other">mistari %d</item>
+    </plurals>
+    <plurals name="download_chapter_count">
+        <item quantity="one">sura %d</item>
+        <item quantity="other">sura %d</item>
+    </plurals>
+
+    <string name="library_search_by_book">Tafuta kwa kitabu</string>
+    <string name="library_search_notes">Tafuta madokezo</string>
+    <string name="library_empty_highlights">Bado hakuna viangazio — bonyeza mstari kwa muda unaposoma ili uongeze kimoja.</string>
+    <string name="library_no_highlights_in_colors">Hakuna viangazio katika rangi ulizochagua.</string>
+    <string name="library_no_highlights_match">Hakuna kiangazio kinacholingana na \"%1$s\".</string>
+    <string name="library_empty_notes">Bado hakuna madokezo — chagua mstari unaposoma ili uongeze moja.</string>
+    <string name="library_no_notes_match">Hakuna dokezo linalolingana na \"%1$s\".</string>
+    <string name="library_color_filter">Rangi</string>
+    <string name="library_show_color_highlights">Onyesha viangazio vya %1$s</string>
+    <string name="library_highlighted_on">Kiliangaziwa %1$s</string>
+    <string name="library_noted_on">Liliandikwa %1$s</string>
+    <string name="library_delete_note">Futa dokezo</string>
+    <string name="library_item_unavailable">Kipengee hiki hakipatikani tena.</string>
+    <string name="library_open_in_bible">Fungua katika Biblia</string>
+    <plurals name="verse_ref_with_more">
+        <item quantity="one">%1$s na %2$d zaidi</item>
+        <item quantity="other">%1$s na %2$d zaidi</item>
+    </plurals>
+
+    <string name="you_section_library">Maktaba yako</string>
+    <string name="you_bookmark_hint">Gusa aikoni ya alamisho unaposoma ili uhifadhi mahali ulipofikia</string>
+    <string name="you_not_signed_in">Hujaingia</string>
+    <string name="you_sign_in_prompt">Ingia ili viangazio, madokezo na maendeleo yako ya kusoma yawe kwenye kila kifaa.</string>
+    <string name="you_continue_reading">Endelea kusoma</string>
+
+    <string name="sync_status_syncing">Inasawazisha…</string>
+    <string name="sync_status_not_synced">Bado haijasawazishwa</string>
+    <string name="sync_status_just_now">Imesawazishwa sasa hivi</string>
+    <plurals name="sync_status_minutes_ago">
+        <item quantity="one">Imesawazishwa dakika %d zilizopita</item>
+        <item quantity="other">Imesawazishwa dakika %d zilizopita</item>
+    </plurals>
+    <plurals name="sync_status_hours_ago">
+        <item quantity="one">Imesawazishwa saa %d zilizopita</item>
+        <item quantity="other">Imesawazishwa saa %d zilizopita</item>
+    </plurals>
+    <string name="sync_status_on_date">Imesawazishwa %1$s</string>
+
+    <string name="auth_email">Barua pepe</string>
+    <string name="auth_password">Nenosiri</string>
+    <string name="auth_confirm_password">Thibitisha nenosiri</string>
+    <string name="auth_invalid_email">Weka anwani sahihi ya barua pepe</string>
+    <string name="auth_show_password">Onyesha nenosiri</string>
+    <string name="auth_hide_password">Ficha nenosiri</string>
+    <string name="login_subtitle">Ingia ili usawazishe viangazio, madokezo na maendeleo yako ya kusoma kwenye vifaa vyako.</string>
+    <string name="login_no_account">Huna akaunti? Fungua moja</string>
+    <string name="register_heading">Fungua akaunti</string>
+    <string name="register_subtitle">Viangazio, madokezo na maendeleo yako ya kusoma yatasawazishwa kwenye kila kifaa utakachoingia.</string>
+    <plurals name="register_password_hint">
+        <item quantity="one">Angalau herufi %d</item>
+        <item quantity="other">Angalau herufi %d</item>
+    </plurals>
+    <string name="register_passwords_mismatch">Manenosiri hayalingani</string>
+    <string name="register_submit">Fungua akaunti</string>
+    <string name="register_have_account">Una akaunti tayari? Ingia</string>
+    <string name="auth_error_invalid_credentials">Barua pepe au nenosiri si sahihi</string>
+    <string name="auth_error_email_registered">Tayari kuna akaunti yenye barua pepe hiyo</string>
+    <string name="auth_error_invalid_input">Maingizo si sahihi</string>
+    <string name="auth_error_status">Hitilafu fulani imetokea (%1$d)</string>
+    <string name="auth_error_unreachable">Imeshindwa kufikia seva. Angalia muunganisho wako kisha ujaribu tena.</string>
+
+    <string name="settings_app_version">%1$s · Toleo %2$s</string>
+    <string name="settings_section_general">Jumla</string>
+    <string name="title_language">Lugha</string>
+    <string name="language_system_default">Chaguomsingi la mfumo</string>
+    <string name="settings_section_appearance">Mwonekano</string>
+    <string name="settings_theme">Mandhari</string>
+    <string name="theme_system">Mfumo</string>
+    <string name="theme_light">Mwanga</string>
+    <string name="theme_dark">Giza</string>
+    <string name="settings_verse_text_size">Ukubwa wa maandishi</string>
+    <string name="text_size_small">Ndogo</string>
+    <string name="text_size_default">Kawaida</string>
+    <string name="text_size_large">Kubwa</string>
+    <string name="settings_section_daily_verse">Mstari wa kila siku</string>
+    <string name="settings_daily_reminder">Kikumbusho cha kila siku</string>
+    <string name="settings_daily_reminder_subtitle">Mstari wa kuanza siku yako</string>
+    <string name="settings_reminder_time">Saa</string>
+    <string name="settings_background_restricted">Shughuli za chinichini zimezuiliwa</string>
+    <string name="settings_background_restricted_subtitle">Kikumbusho kinaweza kufika tu programu ikiwa imefunguliwa. Zima kizuizi hiki katika mipangilio ya simu yako.</string>
+    <string name="settings_reminders_late">Vikumbusho vinachelewa?</string>
+    <string name="settings_reminders_late_subtitle">Baadhi ya simu huzuia programu za chinichini. Angalia mipangilio ya betri.</string>
+    <string name="settings_section_sync">Usawazishaji na nakala rudufu</string>
+    <string name="sync_offline_title">Uko nje ya mtandao</string>
+    <string name="sync_offline_subtitle">Viangazio na madokezo yatasawazishwa ukirudi mtandaoni.</string>
+    <string name="sync_failed">Usawazishaji umeshindwa</string>
+    <string name="sync_now">Sawazisha sasa</string>
+    <string name="sync_auto">Sawazisha kiotomatiki</string>
+    <string name="sync_auto_subtitle">Hifadhi nakala za mabadiliko chinichini</string>
+    <string name="sync_wifi_only">Wi-Fi pekee</string>
+    <string name="sync_wifi_only_subtitle">Usitumie data ya simu kusawazisha</string>
+    <string name="settings_section_account">Akaunti</string>
+    <string name="account_sign_in_subtitle">Sawazisha viangazio, madokezo na maendeleo yako ya kusoma kwenye vifaa vyako</string>
+    <string name="account_your_account">Akaunti yako</string>
+    <string name="account_sign_out">Ondoka</string>
+    <string name="account_delete">Futa akaunti</string>
+    <string name="account_delete_title">Futa akaunti?</string>
+    <string name="account_delete_message">Hii itafuta kabisa akaunti yako na kila kitu kilichohifadhiwa ndani yake. Haiwezi kutenduliwa. Viangazio na madokezo yaliyo kwenye kifaa hiki yatabaki hapa, lakini hayatasawazishwa popote pengine.</string>
+    <string name="account_confirm_password">Thibitisha nenosiri lako</string>
+
+    <string name="daily_verse_notification_title">Mstari wa Siku</string>
+    <string name="notification_channel_daily_verse">Mstari wa Kila Siku</string>
+    <string name="notification_channel_daily_verse_description">Kikumbusho chako cha kila siku cha mstari wa Biblia</string>
+</resources>

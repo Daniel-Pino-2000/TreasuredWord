@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  French. DRAFT by Claude, pending review by a fluent speaker before release.
+  Informal "tu" throughout; non-breaking spaces ( ) before ? ! : and inside « ».
+  Scripture, book names and translation names never go here.
+-->
+<resources>
+    <string name="app_short_name">Bible</string>
+
+    <string name="action_back">Retour</string>
+    <string name="action_cancel">Annuler</string>
+    <string name="action_ok">OK</string>
+    <string name="action_delete">Supprimer</string>
+    <string name="action_remove">Retirer</string>
+    <string name="action_save">Enregistrer</string>
+    <string name="action_undo">Annuler</string>
+    <string name="action_retry">Réessayer</string>
+    <string name="action_dismiss">Fermer</string>
+    <string name="action_sign_in">Se connecter</string>
+    <string name="action_copy">Copier</string>
+    <string name="action_share">Partager</string>
+    <string name="tap_to_retry">Touche pour réessayer</string>
+    <string name="error_generic">Une erreur s’est produite</string>
+
+    <string name="title_home">Accueil</string>
+    <string name="title_bible">Bible</string>
+    <string name="title_search">Rechercher</string>
+    <string name="title_you">Moi</string>
+    <string name="title_select_book">Choisir un livre</string>
+    <string name="title_select_verse">Choisir un verset</string>
+    <string name="title_select_version">Choisir une version</string>
+    <string name="title_sign_in">Connexion</string>
+    <string name="title_create_account">Créer un compte</string>
+    <string name="title_library">Bibliothèque</string>
+    <string name="title_library_item">Détail</string>
+    <string name="title_settings">Paramètres</string>
+    <string name="title_note">Note</string>
+    <string name="title_highlight">Surlignage</string>
+
+    <string name="label_bookmark">Signet</string>
+    <string name="label_highlights">Surlignages</string>
+    <string name="label_notes">Notes</string>
+    <string name="label_signed_in">Connecté</string>
+    <string name="verse_of_the_day">Verset du jour</string>
+
+    <string name="bookmark_this_place">Marquer cet endroit</string>
+    <string name="bookmark_content_description">Signet : %1$s</string>
+    <string name="bookmark_go_to">Aller à %1$s</string>
+    <string name="bookmark_move_here">Déplacer le signet ici</string>
+    <string name="bookmark_remove">Retirer le signet</string>
+
+    <string name="chapter_previous">Chapitre précédent</string>
+    <string name="chapter_next">Chapitre suivant</string>
+
+    <string name="message_copied">Copié dans le presse-papiers</string>
+    <string name="message_highlight_removed">Surlignage retiré</string>
+    <string name="message_note_deleted">Note supprimée</string>
+    <string name="message_bookmarked">Signet placé sur %1$s</string>
+    <string name="message_bookmark_removed">Signet retiré</string>
+
+    <string name="home_continue_reading">Reprendre la lecture</string>
+    <string name="home_search_bible">Rechercher dans la Bible</string>
+    <string name="home_search_bible_subtitle">Trouve un verset par mot-clé</string>
+
+    <string name="footnote_verse">Verset %1$d</string>
+    <plurals name="selection_verses_selected">
+        <item quantity="one">%d verset sélectionné</item>
+        <item quantity="many">%d versets sélectionnés</item>
+        <item quantity="other">%d versets sélectionnés</item>
+    </plurals>
+    <string name="selection_cancel">Annuler la sélection</string>
+
+    <string name="highlight_remove">Retirer le surlignage</string>
+    <string name="highlight_color_generic">Couleur de surlignage</string>
+    <string name="highlight_color_yellow">Jaune</string>
+    <string name="highlight_color_green">Vert</string>
+    <string name="highlight_color_blue">Bleu</string>
+    <string name="highlight_color_pink">Rose</string>
+    <string name="highlight_color_purple">Violet</string>
+
+    <string name="note_discard_title">Abandonner la note ?</string>
+    <string name="note_discard_message">Tes modifications de cette note n’ont pas été enregistrées.</string>
+    <string name="note_discard">Abandonner</string>
+    <string name="note_keep_editing">Continuer</string>
+    <string name="note_remove_verse">Retirer le verset</string>
+    <string name="note_placeholder">Écris tes réflexions sur ce verset…</string>
+    <string name="note_add_another">Ajouter une autre note</string>
+    <string name="note_open">Ouvrir la note</string>
+    <plurals name="note_count">
+        <item quantity="one">%d note</item>
+        <item quantity="many">%d notes</item>
+        <item quantity="other">%d notes</item>
+    </plurals>
+    <string name="sign_in_nudge_message">Connecte-toi pour sauvegarder ceci et le synchroniser sur tous tes appareils.</string>
+
+    <string name="search_book_placeholder">Rechercher un livre</string>
+    <string name="search_verse_placeholder">Rechercher un verset</string>
+    <string name="search_icon">Icône de recherche</string>
+    <string name="search_empty_prompt">Recherche un verset, un mot-clé ou une référence</string>
+    <string name="search_suggestions_title">Essaie l’un de ceux-ci</string>
+    <string name="search_no_results">Aucun résultat pour « %1$s »</string>
+
+    <string name="version_remove_title">Retirer %1$s ?</string>
+    <string name="version_remove_message">Le texte téléchargé sera effacé de ton appareil. Tu pourras le télécharger à nouveau plus tard.</string>
+    <string name="version_load_failed">Impossible de charger les versions</string>
+    <string name="version_none_available">Aucune version disponible</string>
+    <string name="version_search_placeholder">Rechercher par langue ou version</string>
+    <string name="version_download_failed">Échec du téléchargement : %1$s</string>
+    <string name="version_download_retry_hint">Touche une version ci-dessous pour réessayer</string>
+    <string name="version_no_match">Aucune version ne correspond à « %1$s »</string>
+    <string name="version_section_downloaded">Téléchargées</string>
+    <string name="version_status_downloaded">Téléchargée</string>
+    <string name="version_status_active">Version active</string>
+    <string name="version_update_available">Mise à jour disponible : touche ⟳ pour les notes et la mise en forme</string>
+    <string name="version_download_progress">%1$d %%</string>
+    <string name="version_redownload">Télécharger à nouveau %1$s pour obtenir les notes et la mise en forme ajoutées depuis</string>
+    <string name="version_remove_downloaded">Retirer %1$s téléchargée</string>
+    <string name="version_download">Télécharger %1$s</string>
+    <string name="version_currently_active">Active</string>
+    <string name="download_failed">Échec du téléchargement</string>
+    <string name="download_error_offline">Pas de connexion Internet. Connecte-toi et réessaie.</string>
+    <string name="download_error_no_content">Aucun contenu n’est disponible pour cette version.</string>
+    <string name="download_partial_summary">%1$s téléchargés dans %2$s. Certains livres ne sont pas disponibles dans cette version.</string>
+    <plurals name="download_verse_count">
+        <item quantity="one">%d verset</item>
+        <item quantity="many">%d versets</item>
+        <item quantity="other">%d versets</item>
+    </plurals>
+    <plurals name="download_chapter_count">
+        <item quantity="one">%d chapitre</item>
+        <item quantity="many">%d chapitres</item>
+        <item quantity="other">%d chapitres</item>
+    </plurals>
+
+    <string name="library_search_by_book">Rechercher par livre</string>
+    <string name="library_search_notes">Rechercher dans les notes</string>
+    <string name="library_empty_highlights">Pas encore de surlignage. Pendant la lecture, appuie longuement sur un verset pour en ajouter un.</string>
+    <string name="library_no_highlights_in_colors">Aucun surlignage dans les couleurs choisies.</string>
+    <string name="library_no_highlights_match">Aucun surlignage ne correspond à « %1$s ».</string>
+    <string name="library_empty_notes">Pas encore de note. Pendant la lecture, sélectionne un verset pour en ajouter une.</string>
+    <string name="library_no_notes_match">Aucune note ne correspond à « %1$s ».</string>
+    <string name="library_color_filter">Couleur</string>
+    <string name="library_show_color_highlights">Afficher les surlignages en %1$s</string>
+    <string name="library_highlighted_on">Surligné le %1$s</string>
+    <string name="library_noted_on">Noté le %1$s</string>
+    <string name="library_delete_note">Supprimer la note</string>
+    <string name="library_item_unavailable">Cet élément n’est plus disponible.</string>
+    <string name="library_open_in_bible">Ouvrir dans la Bible</string>
+    <plurals name="verse_ref_with_more">
+        <item quantity="one">%1$s +%2$d autre</item>
+        <item quantity="many">%1$s +%2$d autres</item>
+        <item quantity="other">%1$s +%2$d autres</item>
+    </plurals>
+
+    <string name="you_section_library">Ta bibliothèque</string>
+    <string name="you_bookmark_hint">Pendant la lecture, touche l’icône du signet pour garder ta place</string>
+    <string name="you_not_signed_in">Non connecté</string>
+    <string name="you_sign_in_prompt">Connecte-toi pour retrouver tes surlignages, notes et progression de lecture sur tous tes appareils.</string>
+    <string name="you_continue_reading">Reprendre la lecture</string>
+
+    <string name="sync_status_syncing">Synchronisation…</string>
+    <string name="sync_status_not_synced">Pas encore synchronisé</string>
+    <string name="sync_status_just_now">Synchronisé à l’instant</string>
+    <plurals name="sync_status_minutes_ago">
+        <item quantity="one">Synchronisé il y a %d min</item>
+        <item quantity="many">Synchronisé il y a %d min</item>
+        <item quantity="other">Synchronisé il y a %d min</item>
+    </plurals>
+    <plurals name="sync_status_hours_ago">
+        <item quantity="one">Synchronisé il y a %d h</item>
+        <item quantity="many">Synchronisé il y a %d h</item>
+        <item quantity="other">Synchronisé il y a %d h</item>
+    </plurals>
+    <string name="sync_status_on_date">Synchronisé le %1$s</string>
+
+    <string name="auth_email">E-mail</string>
+    <string name="auth_password">Mot de passe</string>
+    <string name="auth_confirm_password">Confirmer le mot de passe</string>
+    <string name="auth_invalid_email">Saisis une adresse e-mail valide</string>
+    <string name="auth_show_password">Afficher le mot de passe</string>
+    <string name="auth_hide_password">Masquer le mot de passe</string>
+    <string name="login_subtitle">Connecte-toi pour synchroniser tes surlignages, notes et progression de lecture sur tes appareils.</string>
+    <string name="login_no_account">Pas de compte ? Crées-en un</string>
+    <string name="register_heading">Créer un compte</string>
+    <string name="register_subtitle">Tes surlignages, notes et progression de lecture seront synchronisés sur tous les appareils où tu te connectes.</string>
+    <plurals name="register_password_hint">
+        <item quantity="one">Au moins %d caractère</item>
+        <item quantity="many">Au moins %d caractères</item>
+        <item quantity="other">Au moins %d caractères</item>
+    </plurals>
+    <string name="register_passwords_mismatch">Les mots de passe ne correspondent pas</string>
+    <string name="register_submit">Créer le compte</string>
+    <string name="register_have_account">Déjà un compte ? Connecte-toi</string>
+    <string name="auth_error_invalid_credentials">E-mail ou mot de passe incorrect</string>
+    <string name="auth_error_email_registered">Un compte existe déjà avec cette adresse e-mail</string>
+    <string name="auth_error_invalid_input">Saisie non valide</string>
+    <string name="auth_error_status">Une erreur s’est produite (%1$d)</string>
+    <string name="auth_error_unreachable">Impossible de joindre le serveur. Vérifie ta connexion et réessaie.</string>
+
+    <string name="settings_app_version">%1$s · Version %2$s</string>
+    <string name="settings_section_general">Général</string>
+    <string name="title_language">Langue</string>
+    <string name="language_system_default">Langue du système</string>
+    <string name="settings_section_appearance">Apparence</string>
+    <string name="settings_theme">Thème</string>
+    <string name="theme_system">Système</string>
+    <string name="theme_light">Clair</string>
+    <string name="theme_dark">Sombre</string>
+    <string name="settings_verse_text_size">Taille du texte</string>
+    <string name="text_size_small">Petite</string>
+    <string name="text_size_default">Normale</string>
+    <string name="text_size_large">Grande</string>
+    <string name="settings_section_daily_verse">Verset quotidien</string>
+    <string name="settings_daily_reminder">Rappel quotidien</string>
+    <string name="settings_daily_reminder_subtitle">Un verset pour bien commencer la journée</string>
+    <string name="settings_reminder_time">Heure</string>
+    <string name="settings_background_restricted">L’activité en arrière-plan est limitée</string>
+    <string name="settings_background_restricted_subtitle">Le rappel ne peut arriver que lorsque l’appli est ouverte. Désactive cette limite dans les paramètres de ton téléphone.</string>
+    <string name="settings_reminders_late">Les rappels arrivent en retard ?</string>
+    <string name="settings_reminders_late_subtitle">Certains téléphones freinent les applis en arrière-plan. Vérifie les paramètres de la batterie.</string>
+    <string name="settings_section_sync">Synchronisation et sauvegarde</string>
+    <string name="sync_offline_title">Tu es hors ligne</string>
+    <string name="sync_offline_subtitle">Les surlignages et les notes seront synchronisés dès que tu seras de nouveau en ligne.</string>
+    <string name="sync_failed">Échec de la synchronisation</string>
+    <string name="sync_now">Synchroniser</string>
+    <string name="sync_auto">Synchronisation automatique</string>
+    <string name="sync_auto_subtitle">Sauvegarder les modifications en arrière-plan</string>
+    <string name="sync_wifi_only">Wi-Fi uniquement</string>
+    <string name="sync_wifi_only_subtitle">Ne pas utiliser les données mobiles pour synchroniser</string>
+    <string name="settings_section_account">Compte</string>
+    <string name="account_sign_in_subtitle">Synchronise tes surlignages, notes et progression de lecture sur tes appareils</string>
+    <string name="account_your_account">Ton compte</string>
+    <string name="account_sign_out">Se déconnecter</string>
+    <string name="account_delete">Supprimer le compte</string>
+    <string name="account_delete_title">Supprimer le compte ?</string>
+    <string name="account_delete_message">Ton compte et tout ce qui y est sauvegardé seront supprimés définitivement. Cette action est irréversible. Les surlignages et notes déjà présents sur cet appareil y resteront, mais ne seront plus synchronisés.</string>
+    <string name="account_confirm_password">Confirme ton mot de passe</string>
+
+    <string name="daily_verse_notification_title">Verset du jour</string>
+    <string name="notification_channel_daily_verse">Verset quotidien</string>
+    <string name="notification_channel_daily_verse_description">Ton rappel quotidien avec un verset de la Bible</string>
+</resources>

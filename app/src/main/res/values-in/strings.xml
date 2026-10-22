@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Indonesian (values-in is Android's folder name for Indonesian, "id"). DRAFT by Claude, pending
+  review by a fluent speaker before release. Polite "Anda". Indonesian has a single plural form.
+  Scripture, book names and translation names never go here.
+-->
+<resources>
+    <string name="app_short_name">Alkitab</string>
+
+    <string name="action_back">Kembali</string>
+    <string name="action_cancel">Batal</string>
+    <string name="action_ok">OK</string>
+    <string name="action_delete">Hapus</string>
+    <string name="action_remove">Buang</string>
+    <string name="action_save">Simpan</string>
+    <string name="action_undo">Urungkan</string>
+    <string name="action_retry">Coba lagi</string>
+    <string name="action_dismiss">Tutup</string>
+    <string name="action_sign_in">Masuk</string>
+    <string name="action_copy">Salin</string>
+    <string name="action_share">Bagikan</string>
+    <string name="tap_to_retry">Ketuk untuk mencoba lagi</string>
+    <string name="error_generic">Terjadi kesalahan</string>
+
+    <string name="title_home">Beranda</string>
+    <string name="title_bible">Alkitab</string>
+    <string name="title_search">Cari</string>
+    <string name="title_you">Anda</string>
+    <string name="title_select_book">Pilih Kitab</string>
+    <string name="title_select_verse">Pilih Ayat</string>
+    <string name="title_select_version">Pilih Versi</string>
+    <string name="title_sign_in">Masuk</string>
+    <string name="title_create_account">Buat Akun</string>
+    <string name="title_library">Pustaka</string>
+    <string name="title_library_item">Detail</string>
+    <string name="title_settings">Setelan</string>
+    <string name="title_note">Catatan</string>
+    <string name="title_highlight">Sorotan</string>
+
+    <string name="label_bookmark">Penanda</string>
+    <string name="label_highlights">Sorotan</string>
+    <string name="label_notes">Catatan</string>
+    <string name="label_signed_in">Sudah masuk</string>
+    <string name="verse_of_the_day">Ayat Hari Ini</string>
+
+    <string name="bookmark_this_place">Tandai tempat ini</string>
+    <string name="bookmark_content_description">Penanda: %1$s</string>
+    <string name="bookmark_go_to">Buka %1$s</string>
+    <string name="bookmark_move_here">Pindahkan penanda ke sini</string>
+    <string name="bookmark_remove">Hapus penanda</string>
+
+    <string name="chapter_previous">Pasal sebelumnya</string>
+    <string name="chapter_next">Pasal berikutnya</string>
+
+    <string name="message_copied">Disalin ke papan klip</string>
+    <string name="message_highlight_removed">Sorotan dihapus</string>
+    <string name="message_note_deleted">Catatan dihapus</string>
+    <string name="message_bookmarked">Penanda dipasang di %1$s</string>
+    <string name="message_bookmark_removed">Penanda dihapus</string>
+
+    <string name="home_continue_reading">Lanjutkan Membaca</string>
+    <string name="home_search_bible">Cari di Alkitab</string>
+    <string name="home_search_bible_subtitle">Temukan ayat dengan kata kunci</string>
+
+    <string name="footnote_verse">Ayat %1$d</string>
+    <plurals name="selection_verses_selected">
+        <item quantity="other">%d ayat dipilih</item>
+    </plurals>
+    <string name="selection_cancel">Batalkan pilihan</string>
+
+    <string name="highlight_remove">Hapus sorotan</string>
+    <string name="highlight_color_generic">Warna sorotan</string>
+    <string name="highlight_color_yellow">Kuning</string>
+    <string name="highlight_color_green">Hijau</string>
+    <string name="highlight_color_blue">Biru</string>
+    <string name="highlight_color_pink">Merah muda</string>
+    <string name="highlight_color_purple">Ungu</string>
+
+    <string name="note_discard_title">Buang catatan?</string>
+    <string name="note_discard_message">Perubahan pada catatan ini belum disimpan.</string>
+    <string name="note_discard">Buang</string>
+    <string name="note_keep_editing">Lanjutkan mengedit</string>
+    <string name="note_remove_verse">Hapus ayat</string>
+    <string name="note_placeholder">Tulis pemikiran Anda tentang ayat ini…</string>
+    <string name="note_add_another">Tambah catatan lain</string>
+    <string name="note_open">Buka catatan</string>
+    <plurals name="note_count">
+        <item quantity="other">%d catatan</item>
+    </plurals>
+    <string name="sign_in_nudge_message">Masuk untuk mencadangkan ini dan menyinkronkannya di semua perangkat Anda.</string>
+
+    <string name="search_book_placeholder">Cari Kitab</string>
+    <string name="search_verse_placeholder">Cari Ayat Alkitab</string>
+    <string name="search_icon">Ikon pencarian</string>
+    <string name="search_empty_prompt">Cari ayat, kata kunci, atau referensi</string>
+    <string name="search_suggestions_title">Coba salah satu ini</string>
+    <string name="search_no_results">Tidak ada hasil untuk \"%1$s\"</string>
+
+    <string name="version_remove_title">Hapus %1$s?</string>
+    <string name="version_remove_message">Teks yang diunduh akan dihapus dari perangkat Anda. Anda bisa mengunduhnya lagi nanti.</string>
+    <string name="version_load_failed">Gagal memuat versi</string>
+    <string name="version_none_available">Tidak ada versi yang tersedia</string>
+    <string name="version_search_placeholder">Cari menurut bahasa atau versi</string>
+    <string name="version_download_failed">Unduhan gagal: %1$s</string>
+    <string name="version_download_retry_hint">Ketuk salah satu versi di bawah untuk mencoba lagi</string>
+    <string name="version_no_match">Tidak ada versi yang cocok dengan \"%1$s\"</string>
+    <string name="version_section_downloaded">Diunduh</string>
+    <string name="version_status_downloaded">Diunduh</string>
+    <string name="version_status_active">Versi aktif</string>
+    <string name="version_update_available">Ada pembaruan — ketuk ⟳ untuk catatan kaki dan format</string>
+    <string name="version_download_progress">%1$d%%</string>
+    <string name="version_redownload">Unduh ulang %1$s untuk mendapatkan catatan kaki dan format yang ditambahkan sejak diunduh</string>
+    <string name="version_remove_downloaded">Hapus unduhan %1$s</string>
+    <string name="version_download">Unduh %1$s</string>
+    <string name="version_currently_active">Sedang aktif</string>
+    <string name="download_failed">Unduhan gagal</string>
+    <string name="download_error_offline">Tidak ada koneksi internet. Sambungkan ke internet, lalu coba lagi.</string>
+    <string name="download_error_no_content">Tidak ada konten yang tersedia untuk versi ini.</string>
+    <string name="download_partial_summary">Berhasil mengunduh %1$s dalam %2$s — beberapa kitab tidak tersedia dalam versi ini.</string>
+    <plurals name="download_verse_count">
+        <item quantity="other">%d ayat</item>
+    </plurals>
+    <plurals name="download_chapter_count">
+        <item quantity="other">%d pasal</item>
+    </plurals>
+
+    <string name="library_search_by_book">Cari menurut kitab</string>
+    <string name="library_search_notes">Cari catatan</string>
+    <string name="library_empty_highlights">Belum ada sorotan — tekan lama sebuah ayat saat membaca untuk menambahkannya.</string>
+    <string name="library_no_highlights_in_colors">Tidak ada sorotan dengan warna yang dipilih.</string>
+    <string name="library_no_highlights_match">Tidak ada sorotan yang cocok dengan \"%1$s\".</string>
+    <string name="library_empty_notes">Belum ada catatan — pilih sebuah ayat saat membaca untuk menambahkannya.</string>
+    <string name="library_no_notes_match">Tidak ada catatan yang cocok dengan \"%1$s\".</string>
+    <string name="library_color_filter">Warna</string>
+    <string name="library_show_color_highlights">Tampilkan sorotan %1$s</string>
+    <string name="library_highlighted_on">Disorot pada %1$s</string>
+    <string name="library_noted_on">Dicatat pada %1$s</string>
+    <string name="library_delete_note">Hapus catatan</string>
+    <string name="library_item_unavailable">Item ini sudah tidak tersedia.</string>
+    <string name="library_open_in_bible">Buka di Alkitab</string>
+    <plurals name="verse_ref_with_more">
+        <item quantity="other">%1$s +%2$d lainnya</item>
+    </plurals>
+
+    <string name="you_section_library">Pustaka Anda</string>
+    <string name="you_bookmark_hint">Ketuk ikon penanda saat membaca untuk menyimpan posisi Anda</string>
+    <string name="you_not_signed_in">Belum masuk</string>
+    <string name="you_sign_in_prompt">Masuk untuk menyimpan sorotan, catatan, dan kemajuan membaca Anda di setiap perangkat.</string>
+    <string name="you_continue_reading">Lanjutkan membaca</string>
+
+    <string name="sync_status_syncing">Menyinkronkan…</string>
+    <string name="sync_status_not_synced">Belum disinkronkan</string>
+    <string name="sync_status_just_now">Baru saja disinkronkan</string>
+    <plurals name="sync_status_minutes_ago">
+        <item quantity="other">Disinkronkan %d mnt lalu</item>
+    </plurals>
+    <plurals name="sync_status_hours_ago">
+        <item quantity="other">Disinkronkan %d jam lalu</item>
+    </plurals>
+    <string name="sync_status_on_date">Disinkronkan %1$s</string>
+
+    <string name="auth_email">Email</string>
+    <string name="auth_password">Sandi</string>
+    <string name="auth_confirm_password">Konfirmasi sandi</string>
+    <string name="auth_invalid_email">Masukkan alamat email yang valid</string>
+    <string name="auth_show_password">Tampilkan sandi</string>
+    <string name="auth_hide_password">Sembunyikan sandi</string>
+    <string name="login_subtitle">Masuk untuk menyinkronkan sorotan, catatan, dan kemajuan membaca Anda di semua perangkat.</string>
+    <string name="login_no_account">Belum punya akun? Buat sekarang</string>
+    <string name="register_heading">Buat akun</string>
+    <string name="register_subtitle">Sorotan, catatan, dan kemajuan membaca Anda akan disinkronkan di setiap perangkat tempat Anda masuk.</string>
+    <plurals name="register_password_hint">
+        <item quantity="other">Minimal %d karakter</item>
+    </plurals>
+    <string name="register_passwords_mismatch">Sandi tidak cocok</string>
+    <string name="register_submit">Buat akun</string>
+    <string name="register_have_account">Sudah punya akun? Masuk</string>
+    <string name="auth_error_invalid_credentials">Email atau sandi salah</string>
+    <string name="auth_error_email_registered">Sudah ada akun dengan email tersebut</string>
+    <string name="auth_error_invalid_input">Input tidak valid</string>
+    <string name="auth_error_status">Terjadi kesalahan (%1$d)</string>
+    <string name="auth_error_unreachable">Tidak dapat menghubungi server. Periksa koneksi Anda, lalu coba lagi.</string>
+
+    <string name="settings_app_version">%1$s · Versi %2$s</string>
+    <string name="settings_section_general">Umum</string>
+    <string name="title_language">Bahasa</string>
+    <string name="language_system_default">Default sistem</string>
+    <string name="settings_section_appearance">Tampilan</string>
+    <string name="settings_theme">Tema</string>
+    <string name="theme_system">Sistem</string>
+    <string name="theme_light">Terang</string>
+    <string name="theme_dark">Gelap</string>
+    <string name="settings_verse_text_size">Ukuran teks ayat</string>
+    <string name="text_size_small">Kecil</string>
+    <string name="text_size_default">Normal</string>
+    <string name="text_size_large">Besar</string>
+    <string name="settings_section_daily_verse">Ayat harian</string>
+    <string name="settings_daily_reminder">Pengingat ayat harian</string>
+    <string name="settings_daily_reminder_subtitle">Ayat untuk mengawali hari Anda</string>
+    <string name="settings_reminder_time">Waktu</string>
+    <string name="settings_background_restricted">Aktivitas latar belakang dibatasi</string>
+    <string name="settings_background_restricted_subtitle">Pengingat hanya bisa muncul saat aplikasi terbuka. Matikan pembatasan ini di setelan ponsel Anda.</string>
+    <string name="settings_reminders_late">Pengingat datang terlambat?</string>
+    <string name="settings_reminders_late_subtitle">Beberapa ponsel menahan aplikasi di latar belakang. Periksa setelan baterai.</string>
+    <string name="settings_section_sync">Sinkronisasi dan cadangan</string>
+    <string name="sync_offline_title">Anda sedang offline</string>
+    <string name="sync_offline_subtitle">Sorotan dan catatan akan disinkronkan saat Anda kembali online.</string>
+    <string name="sync_failed">Sinkronisasi gagal</string>
+    <string name="sync_now">Sinkronkan</string>
+    <string name="sync_auto">Sinkronisasi otomatis</string>
+    <string name="sync_auto_subtitle">Cadangkan perubahan di latar belakang</string>
+    <string name="sync_wifi_only">Hanya Wi-Fi</string>
+    <string name="sync_wifi_only_subtitle">Jangan gunakan data seluler untuk sinkronisasi</string>
+    <string name="settings_section_account">Akun</string>
+    <string name="account_sign_in_subtitle">Sinkronkan sorotan, catatan, dan kemajuan membaca Anda di semua perangkat</string>
+    <string name="account_your_account">Akun Anda</string>
+    <string name="account_sign_out">Keluar</string>
+    <string name="account_delete">Hapus akun</string>
+    <string name="account_delete_title">Hapus akun?</string>
+    <string name="account_delete_message">Akun Anda dan semua yang dicadangkan di dalamnya akan dihapus secara permanen. Tindakan ini tidak dapat diurungkan. Sorotan dan catatan yang sudah ada di perangkat ini akan tetap di sini, tetapi tidak akan disinkronkan ke mana pun.</string>
+    <string name="account_confirm_password">Konfirmasi sandi Anda</string>
+
+    <string name="daily_verse_notification_title">Ayat Hari Ini</string>
+    <string name="notification_channel_daily_verse">Ayat Harian</string>
+    <string name="notification_channel_daily_verse_description">Pengingat harian ayat Alkitab Anda</string>
+</resources>
