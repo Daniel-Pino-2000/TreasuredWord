@@ -18,6 +18,7 @@ import com.application.bibleapp.data.remote.BibleRemoteDataSource
 import com.application.bibleapp.data.remote.DownloadedTranslation
 import com.application.bibleapp.data.remote.VerseLocationDto
 import com.application.bibleapp.data.remote.decodeVerseLocationsOrEmpty
+import com.application.bibleapp.data.repository.BibleRepository
 import com.application.bibleapp.data.remote.encodeToJson as encodeVerseLocationsToJson
 import com.application.bibleapp.utils.NetworkUtils
 import com.application.bibleapp.utils.TextUtils.normalizeForSearch
@@ -77,6 +78,9 @@ object BibleDatabaseManager {
                     }
                 }
                 versionFile.writeText(DB_VERSION.toString())
+                // The fresh copy has no highlights or notes, so any sync watermark left in prefs
+                // (e.g. restored from a cloud backup, which doesn't carry this DB) is stale.
+                BibleRepository.clearSyncState(context)
                 Log.d("BibleDB", "Database copied (schema version $DB_VERSION)")
             } catch (e: Exception) {
                 Log.e("BibleDB", "Error copying database: ${e.message}")
