@@ -91,10 +91,11 @@
 
     <string name="search_book_placeholder">Cari Kitab</string>
     <string name="search_verse_placeholder">Cari Ayat Alkitab</string>
-    <string name="search_icon">Ikon pencarian</string>
     <string name="search_empty_prompt">Cari ayat, kata kunci, atau referensi</string>
     <string name="search_suggestions_title">Coba salah satu ini</string>
     <string name="search_no_results">Tidak ada hasil untuk \"%1$s\"</string>
+    <string name="search_error">Tidak dapat mencari saat ini. Coba lagi.</string>
+    <string name="search_clear">Hapus pencarian</string>
 
     <string name="version_remove_title">Hapus %1$s?</string>
     <string name="version_remove_message">Teks yang diunduh akan dihapus dari perangkat Anda. Anda bisa mengunduhnya lagi nanti.</string>

@@ -69,9 +69,6 @@ fun BookPickerView(
             onTextChange = { newText ->
                 searchText = newText
             },
-            onSearchClick = {
-                bibleViewModel.onSearchButtonClick()
-            },
             placeholder = stringResource(R.string.search_book_placeholder)
         )
 

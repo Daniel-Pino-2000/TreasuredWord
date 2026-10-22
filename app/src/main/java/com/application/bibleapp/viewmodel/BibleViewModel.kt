@@ -239,12 +239,6 @@ class BibleViewModel(
     private fun bookmarkLabelFor(position: ReadingPosition, names: Map<Int, String> = _bookNames.value): String =
         "${names[position.bookId] ?: BibleBooks.getBookById(position.bookId)?.name ?: "Unknown"} ${position.chapter}:${position.verse}"
 
-    private val _searchQuery = MutableStateFlow("")
-    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
-
-    private val _searchResults = MutableStateFlow<List<VerseUI>>(emptyList())
-    val searchResults: StateFlow<List<VerseUI>> = _searchResults.asStateFlow()
-
     private val _availableVersions = MutableStateFlow<List<BibleTranslation>>(emptyList())
     val availableVersions: StateFlow<List<BibleTranslation>> = _availableVersions.asStateFlow()
 
@@ -256,6 +250,15 @@ class BibleViewModel(
 
     private val _versionSearchQuery = MutableStateFlow("")
     val versionSearchQuery: StateFlow<String> = _versionSearchQuery.asStateFlow()
+
+    // Search-as-you-type for the Search screen; it reads the version at search time.
+    private val verseSearch = VerseSearch(
+        scope = viewModelScope,
+        search = repository::searchVerses,
+        currentVersionId = { _selectedVersion.value.id }
+    )
+    val searchQuery: StateFlow<String> = verseSearch.query
+    val searchState: StateFlow<SearchUiState> = verseSearch.state
 
     // Derived from availableVersions + the search query — recomputed locally, no re-fetch.
     val groupedVersions: StateFlow<List<LanguageGroup>> =
@@ -864,23 +867,10 @@ class BibleViewModel(
         loadChapter(_currentBook.value, chapterId)
     }
 
-    fun onSearchQueryChange(newQuery: String) {
-        _searchQuery.value = newQuery
-    }
+    fun onSearchQueryChange(newQuery: String) = verseSearch.onQueryChange(newQuery)
 
-    fun onSearchButtonClick() {
-        val query = _searchQuery.value
-        if (query.isNotBlank()) {
-            viewModelScope.launch {
-                _searchResults.value = repository.searchVerses(query, _selectedVersion.value.id)
-            }
-        }
-    }
-
-    fun clearSearchResults() {
-        _searchResults.value = emptyList()
-        _searchQuery.value = ""
-    }
+    /** Search now, without waiting for typing to pause (keyboard Search key, a suggestion, Retry). */
+    fun onSearchSubmit() = verseSearch.submit()
 
     fun onVersionSearchQueryChange(query: String) {
         _versionSearchQuery.value = query
@@ -1032,6 +1022,7 @@ class BibleViewModel(
         _bookNames.value = repository.getBookNames(versionId)
         _chapterStructure.value = repository.getChapterStructure(versionId)
         loadChapter(_currentBook.value, _currentChapter.value)
+        verseSearch.onVersionChange()
         // Re-resolve (not re-fetch) so the card matches the newly selected translation
         // right away — the reference is already cached for today, so this is just a
         // local chapter lookup, no network call.

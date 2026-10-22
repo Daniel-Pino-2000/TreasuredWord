@@ -106,10 +106,11 @@
     <!-- Search -->
     <string name="search_book_placeholder">Buscar libro</string>
     <string name="search_verse_placeholder">Buscar versículo</string>
-    <string name="search_icon">Icono de búsqueda</string>
     <string name="search_empty_prompt">Busca un versículo, una palabra clave o una referencia</string>
     <string name="search_suggestions_title">Prueba con una de estas</string>
     <string name="search_no_results">Sin resultados para «%1$s»</string>
+    <string name="search_error">No se pudo buscar en este momento. Inténtalo de nuevo.</string>
+    <string name="search_clear">Borrar búsqueda</string>
 
     <!-- Version picker -->
     <string name="version_remove_title">¿Quitar %1$s?</string>
