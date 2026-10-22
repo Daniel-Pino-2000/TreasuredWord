@@ -22,10 +22,15 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.BibleApp"
         tools:targetApi="31">
+        <!-- configChanges: a language change updates the running activity instead of recreating
+             it, which tore the window down and showed black until the new one drew (#34). Compose
+             recomposes with the new configuration; MainActivity.onConfigurationChanged covers
+             what's built outside composition. -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_short_name"
+            android:configChanges="locale|layoutDirection"
             android:theme="@style/Theme.BibleApp">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

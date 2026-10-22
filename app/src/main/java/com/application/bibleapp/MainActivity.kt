@@ -1,6 +1,7 @@
 package com.application.bibleapp
 
 import android.content.Intent
+import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
@@ -95,8 +96,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        // A language change recreates this activity; renames the channel in the system's
-        // notification settings to match.
+        // Names the channel (shown in the system's notification settings) in the app language.
         createDailyVerseNotificationChannel(this)
 
         setContent {
@@ -399,5 +399,17 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    /** Only called for what the manifest's configChanges lists, i.e. a language change. Compose
+     *  picks up the new configuration itself; this redoes what lives outside composition. */
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        // Below Android 13 the change comes from AppCompat, not the system, and only reaches the
+        // activity: hand it to the views too, or Compose keeps showing the old language.
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            window.decorView.dispatchConfigurationChanged(newConfig)
+        }
+        createDailyVerseNotificationChannel(this)
     }
 }
