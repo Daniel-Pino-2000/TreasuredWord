@@ -62,7 +62,7 @@ class BibleRepository(
     private val daily: DailyVerseDataSource
 ) {
     private val prefs by lazy {
-        context.applicationContext.getSharedPreferences("bible_prefs", Context.MODE_PRIVATE)
+        context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     }
 
     suspend fun getChapter(bookId: Int, chapter: Int, versionId: String): List<VerseUI> =
@@ -453,15 +453,26 @@ class BibleRepository(
     suspend fun detachLocalContentFromDeletedAccount() = withContext(Dispatchers.IO) {
         BibleDatabaseManager.detachHighlightsFromAccount(context)
         BibleDatabaseManager.detachNotesFromAccount(context)
-        prefs.edit()
-            .remove(KEY_HIGHLIGHTS_SYNC_WATERMARK)
-            .remove(KEY_NOTES_SYNC_WATERMARK)
-            .remove(KEY_LAST_SYNC_COMPLETED_AT)
-            .remove(KEY_LAST_SYNC_FAILED)
-            .apply()
+        clearSyncState(context)
     }
 
-    private companion object {
+    internal companion object {
+        private const val PREFS_NAME = "bible_prefs"
+
+        /** Forgets the sync watermarks and status, so the next sync pulls everything. Also
+         *  called by [BibleDatabaseManager] whenever it installs a fresh DB with no highlights or
+         *  notes in it: e.g. after a cloud restore, which brings back these prefs but not the DB
+         *  (see res/xml/data_extraction_rules.xml). Keeping the old watermark then would skip
+         *  everything the server had before it. */
+        fun clearSyncState(context: Context) {
+            context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit()
+                .remove(KEY_HIGHLIGHTS_SYNC_WATERMARK)
+                .remove(KEY_NOTES_SYNC_WATERMARK)
+                .remove(KEY_LAST_SYNC_COMPLETED_AT)
+                .remove(KEY_LAST_SYNC_FAILED)
+                .apply()
+        }
+
         const val KEY_SELECTED_VERSION = "selected_version_id"
         const val KEY_THEME_MODE = "theme_mode"
         const val KEY_VERSE_TEXT_SCALE = "verse_text_scale"

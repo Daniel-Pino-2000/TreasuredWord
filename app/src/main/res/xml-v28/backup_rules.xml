@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+   Auto Backup rules for Android 9-11 (Android 12+ reads data_extraction_rules.xml). See
+   data_extraction_rules.xml for why each file is in or out. requireFlags (API 28+) limits
+   the Bible DB to device-to-device transfer, matching the device-transfer rules there.
+-->
+<full-backup-content>
+    <include domain="sharedpref" path="bible_prefs.xml" />
+    <include domain="sharedpref" path="app_language.xml" />
+    <include domain="database" path="bible_default.db" requireFlags="deviceToDeviceTransfer" />
+    <include domain="database" path="bible_default.db.ver" requireFlags="deviceToDeviceTransfer" />
+</full-backup-content>
