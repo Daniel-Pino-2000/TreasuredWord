@@ -13,16 +13,18 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-// TODO: this points directly at the local dev Postgres container so it's easy to run right
+// TODO: this points at the local dev Postgres container by default so it's easy to run right
 // now. Worth switching to a dedicated test database (H2 in-memory, or Testcontainers) instead
 // of sharing the dev DB — see the roadmap PDF, Section 2.
 class UsersTableTest {
 
+    // Same defaults and env overrides as application.conf's database block: the local Docker
+    // Postgres on 5433, unless DATABASE_URL/USER/PASSWORD are set (CI's service runs on 5432).
     private val database = Database.connect(
-        url = "jdbc:postgresql://localhost:5433/bibleapp",
+        url = System.getenv("DATABASE_URL") ?: "jdbc:postgresql://localhost:5433/bibleapp",
         driver = "org.postgresql.Driver",
-        user = "postgres",
-        password = "postgres"
+        user = System.getenv("DATABASE_USER") ?: "postgres",
+        password = System.getenv("DATABASE_PASSWORD") ?: "postgres"
     )
 
     // A fresh email per test run so this test never collides with itself or with other tests
