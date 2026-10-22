@@ -1,8 +1,8 @@
 package com.application.bibleapp.ui.theme
 
-import android.app.Activity
 import android.content.res.Configuration
 import android.os.Build
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -136,7 +136,9 @@ fun BibleAppTheme(
     // matter which theme is actually on screen.
     val view = LocalView.current
     if (!view.isInEditMode) {
-        val activity = LocalContext.current as? Activity
+        // LocalActivity, not a cast of LocalContext: the context can be a wrapper around the
+        // activity, and the cast would then quietly skip the bar update.
+        val activity = LocalActivity.current
         SideEffect {
             val window = activity?.window ?: return@SideEffect
             val insetsController = WindowCompat.getInsetsController(window, view)
