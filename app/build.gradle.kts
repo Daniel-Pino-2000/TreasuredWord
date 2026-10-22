@@ -53,6 +53,13 @@ android {
         // per-app language settings.
         generateLocaleConfig = true
     }
+    bundle {
+        // Play otherwise installs only the device's languages from an App Bundle, so a language
+        // picked in the app's own settings could be missing. The strings are tiny.
+        language {
+            enableSplit = false
+        }
+    }
 }
 
 dependencies {

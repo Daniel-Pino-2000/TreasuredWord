@@ -31,7 +31,8 @@ object AppLanguage {
             ?: chosen.toLanguageTag()
     }
 
-    /** [tag] null means "System default". Recreates the activity in the new language. */
+    /** [tag] null means "System default". MainActivity switches in place, without being recreated
+     *  (configChanges="locale" in the manifest). */
     fun select(context: Context, tag: String?) {
         // A copy for code that runs with no activity (the daily verse worker) below Android 13,
         // where AppCompat only applies the language to activities.
