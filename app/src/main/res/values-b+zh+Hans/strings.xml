@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Chinese (Simplified). DRAFT by Claude, pending review by a fluent speaker before release.
+  Chinese has a single plural form. Scripture, book names and translation names never go here.
+-->
+<resources>
+    <string name="app_short_name">圣经</string>
+
+    <string name="action_back">返回</string>
+    <string name="action_cancel">取消</string>
+    <string name="action_ok">确定</string>
+    <string name="action_delete">删除</string>
+    <string name="action_remove">移除</string>
+    <string name="action_save">保存</string>
+    <string name="action_undo">撤销</string>
+    <string name="action_retry">重试</string>
+    <string name="action_dismiss">关闭</string>
+    <string name="action_sign_in">登录</string>
+    <string name="action_copy">复制</string>
+    <string name="action_share">分享</string>
+    <string name="tap_to_retry">点按重试</string>
+    <string name="error_generic">出了点问题</string>
+
+    <string name="title_home">首页</string>
+    <string name="title_bible">圣经</string>
+    <string name="title_search">搜索</string>
+    <string name="title_you">我</string>
+    <string name="title_select_book">选择书卷</string>
+    <string name="title_select_verse">选择经节</string>
+    <string name="title_select_version">选择译本</string>
+    <string name="title_sign_in">登录</string>
+    <string name="title_create_account">创建账号</string>
+    <string name="title_library">我的收藏</string>
+    <string name="title_library_item">详情</string>
+    <string name="title_settings">设置</string>
+    <string name="title_note">笔记</string>
+    <string name="title_highlight">标记</string>
+
+    <string name="label_bookmark">书签</string>
+    <string name="label_highlights">标记</string>
+    <string name="label_notes">笔记</string>
+    <string name="label_signed_in">已登录</string>
+    <string name="verse_of_the_day">每日经文</string>
+
+    <string name="bookmark_this_place">为此处添加书签</string>
+    <string name="bookmark_content_description">书签：%1$s</string>
+    <string name="bookmark_go_to">前往 %1$s</string>
+    <string name="bookmark_move_here">将书签移到这里</string>
+    <string name="bookmark_remove">删除书签</string>
+
+    <string name="chapter_previous">上一章</string>
+    <string name="chapter_next">下一章</string>
+
+    <string name="message_copied">已复制到剪贴板</string>
+    <string name="message_highlight_removed">已删除标记</string>
+    <string name="message_note_deleted">已删除笔记</string>
+    <string name="message_bookmarked">已在 %1$s 添加书签</string>
+    <string name="message_bookmark_removed">已删除书签</string>
+
+    <string name="home_continue_reading">继续阅读</string>
+    <string name="home_search_bible">搜索圣经</string>
+    <string name="home_search_bible_subtitle">按关键词查找经文</string>
+
+    <string name="footnote_verse">第 %1$d 节</string>
+    <plurals name="selection_verses_selected">
+        <item quantity="other">已选择 %d 节</item>
+    </plurals>
+    <string name="selection_cancel">取消选择</string>
+
+    <string name="highlight_remove">删除标记</string>
+    <string name="highlight_color_generic">标记颜色</string>
+    <string name="highlight_color_yellow">黄色</string>
+    <string name="highlight_color_green">绿色</string>
+    <string name="highlight_color_blue">蓝色</string>
+    <string name="highlight_color_pink">粉色</string>
+    <string name="highlight_color_purple">紫色</string>
+
+    <string name="note_discard_title">放弃这条笔记？</string>
+    <string name="note_discard_message">你对这条笔记的修改尚未保存。</string>
+    <string name="note_discard">放弃</string>
+    <string name="note_keep_editing">继续编辑</string>
+    <string name="note_remove_verse">移除经节</string>
+    <string name="note_placeholder">写下你对这节经文的感想…</string>
+    <string name="note_add_another">再添加一条笔记</string>
+    <string name="note_open">打开笔记</string>
+    <plurals name="note_count">
+        <item quantity="other">%d 条笔记</item>
+    </plurals>
+    <string name="sign_in_nudge_message">登录后即可备份，并在你的所有设备间同步。</string>
+
+    <string name="search_book_placeholder">搜索书卷</string>
+    <string name="search_verse_placeholder">搜索经文</string>
+    <string name="search_icon">搜索图标</string>
+    <string name="search_empty_prompt">搜索经文、关键词或章节</string>
+    <string name="search_suggestions_title">试试这些</string>
+    <string name="search_no_results">没有找到“%1$s”的结果</string>
+
+    <string name="version_remove_title">移除 %1$s？</string>
+    <string name="version_remove_message">这会从设备上删除已下载的经文。之后可以重新下载。</string>
+    <string name="version_load_failed">无法加载译本</string>
+    <string name="version_none_available">没有可用的译本</string>
+    <string name="version_search_placeholder">按语言或译本搜索</string>
+    <string name="version_download_failed">下载失败：%1$s</string>
+    <string name="version_download_retry_hint">点按下方的译本重试</string>
+    <string name="version_no_match">没有与“%1$s”匹配的译本</string>
+    <string name="version_section_downloaded">已下载</string>
+    <string name="version_status_downloaded">已下载</string>
+    <string name="version_status_active">当前译本</string>
+    <string name="version_update_available">有更新：点按 ⟳ 获取脚注和格式</string>
+    <string name="version_download_progress">%1$d%%</string>
+    <string name="version_redownload">重新下载 %1$s，获取下载后新增的脚注和格式</string>
+    <string name="version_remove_downloaded">移除已下载的 %1$s</string>
+    <string name="version_download">下载 %1$s</string>
+    <string name="version_currently_active">当前使用中</string>
+    <string name="download_failed">下载失败</string>
+    <string name="download_error_offline">没有网络连接。请连接网络后重试。</string>
+    <string name="download_error_no_content">此译本没有可用的内容。</string>
+    <string name="download_partial_summary">已下载 %2$s中的 %1$s，此译本缺少部分书卷。</string>
+    <plurals name="download_verse_count">
+        <item quantity="other">%d 节经文</item>
+    </plurals>
+    <plurals name="download_chapter_count">
+        <item quantity="other">%d 章</item>
+    </plurals>
+
+    <string name="library_search_by_book">按书卷搜索</string>
+    <string name="library_search_notes">搜索笔记</string>
+    <string name="library_empty_highlights">还没有标记。阅读时长按经节即可添加。</string>
+    <string name="library_no_highlights_in_colors">所选颜色中没有标记。</string>
+    <string name="library_no_highlights_match">没有与“%1$s”匹配的标记。</string>
+    <string name="library_empty_notes">还没有笔记。阅读时选中经节即可添加。</string>
+    <string name="library_no_notes_match">没有与“%1$s”匹配的笔记。</string>
+    <string name="library_color_filter">颜色</string>
+    <string name="library_show_color_highlights">显示%1$s标记</string>
+    <string name="library_highlighted_on">标记于 %1$s</string>
+    <string name="library_noted_on">记录于 %1$s</string>
+    <string name="library_delete_note">删除笔记</string>
+    <string name="library_item_unavailable">此项目已不存在。</string>
+    <string name="library_open_in_bible">在圣经中打开</string>
+    <plurals name="verse_ref_with_more">
+        <item quantity="other">%1$s 等 %2$d 节</item>
+    </plurals>
+
+    <string name="you_section_library">我的收藏</string>
+    <string name="you_bookmark_hint">阅读时点按书签图标即可保存位置</string>
+    <string name="you_not_signed_in">未登录</string>
+    <string name="you_sign_in_prompt">登录后，你的标记、笔记和阅读进度会出现在每台设备上。</string>
+    <string name="you_continue_reading">继续阅读</string>
+
+    <string name="sync_status_syncing">正在同步…</string>
+    <string name="sync_status_not_synced">尚未同步</string>
+    <string name="sync_status_just_now">刚刚已同步</string>
+    <plurals name="sync_status_minutes_ago">
+        <item quantity="other">%d 分钟前已同步</item>
+    </plurals>
+    <plurals name="sync_status_hours_ago">
+        <item quantity="other">%d 小时前已同步</item>
+    </plurals>
+    <string name="sync_status_on_date">%1$s已同步</string>
+
+    <string name="auth_email">电子邮箱</string>
+    <string name="auth_password">密码</string>
+    <string name="auth_confirm_password">确认密码</string>
+    <string name="auth_invalid_email">请输入有效的电子邮箱地址</string>
+    <string name="auth_show_password">显示密码</string>
+    <string name="auth_hide_password">隐藏密码</string>
+    <string name="login_subtitle">登录后即可在多台设备间同步你的标记、笔记和阅读进度。</string>
+    <string name="login_no_account">还没有账号？立即创建</string>
+    <string name="register_heading">创建账号</string>
+    <string name="register_subtitle">你的标记、笔记和阅读进度会在你登录的每台设备上同步。</string>
+    <plurals name="register_password_hint">
+        <item quantity="other">至少 %d 个字符</item>
+    </plurals>
+    <string name="register_passwords_mismatch">两次输入的密码不一致</string>
+    <string name="register_submit">创建账号</string>
+    <string name="register_have_account">已有账号？登录</string>
+    <string name="auth_error_invalid_credentials">电子邮箱或密码错误</string>
+    <string name="auth_error_email_registered">该电子邮箱已注册账号</string>
+    <string name="auth_error_invalid_input">输入无效</string>
+    <string name="auth_error_status">出了点问题（%1$d）</string>
+    <string name="auth_error_unreachable">无法连接服务器。请检查网络后重试。</string>
+
+    <string name="settings_app_version">%1$s · 版本 %2$s</string>
+    <string name="settings_section_general">通用</string>
+    <string name="title_language">语言</string>
+    <string name="language_system_default">跟随系统</string>
+    <string name="settings_section_appearance">外观</string>
+    <string name="settings_theme">主题</string>
+    <string name="theme_system">跟随系统</string>
+    <string name="theme_light">浅色</string>
+    <string name="theme_dark">深色</string>
+    <string name="settings_verse_text_size">经文字号</string>
+    <string name="text_size_small">小</string>
+    <string name="text_size_default">标准</string>
+    <string name="text_size_large">大</string>
+    <string name="settings_section_daily_verse">每日经文</string>
+    <string name="settings_daily_reminder">每日经文提醒</string>
+    <string name="settings_daily_reminder_subtitle">用一节经文开启新的一天</string>
+    <string name="settings_reminder_time">时间</string>
+    <string name="settings_background_restricted">后台活动受到限制</string>
+    <string name="settings_background_restricted_subtitle">只有在应用打开时才能收到提醒。请在手机设置中关闭此限制。</string>
+    <string name="settings_reminders_late">提醒来得晚？</string>
+    <string name="settings_reminders_late_subtitle">部分手机会限制后台应用。请检查电池设置。</string>
+    <string name="settings_section_sync">同步与备份</string>
+    <string name="sync_offline_title">你已离线</string>
+    <string name="sync_offline_subtitle">恢复联网后，标记和笔记会自动同步。</string>
+    <string name="sync_failed">同步失败</string>
+    <string name="sync_now">立即同步</string>
+    <string name="sync_auto">自动同步</string>
+    <string name="sync_auto_subtitle">在后台备份更改</string>
+    <string name="sync_wifi_only">仅限 Wi-Fi</string>
+    <string name="sync_wifi_only_subtitle">不使用移动数据同步</string>
+    <string name="settings_section_account">账号</string>
+    <string name="account_sign_in_subtitle">在多台设备间同步你的标记、笔记和阅读进度</string>
+    <string name="account_your_account">你的账号</string>
+    <string name="account_sign_out">退出登录</string>
+    <string name="account_delete">删除账号</string>
+    <string name="account_delete_title">删除账号？</string>
+    <string name="account_delete_message">这会永久删除你的账号及其中备份的所有内容，且无法撤销。此设备上已有的标记和笔记会保留，但不会再同步到其他地方。</string>
+    <string name="account_confirm_password">请确认密码</string>
+
+    <string name="daily_verse_notification_title">每日经文</string>
+    <string name="notification_channel_daily_verse">每日经文</string>
+    <string name="notification_channel_daily_verse_description">每日圣经经文提醒</string>
+</resources>

@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Korean. DRAFT by Claude, pending review by a fluent speaker before release.
+  Polite 해요체 for sentences, short noun forms for buttons. Korean has a single plural form.
+  Scripture, book names and translation names never go here.
+-->
+<resources>
+    <string name="app_short_name">성경</string>
+
+    <string name="action_back">뒤로</string>
+    <string name="action_cancel">취소</string>
+    <string name="action_ok">확인</string>
+    <string name="action_delete">삭제</string>
+    <string name="action_remove">제거</string>
+    <string name="action_save">저장</string>
+    <string name="action_undo">실행 취소</string>
+    <string name="action_retry">다시 시도</string>
+    <string name="action_dismiss">닫기</string>
+    <string name="action_sign_in">로그인</string>
+    <string name="action_copy">복사</string>
+    <string name="action_share">공유</string>
+    <string name="tap_to_retry">탭하여 다시 시도</string>
+    <string name="error_generic">문제가 발생했어요</string>
+
+    <string name="title_home">홈</string>
+    <string name="title_bible">성경</string>
+    <string name="title_search">검색</string>
+    <string name="title_you">나</string>
+    <string name="title_select_book">책 선택</string>
+    <string name="title_select_verse">절 선택</string>
+    <string name="title_select_version">번역본 선택</string>
+    <string name="title_sign_in">로그인</string>
+    <string name="title_create_account">계정 만들기</string>
+    <string name="title_library">보관함</string>
+    <string name="title_library_item">상세 정보</string>
+    <string name="title_settings">설정</string>
+    <string name="title_note">메모</string>
+    <string name="title_highlight">하이라이트</string>
+
+    <string name="label_bookmark">책갈피</string>
+    <string name="label_highlights">하이라이트</string>
+    <string name="label_notes">메모</string>
+    <string name="label_signed_in">로그인됨</string>
+    <string name="verse_of_the_day">오늘의 말씀</string>
+
+    <string name="bookmark_this_place">이 위치에 책갈피</string>
+    <string name="bookmark_content_description">책갈피: %1$s</string>
+    <string name="bookmark_go_to">%1$s(으)로 이동</string>
+    <string name="bookmark_move_here">책갈피를 여기로 이동</string>
+    <string name="bookmark_remove">책갈피 삭제</string>
+
+    <string name="chapter_previous">이전 장</string>
+    <string name="chapter_next">다음 장</string>
+
+    <string name="message_copied">클립보드에 복사했어요</string>
+    <string name="message_highlight_removed">하이라이트를 삭제했어요</string>
+    <string name="message_note_deleted">메모를 삭제했어요</string>
+    <string name="message_bookmarked">%1$s에 책갈피를 꽂았어요</string>
+    <string name="message_bookmark_removed">책갈피를 삭제했어요</string>
+
+    <string name="home_continue_reading">이어 읽기</string>
+    <string name="home_search_bible">성경 검색</string>
+    <string name="home_search_bible_subtitle">키워드로 말씀 찾기</string>
+
+    <string name="footnote_verse">%1$d절</string>
+    <plurals name="selection_verses_selected">
+        <item quantity="other">%d개 절 선택됨</item>
+    </plurals>
+    <string name="selection_cancel">선택 취소</string>
+
+    <string name="highlight_remove">하이라이트 삭제</string>
+    <string name="highlight_color_generic">하이라이트 색상</string>
+    <string name="highlight_color_yellow">노란색</string>
+    <string name="highlight_color_green">초록색</string>
+    <string name="highlight_color_blue">파란색</string>
+    <string name="highlight_color_pink">분홍색</string>
+    <string name="highlight_color_purple">보라색</string>
+
+    <string name="note_discard_title">메모를 삭제할까요?</string>
+    <string name="note_discard_message">이 메모의 변경 사항이 저장되지 않았어요.</string>
+    <string name="note_discard">삭제</string>
+    <string name="note_keep_editing">계속 편집</string>
+    <string name="note_remove_verse">절 제거</string>
+    <string name="note_placeholder">이 말씀에 대한 생각을 적어 보세요…</string>
+    <string name="note_add_another">메모 추가</string>
+    <string name="note_open">메모 열기</string>
+    <plurals name="note_count">
+        <item quantity="other">메모 %d개</item>
+    </plurals>
+    <string name="sign_in_nudge_message">로그인하면 백업하고 모든 기기에서 동기화할 수 있어요.</string>
+
+    <string name="search_book_placeholder">책 검색</string>
+    <string name="search_verse_placeholder">성경 구절 검색</string>
+    <string name="search_icon">검색 아이콘</string>
+    <string name="search_empty_prompt">구절, 키워드 또는 장절을 검색하세요</string>
+    <string name="search_suggestions_title">이런 단어는 어때요?</string>
+    <string name="search_no_results">\'%1$s\'에 대한 결과가 없어요</string>
+
+    <string name="version_remove_title">%1$s을(를) 삭제할까요?</string>
+    <string name="version_remove_message">다운로드한 본문이 기기에서 삭제돼요. 나중에 다시 다운로드할 수 있어요.</string>
+    <string name="version_load_failed">번역본을 불러오지 못했어요</string>
+    <string name="version_none_available">사용 가능한 번역본이 없어요</string>
+    <string name="version_search_placeholder">언어 또는 번역본으로 검색</string>
+    <string name="version_download_failed">다운로드 실패: %1$s</string>
+    <string name="version_download_retry_hint">아래 번역본을 탭하여 다시 시도하세요</string>
+    <string name="version_no_match">\'%1$s\'과(와) 일치하는 번역본이 없어요</string>
+    <string name="version_section_downloaded">다운로드됨</string>
+    <string name="version_status_downloaded">다운로드됨</string>
+    <string name="version_status_active">사용 중인 번역본</string>
+    <string name="version_update_available">업데이트 있음 — 각주와 서식을 받으려면 ⟳을 탭하세요</string>
+    <string name="version_download_progress">%1$d%%</string>
+    <string name="version_redownload">다운로드 이후 추가된 각주와 서식을 받기 위해 %1$s 다시 다운로드</string>
+    <string name="version_remove_downloaded">다운로드한 %1$s 삭제</string>
+    <string name="version_download">%1$s 다운로드</string>
+    <string name="version_currently_active">현재 사용 중</string>
+    <string name="download_failed">다운로드 실패</string>
+    <string name="download_error_offline">인터넷에 연결되어 있지 않아요. 인터넷에 연결한 뒤 다시 시도하세요.</string>
+    <string name="download_error_no_content">이 번역본에는 사용할 수 있는 내용이 없어요.</string>
+    <string name="download_partial_summary">%2$s에서 %1$s을(를) 다운로드했어요. 일부 책은 이 번역본에 없어요.</string>
+    <plurals name="download_verse_count">
+        <item quantity="other">%d개 절</item>
+    </plurals>
+    <plurals name="download_chapter_count">
+        <item quantity="other">%d개 장</item>
+    </plurals>
+
+    <string name="library_search_by_book">책으로 검색</string>
+    <string name="library_search_notes">메모 검색</string>
+    <string name="library_empty_highlights">아직 하이라이트가 없어요. 읽는 중에 구절을 길게 누르면 추가할 수 있어요.</string>
+    <string name="library_no_highlights_in_colors">선택한 색상의 하이라이트가 없어요.</string>
+    <string name="library_no_highlights_match">\'%1$s\'과(와) 일치하는 하이라이트가 없어요.</string>
+    <string name="library_empty_notes">아직 메모가 없어요. 읽는 중에 구절을 선택하면 추가할 수 있어요.</string>
+    <string name="library_no_notes_match">\'%1$s\'과(와) 일치하는 메모가 없어요.</string>
+    <string name="library_color_filter">색상</string>
+    <string name="library_show_color_highlights">%1$s 하이라이트 표시</string>
+    <string name="library_highlighted_on">%1$s에 하이라이트함</string>
+    <string name="library_noted_on">%1$s에 메모함</string>
+    <string name="library_delete_note">메모 삭제</string>
+    <string name="library_item_unavailable">이 항목은 더 이상 사용할 수 없어요.</string>
+    <string name="library_open_in_bible">성경에서 열기</string>
+    <plurals name="verse_ref_with_more">
+        <item quantity="other">%1$s 외 %2$d개</item>
+    </plurals>
+
+    <string name="you_section_library">내 보관함</string>
+    <string name="you_bookmark_hint">읽는 중에 책갈피 아이콘을 탭하면 위치가 저장돼요</string>
+    <string name="you_not_signed_in">로그인하지 않음</string>
+    <string name="you_sign_in_prompt">로그인하면 하이라이트, 메모, 읽기 진도를 모든 기기에서 볼 수 있어요.</string>
+    <string name="you_continue_reading">이어 읽기</string>
+
+    <string name="sync_status_syncing">동기화 중…</string>
+    <string name="sync_status_not_synced">아직 동기화하지 않음</string>
+    <string name="sync_status_just_now">방금 동기화함</string>
+    <plurals name="sync_status_minutes_ago">
+        <item quantity="other">%d분 전에 동기화함</item>
+    </plurals>
+    <plurals name="sync_status_hours_ago">
+        <item quantity="other">%d시간 전에 동기화함</item>
+    </plurals>
+    <string name="sync_status_on_date">%1$s에 동기화함</string>
+
+    <string name="auth_email">이메일</string>
+    <string name="auth_password">비밀번호</string>
+    <string name="auth_confirm_password">비밀번호 확인</string>
+    <string name="auth_invalid_email">올바른 이메일 주소를 입력하세요</string>
+    <string name="auth_show_password">비밀번호 표시</string>
+    <string name="auth_hide_password">비밀번호 숨기기</string>
+    <string name="login_subtitle">로그인하면 하이라이트, 메모, 읽기 진도를 여러 기기에서 동기화할 수 있어요.</string>
+    <string name="login_no_account">계정이 없나요? 만들기</string>
+    <string name="register_heading">계정 만들기</string>
+    <string name="register_subtitle">로그인한 모든 기기에서 하이라이트, 메모, 읽기 진도가 동기화돼요.</string>
+    <plurals name="register_password_hint">
+        <item quantity="other">%d자 이상</item>
+    </plurals>
+    <string name="register_passwords_mismatch">비밀번호가 일치하지 않아요</string>
+    <string name="register_submit">계정 만들기</string>
+    <string name="register_have_account">이미 계정이 있나요? 로그인</string>
+    <string name="auth_error_invalid_credentials">이메일 또는 비밀번호가 올바르지 않아요</string>
+    <string name="auth_error_email_registered">이 이메일로 가입된 계정이 이미 있어요</string>
+    <string name="auth_error_invalid_input">입력값이 올바르지 않아요</string>
+    <string name="auth_error_status">문제가 발생했어요 (%1$d)</string>
+    <string name="auth_error_unreachable">서버에 연결할 수 없어요. 연결 상태를 확인한 뒤 다시 시도하세요.</string>
+
+    <string name="settings_app_version">%1$s · 버전 %2$s</string>
+    <string name="settings_section_general">일반</string>
+    <string name="title_language">언어</string>
+    <string name="language_system_default">시스템 기본값</string>
+    <string name="settings_section_appearance">화면</string>
+    <string name="settings_theme">테마</string>
+    <string name="theme_system">시스템</string>
+    <string name="theme_light">라이트</string>
+    <string name="theme_dark">다크</string>
+    <string name="settings_verse_text_size">본문 글자 크기</string>
+    <string name="text_size_small">작게</string>
+    <string name="text_size_default">보통</string>
+    <string name="text_size_large">크게</string>
+    <string name="settings_section_daily_verse">매일 말씀</string>
+    <string name="settings_daily_reminder">매일 말씀 알림</string>
+    <string name="settings_daily_reminder_subtitle">하루를 여는 말씀 한 구절</string>
+    <string name="settings_reminder_time">시간</string>
+    <string name="settings_background_restricted">백그라운드 활동이 제한되어 있어요</string>
+    <string name="settings_background_restricted_subtitle">앱이 열려 있을 때만 알림이 와요. 휴대전화 설정에서 제한을 해제하세요.</string>
+    <string name="settings_reminders_late">알림이 늦게 오나요?</string>
+    <string name="settings_reminders_late_subtitle">일부 휴대전화는 백그라운드 앱을 제한해요. 배터리 설정을 확인하세요.</string>
+    <string name="settings_section_sync">동기화 및 백업</string>
+    <string name="sync_offline_title">오프라인 상태예요</string>
+    <string name="sync_offline_subtitle">다시 온라인이 되면 하이라이트와 메모가 동기화돼요.</string>
+    <string name="sync_failed">동기화 실패</string>
+    <string name="sync_now">지금 동기화</string>
+    <string name="sync_auto">자동 동기화</string>
+    <string name="sync_auto_subtitle">백그라운드에서 변경 사항 백업</string>
+    <string name="sync_wifi_only">Wi-Fi에서만</string>
+    <string name="sync_wifi_only_subtitle">모바일 데이터로 동기화하지 않음</string>
+    <string name="settings_section_account">계정</string>
+    <string name="account_sign_in_subtitle">하이라이트, 메모, 읽기 진도를 여러 기기에서 동기화하세요</string>
+    <string name="account_your_account">내 계정</string>
+    <string name="account_sign_out">로그아웃</string>
+    <string name="account_delete">계정 삭제</string>
+    <string name="account_delete_title">계정을 삭제할까요?</string>
+    <string name="account_delete_message">계정과 백업된 모든 데이터가 영구적으로 삭제돼요. 되돌릴 수 없어요. 이 기기에 있는 하이라이트와 메모는 그대로 남지만 다른 곳과 동기화되지 않아요.</string>
+    <string name="account_confirm_password">비밀번호를 확인하세요</string>
+
+    <string name="daily_verse_notification_title">오늘의 말씀</string>
+    <string name="notification_channel_daily_verse">매일 말씀</string>
+    <string name="notification_channel_daily_verse_description">매일 성경 말씀 알림</string>
+</resources>
