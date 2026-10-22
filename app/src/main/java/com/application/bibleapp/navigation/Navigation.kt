@@ -56,7 +56,13 @@ fun Navigation(
                     bibleViewModel.goToBookmark()
                     navController.navigate(Screen.Bible.route)
                 },
-                onSearchClick = { navController.navigate(Screen.Search.route) }
+                onHighlightClick = { highlight ->
+                    bibleViewModel.openHighlightFromLibrary(highlight)
+                    navController.navigate(Screen.Bible.route)
+                },
+                onSeeAllHighlightsClick = {
+                    navController.navigate(Screen.Library.createRoute(Screen.Library.TAB_HIGHLIGHTS))
+                }
             )
         }
 

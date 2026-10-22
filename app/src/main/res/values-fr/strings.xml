@@ -59,8 +59,13 @@
     <string name="message_bookmark_removed">Signet retiré</string>
 
     <string name="home_continue_reading">Reprendre la lecture</string>
-    <string name="home_search_bible">Rechercher dans la Bible</string>
-    <string name="home_search_bible_subtitle">Trouve un verset par mot-clé</string>
+    <string name="home_greeting_morning">Bonjour</string>
+    <string name="home_greeting_afternoon">Bon après-midi</string>
+    <string name="home_greeting_evening">Bonsoir</string>
+    <string name="home_chapter_progress">Chapitre %1$d sur %2$d</string>
+    <string name="home_recent_highlights">Vos surlignages récents</string>
+    <string name="home_see_all">Tout voir</string>
+    <string name="home_highlights_empty">Surlignez un verset pendant votre lecture et il apparaîtra ici.</string>
 
     <string name="footnote_verse">Verset %1$d</string>
     <plurals name="selection_verses_selected">

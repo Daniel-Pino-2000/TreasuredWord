@@ -59,8 +59,13 @@
     <string name="message_bookmark_removed">책갈피를 삭제했어요</string>
 
     <string name="home_continue_reading">이어 읽기</string>
-    <string name="home_search_bible">성경 검색</string>
-    <string name="home_search_bible_subtitle">키워드로 말씀 찾기</string>
+    <string name="home_greeting_morning">좋은 아침이에요</string>
+    <string name="home_greeting_afternoon">좋은 오후예요</string>
+    <string name="home_greeting_evening">좋은 저녁이에요</string>
+    <string name="home_chapter_progress">%2$d장 중 %1$d장</string>
+    <string name="home_recent_highlights">최근 하이라이트</string>
+    <string name="home_see_all">모두 보기</string>
+    <string name="home_highlights_empty">읽으면서 구절을 하이라이트하면 여기에 표시됩니다.</string>
 
     <string name="footnote_verse">%1$d절</string>
     <plurals name="selection_verses_selected">

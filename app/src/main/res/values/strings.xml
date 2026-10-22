@@ -68,8 +68,13 @@
 
     <!-- Home -->
     <string name="home_continue_reading">Continue Reading</string>
-    <string name="home_search_bible">Search the Bible</string>
-    <string name="home_search_bible_subtitle">Find a verse by keyword</string>
+    <string name="home_greeting_morning">Good morning</string>
+    <string name="home_greeting_afternoon">Good afternoon</string>
+    <string name="home_greeting_evening">Good evening</string>
+    <string name="home_chapter_progress">Chapter %1$d of %2$d</string>
+    <string name="home_recent_highlights">Your recent highlights</string>
+    <string name="home_see_all">See all</string>
+    <string name="home_highlights_empty">Highlight a verse while you read and it\'ll show up here.</string>
 
     <!-- Reader -->
     <!-- %1$d is a verse number -->

@@ -112,15 +112,6 @@ private fun BookmarkButton(state: BookmarkButtonState) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeTopBar() {
-    TopBar(
-        title = { Text(stringResource(R.string.title_home)) }
-    )
-}
-
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
 fun SearchTopBar() {
     TopBar(
         title = { Text(stringResource(R.string.title_search)) }

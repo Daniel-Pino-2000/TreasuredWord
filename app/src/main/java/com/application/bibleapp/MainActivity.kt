@@ -58,7 +58,6 @@ import com.application.bibleapp.components.BibleChapterNav
 import com.application.bibleapp.components.BibleTopBar
 import com.application.bibleapp.components.BookPickerTopBar
 import com.application.bibleapp.components.BookmarkButtonState
-import com.application.bibleapp.components.HomeTopBar
 import com.application.bibleapp.components.LibraryItemDetailTopBar
 import com.application.bibleapp.components.LibraryTopBar
 import com.application.bibleapp.components.LoginTopBar
@@ -310,9 +309,9 @@ class MainActivity : AppCompatActivity() {
                                         }
                                     )
                                 }
-                                // In landscape the rail already says where you are; the bar's height
-                                // goes to the Verse of the Day card instead, so it fits unscrolled.
-                                Screen.Home.route -> if (!compactHeight) HomeTopBar()
+                                // No bar: Home's own greeting is its header, and in landscape the bar's
+                                // height goes to the Verse of the Day card so it fits unscrolled.
+                                Screen.Home.route -> {}
                                 Screen.Search.route -> SearchTopBar()
                                 Screen.BookPicker.route -> BookPickerTopBar { navController.popBackStack() }
                                 Screen.VersePicker.route -> VersePickerTopBar { navController.popBackStack() }

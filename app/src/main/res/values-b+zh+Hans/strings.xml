@@ -58,8 +58,13 @@
     <string name="message_bookmark_removed">已删除书签</string>
 
     <string name="home_continue_reading">继续阅读</string>
-    <string name="home_search_bible">搜索圣经</string>
-    <string name="home_search_bible_subtitle">按关键词查找经文</string>
+    <string name="home_greeting_morning">早上好</string>
+    <string name="home_greeting_afternoon">下午好</string>
+    <string name="home_greeting_evening">晚上好</string>
+    <string name="home_chapter_progress">第 %1$d 章，共 %2$d 章</string>
+    <string name="home_recent_highlights">最近的标记</string>
+    <string name="home_see_all">查看全部</string>
+    <string name="home_highlights_empty">阅读时标记经文，它就会显示在这里。</string>
 
     <string name="footnote_verse">第 %1$d 节</string>
     <plurals name="selection_verses_selected">

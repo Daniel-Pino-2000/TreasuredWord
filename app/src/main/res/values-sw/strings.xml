@@ -59,8 +59,13 @@
     <string name="message_bookmark_removed">Alamisho imeondolewa</string>
 
     <string name="home_continue_reading">Endelea Kusoma</string>
-    <string name="home_search_bible">Tafuta katika Biblia</string>
-    <string name="home_search_bible_subtitle">Pata mstari kwa neno kuu</string>
+    <string name="home_greeting_morning">Habari za asubuhi</string>
+    <string name="home_greeting_afternoon">Habari za mchana</string>
+    <string name="home_greeting_evening">Habari za jioni</string>
+    <string name="home_chapter_progress">Sura ya %1$d kati ya %2$d</string>
+    <string name="home_recent_highlights">Viangazio vyako vya hivi karibuni</string>
+    <string name="home_see_all">Ona vyote</string>
+    <string name="home_highlights_empty">Angazia aya unaposoma nayo itaonekana hapa.</string>
 
     <string name="footnote_verse">Mstari %1$d</string>
     <plurals name="selection_verses_selected">
