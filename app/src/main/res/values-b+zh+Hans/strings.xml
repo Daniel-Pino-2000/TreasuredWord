@@ -203,6 +203,8 @@
     <string name="auth_error_unreachable">无法连接服务器。请检查网络后重试。</string>
 
     <string name="settings_app_version">%1$s · 版本 %2$s</string>
+    <string name="settings_section_about">关于</string>
+    <string name="settings_privacy_policy">隐私政策</string>
     <string name="settings_section_general">通用</string>
     <string name="title_language">语言</string>
     <string name="language_system_default">跟随系统</string>

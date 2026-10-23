@@ -19,6 +19,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.core.net.toUri
 import com.application.bibleapp.R
 
+/** docs/privacy-policy.md as GitHub Pages publishes it; the same URL is in the Play Console. */
+const val PRIVACY_POLICY_URL = "https://daniel-pino-2000.github.io/TreasuredWord/privacy/"
+
 /**
  * Every outside link in the app goes through here (#46): GotQuestions.org pages open in a Chrome
  * Custom Tab, a browser sheet over the app that Back closes, and BibleProject videos open in the

@@ -204,6 +204,8 @@
     <string name="auth_error_unreachable">Tidak dapat menghubungi server. Periksa koneksi Anda, lalu coba lagi.</string>
 
     <string name="settings_app_version">%1$s · Versi %2$s</string>
+    <string name="settings_section_about">Tentang</string>
+    <string name="settings_privacy_policy">Kebijakan privasi</string>
     <string name="settings_section_general">Umum</string>
     <string name="title_language">Bahasa</string>
     <string name="language_system_default">Default sistem</string>

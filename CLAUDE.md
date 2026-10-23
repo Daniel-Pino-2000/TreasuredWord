@@ -1,8 +1,9 @@
 # TreasuredWord — working rules for Claude
 
-The app is called **TreasuredWord**. "BibleApp" is only the codebase, module and package name
-(`com.application.bibleapp`); use TreasuredWord in anything a user or the public sees, and leave
-internal identifiers alone unless asked.
+The app is called **TreasuredWord**. "BibleApp" is only the codebase, module and code package
+name (`com.application.bibleapp`); use TreasuredWord in anything a user or the public sees, and
+leave internal identifiers alone unless asked. The installed app's ID (`applicationId`) is
+**`com.treasuredword.app`**, reserved in the Play Console and permanent once uploaded.
 
 - `app/` — Android app, Kotlin + Jetpack Compose + Material3, Room, Ktor client.
 - `server/` — Ktor + Exposed + PostgreSQL + Flyway backend for accounts and sync, live at
@@ -76,7 +77,7 @@ internal identifiers alone unless asked.
 - Check UI changes on a device in **light and dark, portrait and landscape**, plus a translated
   language and **offline** when the feature touches the network.
 - **The physical Galaxy S23 is the developer's personal phone.** Before *every* tap, check
-  `adb shell dumpsys window | grep mCurrentFocus` shows `com.application.bibleapp`; if not, stop
+  `adb shell dumpsys window | grep mCurrentFocus` shows `com.treasuredword.app`; if not, stop
   and tell them. Never change its system settings. Only create test highlights/notes you remove
   afterwards, and confirm a sheet's title with `uiautomator dump` before tapping Remove/Delete so
   real data is never touched.
