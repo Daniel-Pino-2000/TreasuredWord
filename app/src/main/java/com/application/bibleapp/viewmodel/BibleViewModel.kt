@@ -288,6 +288,12 @@ class BibleViewModel(
                 ?: if (selected.id == DEFAULT_VERSION.id) "KJV" else selected.id.uppercase()
         }.stateIn(viewModelScope, SharingStarted.Eagerly, "KJV")
 
+    /** Topic chips for the empty Search screen — see [searchSuggestionsFor]. */
+    val searchSuggestions: StateFlow<List<String>> =
+        combine(_selectedVersion, _availableVersions) { selected, versions ->
+            searchSuggestionsFor(selected.id, versions)
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
     private val _themeMode = MutableStateFlow(repository.loadThemeMode())
     val themeMode: StateFlow<ThemeMode> = _themeMode.asStateFlow()
 

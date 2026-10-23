@@ -1,5 +1,7 @@
 package com.application.bibleapp.viewmodel
 
+import com.application.bibleapp.data.model.BibleTranslation
+import com.application.bibleapp.data.model.DEFAULT_VERSION
 import com.application.bibleapp.data.model.VerseUI
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -22,6 +24,23 @@ data class SearchUiState(
     val isSearching: Boolean = false,
     val hasError: Boolean = false
 )
+
+/** A handful of common topics to search for before the user has typed anything themselves. */
+private val ENGLISH_SEARCH_SUGGESTIONS = listOf("love", "faith", "hope", "grace", "peace", "joy", "forgiveness")
+
+/**
+ * The empty Search screen's suggestions for [versionId]. They're English words matched against the
+ * Bible's own text, so they're only offered for an English version: in any other language every
+ * one found nothing (#60). Also none while [catalog] hasn't loaded, since the language is unknown.
+ */
+fun searchSuggestionsFor(versionId: String, catalog: List<BibleTranslation>): List<String> {
+    val isEnglish = versionId == DEFAULT_VERSION.id ||
+        catalog.firstOrNull { it.id == versionId }?.languageCode == ENGLISH_LANGUAGE_CODE
+    return if (isEnglish) ENGLISH_SEARCH_SUGGESTIONS else emptyList()
+}
+
+/** The catalog's ISO 639-3 code for English. */
+private const val ENGLISH_LANGUAGE_CODE = "eng"
 
 /**
  * Debounced search-as-you-type for the Search screen: a search runs once typing pauses for

@@ -20,6 +20,8 @@ import com.application.bibleapp.data.remote.VerseLocationDto
 import com.application.bibleapp.ui.theme.ThemeMode
 import com.application.bibleapp.ui.theme.VerseTextScale
 import com.application.bibleapp.utils.NetworkUtils
+import com.application.bibleapp.utils.parseVerseReference
+import com.application.bibleapp.utils.passage
 import com.application.bibleapp.worker.DailyVerseScheduler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -77,10 +79,18 @@ class BibleRepository(
             BibleDatabaseManager.getFootnotesForChapter(context, bookId, chapter, versionId)
         }
 
+    /** A reference ("John 3:16", "Jn 3", the version's own book name) finds that passage; anything
+     *  else, or a reference to verses this version doesn't have, is a word search (#59). */
     suspend fun searchVerses(query: String, versionId: String): List<VerseUI> =
         withContext(Dispatchers.IO) {
-            if (query.isBlank()) emptyList()
-            else BibleDatabaseManager.searchVerses(query, versionId)
+            if (query.isBlank()) return@withContext emptyList()
+            val reference = parseVerseReference(query, BibleDatabaseManager.getBookNames(context, versionId))
+            val passage = reference?.let { ref ->
+                BibleDatabaseManager.getVersesByChapter(context, ref.bookId, ref.chapter, versionId)
+                    .map { it.toUI() }
+                    .passage(ref)
+            }
+            passage?.takeIf { it.isNotEmpty() } ?: BibleDatabaseManager.searchVerses(query, versionId)
         }
 
     // ---- Highlights & Notes (local-first; see data/local/BibleDatabaseManager.kt) ----
