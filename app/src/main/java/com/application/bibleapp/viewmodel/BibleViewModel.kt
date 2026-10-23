@@ -89,6 +89,22 @@ private const val LEGACY_PARAGRAPH_MARKER = "¶ "
 private val TEXT_SIZE_SAMPLE_CHAPTERS = listOf(1 to 1, 43 to 1)
 
 /**
+ * Short label for a translation: its catalog name, else the name stored with its download
+ * (the catalog can be offline with no cached copy — #76), else the raw id, uppercased. The
+ * bundled KJV has no catalog entry or download row (it isn't a real helloao id), so it's "KJV".
+ */
+fun versionLabelFor(
+    versionId: String,
+    catalog: List<BibleTranslation>,
+    downloaded: Map<String, DownloadedVersionInfo>
+): String {
+    if (versionId == DEFAULT_VERSION.id) return "KJV"
+    return catalog.firstOrNull { it.id == versionId }?.displayName
+        ?: downloaded[versionId]?.name?.takeIf { it.isNotBlank() }
+        ?: versionId.uppercase()
+}
+
+/**
  * Version state is split across three flows that the version picker composes
  * together rather than one combined "picker state" object:
  * - [selectedVersion] — which translation is on screen right now.
@@ -281,17 +297,20 @@ class BibleViewModel(
     private val _selectedVersion = MutableStateFlow(DEFAULT_VERSION)
     val selectedVersion: StateFlow<SelectedBibleVersion> = _selectedVersion.asStateFlow()
 
+    // Locally downloaded versions, keyed by id, so the picker can badge "downloaded" /
+    // "update available" without a DB query per row. Refreshed after every download.
+    // Declared before [currentVersionLabel], which reads it as it's built (#76).
+    private val _downloadedVersions = MutableStateFlow<Map<String, DownloadedVersionInfo>>(emptyMap())
+    val downloadedVersions: StateFlow<Map<String, DownloadedVersionInfo>> = _downloadedVersions.asStateFlow()
+
     /**
-     * Short label for the version button (e.g. "KJV", "ESV") — looked up from the
-     * translation catalog by id. Falls back to "KJV" for the bundled default (it has no
-     * catalog entry, it isn't a real helloao translation id) and to the raw id, uppercased,
-     * if the catalog hasn't loaded yet. Started eagerly: share text reads `.value` from screens
-     * that never collect it (Home's verse card), where it would otherwise still be "KJV".
+     * Short label for the version button and share text (e.g. "KJV", "ESV") — see
+     * [versionLabelFor]. Started eagerly: share text reads `.value` from screens that never
+     * collect it (Home's verse card), where it would otherwise still be "KJV".
      */
     val currentVersionLabel: StateFlow<String> =
-        combine(_selectedVersion, _availableVersions) { selected, versions ->
-            versions.firstOrNull { it.id == selected.id }?.displayName
-                ?: if (selected.id == DEFAULT_VERSION.id) "KJV" else selected.id.uppercase()
+        combine(_selectedVersion, _availableVersions, _downloadedVersions) { selected, versions, downloaded ->
+            versionLabelFor(selected.id, versions, downloaded)
         }.stateIn(viewModelScope, SharingStarted.Eagerly, "KJV")
 
     /** Topic chips for the empty Search screen — see [searchSuggestionsFor]. */
@@ -411,11 +430,6 @@ class BibleViewModel(
             refreshSyncStatus()
         }
     }
-
-    // Locally downloaded versions, keyed by id, so the picker can badge "downloaded" /
-    // "update available" without a DB query per row. Refreshed after every download.
-    private val _downloadedVersions = MutableStateFlow<Map<String, DownloadedVersionInfo>>(emptyMap())
-    val downloadedVersions: StateFlow<Map<String, DownloadedVersionInfo>> = _downloadedVersions.asStateFlow()
 
     // Download state
     private val _downloadingVersionId = MutableStateFlow<String?>(null)
