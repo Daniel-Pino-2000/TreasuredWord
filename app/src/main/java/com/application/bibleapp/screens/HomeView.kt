@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
@@ -37,7 +38,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -414,7 +418,21 @@ private fun RecentHighlightsSection(
                 modifier = Modifier.padding(top = Spacing.xs)
             )
         } else {
+            // Keyed cards keep the current first card in view when the list changes, so a new
+            // highlight, inserted at index 0, landed off-screen to the left (#58). Show it instead —
+            // only when the newest one actually changes, so coming back to Home otherwise keeps
+            // wherever the row was scrolled to.
+            val rowState = rememberLazyListState()
+            val newestId = highlights.first().localId
+            var shownNewestId by rememberSaveable { mutableStateOf(newestId) }
+            LaunchedEffect(newestId) {
+                if (newestId != shownNewestId) {
+                    shownNewestId = newestId
+                    rowState.scrollToItem(0)
+                }
+            }
             LazyRow(
+                state = rowState,
                 modifier = Modifier.padding(top = Spacing.xs),
                 horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
                 contentPadding = PaddingValues(end = Spacing.sm)
