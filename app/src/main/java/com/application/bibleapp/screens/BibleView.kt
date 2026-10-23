@@ -1,5 +1,6 @@
 package com.application.bibleapp.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
@@ -54,6 +55,12 @@ fun BibleView(
     val noteEditor by bibleViewModel.noteEditor.collectAsState()
     val noteListVerse by bibleViewModel.noteListVerse.collectAsState()
     val bookNames by bibleViewModel.bookNames.collectAsState()
+
+    // Back cancels a verse selection first, like the toolbar's X, instead of leaving the reader
+    // with it still pending; with predictive back (on by default from API 36, #66) the swipe
+    // would otherwise preview Home. It lives here, inside the NavHost destination, because a
+    // handler registered outside it is overridden by the NavHost's own.
+    BackHandler(enabled = selectedVerses.isNotEmpty()) { bibleViewModel.clearSelection() }
     val showSignInNudge by bibleViewModel.showSignInNudge.collectAsState()
     val scrollRequest by bibleViewModel.scrollRequest.collectAsState()
     val chapterTitle = "$currentBookName $currentChapter"
