@@ -1,5 +1,6 @@
 package com.application.bibleapp.utils
 
+import com.application.bibleapp.data.model.BibleBooks
 import com.application.bibleapp.data.remote.VerseLocationDto
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalConfiguration
@@ -83,6 +84,15 @@ fun formatFullVerseRefs(verses: List<VerseLocationDto>, bookName: (Int) -> Strin
         }
     }
 }
+
+/**
+ * [bookId]'s name in translation [versionId] itself. A highlight or note is labelled in the
+ * translation it was made in, matching the verse text shown with it, whatever version is selected
+ * now (#54). [namesByVersion] holds each version's stored names; the English name stands in for the
+ * bundled KJV and for a version with none stored (downloaded before names were kept, or removed).
+ */
+fun bookNameInVersion(versionId: String, bookId: Int, namesByVersion: Map<String, Map<Int, String>>): String =
+    namesByVersion[versionId]?.get(bookId) ?: BibleBooks.getBookById(bookId)?.name.orEmpty()
 
 /**
  * The text Copy/Share hand off for a set of verses: the scripture in quotes (verse numbers

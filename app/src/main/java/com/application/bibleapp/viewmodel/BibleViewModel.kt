@@ -176,6 +176,12 @@ class BibleViewModel(
     private val _libraryVerseText = MutableStateFlow<Map<VerseTextKey, String>>(emptyMap())
     val libraryVerseText: StateFlow<Map<VerseTextKey, String>> = _libraryVerseText.asStateFlow()
 
+    // Book names for every version a library highlight/note was made in, by version id — each is
+    // labelled in its own translation, like its verse text, not the selected one (#54). See
+    // [com.application.bibleapp.utils.bookNameInVersion].
+    private val _libraryBookNames = MutableStateFlow<Map<String, Map<Int, String>>>(emptyMap())
+    val libraryBookNames: StateFlow<Map<String, Map<Int, String>>> = _libraryBookNames.asStateFlow()
+
     // Prompts sign-in the first time someone highlights or notes a verse while signed out —
     // not a wall (the feature already worked, local-first), just a one-time nudge that it'd
     // sync if they did. Shown at most once per app session: [signInNudgeOffered] tracks
@@ -756,6 +762,9 @@ class BibleViewModel(
         viewModelScope.launch {
             val highlights = repository.getAllActiveHighlights()
             val notes = repository.getAllActiveNotes()
+            // Before the lists themselves, so a new item never shows up with a fallback name first.
+            val versionIds = (highlights.map { it.versionId } + notes.map { it.versionId }).toSet()
+            _libraryBookNames.value = versionIds.associateWith { repository.getBookNames(it) }
             _libraryHighlights.value = highlights
             _libraryNotes.value = notes
 

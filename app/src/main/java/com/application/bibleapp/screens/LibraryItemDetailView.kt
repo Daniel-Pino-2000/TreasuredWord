@@ -34,9 +34,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
-import com.application.bibleapp.data.model.BibleBooks
 import com.application.bibleapp.navigation.Screen
 import com.application.bibleapp.ui.theme.Spacing
+import com.application.bibleapp.utils.bookNameInVersion
 import com.application.bibleapp.utils.displayDate
 import com.application.bibleapp.utils.verseRefsText
 import com.application.bibleapp.viewmodel.BibleViewModel
@@ -66,8 +66,7 @@ fun LibraryItemDetailView(
     val highlights by bibleViewModel.libraryHighlights.collectAsState()
     val notes by bibleViewModel.libraryNotes.collectAsState()
     val verseTextByKey by bibleViewModel.libraryVerseText.collectAsState()
-    val bookNames by bibleViewModel.bookNames.collectAsState()
-    val bookName = { bookId: Int -> bookNames[bookId] ?: BibleBooks.getBookById(bookId)?.name ?: "Unknown" }
+    val bookNamesByVersion by bibleViewModel.libraryBookNames.collectAsState()
 
     val highlight = if (type == Screen.LibraryItemDetail.TYPE_HIGHLIGHT) {
         highlights.firstOrNull { it.localId == localId }
@@ -90,7 +89,8 @@ fun LibraryItemDetailView(
             highlight != null -> {
                 val verseText = resolveVerseText(highlight.versionId, highlight.verses, verseTextByKey)
                 Text(
-                    text = verseRefsText(highlight.verses, bookName),
+                    // In the highlight's own translation, like its text (#54).
+                    text = verseRefsText(highlight.verses) { bookNameInVersion(highlight.versionId, it, bookNamesByVersion) },
                     style = MaterialTheme.typography.headlineSmall
                 )
                 Row(
@@ -147,7 +147,7 @@ fun LibraryItemDetailView(
             note != null -> {
                 val verseText = resolveVerseText(note.versionId, note.verses, verseTextByKey)
                 Text(
-                    text = verseRefsText(note.verses, bookName),
+                    text = verseRefsText(note.verses) { bookNameInVersion(note.versionId, it, bookNamesByVersion) },
                     style = MaterialTheme.typography.headlineSmall
                 )
                 Text(
