@@ -1,3 +1,4 @@
+import java.util.Properties
 import org.gradle.kotlin.dsl.implementation
 
 plugins {
@@ -7,6 +8,35 @@ plugins {
     id("kotlin-kapt")
 
     alias(libs.plugins.kotlin.plugin.serialization)
+}
+
+// Release signing for Google Play (see docs/release.md). The upload key and its passwords never
+// enter the repo: they come from a git-ignored keystore.properties at the repo root, or from
+// TREASUREDWORD_* environment variables (for CI). With neither, release builds come out unsigned
+// and debug builds are unaffected, so CI and fresh clones keep working.
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val releaseSigning: Map<String, String>? = run {
+    val keys = listOf("storeFile", "storePassword", "keyAlias", "keyPassword")
+    val values = if (keystorePropertiesFile.exists()) {
+        val props = Properties().apply { keystorePropertiesFile.inputStream().use { load(it) } }
+        keys.associateWith { props.getProperty(it)?.trim().orEmpty() }
+    } else {
+        // storeFile -> TREASUREDWORD_STORE_FILE, keyAlias -> TREASUREDWORD_KEY_ALIAS, ...
+        keys.associateWith { key ->
+            val env = "TREASUREDWORD_" + key.replace(Regex("([A-Z])"), "_$1").uppercase()
+            providers.environmentVariable(env).orNull?.trim().orEmpty()
+        }
+    }
+    when {
+        values.values.all { it.isEmpty() } -> null
+        // Half-filled settings are a mistake, not "no signing": fail instead of silently
+        // building an unsigned bundle.
+        values.values.any { it.isEmpty() } -> error(
+            "Release signing is missing " + values.filterValues { it.isEmpty() }.keys.joinToString() +
+                " (in keystore.properties or TREASUREDWORD_* variables). See docs/release.md."
+        )
+        else -> values
+    }
 }
 
 android {
@@ -26,6 +56,18 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        if (releaseSigning != null) {
+            create("release") {
+                // A relative path is taken from the repo root; keep the key itself outside the repo.
+                storeFile = rootProject.file(releaseSigning.getValue("storeFile"))
+                storePassword = releaseSigning.getValue("storePassword")
+                keyAlias = releaseSigning.getValue("keyAlias")
+                keyPassword = releaseSigning.getValue("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         debug {
             // en-XA (accented, longer text) and ar-XB (mirrored, right-to-left) show up in the
@@ -33,7 +75,11 @@ android {
             isPseudoLocalesEnabled = true
         }
         release {
-            isMinifyEnabled = false
+            signingConfig = signingConfigs.findByName("release")
+            // R8 shrinks and obfuscates the code; the mapping file goes inside the App Bundle, so
+            // Play Console de-obfuscates crash reports by itself. Keep rules: proguard-rules.pro.
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

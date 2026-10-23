@@ -14,3 +14,8 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Release signing (docs/release.md): the upload key and its passwords never go in the repo.
+keystore.properties
+*.jks
+*.keystore
