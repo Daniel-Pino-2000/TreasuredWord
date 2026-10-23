@@ -58,7 +58,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.application.bibleapp.R
-import com.application.bibleapp.data.model.BibleBooks
 import com.application.bibleapp.data.model.BookResources
 import com.application.bibleapp.data.model.DailyVerseUI
 import com.application.bibleapp.data.model.Highlight
@@ -70,6 +69,7 @@ import com.application.bibleapp.ui.theme.centeredContentWidth
 import com.application.bibleapp.ui.theme.isCompactHeight
 import com.application.bibleapp.ui.theme.scaledBy
 import com.application.bibleapp.utils.UiText
+import com.application.bibleapp.utils.bookNameInVersion
 import com.application.bibleapp.utils.isSpanishUi
 import com.application.bibleapp.utils.rememberExternalLinks
 import com.application.bibleapp.utils.verseRefsText
@@ -103,13 +103,14 @@ fun HomeView(
     val bookmarkLabel by bibleViewModel.bookmarkLabel.collectAsState()
     val highlights by bibleViewModel.libraryHighlights.collectAsState()
     val verseTextByKey by bibleViewModel.libraryVerseText.collectAsState()
-    val bookNames by bibleViewModel.bookNames.collectAsState()
+    val bookNamesByVersion by bibleViewModel.libraryBookNames.collectAsState()
 
     // ISO-8601 UTC timestamps sort chronologically as plain strings.
     val recentHighlights = remember(highlights) {
         highlights.sortedByDescending { it.createdAt }.take(RECENT_HIGHLIGHT_COUNT)
     }
-    val bookName = { bookId: Int -> bookNames[bookId] ?: BibleBooks.getBookById(bookId)?.name ?: "" }
+    // Each card in its own translation's book names, like its text (#54).
+    val bookName = { versionId: String, bookId: Int -> bookNameInVersion(versionId, bookId, bookNamesByVersion) }
 
     val clipboardManager = LocalClipboardManager.current
     val context = LocalContext.current
@@ -393,7 +394,7 @@ private fun ContinueReadingCard(reference: String, chapter: Int, chapterCount: I
 private fun RecentHighlightsSection(
     highlights: List<Highlight>,
     verseText: (Highlight) -> String,
-    bookName: (Int) -> String,
+    bookName: (versionId: String, bookId: Int) -> String,
     onHighlightClick: (Highlight) -> Unit,
     onSeeAllClick: () -> Unit
 ) {
@@ -439,7 +440,7 @@ private fun RecentHighlightsSection(
             ) {
                 items(highlights, key = { it.localId }) { highlight ->
                     RecentHighlightCard(
-                        reference = verseRefsText(highlight.verses, bookName),
+                        reference = verseRefsText(highlight.verses) { bookName(highlight.versionId, it) },
                         text = verseText(highlight),
                         color = Color(highlight.color),
                         onClick = { onHighlightClick(highlight) }

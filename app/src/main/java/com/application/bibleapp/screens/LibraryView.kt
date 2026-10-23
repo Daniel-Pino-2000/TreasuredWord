@@ -63,12 +63,12 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.application.bibleapp.data.model.BibleBooks
 import com.application.bibleapp.data.model.Highlight
 import com.application.bibleapp.data.model.Note
 import com.application.bibleapp.data.remote.VerseLocationDto
 import com.application.bibleapp.navigation.Screen
 import com.application.bibleapp.ui.theme.Spacing
+import com.application.bibleapp.utils.bookNameInVersion
 import com.application.bibleapp.utils.displayDate
 import com.application.bibleapp.utils.verseRefsText
 import com.application.bibleapp.viewmodel.BibleViewModel
@@ -106,8 +106,10 @@ fun LibraryView(
     val highlights by bibleViewModel.libraryHighlights.collectAsState()
     val notes by bibleViewModel.libraryNotes.collectAsState()
     val verseTextByKey by bibleViewModel.libraryVerseText.collectAsState()
-    val bookNames by bibleViewModel.bookNames.collectAsState()
-    val bookName = { bookId: Int -> bookNames[bookId] ?: BibleBooks.getBookById(bookId)?.name ?: "Unknown" }
+    val bookNamesByVersion by bibleViewModel.libraryBookNames.collectAsState()
+    // Each item in its own translation's book names, like its text, and searched by that same
+    // name (#54).
+    val bookName = { versionId: String, bookId: Int -> bookNameInVersion(versionId, bookId, bookNamesByVersion) }
 
     var selectedTab by rememberSaveable { mutableStateOf(LibraryTab.fromRouteArg(initialTab)) }
     var query by rememberSaveable { mutableStateOf("") }
@@ -160,10 +162,10 @@ fun LibraryView(
                         modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.md)
                     )
                 }
-                val filtered = remember(highlights, query, bookNames, colorFilter) {
+                val filtered = remember(highlights, query, bookNamesByVersion, colorFilter) {
                     highlights.filter { h ->
                         (colorFilter.isEmpty() || h.color in colorFilter) &&
-                            (query.isBlank() || h.verses.any { bookName(it.bookId).contains(query, ignoreCase = true) })
+                            (query.isBlank() || h.verses.any { bookName(h.versionId, it.bookId).contains(query, ignoreCase = true) })
                     }
                 }
                 if (filtered.isEmpty()) {
@@ -185,7 +187,7 @@ fun LibraryView(
                                 HighlightCard(
                                     highlight = highlight,
                                     verseText = resolveVerseText(highlight.versionId, highlight.verses, verseTextByKey),
-                                    bookName = bookName,
+                                    bookName = { bookId -> bookName(highlight.versionId, bookId) },
                                     onClick = {
                                         onOpenDetail(Screen.LibraryItemDetail.TYPE_HIGHLIGHT, highlight.localId)
                                     }
@@ -197,11 +199,11 @@ fun LibraryView(
             }
 
             LibraryTab.NOTES -> {
-                val filtered = remember(notes, query, bookNames) {
+                val filtered = remember(notes, query, bookNamesByVersion) {
                     if (query.isBlank()) notes
                     else notes.filter { n ->
                         n.text.contains(query, ignoreCase = true) ||
-                            n.verses.any { bookName(it.bookId).contains(query, ignoreCase = true) }
+                            n.verses.any { bookName(n.versionId, it.bookId).contains(query, ignoreCase = true) }
                     }
                 }
                 if (filtered.isEmpty()) {
@@ -220,7 +222,7 @@ fun LibraryView(
                                 NoteCard(
                                     note = note,
                                     verseText = resolveVerseText(note.versionId, note.verses, verseTextByKey),
-                                    bookName = bookName,
+                                    bookName = { bookId -> bookName(note.versionId, bookId) },
                                     onClick = {
                                         onOpenDetail(Screen.LibraryItemDetail.TYPE_NOTE, note.localId)
                                     }

@@ -48,4 +48,24 @@ class VerseRefFormatTest {
             buildVerseShareText(listOf(v(42, 12, 5), v(42, 12, 4)), text::get, bookName, "PDT")
         )
     }
+
+    // ---- bookNameInVersion (#54) ----
+
+    private val namesByVersion = mapOf(
+        "spa_pdt" to mapOf(43 to "Juan"),
+        "twi_asa" to mapOf(43 to "Yohane")
+    )
+
+    @Test
+    fun `a book is named in the version the highlight was made in`() {
+        assertEquals("Juan", bookNameInVersion("spa_pdt", 43, namesByVersion))
+        assertEquals("Yohane", bookNameInVersion("twi_asa", 43, namesByVersion))
+    }
+
+    @Test
+    fun `the bundled KJV and versions with no stored names use the English name`() {
+        assertEquals("John", bookNameInVersion("kjv", 43, namesByVersion))
+        assertEquals("John", bookNameInVersion("removed_version", 43, namesByVersion))
+        assertEquals("John", bookNameInVersion("spa_pdt", 43, mapOf("spa_pdt" to emptyMap())))
+    }
 }
