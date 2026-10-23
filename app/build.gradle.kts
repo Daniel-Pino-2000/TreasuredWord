@@ -18,7 +18,8 @@ android {
         // old com.application.bibleapp namespace; only the installed app's ID changed.
         applicationId = "com.treasuredword.app"
         minSdk = 24
-        targetSdk = 35
+        // Google Play only accepts new apps and updates that target API 36 or higher (#66).
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 
