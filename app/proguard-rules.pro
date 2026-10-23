@@ -1,21 +1,22 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
+# R8 rules for release builds (see docs/release.md, "Code shrinking").
 #
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# Room, kotlinx.serialization, WorkManager, Ktor, OkHttp and Tink ship their own rules inside their
+# libraries; this file only covers what they miss. After adding a dependency, build with
+# ./gradlew :app:assembleRelease and check the app on the emulator: R8 lists anything else it
+# can't find in app/build/outputs/mapping/release/missing_rules.txt.
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# Keep file names and line numbers so Play Console's crash reports point at real lines. The
+# mapping file inside the App Bundle turns the shortened class names back into real ones.
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# Compile-time annotations that Tink (used by androidx.security-crypto for TokenStore) refers to
+# but doesn't ship. Nothing reads them while the app runs.
+-dontwarn com.google.errorprone.annotations.CanIgnoreReturnValue
+-dontwarn com.google.errorprone.annotations.CheckReturnValue
+-dontwarn com.google.errorprone.annotations.Immutable
+-dontwarn com.google.errorprone.annotations.RestrictedApi
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# Ktor logs through slf4j, which looks for an optional logger binder. Without one it falls back to
+# a no-op logger, which is what we want on Android.
+-dontwarn org.slf4j.impl.StaticLoggerBinder

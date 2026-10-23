@@ -6,6 +6,7 @@ description: A free Bible reading app
 exclude:
   - "*.pdf"
   - api_contract.md
+  - release.md
   - UI_Integration_Roadmap.md
   - icon-source
   - screenshots
