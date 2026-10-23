@@ -296,7 +296,10 @@ class MainActivity : AppCompatActivity() {
                                     BibleTopBar(
                                         scrollBehavior = scrollBehavior,
                                         versionLabel = versionLabel,
-                                        onVersionClick = { navController.navigate(Screen.VersionPicker.route) },
+                                        onVersionClick = {
+                                            bibleViewModel.clearDownloadMessages()
+                                            navController.navigate(Screen.VersionPicker.route)
+                                        },
                                         bookmark = BookmarkButtonState(
                                             label = bookmarkLabel,
                                             isInThisChapter = bookmark?.let { it.bookId == currentBook && it.chapter == currentChapter } == true,

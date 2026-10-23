@@ -128,6 +128,8 @@
     <string name="version_no_match">\'%1$s\'과(와) 일치하는 번역본이 없어요</string>
     <string name="version_section_downloaded">다운로드됨</string>
     <string name="version_status_downloaded">다운로드됨</string>
+    <!-- Status under the KJV that ships inside the app, in the version picker -->
+    <string name="version_status_built_in">앱에 기본 포함</string>
     <string name="version_status_active">사용 중인 번역본</string>
     <string name="version_update_available">업데이트 있음 — 각주와 서식을 받으려면 ⟳을 탭하세요</string>
     <string name="version_download_progress">%1$d%%</string>

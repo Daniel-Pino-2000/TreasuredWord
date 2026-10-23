@@ -130,6 +130,8 @@
     <string name="version_no_match">Hakuna tafsiri inayolingana na \"%1$s\"</string>
     <string name="version_section_downloaded">Zilizopakuliwa</string>
     <string name="version_status_downloaded">Imepakuliwa</string>
+    <!-- Status under the KJV that ships inside the app, in the version picker -->
+    <string name="version_status_built_in">Imejumuishwa kwenye programu</string>
     <string name="version_status_active">Tafsiri inayotumika</string>
     <string name="version_update_available">Sasisho linapatikana — gusa ⟳ upate tanbihi na mpangilio</string>
     <string name="version_download_progress">%1$d%%</string>
