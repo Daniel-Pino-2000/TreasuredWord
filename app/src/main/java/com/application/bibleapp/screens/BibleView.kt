@@ -1,8 +1,10 @@
 package com.application.bibleapp.screens
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,7 +18,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import com.application.bibleapp.components.BibleText
@@ -93,16 +94,35 @@ fun BibleView(
         }.toMap()
     }
 
-    Box(
+    // The banner takes its own space above the text rather than floating over it, where it hid
+    // the chapter title and first verses (#61).
+    Column(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
+        AnimatedVisibility(
+            visible = showSignInNudge,
+            enter = expandVertically(),
+            exit = shrinkVertically()
+        ) {
+            SignInNudgeBanner(
+                onSignInClick = {
+                    bibleViewModel.dismissSignInNudge()
+                    onSignInClick()
+                },
+                onDismiss = { bibleViewModel.dismissSignInNudge() },
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+
         BibleText(
             verses = verses,
             scrollToIndex = currentVerse,
             chapterTitle = chapterTitle,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
             textScale = verseTextScale.multiplier,
             onFootnoteClick = { noteId -> bibleViewModel.selectFootnote(noteId) },
             highlightColorsByVerse = highlightColorsByVerse,
@@ -114,19 +134,6 @@ fun BibleView(
             scrollRequest = scrollRequest,
             onTopVisibleVerseChange = { verse -> bibleViewModel.onTopVisibleVerseChange(verse) }
         )
-
-        if (showSignInNudge) {
-            SignInNudgeBanner(
-                onSignInClick = {
-                    bibleViewModel.dismissSignInNudge()
-                    onSignInClick()
-                },
-                onDismiss = { bibleViewModel.dismissSignInNudge() },
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .fillMaxWidth()
-            )
-        }
     }
 
     selectedFootnote?.let { footnote ->
