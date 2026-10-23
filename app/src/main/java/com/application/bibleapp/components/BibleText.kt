@@ -27,6 +27,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -47,6 +48,8 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInParent
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
@@ -73,9 +76,11 @@ import com.application.bibleapp.ui.theme.isCompactHeight
 import com.application.bibleapp.ui.theme.scaledBy
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlin.math.abs
+import kotlin.math.roundToInt
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.pluralStringResource
 
@@ -159,9 +164,40 @@ private data class ParagraphContent(
     val backgroundRegions: List<BackgroundRegion>
 )
 
+/** A paragraph's laid-out verse text and how far down its list item that text starts (below any
+ *  headings) — what scrolling to a verse inside the paragraph needs (#57). */
+private data class PlacedParagraph(val textTopInItem: Float, val layout: TextLayoutResult, val content: ParagraphContent)
+
+/**
+ * Where the reader scrolls to show [verse] (#57). [listItemIndex] is the list item to bring to the
+ * top: the chapter title (item 0) for the first paragraph's first verse, otherwise the verse's
+ * paragraph (item [paragraphIndex] + 1). [insideParagraph] means the verse isn't its paragraph's
+ * first, so the scroll then has to go on down to the verse itself.
+ */
+internal data class VerseScrollTarget(val paragraphIndex: Int, val listItemIndex: Int, val insideParagraph: Boolean)
+
+/** [VerseScrollTarget] for [verse], given each paragraph's verse numbers in order; a verse that
+ *  isn't there (a stale target from the chapter before) falls back to the nearest end. */
+internal fun verseScrollTarget(paragraphVerses: List<List<Int?>>, verse: Int): VerseScrollTarget {
+    val found = paragraphVerses.indexOfFirst { verse in it }
+    val paragraphIndex = found.coerceIn(paragraphVerses.indices)
+    val insideParagraph = found >= 0 && paragraphVerses[found].firstOrNull() != verse
+    val listItemIndex = if (paragraphIndex == 0 && !insideParagraph) 0 else paragraphIndex + 1
+    return VerseScrollTarget(paragraphIndex, listItemIndex, insideParagraph)
+}
+
+/** Room left above a verse scrolled to from inside its paragraph, so it doesn't sit flush against
+ *  the top edge. */
+private val VERSE_SCROLL_TOP_MARGIN = Spacing.lg
+
 /** Room kept clear above the bottom of the reading list for the floating selection toolbar in
  *  compact height: its single-row height (~67dp) plus the gap MainActivity leaves under it. */
 private val SELECTION_TOOLBAR_RESERVE = 96.dp
+
+/** The same in portrait, where the toolbar is a three-row card: ~173dp at the default text size
+ *  plus the 12dp gap, with some slack for larger text. Without it a highlight opened at the end of
+ *  a chapter stayed hidden under the card, since the list couldn't scroll any further (#57). */
+private val SELECTION_TOOLBAR_RESERVE_PORTRAIT = 200.dp
 
 /** Rounding on a highlight/selection stroke — enough to read as a felt-tip pen, not a text-editor
  *  selection rectangle. */
@@ -310,6 +346,9 @@ fun BibleText(
     // Bottom edge of the list in root coordinates — compared against a long-pressed verse's
     // bottom to tell whether the floating selection toolbar is about to cover it.
     var listBottomInRoot by remember { mutableFloatStateOf(0f) }
+    // Each paragraph's text layout once it's been laid out, by paragraph index — see below.
+    val placedParagraphs = remember(paragraphs) { mutableStateMapOf<Int, PlacedParagraph>() }
+    val verseScrollTopMarginPx = with(LocalDensity.current) { VERSE_SCROLL_TOP_MARGIN.toPx() }
 
     // Scroll to the paragraph containing the desired verse whenever verses or the
     // scroll target changes — paragraphs, not verses, are the list's item granularity.
@@ -320,11 +359,19 @@ fun BibleText(
     // every other paragraph, which does scroll flush to the top of the viewport.
     LaunchedEffect(paragraphs, scrollToIndex, scrollRequest) {
         if (paragraphs.isEmpty()) return@LaunchedEffect
-        val targetIndex = paragraphs.indexOfFirst { paragraph ->
-            paragraph.verses.any { it.verse == scrollToIndex }
-        }.coerceIn(paragraphs.indices)
-        val listItemIndex = if (targetIndex == 0) 0 else targetIndex + 1
-        listState.scrollToItem(listItemIndex)
+        val target = verseScrollTarget(paragraphs.map { paragraph -> paragraph.verses.map { it.verse } }, scrollToIndex)
+        listState.scrollToItem(target.listItemIndex)
+        if (!target.insideParagraph) return@LaunchedEffect
+
+        // The verse is partway down its paragraph (John 4:6 where a translation runs 4:1-6 together),
+        // so the paragraph's start alone can leave it off-screen or under the selection toolbar when
+        // a highlight or note is opened from Home or the Library (#57). Once that paragraph has been
+        // laid out, scroll on to the verse's first line.
+        val placed = snapshotFlow { placedParagraphs[target.paragraphIndex] }.filterNotNull().first()
+        val span = placed.content.verseSpans.firstOrNull { it.location.verse == scrollToIndex } ?: return@LaunchedEffect
+        val lineTop = placed.layout.getLineTop(placed.layout.getLineForOffset(span.range.first))
+        val offset = (placed.textTopInItem + lineTop - verseScrollTopMarginPx).roundToInt().coerceAtLeast(0)
+        listState.scrollToItem(target.listItemIndex, offset)
     }
 
     // Item 0 is the chapter title, so it maps to the first paragraph like item 1 does. A paragraph
@@ -414,10 +461,10 @@ fun BibleText(
     // so the big in-text title and its divider go — they alone ate a third of the reading space.
     // The (empty) item stays so list indices, and the scroll-target math above, don't shift.
     val compactHeight = isCompactHeight()
-    // Landscape only: the selection toolbar floats over the bottom of the reading area with no
-    // bottom bar beneath it, so reserve room for it while selecting (lets the last verses scroll
-    // clear of it) and nudge a newly long-pressed verse up out from under it (see onLongPress).
-    val selectionToolbarReserve = if (compactHeight) SELECTION_TOOLBAR_RESERVE else 0.dp
+    // The selection toolbar floats over the bottom of the reading area, so reserve room for it
+    // while selecting (lets the last verses scroll clear of it) and nudge a newly long-pressed
+    // verse up out from under it (see onLongPress).
+    val selectionToolbarReserve = if (compactHeight) SELECTION_TOOLBAR_RESERVE else SELECTION_TOOLBAR_RESERVE_PORTRAIT
     val verticalPadding = if (compactHeight) Spacing.md else Spacing.xl
     LazyColumn(
         modifier = modifier.onGloballyPositioned { listBottomInRoot = it.boundsInRoot().bottom },
@@ -449,6 +496,12 @@ fun BibleText(
             }
             var layoutResult by remember(paragraph) { mutableStateOf<TextLayoutResult?>(null) }
             var textCoordinates by remember(paragraph) { mutableStateOf<LayoutCoordinates?>(null) }
+            // For the scroll-to-verse effect, which needs to know where each verse's line is (#57).
+            fun publishPlacement() {
+                val layout = layoutResult ?: return
+                val coordinates = textCoordinates?.takeIf { it.isAttached } ?: return
+                placedParagraphs[index] = PlacedParagraph(coordinates.positionInParent().y, layout, content)
+            }
 
             Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
                 Column(modifier = Modifier.widthIn(max = MAX_READING_WIDTH).fillMaxWidth()) {
@@ -473,7 +526,10 @@ fun BibleText(
                                 },
                                 bottom = Spacing.xs
                             )
-                            .onGloballyPositioned { textCoordinates = it }
+                            .onGloballyPositioned {
+                                textCoordinates = it
+                                publishPlacement()
+                            }
                             .drawBehind {
                                 val layout = layoutResult ?: return@drawBehind
                                 content.backgroundRegions.forEach { region -> drawHighlightRegion(layout, region) }
@@ -511,7 +567,7 @@ fun BibleText(
                                             val adding = verse.location !in latestSelectedVerses
                                             onVerseLongPress(verse.location)
                                             val coordinates = textCoordinates
-                                            if (adding && selectionToolbarReserve > 0.dp && coordinates != null) {
+                                            if (adding && coordinates != null) {
                                                 val lastLine = layout.getLineForOffset(verse.range.last)
                                                 val verseBottom = coordinates
                                                     .localToRoot(Offset(0f, layout.getLineBottom(lastLine)))
@@ -523,7 +579,10 @@ fun BibleText(
                                     }
                                 )
                             },
-                        onTextLayout = { layoutResult = it }
+                        onTextLayout = {
+                            layoutResult = it
+                            publishPlacement()
+                        }
                     )
                 }
             }
