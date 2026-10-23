@@ -7,7 +7,7 @@ permalink: /privacy/
 
 **Effective date:** October 22, 2026
 
-TreasuredWord is a free Bible reading app made by an independent developer. In this policy, "we" and "us" mean TreasuredWord's developer. It explains what information the app uses, where it goes, and the choices you have. If you have questions, email [pinoponedaniel@gmail.com](mailto:pinoponedaniel@gmail.com).
+TreasuredWord is a free Bible reading app made by Daniel Pino, an independent developer. In this policy, "we" and "us" mean Daniel Pino, the developer of TreasuredWord. It explains what information the app uses, where it goes, and the choices you have. If you have questions, email [pinoponedaniel@gmail.com](mailto:pinoponedaniel@gmail.com).
 
 ## The short version
 
