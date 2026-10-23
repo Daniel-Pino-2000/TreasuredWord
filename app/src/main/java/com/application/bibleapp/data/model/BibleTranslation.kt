@@ -32,3 +32,17 @@ data class BibleTranslation(
         const val FULL_CANON_BOOK_COUNT = 66
     }
 }
+
+/**
+ * The KJV that ships inside the app ([DEFAULT_VERSION]). The remote catalog never lists it, so
+ * the version picker adds it itself; without it there was no way back to the bundled Bible once
+ * you'd switched away (#56). Always available offline, and never deletable.
+ */
+val BUNDLED_TRANSLATION = BibleTranslation(
+    id = DEFAULT_VERSION.id,
+    displayName = "KJV",
+    nativeName = "King James Version",
+    languageName = "English",
+    languageCode = "eng",
+    textDirection = TextDirection.LTR
+)

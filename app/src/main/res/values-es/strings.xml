@@ -144,6 +144,8 @@
     <string name="version_no_match">Ninguna versión coincide con «%1$s»</string>
     <string name="version_section_downloaded">Descargadas</string>
     <string name="version_status_downloaded">Descargada</string>
+    <!-- Status under the KJV that ships inside the app, in the version picker -->
+    <string name="version_status_built_in">Incluida en la app</string>
     <string name="version_status_active">Versión activa</string>
     <string name="version_update_available">Actualización disponible: toca ⟳ para obtener notas al pie y formato</string>
     <string name="version_download_progress">%1$d %%</string>

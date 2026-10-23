@@ -20,6 +20,7 @@ import com.application.bibleapp.data.model.resolveDailyVerseUI
 import com.application.bibleapp.data.remote.LanguageGroup
 import com.application.bibleapp.data.remote.VerseLocationDto
 import com.application.bibleapp.data.remote.groupVersionsByLanguage
+import com.application.bibleapp.data.remote.withBundledTranslation
 import com.application.bibleapp.data.repository.AuthRepository
 import com.application.bibleapp.data.repository.BibleRepository
 import com.application.bibleapp.data.repository.NotificationTime
@@ -265,9 +266,10 @@ class BibleViewModel(
     val searchState: StateFlow<SearchUiState> = verseSearch.state
 
     // Derived from availableVersions + the search query — recomputed locally, no re-fetch.
+    // Includes the bundled KJV, which the catalog doesn't list (#56).
     val groupedVersions: StateFlow<List<LanguageGroup>> =
         combine(_availableVersions, _versionSearchQuery) { versions, query ->
-            groupVersionsByLanguage(versions, query)
+            groupVersionsByLanguage(withBundledTranslation(versions), query)
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     private val _selectedVersion = MutableStateFlow(DEFAULT_VERSION)
@@ -1012,10 +1014,6 @@ class BibleViewModel(
         }
     }
 
-    fun useLocalBible() {
-        viewModelScope.launch { switchToVersion(DEFAULT_VERSION.id) }
-    }
-
     /**
      * Downloads [versionId] without switching to it — the picker's per-row download
      * action, for grabbing a translation ahead of time without leaving whatever is
@@ -1093,6 +1091,13 @@ class BibleViewModel(
                 false
             }
         )
+    }
+
+    /** Called as the version picker opens: the download banners live here, in the shared
+     *  ViewModel, so without this an earlier visit's failure was still shown on the next (#62). */
+    fun clearDownloadMessages() {
+        _downloadError.value = null
+        _downloadInfo.value = null
     }
 
     /** The two failures a reader can act on get their own message; anything else (a server or

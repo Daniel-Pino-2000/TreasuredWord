@@ -131,6 +131,8 @@
     <string name="version_no_match">Walang bersyong tugma sa \"%1$s\"</string>
     <string name="version_section_downloaded">Na-download</string>
     <string name="version_status_downloaded">Na-download</string>
+    <!-- Status under the KJV that ships inside the app, in the version picker -->
+    <string name="version_status_built_in">Kasama na sa app</string>
     <string name="version_status_active">Aktibong bersyon</string>
     <string name="version_update_available">May update — i-tap ang ⟳ para sa mga footnote at format</string>
     <string name="version_download_progress">%1$d%%</string>

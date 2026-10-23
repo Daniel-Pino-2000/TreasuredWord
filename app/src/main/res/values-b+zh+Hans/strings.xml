@@ -127,6 +127,8 @@
     <string name="version_no_match">没有与“%1$s”匹配的译本</string>
     <string name="version_section_downloaded">已下载</string>
     <string name="version_status_downloaded">已下载</string>
+    <!-- Status under the KJV that ships inside the app, in the version picker -->
+    <string name="version_status_built_in">应用内置</string>
     <string name="version_status_active">当前译本</string>
     <string name="version_update_available">有更新：点按 ⟳ 获取脚注和格式</string>
     <string name="version_download_progress">%1$d%%</string>

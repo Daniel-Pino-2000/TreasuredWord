@@ -397,10 +397,10 @@ object BibleDatabaseManager {
     fun getDownloadedVersions(context: Context): List<DownloadedVersionInfo> {
         val db = getDatabase(context)
         val results = mutableListOf<DownloadedVersionInfo>()
-        val cursor = db.rawQuery("SELECT id, schema_version FROM downloaded_versions", null)
+        val cursor = db.rawQuery("SELECT id, schema_version, name FROM downloaded_versions", null)
         cursor.use {
             while (it.moveToNext()) {
-                results.add(DownloadedVersionInfo(id = it.getString(0), schemaVersion = it.getInt(1)))
+                results.add(DownloadedVersionInfo(id = it.getString(0), schemaVersion = it.getInt(1), name = it.getString(2)))
             }
         }
         return results

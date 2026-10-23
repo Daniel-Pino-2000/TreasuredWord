@@ -154,6 +154,8 @@
     <string name="version_section_downloaded">Downloaded</string>
     <!-- Status line under one downloaded translation -->
     <string name="version_status_downloaded">Downloaded</string>
+    <!-- Status under the KJV that ships inside the app, in the version picker -->
+    <string name="version_status_built_in">Built in</string>
     <string name="version_status_active">Active version</string>
     <string name="version_update_available">Update available — tap ⟳ for footnotes and formatting</string>
     <string name="version_download_progress">%1$d%%</string>

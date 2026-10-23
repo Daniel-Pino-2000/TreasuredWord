@@ -10,7 +10,9 @@ package com.application.bibleapp.data.model
  */
 data class DownloadedVersionInfo(
     val id: String,
-    val schemaVersion: Int
+    val schemaVersion: Int,
+    // The name stored at download time — labels a download the catalog no longer lists (#63).
+    val name: String = ""
 ) {
     val isUpToDate: Boolean get() = schemaVersion >= CURRENT_DOWNLOAD_SCHEMA_VERSION
 

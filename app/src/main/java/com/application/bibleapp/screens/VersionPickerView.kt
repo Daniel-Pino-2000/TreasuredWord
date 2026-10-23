@@ -16,9 +16,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.application.bibleapp.data.model.BUNDLED_TRANSLATION
 import com.application.bibleapp.data.model.BibleTranslation
 import com.application.bibleapp.data.model.DownloadedVersionInfo
 import com.application.bibleapp.data.model.SelectedBibleVersion
+import com.application.bibleapp.data.remote.downloadedSection
 import com.application.bibleapp.ui.theme.Spacing
 import com.application.bibleapp.viewmodel.BibleViewModel
 import com.application.bibleapp.R
@@ -42,6 +44,11 @@ import com.application.bibleapp.utils.asString
  * scroll to find. They also still appear under their own language group below — this
  * is a deliberate duplicate listing, not a bug, so browsing by language always shows
  * every translation for that language in one place.
+ *
+ * The bundled KJV ([BUNDLED_TRANSLATION]) heads that section as a fourth state, "Built in",
+ * with no download or delete action (#56). The section is built from what's on the device,
+ * not from the catalog, so it stays usable when the catalog can't load offline and lists
+ * downloads the catalog no longer has (#63).
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -96,48 +103,42 @@ fun VersionPickerView(
             return@Column
         }
 
-        if (error != null) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        // A failed or empty catalog (offline with no cached copy) only hides the catalog: what's
+        // already on the device can still be opened or removed (#56, #63).
+        val catalogUnavailable = error != null || versions.isEmpty()
+
+        if (catalogUnavailable) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = Spacing.lg, vertical = Spacing.md)
+            ) {
+                if (error != null) {
                     Text(stringResource(R.string.version_load_failed), color = MaterialTheme.colorScheme.error)
-                    Text(
-                        text = stringResource(R.string.tap_to_retry),
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier
-                            .padding(top = Spacing.sm)
-                            .clickable { bibleViewModel.loadAvailableVersions() }
-                    )
-                }
-            }
-            return@Column
-        }
-
-        if (versions.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                } else {
                     Text(stringResource(R.string.version_none_available))
-                    Text(
-                        text = stringResource(R.string.tap_to_retry),
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier
-                            .padding(top = Spacing.sm)
-                            .clickable { bibleViewModel.loadAvailableVersions() }
-                    )
                 }
+                Text(
+                    text = stringResource(R.string.tap_to_retry),
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
+                        .padding(top = Spacing.sm)
+                        .clickable { bibleViewModel.loadAvailableVersions() }
+                )
             }
-            return@Column
+        } else {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = bibleViewModel::onVersionSearchQueryChange,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = Spacing.lg, vertical = Spacing.sm),
+                placeholder = { Text(stringResource(R.string.version_search_placeholder)) },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                singleLine = true
+            )
         }
-
-        OutlinedTextField(
-            value = searchQuery,
-            onValueChange = bibleViewModel::onVersionSearchQueryChange,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = Spacing.lg, vertical = Spacing.sm),
-            placeholder = { Text(stringResource(R.string.version_search_placeholder)) },
-            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-            singleLine = true
-        )
 
         // Download error banner
         downloadError?.let {
@@ -161,7 +162,7 @@ fun VersionPickerView(
             )
         }
 
-        if (groupedVersions.isEmpty()) {
+        if (!catalogUnavailable && groupedVersions.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text(stringResource(R.string.version_no_match, searchQuery))
             }
@@ -175,13 +176,13 @@ fun VersionPickerView(
         // where you'd expect it. Once a search is active, that shortcut stops earning
         // its keep — a match's Downloaded/Active status is already on the row, so
         // duplicating it up top is just noise — so the section only shows up empty-query.
-        val downloadedTranslations = if (searchQuery.isBlank()) {
-            groupedVersions
-                .flatMap { it.translations }
-                .filter { downloadedVersions.containsKey(it.id) }
-        } else {
-            emptyList()
+        val downloadedTranslations = when {
+            catalogUnavailable -> downloadedSection(emptyList(), downloadedVersions)
+            searchQuery.isBlank() -> downloadedSection(groupedVersions, downloadedVersions)
+            else -> emptyList()
         }
+        // Only these can be re-downloaded; a download the catalog doesn't list can only be removed (#63).
+        val catalogIds = versions.mapTo(HashSet()) { it.id }
 
         LazyColumn {
             if (downloadedTranslations.isNotEmpty()) {
@@ -207,6 +208,7 @@ fun VersionPickerView(
                         downloadingVersionId = downloadingVersionId,
                         downloadProgress = downloadProgress,
                         downloadedVersions = downloadedVersions,
+                        isInCatalog = version.id in catalogIds,
                         bibleViewModel = bibleViewModel,
                         onVersionClicked = onVersionClicked,
                         onDeleteClicked = { versionPendingDelete = it }
@@ -214,7 +216,7 @@ fun VersionPickerView(
                 }
             }
 
-            groupedVersions.forEach { group ->
+            if (!catalogUnavailable) groupedVersions.forEach { group ->
                 stickyHeader {
                     Surface(color = MaterialTheme.colorScheme.surfaceVariant) {
                         Text(
@@ -234,6 +236,7 @@ fun VersionPickerView(
                         downloadingVersionId = downloadingVersionId,
                         downloadProgress = downloadProgress,
                         downloadedVersions = downloadedVersions,
+                        isInCatalog = version.id in catalogIds,
                         bibleViewModel = bibleViewModel,
                         onVersionClicked = onVersionClicked,
                         onDeleteClicked = { versionPendingDelete = it }
@@ -251,15 +254,18 @@ private fun VersionRow(
     downloadingVersionId: String?,
     downloadProgress: Float,
     downloadedVersions: Map<String, DownloadedVersionInfo>,
+    isInCatalog: Boolean,
     bibleViewModel: BibleViewModel,
     onVersionClicked: () -> Unit,
     onDeleteClicked: (BibleTranslation) -> Unit
 ) {
     val isSelected = version.id == selectedVersion.id
     val isDownloading = version.id == downloadingVersionId
+    val isBundled = version.id == BUNDLED_TRANSLATION.id
     val downloadInfoForVersion = downloadedVersions[version.id]
-    val isDownloaded = downloadInfoForVersion != null
-    val needsUpdate = downloadInfoForVersion != null && !downloadInfoForVersion.isUpToDate
+    val isDownloaded = isBundled || downloadInfoForVersion != null
+    // Re-downloading needs the catalog to still list this id (#63).
+    val needsUpdate = isInCatalog && downloadInfoForVersion != null && !downloadInfoForVersion.isUpToDate
 
     Column {
         Row(
@@ -298,7 +304,13 @@ private fun VersionRow(
                     // change the row's height (it used to disappear on selection, which
                     // made the list visibly jump).
                     Text(
-                        text = stringResource(if (isSelected) R.string.version_status_active else R.string.version_status_downloaded),
+                        text = stringResource(
+                            when {
+                                isSelected -> R.string.version_status_active
+                                isBundled -> R.string.version_status_built_in
+                                else -> R.string.version_status_downloaded
+                            }
+                        ),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -328,9 +340,10 @@ private fun VersionRow(
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }
-            } else if (isDownloaded && !isSelected) {
+            } else if (isDownloaded && !isSelected && !isBundled) {
                 // Never offered for the active version — selecting a version always
                 // downloads it first, so "downloaded and selected" always holds together.
+                // Nor for the bundled KJV, which ships with the app (#56).
                 IconButton(
                     enabled = downloadingVersionId == null,
                     onClick = { onDeleteClicked(version) }
