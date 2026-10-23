@@ -75,6 +75,28 @@
     <string name="home_recent_highlights">Your recent highlights</string>
     <string name="home_see_all">See all</string>
     <string name="home_highlights_empty">Highlight a verse while you read and it\'ll show up here.</string>
+    <string name="home_questions_title">Questions about the Bible?</string>
+    <string name="home_questions_subtitle">Answers from GotQuestions.org</string>
+
+    <!-- Outside links (GotQuestions.org, BibleProject videos) - see utils/ExternalLinks.kt -->
+    <string name="external_link_opens_outside">Opens outside the app</string>
+    <string name="external_link_offline">You\'re offline. Connect to the internet to open this.</string>
+    <string name="external_link_no_app">No app on this phone can open this link.</string>
+
+    <!-- "About this book" sheet, from the reader's info icon. %1$s is a book name, e.g. "Genesis". -->
+    <string name="about_book_open">About this book</string>
+    <string name="about_book_title">About %1$s</string>
+    <string name="about_book_summary">Book summary</string>
+    <string name="about_book_videos">Overview videos</string>
+    <string name="about_book_video">Overview video</string>
+    <!-- %1$d is the part number, %2$d how many parts there are -->
+    <string name="about_book_video_part">Overview video, part %1$d of %2$d</string>
+    <!-- One video for several books. %1$s and %2$s are the first and last, e.g. "1 Kings" and "2 Kings". -->
+    <string name="about_book_video_covers">Overview video for %1$s–%2$s</string>
+    <!-- BibleProject's terms ask for a notice next to their videos naming them as author and owner -->
+    <string name="about_book_video_credit">Videos by BibleProject, their author and owner. bibleproject.com</string>
+    <string name="source_bibleproject">BibleProject</string>
+    <string name="source_gotquestions" translatable="false">GotQuestions.org</string>
 
     <!-- Reader -->
     <!-- %1$d is a verse number -->

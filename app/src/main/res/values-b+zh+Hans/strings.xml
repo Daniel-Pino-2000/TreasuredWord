@@ -65,6 +65,22 @@
     <string name="home_recent_highlights">最近的标记</string>
     <string name="home_see_all">查看全部</string>
     <string name="home_highlights_empty">阅读时标记经文，它就会显示在这里。</string>
+    <string name="home_questions_title">对圣经有疑问？</string>
+    <string name="home_questions_subtitle">来自 GotQuestions.org 的解答</string>
+
+    <string name="external_link_opens_outside">在应用外打开</string>
+    <string name="external_link_offline">你已离线。请连接网络后再打开。</string>
+    <string name="external_link_no_app">这部手机上没有可以打开此链接的应用。</string>
+
+    <string name="about_book_open">关于这卷书</string>
+    <string name="about_book_title">关于%1$s</string>
+    <string name="about_book_summary">书卷概要</string>
+    <string name="about_book_videos">概览视频</string>
+    <string name="about_book_video">概览视频</string>
+    <string name="about_book_video_part">概览视频，第 %1$d 部分（共 %2$d 部分）</string>
+    <string name="about_book_video_covers">%1$s–%2$s 概览视频</string>
+    <string name="about_book_video_credit">视频由 BibleProject 制作并拥有。bibleproject.com</string>
+    <string name="source_bibleproject">BibleProject</string>
 
     <string name="footnote_verse">第 %1$d 节</string>
     <plurals name="selection_verses_selected">

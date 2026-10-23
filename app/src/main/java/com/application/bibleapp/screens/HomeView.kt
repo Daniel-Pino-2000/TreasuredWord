@@ -20,6 +20,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.ContentCopy
@@ -53,6 +55,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.application.bibleapp.R
 import com.application.bibleapp.data.model.BibleBooks
+import com.application.bibleapp.data.model.BookResources
 import com.application.bibleapp.data.model.DailyVerseUI
 import com.application.bibleapp.data.model.Highlight
 import com.application.bibleapp.data.model.chapterCount
@@ -63,6 +66,8 @@ import com.application.bibleapp.ui.theme.centeredContentWidth
 import com.application.bibleapp.ui.theme.isCompactHeight
 import com.application.bibleapp.ui.theme.scaledBy
 import com.application.bibleapp.utils.UiText
+import com.application.bibleapp.utils.isSpanishUi
+import com.application.bibleapp.utils.rememberExternalLinks
 import com.application.bibleapp.utils.verseRefsText
 import com.application.bibleapp.viewmodel.BibleViewModel
 import java.text.SimpleDateFormat
@@ -155,10 +160,25 @@ fun HomeView(
             onSeeAllClick = onSeeAllHighlightsClick
         )
     }
+    // GotQuestions.org (#47): someone else's site, so the row names it and shows the
+    // opens-outside icon instead of a chevron.
+    val spanish = isSpanishUi()
+    val externalLinks = rememberExternalLinks { bibleViewModel.showMessage(it) }
+    val questionsRow: @Composable () -> Unit = {
+        HomeShortcutRow(
+            icon = Icons.AutoMirrored.Outlined.HelpOutline,
+            title = stringResource(R.string.home_questions_title),
+            subtitle = stringResource(R.string.home_questions_subtitle),
+            trailingIcon = Icons.AutoMirrored.Filled.OpenInNew,
+            trailingIconDescription = stringResource(R.string.external_link_opens_outside),
+            onClick = { externalLinks.openPage(BookResources.gotQuestionsHome(spanish)) }
+        )
+    }
 
     if (isCompactHeight()) {
         // Landscape: verse card on the left, greeting, reading and highlights on the right, so
-        // the verse fits without scrolling. Each column stays well under MaxContentWidth.
+        // the verse fits without scrolling. Each column stays well under MaxContentWidth. The
+        // questions row fills the space under the verse card.
         Row(
             modifier = modifier
                 .centeredContentWidth(maxWidth = MaxContentWidth * 1.4f)
@@ -171,6 +191,7 @@ fun HomeView(
                 verticalArrangement = Arrangement.spacedBy(Spacing.md)
             ) {
                 verseCard()
+                questionsRow()
             }
             Column(
                 modifier = Modifier.weight(1f),
@@ -191,6 +212,7 @@ fun HomeView(
             greeting()
             verseCard()
             readingSection()
+            questionsRow()
         }
     }
 }
@@ -451,6 +473,8 @@ private fun HomeShortcutRow(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     title: String,
     subtitle: String,
+    trailingIcon: androidx.compose.ui.graphics.vector.ImageVector = Icons.Filled.ChevronRight,
+    trailingIconDescription: String? = null,
     onClick: () -> Unit
 ) {
     Surface(
@@ -471,7 +495,8 @@ private fun HomeShortcutRow(
                 tint = MaterialTheme.colorScheme.primary
             )
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = title, style = MaterialTheme.typography.titleMedium)
+                // onSurface, not the Surface's muted onSurfaceVariant, to match the Continue Reading card.
+                Text(text = title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
                 Text(
                     text = subtitle,
                     style = MaterialTheme.typography.bodyMedium,
@@ -479,8 +504,8 @@ private fun HomeShortcutRow(
                 )
             }
             Icon(
-                imageVector = Icons.Filled.ChevronRight,
-                contentDescription = null,
+                imageVector = trailingIcon,
+                contentDescription = trailingIconDescription,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }

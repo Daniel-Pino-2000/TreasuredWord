@@ -73,6 +73,22 @@
     <string name="home_recent_highlights">Tus resaltados recientes</string>
     <string name="home_see_all">Ver todo</string>
     <string name="home_highlights_empty">Resalta un versículo mientras lees y aparecerá aquí.</string>
+    <string name="home_questions_title">¿Preguntas sobre la Biblia?</string>
+    <string name="home_questions_subtitle">Respuestas de GotQuestions.org</string>
+
+    <string name="external_link_opens_outside">Se abre fuera de la app</string>
+    <string name="external_link_offline">Sin conexión. Conéctate a internet para abrir esto.</string>
+    <string name="external_link_no_app">Ninguna app de este teléfono puede abrir este enlace.</string>
+
+    <string name="about_book_open">Acerca de este libro</string>
+    <string name="about_book_title">Acerca de %1$s</string>
+    <string name="about_book_summary">Resumen del libro</string>
+    <string name="about_book_videos">Videos de resumen</string>
+    <string name="about_book_video">Video de resumen</string>
+    <string name="about_book_video_part">Video de resumen, parte %1$d de %2$d</string>
+    <string name="about_book_video_covers">Video de resumen de %1$s–%2$s</string>
+    <string name="about_book_video_credit">Videos de Proyecto Biblia, su autor y propietario. bibleproject.com/es</string>
+    <string name="source_bibleproject">Proyecto Biblia</string>
 
     <!-- Reader -->
     <string name="footnote_verse">Versículo %1$d</string>

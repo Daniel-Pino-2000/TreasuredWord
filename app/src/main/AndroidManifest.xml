@@ -11,6 +11,14 @@
     <!-- Lets BootCompletedReceiver re-arm the daily verse jobs after a reboot -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
 
+    <!-- Android 11+ hides other apps unless asked for: lets utils/ExternalLinks.kt find a browser
+         that supports Custom Tabs before falling back to a plain link. -->
+    <queries>
+        <intent>
+            <action android:name="android.support.customtabs.action.CustomTabsService" />
+        </intent>
+    </queries>
+
     <application
         android:name=".BibleApplication"
         android:allowBackup="true"

@@ -8,6 +8,7 @@ import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.outlined.BookmarkAdd
 import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.BookmarkRemove
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
@@ -31,7 +32,9 @@ import androidx.compose.ui.res.stringResource
  *  [com.application.bibleapp.viewmodel.BibleViewModel.currentVersionLabel].
  *  [chapterNav], when given (compact height — see MainActivity), takes the title's place so the
  *  chapter controls ride in this bar instead of a separate strip at the bottom.
- *  [bookmark] drives the bookmark button — see [BookmarkButton]. */
+ *  [bookmark] drives the bookmark button — see [BookmarkButton].
+ *  [onAboutBookClick] opens the "About this book" sheet; null hides the info icon, for a book
+ *  with nothing to show. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BibleTopBar(
@@ -39,11 +42,17 @@ fun BibleTopBar(
     versionLabel: String,
     onVersionClick: () -> Unit,
     bookmark: BookmarkButtonState,
+    onAboutBookClick: (() -> Unit)?,
     chapterNav: (@Composable () -> Unit)? = null
 ) {
     TopBar(
         title = chapterNav ?: { Text(stringResource(R.string.title_bible)) },
         actions = {
+            onAboutBookClick?.let { onClick ->
+                IconButton(onClick = onClick) {
+                    Icon(Icons.Outlined.Info, contentDescription = stringResource(R.string.about_book_open))
+                }
+            }
             BookmarkButton(bookmark)
             // Without the end margin the pill sits flush against the screen edge.
             Button(onClick = onVersionClick, modifier = Modifier.padding(end = Spacing.sm)) {

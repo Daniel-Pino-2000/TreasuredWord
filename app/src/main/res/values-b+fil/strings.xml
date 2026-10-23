@@ -67,6 +67,22 @@
     <string name="home_recent_highlights">Mga kamakailang highlight mo</string>
     <string name="home_see_all">Tingnan lahat</string>
     <string name="home_highlights_empty">Mag-highlight ng talata habang nagbabasa at lalabas ito rito.</string>
+    <string name="home_questions_title">May tanong tungkol sa Bibliya?</string>
+    <string name="home_questions_subtitle">Mga sagot mula sa GotQuestions.org</string>
+
+    <string name="external_link_opens_outside">Bubuksan sa labas ng app</string>
+    <string name="external_link_offline">Offline ka. Kumonekta sa internet para mabuksan ito.</string>
+    <string name="external_link_no_app">Walang app sa teleponong ito na makakapagbukas ng link na ito.</string>
+
+    <string name="about_book_open">Tungkol sa aklat na ito</string>
+    <string name="about_book_title">Tungkol sa %1$s</string>
+    <string name="about_book_summary">Buod ng aklat</string>
+    <string name="about_book_videos">Mga video ng pangkalahatang-ideya</string>
+    <string name="about_book_video">Video ng pangkalahatang-ideya</string>
+    <string name="about_book_video_part">Video ng pangkalahatang-ideya, bahagi %1$d ng %2$d</string>
+    <string name="about_book_video_covers">Video ng pangkalahatang-ideya para sa %1$s–%2$s</string>
+    <string name="about_book_video_credit">Mga video ng BibleProject, ang may-akda at may-ari nito. bibleproject.com</string>
+    <string name="source_bibleproject">BibleProject</string>
 
     <string name="footnote_verse">Talata %1$d</string>
     <plurals name="selection_verses_selected">
