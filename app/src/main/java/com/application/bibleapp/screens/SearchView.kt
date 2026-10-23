@@ -46,9 +46,6 @@ import androidx.compose.foundation.lazy.items
 import com.application.bibleapp.R
 import androidx.compose.ui.res.stringResource
 
-/** A handful of common topics to search for before the user has typed anything themselves. */
-private val SUGGESTED_SEARCHES = listOf("love", "faith", "hope", "grace", "peace", "joy", "forgiveness")
-
 @Composable
 fun SearchView(
     bibleViewModel: BibleViewModel,
@@ -59,6 +56,7 @@ fun SearchView(
     val searchText by bibleViewModel.searchQuery.collectAsState()
     val searchState by bibleViewModel.searchState.collectAsState()
     val bookNames by bibleViewModel.bookNames.collectAsState()
+    val suggestions by bibleViewModel.searchSuggestions.collectAsState()
 
     Column(
         modifier = modifier
@@ -84,6 +82,7 @@ fun SearchView(
             searchState.isSearching -> Unit
             searchState.hasError -> SearchErrorState(onRetry = { bibleViewModel.onSearchSubmit() })
             searchState.query.isEmpty() -> SearchEmptyState(
+                suggestions = suggestions,
                 onSuggestionClick = { keyword ->
                     bibleViewModel.onSearchQueryChange(keyword)
                     bibleViewModel.onSearchSubmit()
@@ -95,7 +94,7 @@ fun SearchView(
 }
 
 @Composable
-private fun SearchEmptyState(onSuggestionClick: (String) -> Unit) {
+private fun SearchEmptyState(suggestions: List<String>, onSuggestionClick: (String) -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -115,6 +114,8 @@ private fun SearchEmptyState(onSuggestionClick: (String) -> Unit) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = Spacing.lg, bottom = Spacing.xl)
         )
+        // None for a non-English version, where these English words find nothing (#60).
+        if (suggestions.isEmpty()) return@Column
         Text(
             text = stringResource(R.string.search_suggestions_title),
             style = MaterialTheme.typography.labelLarge,
@@ -125,7 +126,7 @@ private fun SearchEmptyState(onSuggestionClick: (String) -> Unit) {
             modifier = Modifier.horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
         ) {
-            SUGGESTED_SEARCHES.forEach { keyword ->
+            suggestions.forEach { keyword ->
                 SuggestionChip(
                     onClick = { onSuggestionClick(keyword) },
                     label = { Text(keyword) },
