@@ -66,6 +66,22 @@
     <string name="home_recent_highlights">Vos surlignages récents</string>
     <string name="home_see_all">Tout voir</string>
     <string name="home_highlights_empty">Surlignez un verset pendant votre lecture et il apparaîtra ici.</string>
+    <string name="home_questions_title">Des questions sur la Bible ?</string>
+    <string name="home_questions_subtitle">Réponses de GotQuestions.org</string>
+
+    <string name="external_link_opens_outside">S\'ouvre en dehors de l\'app</string>
+    <string name="external_link_offline">Tu es hors ligne. Connecte-toi à Internet pour ouvrir ceci.</string>
+    <string name="external_link_no_app">Aucune app de ce téléphone ne peut ouvrir ce lien.</string>
+
+    <string name="about_book_open">À propos de ce livre</string>
+    <string name="about_book_title">À propos de %1$s</string>
+    <string name="about_book_summary">Résumé du livre</string>
+    <string name="about_book_videos">Vidéos de présentation</string>
+    <string name="about_book_video">Vidéo de présentation</string>
+    <string name="about_book_video_part">Vidéo de présentation, partie %1$d sur %2$d</string>
+    <string name="about_book_video_covers">Vidéo de présentation de %1$s–%2$s</string>
+    <string name="about_book_video_credit">Vidéos de BibleProject, leur auteur et propriétaire. bibleproject.com</string>
+    <string name="source_bibleproject">BibleProject</string>
 
     <string name="footnote_verse">Verset %1$d</string>
     <plurals name="selection_verses_selected">

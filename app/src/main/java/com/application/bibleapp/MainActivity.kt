@@ -37,6 +37,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -54,6 +55,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.application.bibleapp.components.AboutBookSheet
 import com.application.bibleapp.components.BibleChapterNav
 import com.application.bibleapp.components.BibleTopBar
 import com.application.bibleapp.components.BookPickerTopBar
@@ -71,6 +73,8 @@ import com.application.bibleapp.components.VersePickerTopBar
 import com.application.bibleapp.components.VersionPickerTopBar
 import com.application.bibleapp.components.VerseSelectionToolbar
 import com.application.bibleapp.components.YouTopBar
+import com.application.bibleapp.data.model.BibleBooks
+import com.application.bibleapp.data.model.BookResources
 import com.application.bibleapp.navigation.Navigation
 import com.application.bibleapp.navigation.Screen
 import com.application.bibleapp.ui.theme.BibleAppTheme
@@ -83,6 +87,7 @@ import com.application.bibleapp.viewmodel.BibleViewModel
 import com.application.bibleapp.viewmodel.BibleViewModelFactory
 import androidx.compose.ui.res.stringResource
 import com.application.bibleapp.utils.UiText
+import com.application.bibleapp.utils.isSpanishUi
 
 /** Cumulative scroll distance, in one sustained direction, required before the reading
  *  chrome commits to hiding or showing — see the effect in [MainActivity.onCreate]. */
@@ -237,6 +242,9 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
 
+                // The reader's "About this book" sheet, from the top bar's info icon.
+                var aboutBookOpen by rememberSaveable { mutableStateOf(false) }
+
                 // Compact height = a phone in landscape. There the tabs move to a side rail and the
                 // chapter controls into the top bar, since a bottom bar plus chapter strip left only
                 // ~50dp of a ~360dp-tall screen for actual reading.
@@ -296,6 +304,11 @@ class MainActivity : AppCompatActivity() {
                                             onGoToBookmark = { bibleViewModel.goToBookmark() },
                                             onRemoveBookmark = { bibleViewModel.removeBookmark() }
                                         ),
+                                        onAboutBookClick = if (BookResources.hasAny(currentBook)) {
+                                            { aboutBookOpen = true }
+                                        } else {
+                                            null
+                                        },
                                         chapterNav = if (compactHeight) {
                                             {
                                                 BibleChapterNav(
@@ -392,6 +405,17 @@ class MainActivity : AppCompatActivity() {
                                     .then(if (compactHeight) Modifier.navigationBarsPadding() else Modifier)
                                     .padding(horizontal = Spacing.lg)
                                     .offset(y = -(bottomBarHeight + gap))
+                            )
+                        }
+
+                        if (aboutBookOpen && currentRoute == Screen.Bible.route) {
+                            val currentBook by bibleViewModel.currentBook.collectAsState()
+                            val bookNames by bibleViewModel.bookNames.collectAsState()
+                            AboutBookSheet(
+                                bookId = currentBook,
+                                bookName = { id -> bookNames[id] ?: BibleBooks.getBookById(id)?.name.orEmpty() },
+                                spanish = isSpanishUi(),
+                                onDismiss = { aboutBookOpen = false }
                             )
                         }
                     }

@@ -96,6 +96,9 @@ dependencies {
     // Background scheduling for the daily verse fetch + notification
     implementation(libs.androidx.work.runtime.ktx)
 
+    // Chrome Custom Tabs for outside web pages (GotQuestions.org) - see utils/ExternalLinks.kt
+    implementation(libs.androidx.browser)
+
     // Room
     val room_version = "2.7.1"
     implementation("androidx.room:room-ktx:$room_version")

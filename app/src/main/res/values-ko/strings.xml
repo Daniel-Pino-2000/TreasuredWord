@@ -66,6 +66,22 @@
     <string name="home_recent_highlights">최근 하이라이트</string>
     <string name="home_see_all">모두 보기</string>
     <string name="home_highlights_empty">읽으면서 구절을 하이라이트하면 여기에 표시됩니다.</string>
+    <string name="home_questions_title">성경에 대해 궁금한 점이 있나요?</string>
+    <string name="home_questions_subtitle">GotQuestions.org의 답변</string>
+
+    <string name="external_link_opens_outside">앱 밖에서 열립니다</string>
+    <string name="external_link_offline">오프라인 상태예요. 인터넷에 연결한 뒤 열어 주세요.</string>
+    <string name="external_link_no_app">이 링크를 열 수 있는 앱이 없어요.</string>
+
+    <string name="about_book_open">이 책 소개</string>
+    <string name="about_book_title">%1$s 소개</string>
+    <string name="about_book_summary">책 요약</string>
+    <string name="about_book_videos">개요 영상</string>
+    <string name="about_book_video">개요 영상</string>
+    <string name="about_book_video_part">개요 영상, %2$d부 중 %1$d부</string>
+    <string name="about_book_video_covers">%1$s–%2$s 개요 영상</string>
+    <string name="about_book_video_credit">영상 제작 및 소유: BibleProject. bibleproject.com</string>
+    <string name="source_bibleproject">BibleProject</string>
 
     <string name="footnote_verse">%1$d절</string>
     <plurals name="selection_verses_selected">
