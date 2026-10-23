@@ -204,6 +204,8 @@
     <string name="auth_error_unreachable">서버에 연결할 수 없어요. 연결 상태를 확인한 뒤 다시 시도하세요.</string>
 
     <string name="settings_app_version">%1$s · 버전 %2$s</string>
+    <string name="settings_section_about">정보</string>
+    <string name="settings_privacy_policy">개인정보처리방침</string>
     <string name="settings_section_general">일반</string>
     <string name="title_language">언어</string>
     <string name="language_system_default">시스템 기본값</string>

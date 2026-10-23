@@ -14,7 +14,9 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.application.bibleapp"
+        // TreasuredWord's permanent Google Play ID, reserved in the Play Console. The code keeps the
+        // old com.application.bibleapp namespace; only the installed app's ID changed.
+        applicationId = "com.treasuredword.app"
         minSdk = 24
         targetSdk = 35
         versionCode = 1

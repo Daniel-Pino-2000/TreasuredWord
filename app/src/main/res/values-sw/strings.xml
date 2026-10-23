@@ -212,6 +212,8 @@
     <string name="auth_error_unreachable">Imeshindwa kufikia seva. Angalia muunganisho wako kisha ujaribu tena.</string>
 
     <string name="settings_app_version">%1$s · Toleo %2$s</string>
+    <string name="settings_section_about">Kuhusu</string>
+    <string name="settings_privacy_policy">Sera ya faragha</string>
     <string name="settings_section_general">Jumla</string>
     <string name="title_language">Lugha</string>
     <string name="language_system_default">Chaguomsingi la mfumo</string>

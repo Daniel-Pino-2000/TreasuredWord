@@ -22,10 +22,15 @@ import com.application.bibleapp.viewmodel.BibleViewModel
 import com.application.bibleapp.R
 import androidx.compose.ui.res.stringResource
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.outlined.Language
+import androidx.compose.material.icons.outlined.PrivacyTip
+import androidx.compose.material3.Icon
 import com.application.bibleapp.components.GroupedRow
 import com.application.bibleapp.components.GroupedSection
 import com.application.bibleapp.utils.AppLanguage
+import com.application.bibleapp.utils.PRIVACY_POLICY_URL
+import com.application.bibleapp.utils.rememberExternalLinks
 
 /**
  * Every setting on one grouped page — at this size (~10 settings) a single screen is quicker to
@@ -44,6 +49,7 @@ fun SettingsView(
 ) {
     val context = LocalContext.current
     val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
+    val links = rememberExternalLinks { bibleViewModel.showMessage(it) }
 
     Column(
         modifier = modifier
@@ -66,6 +72,21 @@ fun SettingsView(
         // Sync's switches mean nothing signed out — the Account section's sign-in row covers it.
         if (isLoggedIn) SyncSettings(bibleViewModel)
         AccountSettings(authViewModel, bibleViewModel, onSignInClick)
+        // Google Play requires the privacy policy to be reachable from inside the app, too.
+        GroupedSection(title = stringResource(R.string.settings_section_about)) {
+            GroupedRow(
+                title = stringResource(R.string.settings_privacy_policy),
+                icon = Icons.Outlined.PrivacyTip,
+                onClick = { links.openPage(PRIVACY_POLICY_URL) },
+                trailing = {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.OpenInNew,
+                        contentDescription = stringResource(R.string.external_link_opens_outside),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            )
+        }
 
         Text(
             text = stringResource(R.string.settings_app_version, stringResource(R.string.app_name), appVersionName(context)),
