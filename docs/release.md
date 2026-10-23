@@ -16,15 +16,15 @@ signing key. That's why Play App Signing is worth opting in to.
 
 Create the key with `keytool` (it comes with Android Studio's JDK, in
 `C:\Program Files\Android\Android Studio\jbr\bin`). Keep it **outside the repo**, for example in
-`C:\Users\<you>\keys\`:
+`C:\Users\<you>\keys\`. `keytool` doesn't create folders, so make the folder first. In PowerShell:
 
-```bash
-mkdir -p ~/keys
+```powershell
+New-Item -ItemType Directory -Force ~/keys
 keytool -genkeypair -v -keystore ~/keys/treasuredword-upload.jks -storetype PKCS12 -alias upload -keyalg RSA -keysize 2048 -validity 10000
 ```
 
-`keytool` asks for a password and your name/organization. Pick a strong password and save it in
-a password manager. A PKCS12 keystore uses the same password for the store and the key, so use it
+`keytool` asks for a password and your name/organization. The last question wants a two-letter
+**country** code (`US`), not a state. Pick a strong password and save it in a password manager. A PKCS12 keystore uses the same password for the store and the key, so use it
 for both `storePassword` and `keyPassword` below. `-validity 10000` (about 27 years) is what
 Google recommends; Play requires the key to be valid until at least 2033.
 
@@ -41,7 +41,9 @@ Never email it or attach it to a GitHub issue.
 ## 2. Tell Gradle where the key is
 
 Copy `keystore.properties.example` (repo root) to `keystore.properties` and fill it in.
-`keystore.properties` is git-ignored, and so are `*.jks` and `*.keystore` files.
+`keystore.properties` is git-ignored, and so are `*.jks` and `*.keystore` files. Afterwards, run
+`git status`: if `keystore.properties` shows up, the branch you're on is older than the ignore
+rule, so delete the file and switch to a branch made from the latest `main`.
 
 ```properties
 storeFile=C:/Users/<you>/keys/treasuredword-upload.jks
