@@ -224,6 +224,8 @@
     <string name="auth_error_invalid_input">Saisie non valide</string>
     <string name="auth_error_status">Une erreur s’est produite (%1$d)</string>
     <string name="auth_error_unreachable">Impossible de joindre le serveur. Vérifie ta connexion et réessaie.</string>
+    <string name="auth_error_server_slow">Le serveur met trop de temps à répondre. Réessaie dans une minute.</string>
+    <string name="server_waking_hint">Le serveur est peut-être en train de démarrer. Cela peut prendre jusqu’à une minute.</string>
 
     <string name="settings_app_version">%1$s · Version %2$s</string>
     <string name="settings_section_about">À propos</string>

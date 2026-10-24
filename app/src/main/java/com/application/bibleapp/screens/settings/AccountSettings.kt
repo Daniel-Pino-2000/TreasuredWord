@@ -27,6 +27,8 @@ import androidx.compose.ui.unit.dp
 import com.application.bibleapp.components.GroupedDivider
 import com.application.bibleapp.components.GroupedRow
 import com.application.bibleapp.components.GroupedSection
+import com.application.bibleapp.components.ServerWakeHint
+import com.application.bibleapp.components.rememberWaitingLong
 import com.application.bibleapp.ui.theme.Spacing
 import com.application.bibleapp.viewmodel.AuthViewModel
 import com.application.bibleapp.viewmodel.BibleViewModel
@@ -145,6 +147,7 @@ private fun DeleteAccountDialog(
     var password by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<UiText?>(null) }
     var isSubmitting by remember { mutableStateOf(false) }
+    val submittingLong = rememberWaitingLong(isSubmitting)
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -166,6 +169,7 @@ private fun DeleteAccountDialog(
                 errorMessage?.let {
                     Text(it.asString(), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
                 }
+                if (submittingLong) ServerWakeHint()
             }
         },
         confirmButton = {

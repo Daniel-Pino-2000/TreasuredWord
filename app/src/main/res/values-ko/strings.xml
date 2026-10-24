@@ -208,6 +208,8 @@
     <string name="auth_error_invalid_input">입력값이 올바르지 않아요</string>
     <string name="auth_error_status">문제가 발생했어요 (%1$d)</string>
     <string name="auth_error_unreachable">서버에 연결할 수 없어요. 연결 상태를 확인한 뒤 다시 시도하세요.</string>
+    <string name="auth_error_server_slow">서버 응답이 너무 늦어요. 1분 뒤에 다시 시도하세요.</string>
+    <string name="server_waking_hint">서버가 시작되는 중일 수 있어요. 최대 1분 정도 걸릴 수 있어요.</string>
 
     <string name="settings_app_version">%1$s · 버전 %2$s</string>
     <string name="settings_section_about">정보</string>

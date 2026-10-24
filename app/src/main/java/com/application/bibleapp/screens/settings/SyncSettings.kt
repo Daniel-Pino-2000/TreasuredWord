@@ -29,6 +29,7 @@ import com.application.bibleapp.components.GroupedDivider
 import com.application.bibleapp.components.GroupedRow
 import com.application.bibleapp.components.GroupedSection
 import com.application.bibleapp.components.GroupedSwitchRow
+import com.application.bibleapp.components.rememberWaitingLong
 import com.application.bibleapp.utils.NetworkUtils
 import com.application.bibleapp.utils.formatSyncedStatus
 import com.application.bibleapp.viewmodel.BibleViewModel
@@ -45,6 +46,8 @@ internal fun SyncSettings(bibleViewModel: BibleViewModel) {
     val lastSyncCompletedAt by bibleViewModel.lastSyncCompletedAt.collectAsState()
     val lastSyncFailed by bibleViewModel.lastSyncFailed.collectAsState()
     val isSyncing by bibleViewModel.isSyncing.collectAsState()
+    // A sync that's this slow is almost always the server waking up, so say so (#87).
+    val syncingLong = rememberWaitingLong(isSyncing)
 
     // Reflects a background periodic sync's timestamp even if this screen was already open
     // when it completed, rather than only ever showing whatever was true on first composition.
@@ -93,6 +96,7 @@ internal fun SyncSettings(bibleViewModel: BibleViewModel) {
                     lastSyncCompletedAt != null -> formatSyncedStatus(context.resources, lastSyncCompletedAt!!)
                     else -> stringResource(R.string.sync_status_not_synced)
                 },
+                subtitle = if (isSyncing && syncingLong) stringResource(R.string.server_waking_hint) else null,
                 icon = Icons.Outlined.CloudDone,
                 trailing = {
                     if (isSyncing) {

@@ -96,6 +96,11 @@ class AuthRepository(context: Context) {
         }
     }
 
+    /** Asks the server's health check for nothing but a reply, to wake it if it's asleep (#87). */
+    suspend fun pingServer() {
+        client.get(HttpClientProvider.HEALTH_URL)
+    }
+
     suspend fun getCurrentUser(): Result<UserResponseDto> = runCatching {
         val response = client.get("$baseUrl/users/me")
         if (!response.status.isSuccess()) throw toAuthException(response)

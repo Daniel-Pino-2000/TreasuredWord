@@ -217,6 +217,8 @@
     <string name="auth_error_invalid_input">Hindi wastong input</string>
     <string name="auth_error_status">Nagkaproblema (%1$d)</string>
     <string name="auth_error_unreachable">Hindi maabot ang server. Tingnan ang iyong koneksyon at subukan ulit.</string>
+    <string name="auth_error_server_slow">Masyadong matagal sumagot ang server. Subukan ulit pagkalipas ng isang minuto.</string>
+    <string name="server_waking_hint">Maaaring nagsisimula pa ang server. Puwedeng umabot ito nang hanggang isang minuto.</string>
 
     <string name="settings_app_version">%1$s · Bersyon %2$s</string>
     <string name="settings_section_about">Tungkol</string>
