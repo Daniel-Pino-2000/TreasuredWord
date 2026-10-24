@@ -427,8 +427,9 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    /** Only called for what the manifest's configChanges lists, i.e. a language change. Compose
-     *  picks up the new configuration itself; this redoes what lives outside composition. */
+    /** Only called for what the manifest's configChanges lists: a language change, which can
+     *  also change screenLayout (#89). Compose picks up the new configuration itself; this redoes
+     *  what lives outside composition. */
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
         // Below Android 13 the change comes from AppCompat, not the system, and only reaches the
