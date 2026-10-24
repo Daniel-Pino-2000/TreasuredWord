@@ -102,6 +102,11 @@ before code.
     its remaining verses, in its original color, before creating the new one. The server still
     accepts overlaps (another client or an old sync could produce them); the reader then shows
     the most recent one.
+20. **List responses carry the server's clock** (`serverTime`, #84). A syncing client sends it
+    back as the next `updatedSince` instead of its own clock: a phone whose clock runs ahead of
+    the server's would otherwise skip every change made in that gap, deletes included. It's read
+    before the query runs, so anything saved while the query runs is at or after it; the Android
+    client still starts its next pull a minute earlier, since re-pulling a few rows is harmless.
 
 ---
 
@@ -277,13 +282,16 @@ data class HighlightResponse(
 )
 
 @Serializable
-data class HighlightListResponse(val highlights: List<HighlightResponse>)
+data class HighlightListResponse(
+    val highlights: List<HighlightResponse>,
+    val serverTime: String             // ISO-8601, the server's clock when the list was read (decision 20)
+)
 ```
 
 ### `GET /api/v1/highlights`
 Auth: required
 Query params: `bookId` (optional Int), `chapter` (optional Int, requires `bookId`), `updatedSince` (optional ISO-8601 — includes soft-deleted tombstones when present)
-Success: `200 OK` → `HighlightListResponse` (active highlights only, unless `updatedSince` is set; see decision 15 for filter semantics)
+Success: `200 OK` → `HighlightListResponse` (active highlights only, unless `updatedSince` is set; see decision 15 for filter semantics). Pass its `serverTime` as the next `updatedSince` (decision 20)
 Errors: `401 UNAUTHORIZED`
 
 ### `POST /api/v1/highlights`
@@ -336,13 +344,16 @@ data class NoteResponse(
 )
 
 @Serializable
-data class NoteListResponse(val notes: List<NoteResponse>)
+data class NoteListResponse(
+    val notes: List<NoteResponse>,
+    val serverTime: String             // ISO-8601, the server's clock when the list was read (decision 20)
+)
 ```
 
 ### `GET /api/v1/notes`
 Auth: required
 Query params: `bookId` (optional Int), `chapter` (optional Int, requires `bookId`), `updatedSince` (optional ISO-8601)
-Success: `200 OK` → `NoteListResponse` (active notes only, unless `updatedSince` is set; see decision 15 for filter semantics)
+Success: `200 OK` → `NoteListResponse` (active notes only, unless `updatedSince` is set; see decision 15 for filter semantics). Pass its `serverTime` as the next `updatedSince` (decision 20)
 Errors: `401 UNAUTHORIZED`
 
 ### `GET /api/v1/notes/{id}`

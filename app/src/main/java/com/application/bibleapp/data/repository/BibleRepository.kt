@@ -15,14 +15,20 @@ import com.application.bibleapp.data.model.VerseUI
 import com.application.bibleapp.data.model.toUI
 import com.application.bibleapp.data.remote.BibleRemoteDataSource
 import com.application.bibleapp.data.remote.DailyVerseDataSource
+import com.application.bibleapp.data.remote.HighlightResponseDto
 import com.application.bibleapp.data.remote.HttpClientProvider
+import com.application.bibleapp.data.remote.NoteResponseDto
+import com.application.bibleapp.data.remote.ReadingProgressResponseDto
 import com.application.bibleapp.data.remote.VerseLocationDto
 import com.application.bibleapp.ui.theme.ThemeMode
 import com.application.bibleapp.ui.theme.VerseTextScale
 import com.application.bibleapp.utils.NetworkUtils
+import com.application.bibleapp.utils.isoTimestampNow
 import com.application.bibleapp.utils.parseVerseReference
 import com.application.bibleapp.utils.passage
 import com.application.bibleapp.worker.DailyVerseScheduler
+import com.application.bibleapp.worker.LocalReadingProgress
+import com.application.bibleapp.worker.SyncLocalStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
@@ -62,7 +68,7 @@ class BibleRepository(
     private val context: Context,
     private val remote: BibleRemoteDataSource,
     private val daily: DailyVerseDataSource
-) {
+) : SyncLocalStore {
     private val prefs by lazy {
         context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     }
@@ -134,64 +140,64 @@ class BibleRepository(
     suspend fun restoreNote(note: Note) =
         withContext(Dispatchers.IO) { BibleDatabaseManager.restoreNote(context, note) }
 
-    // ---- Sync worker support (Phase E) — see worker/SyncWorker.kt ----
+    // ---- Sync support (Phase E) — see worker/SyncEngine.kt ----
 
-    suspend fun getPendingHighlights(): List<Highlight> =
+    override suspend fun getPendingHighlights(): List<Highlight> =
         withContext(Dispatchers.IO) { BibleDatabaseManager.getPendingHighlights(context) }
 
-    suspend fun markHighlightPushed(localId: Long, remoteId: String, createdAt: String, updatedAt: String) =
-        withContext(Dispatchers.IO) { BibleDatabaseManager.markHighlightPushed(context, localId, remoteId, createdAt, updatedAt) }
+    override suspend fun markHighlightPushed(pushed: Highlight, remoteId: String, createdAt: String, updatedAt: String): Boolean =
+        withContext(Dispatchers.IO) {
+            BibleDatabaseManager.markHighlightPushed(context, pushed.localId, pushed.updatedAt, remoteId, createdAt, updatedAt)
+        }
 
-    suspend fun purgeHighlight(localId: Long) =
-        withContext(Dispatchers.IO) { BibleDatabaseManager.purgeHighlight(context, localId) }
+    override suspend fun purgeHighlight(pushed: Highlight) =
+        withContext(Dispatchers.IO) { BibleDatabaseManager.purgeHighlight(context, pushed.localId, pushed.updatedAt) }
 
-    suspend fun deleteHighlightByRemoteId(remoteId: String) =
+    override suspend fun detachHighlight(pushed: Highlight) =
+        withContext(Dispatchers.IO) { BibleDatabaseManager.detachHighlight(context, pushed.localId) }
+
+    override suspend fun deleteHighlightByRemoteId(remoteId: String): Boolean =
         withContext(Dispatchers.IO) { BibleDatabaseManager.deleteHighlightByRemoteId(context, remoteId) }
 
-    suspend fun upsertHighlightFromServer(
-        remoteId: String,
-        versionId: String,
-        verses: List<VerseLocationDto>,
-        color: Int,
-        createdAt: String,
-        updatedAt: String
-    ) = withContext(Dispatchers.IO) {
-        BibleDatabaseManager.upsertHighlightFromServer(context, remoteId, versionId, verses, color, createdAt, updatedAt)
+    override suspend fun upsertHighlightFromServer(dto: HighlightResponseDto): Boolean = withContext(Dispatchers.IO) {
+        BibleDatabaseManager.upsertHighlightFromServer(context, dto.id, dto.versionId, dto.verses, dto.color, dto.createdAt, dto.updatedAt)
     }
 
-    suspend fun getPendingNotes(): List<Note> =
+    override suspend fun getPendingNotes(): List<Note> =
         withContext(Dispatchers.IO) { BibleDatabaseManager.getPendingNotes(context) }
 
-    suspend fun markNotePushed(localId: Long, remoteId: String, createdAt: String, updatedAt: String) =
-        withContext(Dispatchers.IO) { BibleDatabaseManager.markNotePushed(context, localId, remoteId, createdAt, updatedAt) }
+    override suspend fun markNotePushed(pushed: Note, remoteId: String, createdAt: String, updatedAt: String): Boolean =
+        withContext(Dispatchers.IO) {
+            BibleDatabaseManager.markNotePushed(context, pushed.localId, pushed.updatedAt, remoteId, createdAt, updatedAt)
+        }
 
-    suspend fun purgeNote(localId: Long) =
-        withContext(Dispatchers.IO) { BibleDatabaseManager.purgeNote(context, localId) }
+    override suspend fun purgeNote(pushed: Note) =
+        withContext(Dispatchers.IO) { BibleDatabaseManager.purgeNote(context, pushed.localId, pushed.updatedAt) }
 
-    suspend fun deleteNoteByRemoteId(remoteId: String) =
+    override suspend fun detachNote(pushed: Note) =
+        withContext(Dispatchers.IO) { BibleDatabaseManager.detachNote(context, pushed.localId) }
+
+    override suspend fun deleteNoteByRemoteId(remoteId: String): Boolean =
         withContext(Dispatchers.IO) { BibleDatabaseManager.deleteNoteByRemoteId(context, remoteId) }
 
-    suspend fun upsertNoteFromServer(
-        remoteId: String,
-        versionId: String,
-        verses: List<VerseLocationDto>,
-        text: String,
-        createdAt: String,
-        updatedAt: String
-    ) = withContext(Dispatchers.IO) {
-        BibleDatabaseManager.upsertNoteFromServer(context, remoteId, versionId, verses, text, createdAt, updatedAt)
+    override suspend fun upsertNoteFromServer(dto: NoteResponseDto): Boolean = withContext(Dispatchers.IO) {
+        BibleDatabaseManager.upsertNoteFromServer(context, dto.id, dto.versionId, dto.verses, dto.text, dto.createdAt, dto.updatedAt)
     }
 
-    /** Last time this device successfully pulled highlights/notes — passed as the server's
-     *  `updatedSince` query param so a sync pass only asks for what changed since then (and gets
-     *  tombstones for anything deleted elsewhere in the meantime). Null before the first sync. */
-    fun loadHighlightsSyncWatermark(): String? = prefs.getString(KEY_HIGHLIGHTS_SYNC_WATERMARK, null)
-    fun saveHighlightsSyncWatermark(iso: String) {
+    /** Highlights and notes that haven't reached the server yet (#81). */
+    suspend fun countPendingChanges(): Int =
+        withContext(Dispatchers.IO) { BibleDatabaseManager.countPendingChanges(context) }
+
+    /** Where the next pull starts — passed as the server's `updatedSince` query param so a sync
+     *  pass only asks for what changed since then (and gets tombstones for anything deleted
+     *  elsewhere in the meantime). From the server's clock (#84). Null before the first sync. */
+    override fun loadHighlightsSyncWatermark(): String? = prefs.getString(KEY_HIGHLIGHTS_SYNC_WATERMARK, null)
+    override fun saveHighlightsSyncWatermark(iso: String) {
         prefs.edit().putString(KEY_HIGHLIGHTS_SYNC_WATERMARK, iso).apply()
     }
 
-    fun loadNotesSyncWatermark(): String? = prefs.getString(KEY_NOTES_SYNC_WATERMARK, null)
-    fun saveNotesSyncWatermark(iso: String) {
+    override fun loadNotesSyncWatermark(): String? = prefs.getString(KEY_NOTES_SYNC_WATERMARK, null)
+    override fun saveNotesSyncWatermark(iso: String) {
         prefs.edit().putString(KEY_NOTES_SYNC_WATERMARK, iso).apply()
     }
 
@@ -380,13 +386,23 @@ class BibleRepository(
     fun loadVerseTextScale(): VerseTextScale =
         VerseTextScale.fromMultiplier(prefs.getFloat(KEY_VERSE_TEXT_SCALE, VerseTextScale.DEFAULT.multiplier))
 
-    /** Persisted across process restarts so the app reopens on the last book/chapter/verse read. */
-    fun saveReadingPosition(bookId: Int, chapter: Int, verse: Int) {
+    /**
+     * Persisted across process restarts so the app reopens on the last book/chapter/verse read,
+     * in [versionId]. Only an actual move counts: reopening the stored position (every app start)
+     * changes nothing. A move also records when it happened — the time sync sends as the
+     * position's `readAt` (#82). Returns that time, or null if nothing moved.
+     */
+    fun saveReadingPosition(bookId: Int, chapter: Int, verse: Int, versionId: String): String? = synchronized(readingLock) {
+        if (ReadingPosition(bookId, chapter, verse) == loadReadingPosition()) return null
+        val changedAt = isoTimestampNow()
         prefs.edit()
             .putInt(KEY_READING_BOOK, bookId)
             .putInt(KEY_READING_CHAPTER, chapter)
             .putInt(KEY_READING_VERSE, verse)
+            .putString(KEY_READING_VERSION, versionId)
+            .putString(KEY_READING_CHANGED_AT, changedAt)
             .apply()
+        changedAt
     }
 
     fun loadReadingPosition(): ReadingPosition = ReadingPosition(
@@ -394,6 +410,40 @@ class BibleRepository(
         chapter = prefs.getInt(KEY_READING_CHAPTER, 1),
         verse = prefs.getInt(KEY_READING_VERSE, 1)
     )
+
+    override fun loadReadingProgress(): LocalReadingProgress = synchronized(readingLock) {
+        LocalReadingProgress(
+            position = loadReadingPosition(),
+            // Positions saved before the version was stored with them (#82) fall back to the
+            // selected one, which is what was pushed for them back then.
+            versionId = prefs.getString(KEY_READING_VERSION, null) ?: loadSelectedVersion(),
+            changedAt = prefs.getString(KEY_READING_CHANGED_AT, null),
+            pushedAt = prefs.getString(KEY_READING_PUSHED_AT, null),
+            hasLocalPosition = prefs.contains(KEY_READING_BOOK)
+        )
+    }
+
+    override fun markReadingPositionPushed(readAt: String): Unit = synchronized(readingLock) {
+        if (prefs.getString(KEY_READING_CHANGED_AT, null) == readAt) {
+            prefs.edit().putString(KEY_READING_PUSHED_AT, readAt).apply()
+        }
+    }
+
+    /** Stores [server]'s position as already in sync (changed and pushed at its own time), so it
+     *  isn't sent back. Skipped if the position moved here since [expectedChangedAt] was read. */
+    override fun saveReadingPositionFromServer(server: ReadingProgressResponseDto, expectedChangedAt: String?): Boolean =
+        synchronized(readingLock) {
+            if (prefs.getString(KEY_READING_CHANGED_AT, null) != expectedChangedAt) return false
+            prefs.edit()
+                .putInt(KEY_READING_BOOK, server.bookId)
+                .putInt(KEY_READING_CHAPTER, server.chapter)
+                .putInt(KEY_READING_VERSE, server.verse)
+                .putString(KEY_READING_VERSION, server.versionId)
+                .putString(KEY_READING_CHANGED_AT, server.updatedAt)
+                .putString(KEY_READING_PUSHED_AT, server.updatedAt)
+                .apply()
+            true
+        }
 
     /** The single reading bookmark — where the user marked they're actually reading, separate
      *  from [loadReadingPosition], which follows every jump. Device-local and translation-independent. */
@@ -466,20 +516,61 @@ class BibleRepository(
         clearSyncState(context)
     }
 
+    /** Sign-out (#81): the account's highlights and notes leave this device — they're safe on the
+     *  server and come back on the next sign-in — so the next person to sign in here never sees
+     *  them, and none of them get uploaded to another account. */
+    suspend fun removeAccountContent() = withContext(Dispatchers.IO) {
+        BibleDatabaseManager.deleteAllUserContent(context)
+        clearSyncState(context)
+    }
+
+    /**
+     * Called on every sign-in with the account's id (#81). Signing into a different account than
+     * the one this device's content was synced with (e.g. after a session expired without a
+     * sign-out) removes the old account's content and sync state first, so the new account
+     * downloads all of its own and none of the old one's is pushed to it. Items made on this
+     * device that were never uploaded stay, and go to the new account like any signed-out work.
+     */
+    suspend fun adoptContentOwner(userId: String?) = withContext(Dispatchers.IO) {
+        val owner = prefs.getString(KEY_CONTENT_OWNER, null)
+        if (owner != null && owner != userId) {
+            BibleDatabaseManager.deleteContentSyncedToAnAccount(context)
+            clearSyncState(context)
+        }
+        prefs.edit().putString(KEY_CONTENT_OWNER, userId).apply()
+    }
+
+    /** For installs from before [adoptContentOwner] existed: the account already signed in owns
+     *  what's on the device. */
+    fun adoptContentOwnerIfUnknown(userId: String?) {
+        if (userId != null && !prefs.contains(KEY_CONTENT_OWNER)) {
+            prefs.edit().putString(KEY_CONTENT_OWNER, userId).apply()
+        }
+    }
+
     internal companion object {
         private const val PREFS_NAME = "bible_prefs"
 
-        /** Forgets the sync watermarks and status, so the next sync pulls everything. Also
-         *  called by [BibleDatabaseManager] whenever it installs a fresh DB with no highlights or
-         *  notes in it: e.g. after a cloud restore, which brings back these prefs but not the DB
-         *  (see res/xml/data_extraction_rules.xml). Keeping the old watermark then would skip
-         *  everything the server had before it. */
+        /** Guards the reading position's compare-then-write steps (#82): the reader saves it on
+         *  the main thread while a sync pass reads and writes it in the background. */
+        private val readingLock = Any()
+
+        /** Forgets the sync watermarks and status, so the next sync pulls everything, and which
+         *  account the content belongs to. Also forgets when the reading position last changed,
+         *  so a position from before isn't pushed as new to whatever account syncs next (#82).
+         *  Also called by [BibleDatabaseManager] whenever it installs a fresh DB with no
+         *  highlights or notes in it: e.g. after a cloud restore, which brings back these prefs
+         *  but not the DB (see res/xml/data_extraction_rules.xml). Keeping the old watermark then
+         *  would skip everything the server had before it. */
         fun clearSyncState(context: Context) {
             context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit()
                 .remove(KEY_HIGHLIGHTS_SYNC_WATERMARK)
                 .remove(KEY_NOTES_SYNC_WATERMARK)
                 .remove(KEY_LAST_SYNC_COMPLETED_AT)
                 .remove(KEY_LAST_SYNC_FAILED)
+                .remove(KEY_CONTENT_OWNER)
+                .remove(KEY_READING_CHANGED_AT)
+                .remove(KEY_READING_PUSHED_AT)
                 .apply()
         }
 
@@ -489,6 +580,10 @@ class BibleRepository(
         const val KEY_READING_BOOK = "reading_book_id"
         const val KEY_READING_CHAPTER = "reading_chapter"
         const val KEY_READING_VERSE = "reading_verse"
+        const val KEY_READING_VERSION = "reading_version_id"
+        const val KEY_READING_CHANGED_AT = "reading_changed_at"
+        const val KEY_READING_PUSHED_AT = "reading_pushed_at"
+        const val KEY_CONTENT_OWNER = "content_owner_user_id"
         const val KEY_BOOKMARK_BOOK = "bookmark_book_id"
         const val KEY_BOOKMARK_CHAPTER = "bookmark_chapter"
         const val KEY_BOOKMARK_VERSE = "bookmark_verse"

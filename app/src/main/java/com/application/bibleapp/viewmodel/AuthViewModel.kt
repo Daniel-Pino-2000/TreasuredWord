@@ -11,6 +11,16 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import com.application.bibleapp.R
 import com.application.bibleapp.utils.UiText
+import com.application.bibleapp.worker.AccountContentSync
+
+/** Where a sign-out is (#81) — see [AuthViewModel.signOut]. */
+sealed interface SignOutState {
+    data object Idle : SignOutState
+    /** Uploading unsynced highlights and notes before they're removed from the device. */
+    data object Uploading : SignOutState
+    /** Some couldn't be uploaded (e.g. offline): signing out now would lose them, so ask first. */
+    data object UnsyncedChanges : SignOutState
+}
 
 /**
  * Backs the login/register screens and the account section in Settings. [isLoggedIn] is
@@ -18,7 +28,10 @@ import com.application.bibleapp.utils.UiText
  * recompose when it changes — AuthRepository's own property is a plain synchronous read of
  * TokenStore, which by itself doesn't notify anyone that the value changed.
  */
-class AuthViewModel(private val authRepository: AuthRepository) : ViewModel() {
+class AuthViewModel(
+    private val authRepository: AuthRepository,
+    private val accountContent: AccountContentSync
+) : ViewModel() {
 
     private val _isLoggedIn = MutableStateFlow(authRepository.isLoggedIn)
     val isLoggedIn: StateFlow<Boolean> = _isLoggedIn.asStateFlow()
@@ -44,12 +57,38 @@ class AuthViewModel(private val authRepository: AuthRepository) : ViewModel() {
         runAuthAction(onSuccess) { authRepository.login(email, password) }
     }
 
-    fun logout() {
+    private val _signOutState = MutableStateFlow<SignOutState>(SignOutState.Idle)
+    val signOutState: StateFlow<SignOutState> = _signOutState.asStateFlow()
+
+    /**
+     * Signs out and removes the account's highlights and notes from this device (#81) — they're
+     * safe on the server and come back on the next sign-in. Anything not uploaded yet is sent
+     * first; if some still can't be, this stops at [SignOutState.UnsyncedChanges] unless
+     * [discardUnsynced] (the person chose "Sign out anyway"). [onSignedOut] lets the reader and
+     * Library drop what they were showing.
+     */
+    fun signOut(discardUnsynced: Boolean = false, onSignedOut: () -> Unit) {
+        if (_signOutState.value == SignOutState.Uploading) return
         viewModelScope.launch {
-            authRepository.logout()
+            if (!discardUnsynced) {
+                _signOutState.value = SignOutState.Uploading
+                if (accountContent.uploadPendingChanges() > 0) {
+                    _signOutState.value = SignOutState.UnsyncedChanges
+                    return@launch
+                }
+            }
+            val refreshToken = accountContent.signOut { authRepository.endLocalSession() }
             _isLoggedIn.value = false
             _currentUser.value = null
+            _signOutState.value = SignOutState.Idle
+            onSignedOut()
+            authRepository.revokeOnServer(refreshToken)
         }
+    }
+
+    /** "Cancel" on the unsynced-changes warning: stay signed in. */
+    fun cancelSignOut() {
+        _signOutState.value = SignOutState.Idle
     }
 
     /** [onResult] receives null on success, or a message to show on failure (e.g. the
@@ -93,6 +132,9 @@ class AuthViewModel(private val authRepository: AuthRepository) : ViewModel() {
         _isLoading.value = true
         viewModelScope.launch {
             val result = action()
+            // Before the session's first sync (onSuccess triggers it), so a different account's
+            // content left on the device is cleared first instead of mixed in (#81).
+            if (result.isSuccess) accountContent.onSignedIn(authRepository.currentUserId)
             _isLoading.value = false
             result.fold(
                 onSuccess = {

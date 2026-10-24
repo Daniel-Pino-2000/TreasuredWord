@@ -6,6 +6,8 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.HttpTimeout
+import io.ktor.client.plugins.api.createClientPlugin
+import io.ktor.client.plugins.timeout
 import io.ktor.client.plugins.auth.Auth
 import io.ktor.client.plugins.auth.providers.BearerTokens
 import io.ktor.client.plugins.auth.providers.bearer
@@ -43,6 +45,31 @@ object HttpClientProvider {
      * temporarily if debugging against a local server, but don't commit that swap.
      */
     const val BASE_URL = "https://treasuredword.onrender.com/api/v1"
+
+    /**
+     * Requests to our own backend wait this long instead of the shared 15 s: Render's free tier
+     * spins the server down when idle, and the first request after that takes ~30–50 s while it
+     * starts — exactly the "just reinstalled and signed in" moment, whose sign-in and restoring
+     * sync used to time out (#80).
+     */
+    private const val BACKEND_TIMEOUT_MILLIS = 90_000L
+
+    /** Applies [BACKEND_TIMEOUT_MILLIS] to every request to [BASE_URL]'s host — sign-in, token
+     *  refresh and sync alike — leaving the third-party Bible APIs on the shorter default. */
+    private val BackendTimeouts = createClientPlugin("BackendTimeouts") {
+        val backendHost = Url(BASE_URL).host
+        onRequest { request, _ ->
+            if (request.url.host == backendHost) {
+                request.timeout {
+                    requestTimeoutMillis = BACKEND_TIMEOUT_MILLIS
+                    socketTimeoutMillis = BACKEND_TIMEOUT_MILLIS
+                    // Render's edge accepts the connection straight away and holds the request
+                    // while the server starts, so connecting itself needs no extra time.
+                    connectTimeoutMillis = 30_000
+                }
+            }
+        }
+    }
 
     private lateinit var tokenStore: TokenStore
 
@@ -99,6 +126,7 @@ object HttpClientProvider {
                 connectTimeoutMillis = 10_000
                 socketTimeoutMillis = 15_000
             }
+            install(BackendTimeouts)
 
             // Automatically attaches "Authorization: Bearer <accessToken>" to every request
             // to the backend, and on a 401, transparently calls /auth/refresh and retries

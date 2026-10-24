@@ -16,10 +16,29 @@ import java.text.DateFormat
  * desugaring isn't enabled, so this formats manually instead of pulling in a new dependency or
  * toolchain change just for timestamps.
  */
-fun isoTimestampNow(): String {
+fun isoTimestampNow(): String = formatIsoTimestamp(System.currentTimeMillis())
+
+/** [epochMillis] in the same format as [isoTimestampNow]. */
+fun formatIsoTimestamp(epochMillis: Long): String {
     val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
     format.timeZone = TimeZone.getTimeZone("UTC")
-    return format.format(Date())
+    return format.format(Date(epochMillis))
+}
+
+private val ISO_INSTANT = Regex("""(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(?:\.(\d{1,9}))?Z""")
+
+/** Epoch millis of an ISO-8601 UTC instant, or null if it isn't one. Accepts any number of
+ *  fraction digits, or none: the server's `java.time.Instant.toString()` writes microseconds and
+ *  drops a zero fraction entirely, so its timestamps can't be compared with ours as strings. */
+fun parseIsoTimestamp(iso: String): Long? {
+    val match = ISO_INSTANT.matchEntire(iso) ?: return null
+    val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US).apply {
+        timeZone = TimeZone.getTimeZone("UTC")
+        isLenient = false
+    }
+    val seconds = runCatching { format.parse(match.groupValues[1]) }.getOrNull() ?: return null
+    val millis = match.groupValues[2].padEnd(3, '0').take(3).toInt()
+    return seconds.time + millis
 }
 
 /** A stored ISO-8601 UTC timestamp (see [isoTimestampNow]) as a short date in [locale]'s own

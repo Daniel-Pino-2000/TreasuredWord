@@ -27,5 +27,6 @@ data class NoteResponse(
     val deletedAt: String? = null
 )
 
+/** See [HighlightListResponse.serverTime] (#84). */
 @Serializable
-data class NoteListResponse(val notes: List<NoteResponse>)
+data class NoteListResponse(val notes: List<NoteResponse>, val serverTime: String)
