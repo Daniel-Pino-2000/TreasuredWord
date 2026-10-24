@@ -74,13 +74,18 @@ class AuthRepository(context: Context) {
     }
 
     /**
-     * Always clears the local session, even if the network call to revoke it on the server
-     * fails (e.g. no connectivity) — a user asking to sign out on this device shouldn't be
-     * blocked by that. The server-side revocation is best-effort on top of that.
+     * Signing out, step one: clears the local session right away and returns its refresh token
+     * for [revokeOnServer]. Split in two so the device is signed out without waiting on the
+     * network — a user asking to sign out on this device shouldn't be blocked by that.
      */
-    suspend fun logout() {
+    fun endLocalSession(): String? {
         val refreshToken = tokenStore.refreshToken
         tokenStore.clear()
+        return refreshToken
+    }
+
+    /** Signing out, step two: best-effort revocation of [refreshToken] on the server. */
+    suspend fun revokeOnServer(refreshToken: String?) {
         if (refreshToken == null) return
         runCatching {
             client.post("$baseUrl/auth/logout") {

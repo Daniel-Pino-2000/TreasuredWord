@@ -19,6 +19,7 @@
     <string name="action_sign_in">Masuk</string>
     <string name="action_copy">Salin</string>
     <string name="action_share">Bagikan</string>
+    <string name="action_download">Unduh</string>
     <string name="tap_to_retry">Ketuk untuk mencoba lagi</string>
     <string name="error_generic">Terjadi kesalahan</string>
 
@@ -161,6 +162,8 @@
     <string name="library_noted_on">Dicatat pada %1$s</string>
     <string name="library_delete_note">Hapus catatan</string>
     <string name="library_item_unavailable">Item ini sudah tidak tersedia.</string>
+    <string name="library_missing_version">Beberapa sorotan dan catatan ada di %1$s, yang belum diunduh. Semuanya ditampilkan dalam KJV sampai Anda mengunduhnya.</string>
+    <string name="library_shown_in_kjv">Ditampilkan dalam KJV</string>
     <string name="library_open_in_bible">Buka di Alkitab</string>
     <plurals name="verse_ref_with_more">
         <item quantity="other">%1$s +%2$d lainnya</item>
@@ -173,6 +176,7 @@
     <string name="you_continue_reading">Lanjutkan membaca</string>
 
     <string name="sync_status_syncing">Menyinkronkan…</string>
+    <string name="sync_restoring_content">Memulihkan sorotan dan catatan Anda…</string>
     <string name="sync_status_not_synced">Belum disinkronkan</string>
     <string name="sync_status_just_now">Baru saja disinkronkan</string>
     <plurals name="sync_status_minutes_ago">
@@ -241,6 +245,11 @@
     <string name="account_sign_in_subtitle">Sinkronkan sorotan, catatan, dan kemajuan membaca Anda di semua perangkat</string>
     <string name="account_your_account">Akun Anda</string>
     <string name="account_sign_out">Keluar</string>
+    <string name="account_sign_out_subtitle">Menghapus sorotan dan catatan Anda dari ponsel ini. Semuanya tetap tersimpan di akun Anda.</string>
+    <string name="account_signing_out">Sedang keluar…</string>
+    <string name="account_sign_out_unsynced_title">Keluar tanpa menyinkronkan?</string>
+    <string name="account_sign_out_unsynced_message">Beberapa sorotan atau catatan belum tersimpan di akun Anda. Jika keluar sekarang, semuanya akan dihapus dari ponsel ini. Agar tetap tersimpan, sambungkan ke internet dan coba lagi.</string>
+    <string name="account_sign_out_anyway">Tetap keluar</string>
     <string name="account_delete">Hapus akun</string>
     <string name="account_delete_title">Hapus akun?</string>
     <string name="account_delete_message">Akun Anda dan semua yang dicadangkan di dalamnya akan dihapus secara permanen. Tindakan ini tidak dapat diurungkan. Sorotan dan catatan yang sudah ada di perangkat ini akan tetap di sini, tetapi tidak akan disinkronkan ke mana pun.</string>

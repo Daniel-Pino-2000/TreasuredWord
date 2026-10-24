@@ -19,6 +19,7 @@
     <string name="action_sign_in">로그인</string>
     <string name="action_copy">복사</string>
     <string name="action_share">공유</string>
+    <string name="action_download">다운로드</string>
     <string name="tap_to_retry">탭하여 다시 시도</string>
     <string name="error_generic">문제가 발생했어요</string>
 
@@ -161,6 +162,8 @@
     <string name="library_noted_on">%1$s에 메모함</string>
     <string name="library_delete_note">메모 삭제</string>
     <string name="library_item_unavailable">이 항목은 더 이상 사용할 수 없어요.</string>
+    <string name="library_missing_version">일부 하이라이트와 메모는 다운로드하지 않은 %1$s 번역본이에요. 다운로드하기 전까지는 KJV로 표시돼요.</string>
+    <string name="library_shown_in_kjv">KJV로 표시됨</string>
     <string name="library_open_in_bible">성경에서 열기</string>
     <plurals name="verse_ref_with_more">
         <item quantity="other">%1$s 외 %2$d개</item>
@@ -173,6 +176,7 @@
     <string name="you_continue_reading">이어 읽기</string>
 
     <string name="sync_status_syncing">동기화 중…</string>
+    <string name="sync_restoring_content">하이라이트와 메모를 복원하는 중…</string>
     <string name="sync_status_not_synced">아직 동기화하지 않음</string>
     <string name="sync_status_just_now">방금 동기화함</string>
     <plurals name="sync_status_minutes_ago">
@@ -241,6 +245,11 @@
     <string name="account_sign_in_subtitle">하이라이트, 메모, 읽기 진도를 여러 기기에서 동기화하세요</string>
     <string name="account_your_account">내 계정</string>
     <string name="account_sign_out">로그아웃</string>
+    <string name="account_sign_out_subtitle">이 휴대전화에서 하이라이트와 메모를 삭제해요. 계정에는 그대로 저장돼 있어요.</string>
+    <string name="account_signing_out">로그아웃하는 중…</string>
+    <string name="account_sign_out_unsynced_title">동기화하지 않고 로그아웃할까요?</string>
+    <string name="account_sign_out_unsynced_message">아직 계정에 저장되지 않은 하이라이트나 메모가 있어요. 지금 로그아웃하면 이 휴대전화에서 삭제돼요. 보관하려면 인터넷에 연결한 후 다시 시도하세요.</string>
+    <string name="account_sign_out_anyway">그래도 로그아웃</string>
     <string name="account_delete">계정 삭제</string>
     <string name="account_delete_title">계정을 삭제할까요?</string>
     <string name="account_delete_message">계정과 백업된 모든 데이터가 영구적으로 삭제돼요. 되돌릴 수 없어요. 이 기기에 있는 하이라이트와 메모는 그대로 남지만 다른 곳과 동기화되지 않아요.</string>

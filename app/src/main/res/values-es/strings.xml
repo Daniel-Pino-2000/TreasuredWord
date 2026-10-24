@@ -19,6 +19,7 @@
     <string name="action_sign_in">Iniciar sesión</string>
     <string name="action_copy">Copiar</string>
     <string name="action_share">Compartir</string>
+    <string name="action_download">Descargar</string>
     <string name="tap_to_retry">Toca para reintentar</string>
     <string name="error_generic">Algo salió mal</string>
 
@@ -182,6 +183,8 @@
     <string name="library_noted_on">Nota del %1$s</string>
     <string name="library_delete_note">Eliminar nota</string>
     <string name="library_item_unavailable">Este elemento ya no está disponible.</string>
+    <string name="library_missing_version">Algunos resaltados y notas están en %1$s, que no está descargada. Se muestran en la KJV hasta que la descargues.</string>
+    <string name="library_shown_in_kjv">Se muestra en la KJV</string>
     <string name="library_open_in_bible">Abrir en la Biblia</string>
     <plurals name="verse_ref_with_more">
         <item quantity="one">%1$s y %2$d más</item>
@@ -198,6 +201,7 @@
 
     <!-- Sync status -->
     <string name="sync_status_syncing">Sincronizando…</string>
+    <string name="sync_restoring_content">Restaurando tus resaltados y notas…</string>
     <string name="sync_status_not_synced">Aún no se ha sincronizado</string>
     <string name="sync_status_just_now">Sincronizado hace un momento</string>
     <plurals name="sync_status_minutes_ago">
@@ -273,6 +277,11 @@
     <string name="account_sign_in_subtitle">Sincroniza tus resaltados, notas y progreso de lectura en tus dispositivos</string>
     <string name="account_your_account">Tu cuenta</string>
     <string name="account_sign_out">Cerrar sesión</string>
+    <string name="account_sign_out_subtitle">Quita tus resaltados y notas de este teléfono. Siguen guardados en tu cuenta.</string>
+    <string name="account_signing_out">Cerrando sesión…</string>
+    <string name="account_sign_out_unsynced_title">¿Cerrar sesión sin sincronizar?</string>
+    <string name="account_sign_out_unsynced_message">Algunos resaltados o notas aún no se han guardado en tu cuenta. Si cierras sesión ahora, se borrarán de este teléfono. Para conservarlos, conéctate a internet y vuelve a intentarlo.</string>
+    <string name="account_sign_out_anyway">Cerrar sesión igualmente</string>
     <string name="account_delete">Eliminar cuenta</string>
     <string name="account_delete_title">¿Eliminar la cuenta?</string>
     <string name="account_delete_message">Se eliminarán para siempre tu cuenta y todo lo que tenga guardado. No se puede deshacer. Los resaltados y notas que ya están en este dispositivo se quedarán aquí, pero no se sincronizarán con ningún otro.</string>

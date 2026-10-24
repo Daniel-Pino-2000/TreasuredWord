@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -58,6 +59,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.application.bibleapp.R
+import com.application.bibleapp.components.MissingVersionBanners
 import com.application.bibleapp.data.model.BookResources
 import com.application.bibleapp.data.model.DailyVerseUI
 import com.application.bibleapp.data.model.Highlight
@@ -104,6 +106,7 @@ fun HomeView(
     val highlights by bibleViewModel.libraryHighlights.collectAsState()
     val verseTextByKey by bibleViewModel.libraryVerseText.collectAsState()
     val bookNamesByVersion by bibleViewModel.libraryBookNames.collectAsState()
+    val isRestoring by bibleViewModel.isRestoringContent.collectAsState()
 
     // ISO-8601 UTC timestamps sort chronologically as plain strings.
     val recentHighlights = remember(highlights) {
@@ -159,11 +162,14 @@ fun HomeView(
         }
         RecentHighlightsSection(
             highlights = recentHighlights,
+            isRestoring = isRestoring,
             verseText = { highlight -> resolveVerseText(highlight.versionId, highlight.verses, verseTextByKey) },
             bookName = bookName,
             onHighlightClick = onHighlightClick,
             onSeeAllClick = onSeeAllHighlightsClick
         )
+        // Recent highlights in a translation that isn't downloaded show KJV text (#78).
+        MissingVersionBanners(bibleViewModel, versionIds = recentHighlights.mapTo(mutableSetOf()) { it.versionId })
     }
     // GotQuestions.org (#47): someone else's site, so the row names it and shows the
     // opens-outside icon instead of a chevron.
@@ -393,6 +399,7 @@ private fun ContinueReadingCard(reference: String, chapter: Int, chapterCount: I
 @Composable
 private fun RecentHighlightsSection(
     highlights: List<Highlight>,
+    isRestoring: Boolean,
     verseText: (Highlight) -> String,
     bookName: (versionId: String, bookId: Int) -> String,
     onHighlightClick: (Highlight) -> Unit,
@@ -411,7 +418,22 @@ private fun RecentHighlightsSection(
                 }
             }
         }
-        if (highlights.isEmpty()) {
+        if (highlights.isEmpty() && isRestoring) {
+            // The first sync after signing in, e.g. on a reinstall (#79): the highlights are on
+            // their way, and appear here by themselves once they're in.
+            Row(
+                modifier = Modifier.padding(top = Spacing.xs),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
+            ) {
+                CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                Text(
+                    text = stringResource(R.string.sync_restoring_content),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        } else if (highlights.isEmpty()) {
             Text(
                 text = stringResource(R.string.home_highlights_empty),
                 style = MaterialTheme.typography.bodyMedium,

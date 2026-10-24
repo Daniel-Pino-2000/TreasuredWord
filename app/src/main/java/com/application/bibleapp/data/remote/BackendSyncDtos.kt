@@ -53,8 +53,10 @@ data class HighlightResponseDto(
     val deletedAt: String? = null
 )
 
+/** [serverTime] is the server's clock when it read the list — the next pull's `updatedSince`, so a
+ *  phone whose clock runs fast doesn't skip changes (#84). Null from a server older than that. */
 @Serializable
-data class HighlightListResponseDto(val highlights: List<HighlightResponseDto>)
+data class HighlightListResponseDto(val highlights: List<HighlightResponseDto>, val serverTime: String? = null)
 
 @Serializable
 data class CreateNoteRequestDto(
@@ -77,8 +79,9 @@ data class NoteResponseDto(
     val deletedAt: String? = null
 )
 
+/** See [HighlightListResponseDto.serverTime] (#84). */
 @Serializable
-data class NoteListResponseDto(val notes: List<NoteResponseDto>)
+data class NoteListResponseDto(val notes: List<NoteResponseDto>, val serverTime: String? = null)
 
 @Serializable
 data class ReadingProgressResponseDto(
@@ -95,7 +98,7 @@ data class UpdateReadingProgressRequestDto(
     val bookId: Int,
     val chapter: Int,
     val verse: Int,
-    /** This device's local clock time for this read event — see api_contract.md decision 8:
+    /** When this position was read on this device, not when it's sent (#82) — see api_contract.md decision 8:
      *  the server ignores the write if it's older than what's already stored, so a device
      *  that was offline for a while can't clobber a newer position from another device. */
     val readAt: String

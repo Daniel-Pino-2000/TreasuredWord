@@ -19,6 +19,7 @@
     <string name="action_sign_in">Ingia</string>
     <string name="action_copy">Nakili</string>
     <string name="action_share">Shiriki</string>
+    <string name="action_download">Pakua</string>
     <string name="tap_to_retry">Gusa ili ujaribu tena</string>
     <string name="error_generic">Hitilafu fulani imetokea</string>
 
@@ -165,6 +166,8 @@
     <string name="library_noted_on">Liliandikwa %1$s</string>
     <string name="library_delete_note">Futa dokezo</string>
     <string name="library_item_unavailable">Kipengee hiki hakipatikani tena.</string>
+    <string name="library_missing_version">Baadhi ya viangazio na madokezo yako katika %1$s, ambayo haijapakuliwa. Yanaonyeshwa katika KJV hadi uipakue.</string>
+    <string name="library_shown_in_kjv">Inaonyeshwa katika KJV</string>
     <string name="library_open_in_bible">Fungua katika Biblia</string>
     <plurals name="verse_ref_with_more">
         <item quantity="one">%1$s na %2$d zaidi</item>
@@ -178,6 +181,7 @@
     <string name="you_continue_reading">Endelea kusoma</string>
 
     <string name="sync_status_syncing">Inasawazisha…</string>
+    <string name="sync_restoring_content">Inarejesha viangazio na madokezo yako…</string>
     <string name="sync_status_not_synced">Bado haijasawazishwa</string>
     <string name="sync_status_just_now">Imesawazishwa sasa hivi</string>
     <plurals name="sync_status_minutes_ago">
@@ -249,6 +253,11 @@
     <string name="account_sign_in_subtitle">Sawazisha viangazio, madokezo na maendeleo yako ya kusoma kwenye vifaa vyako</string>
     <string name="account_your_account">Akaunti yako</string>
     <string name="account_sign_out">Ondoka</string>
+    <string name="account_sign_out_subtitle">Huondoa viangazio na madokezo yako kwenye simu hii. Yanabaki yamehifadhiwa kwenye akaunti yako.</string>
+    <string name="account_signing_out">Inaondoka…</string>
+    <string name="account_sign_out_unsynced_title">Ondoka bila kusawazisha?</string>
+    <string name="account_sign_out_unsynced_message">Baadhi ya viangazio au madokezo bado hayajahifadhiwa kwenye akaunti yako. Ukiondoka sasa, yatafutwa kwenye simu hii. Ili kuyabakiza, unganisha kwenye intaneti kisha ujaribu tena.</string>
+    <string name="account_sign_out_anyway">Ondoka hata hivyo</string>
     <string name="account_delete">Futa akaunti</string>
     <string name="account_delete_title">Futa akaunti?</string>
     <string name="account_delete_message">Hii itafuta kabisa akaunti yako na kila kitu kilichohifadhiwa ndani yake. Haiwezi kutenduliwa. Viangazio na madokezo yaliyo kwenye kifaa hiki yatabaki hapa, lakini hayatasawazishwa popote pengine.</string>

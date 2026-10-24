@@ -20,6 +20,7 @@
     <string name="action_sign_in">Mag-sign in</string>
     <string name="action_copy">Kopyahin</string>
     <string name="action_share">Ibahagi</string>
+    <string name="action_download">I-download</string>
     <string name="tap_to_retry">I-tap para subukan ulit</string>
     <string name="error_generic">Nagkaproblema</string>
 
@@ -166,6 +167,8 @@
     <string name="library_noted_on">Naitala noong %1$s</string>
     <string name="library_delete_note">I-delete ang tala</string>
     <string name="library_item_unavailable">Hindi na available ang item na ito.</string>
+    <string name="library_missing_version">May mga highlight at tala sa %1$s, na hindi pa naka-download. Ipinapakita ang mga ito sa KJV hanggang i-download mo ito.</string>
+    <string name="library_shown_in_kjv">Ipinapakita sa KJV</string>
     <string name="library_open_in_bible">Buksan sa Bibliya</string>
     <plurals name="verse_ref_with_more">
         <item quantity="one">%1$s at %2$d pa</item>
@@ -179,6 +182,7 @@
     <string name="you_continue_reading">Ituloy ang pagbasa</string>
 
     <string name="sync_status_syncing">Nagsi-sync…</string>
+    <string name="sync_restoring_content">Ibinabalik ang iyong mga highlight at tala…</string>
     <string name="sync_status_not_synced">Hindi pa na-sync</string>
     <string name="sync_status_just_now">Na-sync ngayon lang</string>
     <plurals name="sync_status_minutes_ago">
@@ -250,6 +254,11 @@
     <string name="account_sign_in_subtitle">I-sync ang iyong mga highlight, tala, at progreso sa pagbasa sa iba\'t ibang device</string>
     <string name="account_your_account">Iyong account</string>
     <string name="account_sign_out">Mag-sign out</string>
+    <string name="account_sign_out_subtitle">Inaalis ang iyong mga highlight at tala sa phone na ito. Nananatiling naka-save ang mga ito sa iyong account.</string>
+    <string name="account_signing_out">Nagsa-sign out…</string>
+    <string name="account_sign_out_unsynced_title">Mag-sign out nang hindi nagsi-sync?</string>
+    <string name="account_sign_out_unsynced_message">May mga highlight o tala na hindi pa naka-save sa iyong account. Kapag nag-sign out ka ngayon, mabubura ang mga ito sa phone na ito. Para manatili ang mga ito, kumonekta sa internet at subukan ulit.</string>
+    <string name="account_sign_out_anyway">Mag-sign out pa rin</string>
     <string name="account_delete">I-delete ang account</string>
     <string name="account_delete_title">I-delete ang account?</string>
     <string name="account_delete_message">Permanenteng mabubura ang iyong account at lahat ng naka-back up dito. Hindi na ito maibabalik. Mananatili rito ang mga highlight at tala na nasa device na ito, pero hindi na masi-sync kahit saan.</string>
