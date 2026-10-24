@@ -49,6 +49,9 @@ fun Route.highlightRoutes() {
             val updatedSince = call.request.queryParameters["updatedSince"]
                 ?.let { runCatching { Instant.parse(it) }.getOrNull() }
 
+            // Read before the query, so a change saved while it runs is at or after this time and
+            // the client's next `updatedSince=serverTime` still picks it up (#84).
+            val serverTime = Instant.now()
             val rows = transaction {
                 val query = Highlights.selectAll().where { Highlights.userId eq userId }
                 if (updatedSince != null) {
@@ -70,7 +73,10 @@ fun Route.highlightRoutes() {
                 }
             }
 
-            call.respond(HttpStatusCode.OK, HighlightListResponse(filtered.map { it.toHighlightResponse() }))
+            call.respond(
+                HttpStatusCode.OK,
+                HighlightListResponse(filtered.map { it.toHighlightResponse() }, serverTime = serverTime.toString())
+            )
         }
 
         post("/highlights") {

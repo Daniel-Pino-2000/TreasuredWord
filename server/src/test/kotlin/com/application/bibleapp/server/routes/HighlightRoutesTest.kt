@@ -21,6 +21,7 @@ import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.config.ApplicationConfig
 import io.ktor.server.testing.testApplication
 import kotlinx.serialization.json.Json
+import java.time.Instant
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
@@ -178,5 +179,34 @@ class HighlightRoutesTest {
 
         assertEquals(1, filtered.highlights.size)
         assertEquals(johnHighlight.id, filtered.highlights.single().id)
+    }
+
+    @Test
+    fun verifyListServerTimeWorksAsTheNextUpdatedSince() = testApplication {
+        environment { config = ApplicationConfig("application.conf") }
+        val client = createClient { install(ContentNegotiation) { json() } }
+        val user = client.registerTestUser()
+
+        val before = Instant.now()
+        val firstPull = Json.decodeFromString<HighlightListResponse>(
+            client.get("/api/v1/highlights") { bearerAuth(user.auth.accessToken) }.bodyAsText()
+        )
+        val serverTime = Instant.parse(firstPull.serverTime)
+        assertTrue(!serverTime.isBefore(before) && !serverTime.isAfter(Instant.now()))
+
+        // Made after the first pull, so the next pull from its serverTime must include it (#84).
+        val created = Json.decodeFromString<HighlightResponse>(
+            client.post("/api/v1/highlights") {
+                contentType(ContentType.Application.Json)
+                bearerAuth(user.auth.accessToken)
+                setBody(CreateHighlightRequest(versionId = "kjv", verses = johnThreeSixteenToEighteen, color = 1))
+            }.bodyAsText()
+        )
+        val nextPull = Json.decodeFromString<HighlightListResponse>(
+            client.get("/api/v1/highlights?updatedSince=${firstPull.serverTime}") {
+                bearerAuth(user.auth.accessToken)
+            }.bodyAsText()
+        )
+        assertTrue(nextPull.highlights.any { it.id == created.id })
     }
 }

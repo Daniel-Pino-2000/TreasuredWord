@@ -48,6 +48,8 @@ fun Route.noteRoutes() {
             val updatedSince = call.request.queryParameters["updatedSince"]
                 ?.let { runCatching { Instant.parse(it) }.getOrNull() }
 
+            // Read before the query — see the same line in HighlightRoutes.kt (#84).
+            val serverTime = Instant.now()
             val rows = transaction {
                 val query = Notes.selectAll().where { Notes.userId eq userId }
                 if (updatedSince != null) {
@@ -64,7 +66,10 @@ fun Route.noteRoutes() {
                 }
             }
 
-            call.respond(HttpStatusCode.OK, NoteListResponse(filtered.map { it.toNoteResponse() }))
+            call.respond(
+                HttpStatusCode.OK,
+                NoteListResponse(filtered.map { it.toNoteResponse() }, serverTime = serverTime.toString())
+            )
         }
 
         // Unlike highlights, notes may be opened in a dedicated editor navigated to

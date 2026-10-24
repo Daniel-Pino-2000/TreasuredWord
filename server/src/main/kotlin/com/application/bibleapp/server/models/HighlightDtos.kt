@@ -24,5 +24,7 @@ data class HighlightResponse(
     val deletedAt: String? = null
 )
 
+/** [serverTime] is the server's clock when the list was read, for the client to send back as the
+ *  next `updatedSince` instead of its own clock, which may be ahead (#84). */
 @Serializable
-data class HighlightListResponse(val highlights: List<HighlightResponse>)
+data class HighlightListResponse(val highlights: List<HighlightResponse>, val serverTime: String)
