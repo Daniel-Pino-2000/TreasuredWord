@@ -81,6 +81,7 @@ class AuthRepository(context: Context) {
     fun endLocalSession(): String? {
         val refreshToken = tokenStore.refreshToken
         tokenStore.clear()
+        HttpClientProvider.forgetCachedTokens()
         return refreshToken
     }
 
@@ -108,12 +109,15 @@ class AuthRepository(context: Context) {
         }
         if (!response.status.isSuccess()) throw toAuthException(response)
         tokenStore.clear()
+        HttpClientProvider.forgetCachedTokens()
     }
 
     private suspend fun saveSession(response: HttpResponse) {
         if (!response.status.isSuccess()) throw toAuthException(response)
         val auth = response.body<AuthResponseDto>()
         tokenStore.saveSession(auth.userId, auth.accessToken, auth.refreshToken)
+        // The shared client would otherwise keep sending the previous account's token (#86).
+        HttpClientProvider.forgetCachedTokens()
     }
 
     private suspend fun toAuthException(response: HttpResponse): AuthException {

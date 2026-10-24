@@ -167,6 +167,8 @@ dependencies {
     testImplementation(libs.junit)
     // runTest/virtual time for VerseSearchTest - matches the kotlinx-coroutines version the app already resolves
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
+    // MockEngine for BackendBearerTest (#86) - same version as the app's other Ktor client artifacts
+    testImplementation("io.ktor:ktor-client-mock:2.3.8")
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
