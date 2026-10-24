@@ -41,9 +41,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.transform
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import com.application.bibleapp.R
@@ -332,10 +334,22 @@ class BibleViewModel(
             }
         }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
 
-    /** Topic chips for the empty Search screen — see [searchSuggestionsFor]. */
+    private val searchSuggestionFilter = SearchSuggestionFilter(repository::hasSearchMatch)
+
+    /** Topic chips for the empty Search screen, in the selected version's language, and only
+     *  the ones that find something in it — see [searchSuggestionsFor] (#88). */
     val searchSuggestions: StateFlow<List<String>> =
         combine(_selectedVersion, _availableVersions) { selected, versions ->
-            searchSuggestionsFor(selected.id, versions)
+            selected.id to searchSuggestionsFor(selected.id, versions)
+        }.distinctUntilChanged().transform { (versionId, candidates) ->
+            val cached = searchSuggestionFilter.cached(versionId, candidates)
+            if (cached != null) {
+                emit(cached)
+            } else {
+                // Never the previous version's words while this one's are being checked.
+                emit(emptyList())
+                emit(searchSuggestionFilter.matching(versionId, candidates))
+            }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     private val _themeMode = MutableStateFlow(repository.loadThemeMode())

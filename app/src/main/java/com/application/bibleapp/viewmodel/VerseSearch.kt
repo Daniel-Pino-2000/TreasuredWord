@@ -25,22 +25,67 @@ data class SearchUiState(
     val hasError: Boolean = false
 )
 
-/** A handful of common topics to search for before the user has typed anything themselves. */
-private val ENGLISH_SEARCH_SUGGESTIONS = listOf("love", "faith", "hope", "grace", "peace", "joy", "forgiveness")
+/**
+ * A handful of common topics to search for before the user has typed anything themselves, keyed
+ * by the catalog's ISO 639-3 language code. They're matched against the Bible's own text, so they
+ * follow the version's language, not the app's (#88). Search matches parts of words, so very
+ * short words that hide inside others ("fe" in "profeta", "foi" in "fois") are left out.
+ * Not every word finds something in every translation: [SearchSuggestionFilter] hides those.
+ * Korean and Chinese are missing because search can't match their scripts yet.
+ */
+private val SEARCH_SUGGESTIONS: Map<String, List<String>> = mapOf(
+    "eng" to listOf("love", "faith", "hope", "grace", "peace", "joy", "forgiveness"),
+    "spa" to listOf("amor", "esperanza", "gracia", "paz", "gozo", "perdón"),
+    "por" to listOf("amor", "esperança", "graça", "paz", "alegria", "perdão"),
+    "fra" to listOf("amour", "espérance", "grâce", "paix", "joie", "pardon"),
+    "deu" to listOf("Liebe", "Glaube", "Hoffnung", "Gnade", "Friede", "Freude", "Vergebung"),
+    "ind" to listOf("kasih", "iman", "pengharapan", "kasih karunia", "damai", "sukacita", "pengampunan"),
+    "tgl" to listOf("pag-ibig", "pananampalataya", "biyaya", "kapayapaan", "kagalakan", "kapatawaran"),
+    "swh" to listOf("upendo", "imani", "tumaini", "neema", "amani", "furaha", "msamaha")
+)
 
 /**
- * The empty Search screen's suggestions for [versionId]. They're English words matched against the
- * Bible's own text, so they're only offered for an English version: in any other language every
- * one found nothing (#60). Also none while [catalog] hasn't loaded, since the language is unknown.
+ * The empty Search screen's candidate suggestions for [versionId], in its language. None while
+ * [catalog] hasn't loaded, since the language is unknown then, except for the bundled KJV.
  */
 fun searchSuggestionsFor(versionId: String, catalog: List<BibleTranslation>): List<String> {
-    val isEnglish = versionId == DEFAULT_VERSION.id ||
-        catalog.firstOrNull { it.id == versionId }?.languageCode == ENGLISH_LANGUAGE_CODE
-    return if (isEnglish) ENGLISH_SEARCH_SUGGESTIONS else emptyList()
+    val languageCode = if (versionId == DEFAULT_VERSION.id) ENGLISH_LANGUAGE_CODE
+    else catalog.firstOrNull { it.id == versionId }?.languageCode
+    return SEARCH_SUGGESTIONS[languageCode].orEmpty()
 }
 
 /** The catalog's ISO 639-3 code for English. */
 private const val ENGLISH_LANGUAGE_CODE = "eng"
+
+/**
+ * Keeps only the suggestions that find something in the version, so no chip ever leads to
+ * "No results" (#60, #88): translations word things differently ("gozo" or "alegría"), and
+ * search can't match every accent yet. Answers are remembered per version and word, since a
+ * version's text doesn't change while it's installed. A failed check isn't remembered.
+ */
+class SearchSuggestionFilter(
+    private val hasMatch: suspend (word: String, versionId: String) -> Boolean
+) {
+    private val known = mutableMapOf<Pair<String, String>, Boolean>()
+
+    /** [candidates] filtered without touching the database, or null if one hasn't been checked. */
+    @Synchronized
+    fun cached(versionId: String, candidates: List<String>): List<String>? {
+        val answers = candidates.map { known[versionId to it] ?: return null }
+        return candidates.filterIndexed { i, _ -> answers[i] }
+    }
+
+    suspend fun matching(versionId: String, candidates: List<String>): List<String> =
+        candidates.filter { word ->
+            synchronized(this) { known[versionId to word] } ?: try {
+                hasMatch(word, versionId).also { synchronized(this) { known[versionId to word] = it } }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                false
+            }
+        }
+}
 
 /**
  * Debounced search-as-you-type for the Search screen: a search runs once typing pauses for

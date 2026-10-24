@@ -702,6 +702,32 @@ object BibleDatabaseManager {
         return "LOWER($sql)"
     }
 
+    /**
+     * Whether a word search for [query] would find anything in [version], matched exactly as
+     * [searchVerses] matches. Checks single rows with LIMIT 1 instead of grouping whole verses,
+     * so it's cheap enough to run for each Search suggestion (#88); a row that matches always
+     * means its verse matches too.
+     */
+    suspend fun hasSearchMatch(context: Context, query: String, version: String): Boolean = withContext(Dispatchers.IO) {
+        val db = getDatabase(context)
+        val words = query.normalizeForSearch().split(" ").filter { it.isNotBlank() }
+        if (words.isEmpty()) return@withContext false
+
+        val isKjv = version == "kjv"
+        val table = if (isKjv) "KJV_verses" else "downloaded_verses"
+        val normalizedCol = buildNormalizedSql("text")
+        val conditions = buildList {
+            if (!isKjv) add("version = ?")
+            words.forEach { _ -> add("$normalizedCol LIKE ?") }
+        }.joinToString(" AND ")
+        val args = buildList {
+            if (!isKjv) add(version)
+            words.forEach { add("%$it%") }
+        }.toTypedArray()
+
+        db.rawQuery("SELECT 1 FROM $table WHERE $conditions LIMIT 1", args).use { it.moveToFirst() }
+    }
+
     suspend fun searchVerses(query: String, version: String): List<VerseUI> = withContext(Dispatchers.IO) {
         if (query.isBlank()) return@withContext emptyList()
 

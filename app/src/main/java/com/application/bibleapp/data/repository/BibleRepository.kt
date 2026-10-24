@@ -85,6 +85,10 @@ class BibleRepository(
             BibleDatabaseManager.getFootnotesForChapter(context, bookId, chapter, versionId)
         }
 
+    /** Whether a word search for [query] finds anything in [versionId] (#88). */
+    suspend fun hasSearchMatch(query: String, versionId: String): Boolean =
+        BibleDatabaseManager.hasSearchMatch(context, query, versionId)
+
     /** A reference ("John 3:16", "Jn 3", the version's own book name) finds that passage; anything
      *  else, or a reference to verses this version doesn't have, is a word search (#59). */
     suspend fun searchVerses(query: String, versionId: String): List<VerseUI> =
