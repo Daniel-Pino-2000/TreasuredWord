@@ -1,5 +1,6 @@
 package com.application.bibleapp.data.repository
 
+import com.application.bibleapp.data.remote.BackendHttpException
 import com.application.bibleapp.data.remote.CreateHighlightRequestDto
 import com.application.bibleapp.data.remote.HighlightListResponseDto
 import com.application.bibleapp.data.remote.HighlightResponseDto
@@ -16,13 +17,14 @@ import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
+import com.application.bibleapp.worker.HighlightSyncApi
 
 /**
  * The backend-synced counterpart to a highlight — see server/docs/api_contract.md. Requires
  * being signed in (AuthRepository); every call here relies on HttpClientProvider's Auth
  * plugin to attach the access token automatically.
  */
-class HighlightRepository {
+class HighlightRepository : HighlightSyncApi {
 
     private val client get() = HttpClientProvider.client
     private val baseUrl get() = HttpClientProvider.BASE_URL
@@ -46,7 +48,17 @@ class HighlightRepository {
             response.body<HighlightListResponseDto>().highlights
         }
 
-    suspend fun createHighlight(
+    /** The whole list response, including the server's clock (#84) — what the sync pull needs. */
+    override suspend fun listHighlightsChangedSince(updatedSince: String?): Result<HighlightListResponseDto> =
+        runCatching {
+            val response = client.get("$baseUrl/highlights") {
+                url { updatedSince?.let { parameters.append("updatedSince", it) } }
+            }
+            requireSuccess(response)
+            response.body()
+        }
+
+    override suspend fun createHighlight(
         versionId: String,
         verses: List<VerseLocationDto>,
         color: Int
@@ -59,7 +71,7 @@ class HighlightRepository {
         response.body()
     }
 
-    suspend fun recolorHighlight(id: String, color: Int): Result<HighlightResponseDto> = runCatching {
+    override suspend fun recolorHighlight(id: String, color: Int): Result<HighlightResponseDto> = runCatching {
         val response = client.patch("$baseUrl/highlights/$id") {
             contentType(ContentType.Application.Json)
             setBody(UpdateHighlightRequestDto(color))
@@ -68,14 +80,14 @@ class HighlightRepository {
         response.body()
     }
 
-    suspend fun deleteHighlight(id: String): Result<Unit> = runCatching {
+    override suspend fun deleteHighlight(id: String): Result<Unit> = runCatching {
         val response = client.delete("$baseUrl/highlights/$id")
         requireSuccess(response)
     }
 
     private suspend fun requireSuccess(response: HttpResponse) {
         if (!response.status.isSuccess()) {
-            error("Highlight request failed: ${response.status.value}")
+            throw BackendHttpException(response.status.value, "Highlight")
         }
     }
 }

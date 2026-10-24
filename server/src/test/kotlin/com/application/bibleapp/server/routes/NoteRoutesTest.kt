@@ -21,6 +21,7 @@ import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.config.ApplicationConfig
 import io.ktor.server.testing.testApplication
 import kotlinx.serialization.json.Json
+import java.time.Instant
 import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -144,5 +145,34 @@ class NoteRoutesTest {
             client.get("/api/v1/notes") { bearerAuth(user.auth.accessToken) }.bodyAsText()
         )
         assertTrue(listResponse.notes.none { it.id == created.id })
+    }
+
+    @Test
+    fun verifyListServerTimeWorksAsTheNextUpdatedSince() = testApplication {
+        environment { config = ApplicationConfig("application.conf") }
+        val client = createClient { install(ContentNegotiation) { json() } }
+        val user = client.registerTestUser()
+
+        val before = Instant.now()
+        val firstPull = Json.decodeFromString<NoteListResponse>(
+            client.get("/api/v1/notes") { bearerAuth(user.auth.accessToken) }.bodyAsText()
+        )
+        val serverTime = Instant.parse(firstPull.serverTime)
+        assertTrue(!serverTime.isBefore(before) && !serverTime.isAfter(Instant.now()))
+
+        // Made after the first pull, so the next pull from its serverTime must include it (#84).
+        val created = Json.decodeFromString<NoteResponse>(
+            client.post("/api/v1/notes") {
+                contentType(ContentType.Application.Json)
+                bearerAuth(user.auth.accessToken)
+                setBody(CreateNoteRequest(versionId = "kjv", verses = johnThreeSixteen, text = "Later"))
+            }.bodyAsText()
+        )
+        val nextPull = Json.decodeFromString<NoteListResponse>(
+            client.get("/api/v1/notes?updatedSince=${firstPull.serverTime}") {
+                bearerAuth(user.auth.accessToken)
+            }.bodyAsText()
+        )
+        assertTrue(nextPull.notes.any { it.id == created.id })
     }
 }

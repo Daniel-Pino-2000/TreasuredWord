@@ -29,6 +29,9 @@ import com.application.bibleapp.data.repository.ReadingProgressRepository
 import com.application.bibleapp.ui.theme.ThemeMode
 import com.application.bibleapp.ui.theme.VerseTextScale
 import com.application.bibleapp.utils.buildVerseShareText
+import com.application.bibleapp.worker.SyncEvents
+import com.application.bibleapp.worker.serverPositionWins
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -38,6 +41,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -199,6 +203,10 @@ class BibleViewModel(
     private val _libraryBookNames = MutableStateFlow<Map<String, Map<Int, String>>>(emptyMap())
     val libraryBookNames: StateFlow<Map<String, Map<Int, String>>> = _libraryBookNames.asStateFlow()
 
+    // Translations library items were made in that aren't on this device, so their verse text
+    // comes from KJV for now (#78) — see [libraryMissingVersionLabels].
+    private val _libraryMissingVersions = MutableStateFlow<Set<String>>(emptySet())
+
     // Prompts sign-in the first time someone highlights or notes a verse while signed out —
     // not a wall (the feature already worked, local-first), just a one-time nudge that it'd
     // sync if they did. Shown at most once per app session: [signInNudgeOffered] tracks
@@ -313,6 +321,17 @@ class BibleViewModel(
             versionLabelFor(selected.id, versions, downloaded)
         }.stateIn(viewModelScope, SharingStarted.Eagerly, "KJV")
 
+    /** Each missing library translation (#78) by id, with its name for the "Download" offer — the
+     *  full name, which reads better in a sentence than an abbreviation, else the short label.
+     *  Declared after the flows it reads, like [currentVersionLabel]. */
+    val libraryMissingVersionLabels: StateFlow<Map<String, String>> =
+        combine(_libraryMissingVersions, _availableVersions, _downloadedVersions) { missing, versions, downloaded ->
+            missing.associateWith { id ->
+                versions.firstOrNull { it.id == id }?.nativeName?.takeIf { it.isNotBlank() }
+                    ?: versionLabelFor(id, versions, downloaded)
+            }
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
+
     /** Topic chips for the empty Search screen — see [searchSuggestionsFor]. */
     val searchSuggestions: StateFlow<List<String>> =
         combine(_selectedVersion, _availableVersions) { selected, versions ->
@@ -372,6 +391,13 @@ class BibleViewModel(
 
     private val _isSyncing = MutableStateFlow(false)
     val isSyncing: StateFlow<Boolean> = _isSyncing.asStateFlow()
+
+    /** The first sync after signing in is running — e.g. a reinstall bringing highlights back,
+     *  which can take most of a minute while the server wakes up (#79). Empty screens say so
+     *  instead of looking like there's nothing to restore. */
+    val isRestoringContent: StateFlow<Boolean> =
+        combine(SyncEvents.isRunning, _lastSyncCompletedAt) { running, lastCompleted -> running && lastCompleted == null }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     fun setAutoSyncEnabled(enabled: Boolean) {
         _autoSyncEnabled.value = enabled
@@ -461,6 +487,19 @@ class BibleViewModel(
         }
         loadAvailableVersions()
         refreshDownloadedVersions()
+        observeSync()
+    }
+
+    /** The sync worker writes straight to the database; these keep the open screens in step
+     *  with it (#79). Each flow's current value is skipped — it's what's already on screen. */
+    private fun observeSync() {
+        viewModelScope.launch { SyncEvents.contentVersion.drop(1).collect { refreshUserContent() } }
+        viewModelScope.launch { SyncEvents.passesFinished.drop(1).collect { refreshSyncStatus() } }
+        viewModelScope.launch {
+            // Only sent for a device that hadn't been read on yet (#82), so this never moves
+            // someone away from where they were reading.
+            SyncEvents.restoredReadingPosition.collect { loadChapter(it.bookId, it.chapter, it.verse) }
+        }
     }
 
     // Tries the remote daily-verse API first (cached once per day by the repository);
@@ -499,11 +538,31 @@ class BibleViewModel(
             _currentChapter.value = chapterId
             val verse = verseId.coerceIn(1, chapterData.size.coerceAtLeast(1))
             _currentVerse.value = verse
-            repository.saveReadingPosition(bookId, chapterId, verse)
-            syncReadingProgressToServer(versionId, bookId, chapterId, verse)
+            // Reopening the stored position on launch isn't a move, so it's not pushed as new (#82).
+            repository.saveReadingPosition(bookId, chapterId, verse, versionId)?.let { changedAt ->
+                syncReadingProgressToServer(versionId, bookId, chapterId, verse, changedAt)
+            }
             _highlightsInChapter.value = repository.getHighlightsForChapter(bookId, chapterId)
             _notesInChapter.value = repository.getNotesForChapter(bookId, chapterId)
         }
+    }
+
+    /** Reloads everything showing highlights or notes — after a sync changed them (#79) or
+     *  sign-out removed them (#81). */
+    private fun refreshUserContent() {
+        reloadHighlightsInChapter()
+        reloadNotesInChapter()
+        loadLibrary()
+    }
+
+    /** Sign-out removed the account's highlights and notes from the device (#81): close anything
+     *  still showing one, and reload the screens. */
+    fun onAccountContentRemoved() {
+        _highlightPopup.value = null
+        if (_noteEditor.value?.existingNote != null) _noteEditor.value = null
+        _noteListVerse.value = null
+        refreshUserContent()
+        refreshSyncStatus()
     }
 
     private fun reloadHighlightsInChapter() {
@@ -778,17 +837,25 @@ class BibleViewModel(
         }
     }
 
+    private var libraryJob: Job? = null
+
     /** Loads every active highlight/note for the Library screen, plus the actual scripture text
-     *  each one covers — call once when it opens. */
+     *  each one covers — call when it opens; sync and downloads call it again when they change
+     *  what it shows (#79, #78). Everything is read first and published together, so a reload
+     *  never shows an item without its text or with a fallback book name first. */
     fun loadLibrary() {
-        viewModelScope.launch {
+        libraryJob?.cancel()
+        libraryJob = viewModelScope.launch {
             val highlights = repository.getAllActiveHighlights()
             val notes = repository.getAllActiveNotes()
-            // Before the lists themselves, so a new item never shows up with a fallback name first.
             val versionIds = (highlights.map { it.versionId } + notes.map { it.versionId }).toSet()
-            _libraryBookNames.value = versionIds.associateWith { repository.getBookNames(it) }
-            _libraryHighlights.value = highlights
-            _libraryNotes.value = notes
+            // A translation that isn't on this device, e.g. after a reinstall restored highlights
+            // made in it (#78): show KJV's text for those verses instead of a blank, and offer
+            // the download.
+            val missingVersions = versionIds.filterTo(mutableSetOf()) {
+                it != DEFAULT_VERSION.id && !repository.isVersionDownloaded(it)
+            }
+            val bookNames = versionIds.associateWith { repository.getBookNames(it) }
 
             // One chapter fetch per distinct (version, book, chapter) triple covered by any
             // highlight/note, however many individual verses in it are actually referenced —
@@ -799,13 +866,31 @@ class BibleViewModel(
 
             val textByKey = mutableMapOf<VerseTextKey, String>()
             neededChapters.forEach { (versionId, bookId, chapter) ->
-                repository.getChapter(bookId, chapter, versionId).forEach { verse ->
+                val textVersion = if (versionId in missingVersions) DEFAULT_VERSION.id else versionId
+                repository.getChapter(bookId, chapter, textVersion).forEach { verse ->
                     val v = verse.verse ?: return@forEach
                     val location = VerseLocationDto(bookId, chapter, v)
                     textByKey[VerseTextKey(versionId, location)] = verse.text.removePrefix(LEGACY_PARAGRAPH_MARKER)
                 }
             }
+
+            _libraryBookNames.value = bookNames
             _libraryVerseText.value = textByKey
+            _libraryMissingVersions.value = missingVersions
+            _libraryHighlights.value = highlights
+            _libraryNotes.value = notes
+        }
+    }
+
+    /** The "Download" button next to a translation the Library is showing in KJV (#78). The
+     *  Library reloads with the real text once it's in (see [downloadAndSwitch]). */
+    fun downloadMissingVersion(versionId: String) {
+        if (_downloadingVersionId.value != null) return
+        _downloadInfo.value = null
+        viewModelScope.launch {
+            if (!downloadAndSwitch(versionId, switchAfter = false)) {
+                showMessage(_downloadError.value ?: UiText.Res(R.string.download_failed))
+            }
         }
     }
 
@@ -833,22 +918,29 @@ class BibleViewModel(
 
     /** Fire-and-forget: a failed background sync shouldn't interrupt someone just reading —
      *  the position is already safely saved locally via [BibleRepository.saveReadingPosition]
-     *  regardless of whether this succeeds. No-ops when signed out. */
-    private fun syncReadingProgressToServer(versionId: String, bookId: Int, chapter: Int, verse: Int) {
+     *  regardless of whether this succeeds, and the sync worker sends it later if this doesn't
+     *  (#82). Stamped [changedAt], the moment it was read. No-ops when signed out. */
+    private fun syncReadingProgressToServer(versionId: String, bookId: Int, chapter: Int, verse: Int, changedAt: String) {
         if (!authRepository.isLoggedIn) return
         viewModelScope.launch {
-            readingProgressRepository.updateProgress(versionId, bookId, chapter, verse)
+            readingProgressRepository.updateProgress(versionId, bookId, chapter, verse, readAt = changedAt)
+                .onSuccess { repository.markReadingPositionPushed(changedAt) }
         }
     }
 
     /** Pulls the position saved from any other device and jumps there — called right after a
      *  successful login/register (see Navigation.kt), so signing in on a new device picks up
-     *  where the user left off elsewhere instead of staying on this device's local position. */
+     *  where the user left off elsewhere instead of staying on this device's local position.
+     *  Unless this device has read further since then: then it stays, and sync pushes it (#82). */
     fun syncReadingProgressFromServer() {
         if (!authRepository.isLoggedIn) return
         viewModelScope.launch {
             readingProgressRepository.getProgress().onSuccess { remote ->
-                if (remote != null) {
+                if (remote == null) return@onSuccess
+                val local = repository.loadReadingProgress()
+                if (serverPositionWins(remote.updatedAt, local.changedAt) &&
+                    repository.saveReadingPositionFromServer(remote, expectedChangedAt = local.changedAt)
+                ) {
                     loadChapter(remote.bookId, remote.chapter, remote.verse)
                 }
             }
@@ -882,7 +974,7 @@ class BibleViewModel(
         val bookmark = _bookmark.value ?: return
         if (bookmark.bookId == _currentBook.value && bookmark.chapter == _currentChapter.value && _verses.value.isNotEmpty()) {
             _currentVerse.value = bookmark.verse
-            repository.saveReadingPosition(bookmark.bookId, bookmark.chapter, bookmark.verse)
+            repository.saveReadingPosition(bookmark.bookId, bookmark.chapter, bookmark.verse, _selectedVersion.value.id)
         } else {
             loadChapter(bookmark.bookId, bookmark.chapter, bookmark.verse)
         }
@@ -1113,6 +1205,8 @@ class BibleViewModel(
                 }
                 if (switchAfter) switchToVersion(versionId)
                 refreshDownloadedVersions()
+                // Library items in this translation were showing KJV text until now (#78).
+                if (versionId in _libraryMissingVersions.value) loadLibrary()
                 true
             },
             onFailure = {

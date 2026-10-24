@@ -19,6 +19,7 @@
     <string name="action_sign_in">Entrar</string>
     <string name="action_copy">Copiar</string>
     <string name="action_share">Compartilhar</string>
+    <string name="action_download">Baixar</string>
     <string name="tap_to_retry">Toque para tentar de novo</string>
     <string name="error_generic">Algo deu errado</string>
 
@@ -169,6 +170,8 @@
     <string name="library_noted_on">Anotado em %1$s</string>
     <string name="library_delete_note">Excluir nota</string>
     <string name="library_item_unavailable">Este item não está mais disponível.</string>
+    <string name="library_missing_version">Alguns destaques e notas estão em %1$s, que não foi baixada. Eles aparecem na KJV até você baixá-la.</string>
+    <string name="library_shown_in_kjv">Exibido na KJV</string>
     <string name="library_open_in_bible">Abrir na Bíblia</string>
     <plurals name="verse_ref_with_more">
         <item quantity="one">%1$s e mais %2$d</item>
@@ -183,6 +186,7 @@
     <string name="you_continue_reading">Continuar lendo</string>
 
     <string name="sync_status_syncing">Sincronizando…</string>
+    <string name="sync_restoring_content">Restaurando seus destaques e notas…</string>
     <string name="sync_status_not_synced">Ainda não sincronizado</string>
     <string name="sync_status_just_now">Sincronizado agora mesmo</string>
     <plurals name="sync_status_minutes_ago">
@@ -257,6 +261,11 @@
     <string name="account_sign_in_subtitle">Sincronize seus destaques, notas e progresso de leitura entre dispositivos</string>
     <string name="account_your_account">Sua conta</string>
     <string name="account_sign_out">Sair</string>
+    <string name="account_sign_out_subtitle">Remove seus destaques e notas deste celular. Eles continuam salvos na sua conta.</string>
+    <string name="account_signing_out">Saindo…</string>
+    <string name="account_sign_out_unsynced_title">Sair sem sincronizar?</string>
+    <string name="account_sign_out_unsynced_message">Alguns destaques ou notas ainda não foram salvos na sua conta. Se você sair agora, eles serão apagados deste celular. Para mantê-los, conecte-se à internet e tente de novo.</string>
+    <string name="account_sign_out_anyway">Sair mesmo assim</string>
     <string name="account_delete">Excluir conta</string>
     <string name="account_delete_title">Excluir a conta?</string>
     <string name="account_delete_message">Sua conta e tudo o que foi salvo nela serão excluídos para sempre. Isso não pode ser desfeito. Os destaques e notas que já estão neste dispositivo continuarão aqui, mas não serão mais sincronizados.</string>

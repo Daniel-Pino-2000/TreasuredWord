@@ -50,6 +50,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import com.application.bibleapp.components.MissingVersionBanners
 import com.application.bibleapp.components.SWATCH_NAMES
 import com.application.bibleapp.ui.theme.HighlightColors
 import com.application.bibleapp.ui.theme.toHighlightArgb
@@ -107,6 +108,8 @@ fun LibraryView(
     val notes by bibleViewModel.libraryNotes.collectAsState()
     val verseTextByKey by bibleViewModel.libraryVerseText.collectAsState()
     val bookNamesByVersion by bibleViewModel.libraryBookNames.collectAsState()
+    val missingVersions by bibleViewModel.libraryMissingVersionLabels.collectAsState()
+    val isRestoring by bibleViewModel.isRestoringContent.collectAsState()
     // Each item in its own translation's book names, like its text, and searched by that same
     // name (#54).
     val bookName = { versionId: String, bookId: Int -> bookNameInVersion(versionId, bookId, bookNamesByVersion) }
@@ -171,6 +174,7 @@ fun LibraryView(
                 if (filtered.isEmpty()) {
                     EmptyLibraryState(
                         message = when {
+                            highlights.isEmpty() && isRestoring -> stringResource(R.string.sync_restoring_content)
                             highlights.isEmpty() -> stringResource(R.string.library_empty_highlights)
                             query.isBlank() -> stringResource(R.string.library_no_highlights_in_colors)
                             else -> stringResource(R.string.library_no_highlights_match, query)
@@ -182,11 +186,15 @@ fun LibraryView(
                         contentPadding = PaddingValues(Spacing.lg),
                         verticalArrangement = Arrangement.spacedBy(Spacing.md)
                     ) {
+                        item(key = MISSING_VERSIONS_KEY) {
+                            MissingVersionBanners(bibleViewModel, versionIds = filtered.mapTo(mutableSetOf()) { it.versionId })
+                        }
                         items(filtered, key = { it.localId }) { highlight ->
                             SwipeToDeleteRow(onDelete = { bibleViewModel.deleteLibraryHighlight(highlight) }) {
                                 HighlightCard(
                                     highlight = highlight,
                                     verseText = resolveVerseText(highlight.versionId, highlight.verses, verseTextByKey),
+                                    shownInKjv = highlight.versionId in missingVersions,
                                     bookName = { bookId -> bookName(highlight.versionId, bookId) },
                                     onClick = {
                                         onOpenDetail(Screen.LibraryItemDetail.TYPE_HIGHLIGHT, highlight.localId)
@@ -208,8 +216,11 @@ fun LibraryView(
                 }
                 if (filtered.isEmpty()) {
                     EmptyLibraryState(
-                        message = if (notes.isEmpty()) stringResource(R.string.library_empty_notes)
-                        else stringResource(R.string.library_no_notes_match, query),
+                        message = when {
+                            notes.isEmpty() && isRestoring -> stringResource(R.string.sync_restoring_content)
+                            notes.isEmpty() -> stringResource(R.string.library_empty_notes)
+                            else -> stringResource(R.string.library_no_notes_match, query)
+                        },
                         icon = painterResource(R.drawable.ic_stylus_note_outline)
                     )
                 } else {
@@ -217,11 +228,15 @@ fun LibraryView(
                         contentPadding = PaddingValues(Spacing.lg),
                         verticalArrangement = Arrangement.spacedBy(Spacing.md)
                     ) {
+                        item(key = MISSING_VERSIONS_KEY) {
+                            MissingVersionBanners(bibleViewModel, versionIds = filtered.mapTo(mutableSetOf()) { it.versionId })
+                        }
                         items(filtered, key = { it.localId }) { note ->
                             SwipeToDeleteRow(onDelete = { bibleViewModel.deleteLibraryNote(note) }) {
                                 NoteCard(
                                     note = note,
                                     verseText = resolveVerseText(note.versionId, note.verses, verseTextByKey),
+                                    shownInKjv = note.versionId in missingVersions,
                                     bookName = { bookId -> bookName(note.versionId, bookId) },
                                     onClick = {
                                         onOpenDetail(Screen.LibraryItemDetail.TYPE_NOTE, note.localId)
@@ -234,6 +249,22 @@ fun LibraryView(
             }
         }
     }
+}
+
+/** LazyColumn key of the missing-translation banners above the cards — a String, so it can't
+ *  collide with a card's Long local id. */
+private const val MISSING_VERSIONS_KEY = "missing_versions"
+
+/** Under a card's verse text while it's KJV's, standing in for a translation that isn't
+ *  downloaded (#78). */
+@Composable
+internal fun ShownInKjvLabel(modifier: Modifier = Modifier) {
+    Text(
+        text = stringResource(R.string.library_shown_in_kjv),
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = modifier
+    )
 }
 
 /** Swipe-left (end-to-start) to delete — [enableDismissFromStartToEnd] off so an accidental
@@ -287,7 +318,13 @@ internal fun resolveVerseText(versionId: String, verses: List<VerseLocationDto>,
 }
 
 @Composable
-private fun HighlightCard(highlight: Highlight, verseText: String, bookName: (Int) -> String, onClick: () -> Unit) {
+private fun HighlightCard(
+    highlight: Highlight,
+    verseText: String,
+    shownInKjv: Boolean,
+    bookName: (Int) -> String,
+    onClick: () -> Unit
+) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -331,6 +368,7 @@ private fun HighlightCard(highlight: Highlight, verseText: String, bookName: (In
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.padding(top = Spacing.xs)
                     )
+                    if (shownInKjv) ShownInKjvLabel(modifier = Modifier.padding(top = Spacing.xs))
                 }
                 Text(
                     text = displayDate(highlight.createdAt),
@@ -344,7 +382,13 @@ private fun HighlightCard(highlight: Highlight, verseText: String, bookName: (In
 }
 
 @Composable
-private fun NoteCard(note: Note, verseText: String, bookName: (Int) -> String, onClick: () -> Unit) {
+private fun NoteCard(
+    note: Note,
+    verseText: String,
+    shownInKjv: Boolean,
+    bookName: (Int) -> String,
+    onClick: () -> Unit
+) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -392,6 +436,7 @@ private fun NoteCard(note: Note, verseText: String, bookName: (Int) -> String, o
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.padding(top = Spacing.xs)
                     )
+                    if (shownInKjv) ShownInKjvLabel(modifier = Modifier.padding(top = Spacing.xs))
                 }
                 Text(
                     text = note.text,

@@ -19,6 +19,7 @@
     <string name="action_sign_in">Se connecter</string>
     <string name="action_copy">Copier</string>
     <string name="action_share">Partager</string>
+    <string name="action_download">Télécharger</string>
     <string name="tap_to_retry">Touche pour réessayer</string>
     <string name="error_generic">Une erreur s’est produite</string>
 
@@ -169,6 +170,8 @@
     <string name="library_noted_on">Noté le %1$s</string>
     <string name="library_delete_note">Supprimer la note</string>
     <string name="library_item_unavailable">Cet élément n’est plus disponible.</string>
+    <string name="library_missing_version">Certains surlignages et notes sont en %1$s, qui n’est pas téléchargée. Ils s’affichent dans la KJV jusqu’à ce que tu la télécharges.</string>
+    <string name="library_shown_in_kjv">Affiché dans la KJV</string>
     <string name="library_open_in_bible">Ouvrir dans la Bible</string>
     <plurals name="verse_ref_with_more">
         <item quantity="one">%1$s +%2$d autre</item>
@@ -183,6 +186,7 @@
     <string name="you_continue_reading">Reprendre la lecture</string>
 
     <string name="sync_status_syncing">Synchronisation…</string>
+    <string name="sync_restoring_content">Restauration de tes surlignages et notes…</string>
     <string name="sync_status_not_synced">Pas encore synchronisé</string>
     <string name="sync_status_just_now">Synchronisé à l’instant</string>
     <plurals name="sync_status_minutes_ago">
@@ -257,6 +261,11 @@
     <string name="account_sign_in_subtitle">Synchronise tes surlignages, notes et progression de lecture sur tes appareils</string>
     <string name="account_your_account">Ton compte</string>
     <string name="account_sign_out">Se déconnecter</string>
+    <string name="account_sign_out_subtitle">Retire tes surlignages et notes de ce téléphone. Ils restent enregistrés dans ton compte.</string>
+    <string name="account_signing_out">Déconnexion…</string>
+    <string name="account_sign_out_unsynced_title">Se déconnecter sans synchroniser ?</string>
+    <string name="account_sign_out_unsynced_message">Certains surlignages ou notes ne sont pas encore enregistrés dans ton compte. Si tu te déconnectes maintenant, ils seront supprimés de ce téléphone. Pour les garder, connecte-toi à Internet et réessaie.</string>
+    <string name="account_sign_out_anyway">Se déconnecter quand même</string>
     <string name="account_delete">Supprimer le compte</string>
     <string name="account_delete_title">Supprimer le compte ?</string>
     <string name="account_delete_message">Ton compte et tout ce qui y est sauvegardé seront supprimés définitivement. Cette action est irréversible. Les surlignages et notes déjà présents sur cet appareil y resteront, mais ne seront plus synchronisés.</string>

@@ -18,6 +18,7 @@
     <string name="action_sign_in">登录</string>
     <string name="action_copy">复制</string>
     <string name="action_share">分享</string>
+    <string name="action_download">下载</string>
     <string name="tap_to_retry">点按重试</string>
     <string name="error_generic">出了点问题</string>
 
@@ -160,6 +161,8 @@
     <string name="library_noted_on">记录于 %1$s</string>
     <string name="library_delete_note">删除笔记</string>
     <string name="library_item_unavailable">此项目已不存在。</string>
+    <string name="library_missing_version">部分标记和笔记使用的是 %1$s，但它尚未下载。下载前，这些经文会以 KJV 显示。</string>
+    <string name="library_shown_in_kjv">以 KJV 显示</string>
     <string name="library_open_in_bible">在圣经中打开</string>
     <plurals name="verse_ref_with_more">
         <item quantity="other">%1$s 等 %2$d 节</item>
@@ -172,6 +175,7 @@
     <string name="you_continue_reading">继续阅读</string>
 
     <string name="sync_status_syncing">正在同步…</string>
+    <string name="sync_restoring_content">正在恢复你的标记和笔记…</string>
     <string name="sync_status_not_synced">尚未同步</string>
     <string name="sync_status_just_now">刚刚已同步</string>
     <plurals name="sync_status_minutes_ago">
@@ -240,6 +244,11 @@
     <string name="account_sign_in_subtitle">在多台设备间同步你的标记、笔记和阅读进度</string>
     <string name="account_your_account">你的账号</string>
     <string name="account_sign_out">退出登录</string>
+    <string name="account_sign_out_subtitle">会从这部手机上移除你的标记和笔记，它们仍保存在你的账号中。</string>
+    <string name="account_signing_out">正在退出登录…</string>
+    <string name="account_sign_out_unsynced_title">不同步就退出登录？</string>
+    <string name="account_sign_out_unsynced_message">部分标记或笔记还没有保存到你的账号。现在退出登录会把它们从这部手机上删除。如要保留，请连接网络后重试。</string>
+    <string name="account_sign_out_anyway">仍然退出登录</string>
     <string name="account_delete">删除账号</string>
     <string name="account_delete_title">删除账号？</string>
     <string name="account_delete_message">这会永久删除你的账号及其中备份的所有内容，且无法撤销。此设备上已有的标记和笔记会保留，但不会再同步到其他地方。</string>

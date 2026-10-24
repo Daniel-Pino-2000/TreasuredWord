@@ -34,6 +34,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
+import com.application.bibleapp.components.MissingVersionBanners
 import com.application.bibleapp.navigation.Screen
 import com.application.bibleapp.ui.theme.Spacing
 import com.application.bibleapp.utils.bookNameInVersion
@@ -67,6 +68,7 @@ fun LibraryItemDetailView(
     val notes by bibleViewModel.libraryNotes.collectAsState()
     val verseTextByKey by bibleViewModel.libraryVerseText.collectAsState()
     val bookNamesByVersion by bibleViewModel.libraryBookNames.collectAsState()
+    val missingVersions by bibleViewModel.libraryMissingVersionLabels.collectAsState()
 
     val highlight = if (type == Screen.LibraryItemDetail.TYPE_HIGHLIGHT) {
         highlights.firstOrNull { it.localId == localId }
@@ -124,6 +126,7 @@ fun LibraryItemDetailView(
                         modifier = Modifier.padding(Spacing.lg)
                     )
                 }
+                MissingVersionNotice(bibleViewModel, highlight.versionId, isMissing = highlight.versionId in missingVersions)
                 Spacer(modifier = Modifier.height(Spacing.xl))
                 OpenInBibleButton(onClick = onOpenInBible)
                 TextButton(
@@ -175,6 +178,7 @@ fun LibraryItemDetailView(
                         )
                     }
                 }
+                MissingVersionNotice(bibleViewModel, note.versionId, isMissing = note.versionId in missingVersions)
                 Text(
                     text = note.text,
                     style = MaterialTheme.typography.bodyLarge,
@@ -212,6 +216,19 @@ fun LibraryItemDetailView(
             }
         }
     }
+}
+
+/** For an item whose translation isn't downloaded (#78): says its text above is KJV's, and offers
+ *  the download, after which the real text replaces it in place. */
+@Composable
+private fun MissingVersionNotice(bibleViewModel: BibleViewModel, versionId: String, isMissing: Boolean) {
+    if (!isMissing) return
+    ShownInKjvLabel(modifier = Modifier.padding(top = Spacing.sm))
+    MissingVersionBanners(
+        bibleViewModel = bibleViewModel,
+        versionIds = setOf(versionId),
+        modifier = Modifier.padding(top = Spacing.md)
+    )
 }
 
 @Composable

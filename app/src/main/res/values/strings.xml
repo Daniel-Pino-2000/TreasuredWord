@@ -21,6 +21,7 @@
     <string name="action_sign_in">Sign in</string>
     <string name="action_copy">Copy</string>
     <string name="action_share">Share</string>
+    <string name="action_download">Download</string>
     <string name="tap_to_retry">Tap to retry</string>
     <string name="error_generic">Something went wrong</string>
 
@@ -193,6 +194,10 @@
     <string name="library_noted_on">Noted %1$s</string>
     <string name="library_delete_note">Delete note</string>
     <string name="library_item_unavailable">This item is no longer available.</string>
+    <!-- %1$s is a translation name, e.g. "Reina-Valera 1909". Shown when highlights or notes were made in a translation that isn't downloaded -->
+    <string name="library_missing_version">Some highlights and notes are in %1$s, which isn\'t downloaded. They\'re shown in KJV until you download it.</string>
+    <!-- Under a verse shown in KJV in place of a translation that isn't downloaded -->
+    <string name="library_shown_in_kjv">Shown in KJV</string>
     <string name="library_open_in_bible">Open in Bible</string>
     <!-- A verse reference followed by how many more verses it covers, e.g. "John 3:16 +2 more" -->
     <plurals name="verse_ref_with_more">
@@ -209,6 +214,8 @@
 
     <!-- Sync status -->
     <string name="sync_status_syncing">Syncing…</string>
+    <!-- While the first sync after signing in brings highlights and notes back -->
+    <string name="sync_restoring_content">Restoring your highlights and notes…</string>
     <string name="sync_status_not_synced">Not synced yet</string>
     <string name="sync_status_just_now">Synced just now</string>
     <plurals name="sync_status_minutes_ago">
@@ -286,6 +293,11 @@
     <string name="account_sign_in_subtitle">Sync your highlights, notes, and reading progress across devices</string>
     <string name="account_your_account">Your account</string>
     <string name="account_sign_out">Sign out</string>
+    <string name="account_sign_out_subtitle">Removes your highlights and notes from this phone. They stay saved in your account.</string>
+    <string name="account_signing_out">Signing out…</string>
+    <string name="account_sign_out_unsynced_title">Sign out without syncing?</string>
+    <string name="account_sign_out_unsynced_message">Some highlights or notes haven\'t been saved to your account yet. Signing out now deletes them from this phone. To keep them, connect to the internet and try again.</string>
+    <string name="account_sign_out_anyway">Sign out anyway</string>
     <string name="account_delete">Delete account</string>
     <string name="account_delete_title">Delete account?</string>
     <string name="account_delete_message">This permanently deletes your account and everything backed up to it. This can\'t be undone. Highlights and notes already on this device will stay here, but won\'t sync anywhere else.</string>

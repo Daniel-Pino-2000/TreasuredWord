@@ -6,9 +6,14 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.HttpTimeout
+import io.ktor.client.plugins.api.createClientPlugin
+import io.ktor.client.plugins.timeout
 import io.ktor.client.plugins.auth.Auth
+import io.ktor.client.plugins.auth.providers.BearerAuthProvider
 import io.ktor.client.plugins.auth.providers.BearerTokens
+import io.ktor.client.plugins.auth.providers.RefreshTokensParams
 import io.ktor.client.plugins.auth.providers.bearer
+import io.ktor.client.plugins.pluginOrNull
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
@@ -44,6 +49,31 @@ object HttpClientProvider {
      */
     const val BASE_URL = "https://treasuredword.onrender.com/api/v1"
 
+    /**
+     * Requests to our own backend wait this long instead of the shared 15 s: Render's free tier
+     * spins the server down when idle, and the first request after that takes ~30–50 s while it
+     * starts — exactly the "just reinstalled and signed in" moment, whose sign-in and restoring
+     * sync used to time out (#80).
+     */
+    private const val BACKEND_TIMEOUT_MILLIS = 90_000L
+
+    /** Applies [BACKEND_TIMEOUT_MILLIS] to every request to [BASE_URL]'s host — sign-in, token
+     *  refresh and sync alike — leaving the third-party Bible APIs on the shorter default. */
+    private val BackendTimeouts = createClientPlugin("BackendTimeouts") {
+        val backendHost = Url(BASE_URL).host
+        onRequest { request, _ ->
+            if (request.url.host == backendHost) {
+                request.timeout {
+                    requestTimeoutMillis = BACKEND_TIMEOUT_MILLIS
+                    socketTimeoutMillis = BACKEND_TIMEOUT_MILLIS
+                    // Render's edge accepts the connection straight away and holds the request
+                    // while the server starts, so connecting itself needs no extra time.
+                    connectTimeoutMillis = 30_000
+                }
+            }
+        }
+    }
+
     private lateinit var tokenStore: TokenStore
 
     /**
@@ -76,7 +106,7 @@ object HttpClientProvider {
      *  - not created at app startup
      *  - thread-safe
      */
-    val client: HttpClient by lazy {
+    private val lazyClient = lazy {
 
         // OkHttp, not CIO - see the dependency comment in app/build.gradle.kts for why:
         // CIO's TLS handshake breaks HTTPS to any host once the app's network security
@@ -99,35 +129,22 @@ object HttpClientProvider {
                 connectTimeoutMillis = 10_000
                 socketTimeoutMillis = 15_000
             }
+            install(BackendTimeouts)
 
             // Automatically attaches "Authorization: Bearer <accessToken>" to every request
             // to the backend, and on a 401, transparently calls /auth/refresh and retries
             // once with the new token — callers (AuthRepository, HighlightRepository, etc.)
             // never have to think about the access token's 15-minute expiry themselves.
             install(Auth) {
-                bearer {
-                    // Without this, the Auth plugin's default behavior attaches our
-                    // backend's bearer token to EVERY request through this shared client -
-                    // including the third-party Bible/verse APIs (bible.helloao.org,
-                    // OurManna) - leaking the user's access token to unrelated services.
-                    // Only skip attaching it when the request isn't going to our own
-                    // backend host.
-                    sendWithoutRequest { request ->
-                        request.url.host == Url(BASE_URL).host
-                    }
-
-                    // Called before every request that needs auth. Reading fresh from
-                    // TokenStore each time (not a cached value) so a login/logout that
-                    // happened since this client was created is always picked up.
-                    loadTokens {
+                backendBearer(
+                    backendHost = Url(BASE_URL).host,
+                    storedTokens = {
                         val access = tokenStore.accessToken
                         val refresh = tokenStore.refreshToken
                         if (access != null && refresh != null) BearerTokens(access, refresh) else null
-                    }
-
-                    // Called once, automatically, the first time a request comes back 401.
-                    refreshTokens {
-                        val currentRefreshToken = tokenStore.refreshToken ?: return@refreshTokens null
+                    },
+                    refresh = {
+                        val currentRefreshToken = tokenStore.refreshToken ?: return@backendBearer null
 
                         // Uses this callback's own `client` (not HttpClientProvider.client)
                         // and marks the request as a refresh so the Auth plugin doesn't try
@@ -145,15 +162,53 @@ object HttpClientProvider {
                             // silently. Clear the session so the app treats the user as
                             // logged out instead of retrying a refresh that will never work.
                             tokenStore.clear()
-                            return@refreshTokens null
+                            return@backendBearer null
                         }
 
                         val refreshed = response.body<AuthResponseDto>()
                         tokenStore.updateTokens(refreshed.accessToken, refreshed.refreshToken)
                         BearerTokens(refreshed.accessToken, refreshed.refreshToken)
                     }
-                }
+                )
             }
         }
     }
+
+    val client: HttpClient by lazyClient
+
+    /**
+     * Makes the next backend request read the session from [TokenStore] again. Ktor's bearer
+     * provider keeps the tokens it loaded and only reloads them after a refresh, so without this a
+     * sign-in to a different account kept sending the previous account's token (#86).
+     * [com.application.bibleapp.data.repository.AuthRepository] calls it whenever the session
+     * changes. A no-op before the client exists — it loads fresh tokens when it's created.
+     */
+    fun forgetCachedTokens() {
+        if (lazyClient.isInitialized()) client.forgetCachedBearerTokens()
+    }
+}
+
+/**
+ * Our backend's bearer auth: [storedTokens] supplies the session (read again only after
+ * [forgetCachedBearerTokens] or a refresh — Ktor caches what it returns), [refresh] runs on a 401.
+ * Only requests to [backendHost] carry the token: by default the Auth plugin attaches it to EVERY
+ * request through the shared client, including the third-party Bible/verse APIs
+ * (bible.helloao.org, OurManna), which would leak the user's access token to unrelated services.
+ * Kept outside [HttpClientProvider] so a test can build a client with it (#86).
+ */
+internal fun Auth.backendBearer(
+    backendHost: String,
+    storedTokens: () -> BearerTokens?,
+    refresh: suspend RefreshTokensParams.() -> BearerTokens?
+) {
+    bearer {
+        sendWithoutRequest { request -> request.url.host == backendHost }
+        loadTokens { storedTokens() }
+        refreshTokens { refresh() }
+    }
+}
+
+/** Drops the bearer tokens Ktor cached, so the next request loads the current ones (#86). */
+internal fun HttpClient.forgetCachedBearerTokens() {
+    pluginOrNull(Auth)?.providers?.filterIsInstance<BearerAuthProvider>()?.forEach { it.clearToken() }
 }

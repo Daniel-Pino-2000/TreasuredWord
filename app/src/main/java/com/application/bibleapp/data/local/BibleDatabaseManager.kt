@@ -936,35 +936,79 @@ object BibleDatabaseManager {
             null
         ).use { cursor -> generateSequence { if (cursor.moveToNext()) cursorToNote(cursor) else null }.toList() }
 
-    // ---- Sync worker support (Phase E) — see worker/SyncWorker.kt ----
+    // ---- Sync support (Phase E) — see worker/SyncEngine.kt ----
 
-    /** After a successful create/recolor push — stamps the server's id (a no-op change if this
-     *  row already had one, e.g. a recolor) and timestamps, and clears PENDING. */
-    fun markHighlightPushed(context: Context, localId: Long, remoteId: String, createdAt: String, updatedAt: String) {
-        getDatabase(context).execSQL(
-            "UPDATE highlights SET remote_id = ?, created_at = ?, updated_at = ?, sync_status = 'SYNCED' WHERE local_id = ?",
-            arrayOf(remoteId, createdAt, updatedAt, localId)
-        )
+    /** Runs an UPDATE/DELETE and returns how many rows it touched — [SQLiteDatabase.execSQL] can't. */
+    private fun SQLiteDatabase.executeCounting(sql: String, vararg args: Any?): Int =
+        compileStatement(sql).use { statement ->
+            args.forEachIndexed { index, arg ->
+                when (arg) {
+                    null -> statement.bindNull(index + 1)
+                    is String -> statement.bindString(index + 1, arg)
+                    is Int -> statement.bindLong(index + 1, arg.toLong())
+                    is Long -> statement.bindLong(index + 1, arg)
+                    else -> error("Unsupported SQL argument: $arg")
+                }
+            }
+            statement.executeUpdateDelete()
+        }
+
+    /**
+     * After a successful create/recolor push — stamps the server's id and timestamps and clears
+     * PENDING, but only if the row is unchanged since [pushedUpdatedAt] was read for the push.
+     * A recolor or delete made while the request was out (#83) would otherwise be marked synced
+     * without ever being sent; instead the row keeps PENDING, gets the server's id (so its next
+     * push is an update or delete, not a second create), and goes out again next pass.
+     */
+    fun markHighlightPushed(
+        context: Context,
+        localId: Long,
+        pushedUpdatedAt: String,
+        remoteId: String,
+        createdAt: String,
+        updatedAt: String
+    ): Boolean {
+        val db = getDatabase(context)
+        val marked = db.executeCounting(
+            "UPDATE highlights SET remote_id = ?, created_at = ?, updated_at = ?, sync_status = 'SYNCED' WHERE local_id = ? AND updated_at = ?",
+            remoteId, createdAt, updatedAt, localId, pushedUpdatedAt
+        ) > 0
+        if (!marked) db.executeCounting("UPDATE highlights SET remote_id = ? WHERE local_id = ?", remoteId, localId)
+        return marked
     }
 
     /** Hard-removes a local row once its deletion has been confirmed pushed (or, for a row that
      *  was created and soft-deleted again before ever reaching the server, immediately — there's
      *  nothing to push for a row the server never saw). Unlike [softDeleteHighlight], this isn't
-     *  a tombstone; nothing references a purged row afterward. */
-    fun purgeHighlight(context: Context, localId: Long) {
-        getDatabase(context).execSQL("DELETE FROM highlights WHERE local_id = ?", arrayOf(localId))
+     *  a tombstone; nothing references a purged row afterward. If it was restored (Undo) while
+     *  the delete was out, it's kept and loses its remote id instead: the server's copy is now a
+     *  tombstone, so the next pass creates it again (#83). */
+    fun purgeHighlight(context: Context, localId: Long, pushedUpdatedAt: String) {
+        val db = getDatabase(context)
+        val purged = db.executeCounting("DELETE FROM highlights WHERE local_id = ? AND updated_at = ?", localId, pushedUpdatedAt) > 0
+        if (!purged) db.executeCounting("UPDATE highlights SET remote_id = NULL WHERE local_id = ?", localId)
+    }
+
+    /** The server answered 404 for this row's remote id (it isn't in this account): forget the id
+     *  and keep the row PENDING, so the next pass creates it instead of retrying forever. */
+    fun detachHighlight(context: Context, localId: Long) {
+        getDatabase(context).executeCounting(
+            "UPDATE highlights SET remote_id = NULL, sync_status = 'PENDING' WHERE local_id = ?", localId
+        )
     }
 
     /** Removes this device's copy of a highlight the server reports as deleted (a pulled
-     *  tombstone) — a no-op if this device never had a synced copy of it. */
-    fun deleteHighlightByRemoteId(context: Context, remoteId: String) {
-        getDatabase(context).execSQL("DELETE FROM highlights WHERE remote_id = ?", arrayOf(remoteId))
-    }
+     *  tombstone) — false if this device had no copy of it. A deletion from another device wins
+     *  over an unpushed local edit to the same highlight. */
+    fun deleteHighlightByRemoteId(context: Context, remoteId: String): Boolean =
+        getDatabase(context).executeCounting("DELETE FROM highlights WHERE remote_id = ?", remoteId) > 0
 
     /** Inserts or refreshes the local copy of a highlight from the server's authoritative state —
      *  either a highlight seen for the first time (created on another device) or this device's
      *  own row, freshly confirmed. Matched by [remoteId], not local_id, since the two devices
-     *  don't share local row ids. */
+     *  don't share local row ids. A row that's PENDING here (its push failed, or it changed
+     *  mid-push) is left alone so the local change isn't lost; it's pushed next pass (#83).
+     *  Returns whether anything changed, so screens only reload when they need to (#79). */
     fun upsertHighlightFromServer(
         context: Context,
         remoteId: String,
@@ -973,47 +1017,70 @@ object BibleDatabaseManager {
         color: Int,
         createdAt: String,
         updatedAt: String
-    ) {
+    ): Boolean {
         val db = getDatabase(context)
         val versesJson = verses.encodeVerseLocationsToJson()
-        val existingLocalId = db.rawQuery("SELECT local_id FROM highlights WHERE remote_id = ?", arrayOf(remoteId))
-            .use { cursor -> if (cursor.moveToFirst()) cursor.getLong(0) else null }
-        if (existingLocalId != null) {
-            db.execSQL(
+        val existing = db.rawQuery("SELECT local_id, sync_status FROM highlights WHERE remote_id = ?", arrayOf(remoteId))
+            .use { cursor -> if (cursor.moveToFirst()) cursor.getLong(0) to SyncStatus.fromStored(cursor.getString(1)) else null }
+        if (existing != null) {
+            val (localId, status) = existing
+            if (status == SyncStatus.PENDING) return false
+            return db.executeCounting(
                 """
                 UPDATE highlights SET version_id = ?, verses_json = ?, color = ?, created_at = ?,
-                    updated_at = ?, deleted_at = NULL, sync_status = 'SYNCED' WHERE local_id = ?
+                    updated_at = ?, deleted_at = NULL, sync_status = 'SYNCED'
+                WHERE local_id = ? AND sync_status = 'SYNCED' AND (version_id IS NOT ? OR verses_json IS NOT ?
+                    OR color IS NOT ? OR created_at IS NOT ? OR updated_at IS NOT ? OR deleted_at IS NOT NULL)
                 """.trimIndent(),
-                arrayOf(versionId, versesJson, color, createdAt, updatedAt, existingLocalId)
-            )
-        } else {
-            db.execSQL(
-                """
-                INSERT INTO highlights (remote_id, version_id, verses_json, color, created_at, updated_at, sync_status)
-                VALUES (?, ?, ?, ?, ?, ?, 'SYNCED')
-                """.trimIndent(),
-                arrayOf(remoteId, versionId, versesJson, color, createdAt, updatedAt)
-            )
+                versionId, versesJson, color, createdAt, updatedAt,
+                localId, versionId, versesJson, color, createdAt, updatedAt
+            ) > 0
         }
+        db.execSQL(
+            """
+            INSERT INTO highlights (remote_id, version_id, verses_json, color, created_at, updated_at, sync_status)
+            VALUES (?, ?, ?, ?, ?, ?, 'SYNCED')
+            """.trimIndent(),
+            arrayOf(remoteId, versionId, versesJson, color, createdAt, updatedAt)
+        )
+        return true
     }
 
     /** See [markHighlightPushed] — the note equivalent. */
-    fun markNotePushed(context: Context, localId: Long, remoteId: String, createdAt: String, updatedAt: String) {
-        getDatabase(context).execSQL(
-            "UPDATE notes SET remote_id = ?, created_at = ?, updated_at = ?, sync_status = 'SYNCED' WHERE local_id = ?",
-            arrayOf(remoteId, createdAt, updatedAt, localId)
-        )
+    fun markNotePushed(
+        context: Context,
+        localId: Long,
+        pushedUpdatedAt: String,
+        remoteId: String,
+        createdAt: String,
+        updatedAt: String
+    ): Boolean {
+        val db = getDatabase(context)
+        val marked = db.executeCounting(
+            "UPDATE notes SET remote_id = ?, created_at = ?, updated_at = ?, sync_status = 'SYNCED' WHERE local_id = ? AND updated_at = ?",
+            remoteId, createdAt, updatedAt, localId, pushedUpdatedAt
+        ) > 0
+        if (!marked) db.executeCounting("UPDATE notes SET remote_id = ? WHERE local_id = ?", remoteId, localId)
+        return marked
     }
 
     /** See [purgeHighlight] — the note equivalent. */
-    fun purgeNote(context: Context, localId: Long) {
-        getDatabase(context).execSQL("DELETE FROM notes WHERE local_id = ?", arrayOf(localId))
+    fun purgeNote(context: Context, localId: Long, pushedUpdatedAt: String) {
+        val db = getDatabase(context)
+        val purged = db.executeCounting("DELETE FROM notes WHERE local_id = ? AND updated_at = ?", localId, pushedUpdatedAt) > 0
+        if (!purged) db.executeCounting("UPDATE notes SET remote_id = NULL WHERE local_id = ?", localId)
+    }
+
+    /** See [detachHighlight] — the note equivalent. */
+    fun detachNote(context: Context, localId: Long) {
+        getDatabase(context).executeCounting(
+            "UPDATE notes SET remote_id = NULL, sync_status = 'PENDING' WHERE local_id = ?", localId
+        )
     }
 
     /** See [deleteHighlightByRemoteId] — the note equivalent. */
-    fun deleteNoteByRemoteId(context: Context, remoteId: String) {
-        getDatabase(context).execSQL("DELETE FROM notes WHERE remote_id = ?", arrayOf(remoteId))
-    }
+    fun deleteNoteByRemoteId(context: Context, remoteId: String): Boolean =
+        getDatabase(context).executeCounting("DELETE FROM notes WHERE remote_id = ?", remoteId) > 0
 
     /** See [upsertHighlightFromServer] — the note equivalent (text instead of color). */
     fun upsertNoteFromServer(
@@ -1024,27 +1091,76 @@ object BibleDatabaseManager {
         text: String,
         createdAt: String,
         updatedAt: String
-    ) {
+    ): Boolean {
         val db = getDatabase(context)
         val versesJson = verses.encodeVerseLocationsToJson()
-        val existingLocalId = db.rawQuery("SELECT local_id FROM notes WHERE remote_id = ?", arrayOf(remoteId))
-            .use { cursor -> if (cursor.moveToFirst()) cursor.getLong(0) else null }
-        if (existingLocalId != null) {
-            db.execSQL(
+        val existing = db.rawQuery("SELECT local_id, sync_status FROM notes WHERE remote_id = ?", arrayOf(remoteId))
+            .use { cursor -> if (cursor.moveToFirst()) cursor.getLong(0) to SyncStatus.fromStored(cursor.getString(1)) else null }
+        if (existing != null) {
+            val (localId, status) = existing
+            if (status == SyncStatus.PENDING) return false
+            return db.executeCounting(
                 """
                 UPDATE notes SET version_id = ?, verses_json = ?, text = ?, created_at = ?,
-                    updated_at = ?, deleted_at = NULL, sync_status = 'SYNCED' WHERE local_id = ?
+                    updated_at = ?, deleted_at = NULL, sync_status = 'SYNCED'
+                WHERE local_id = ? AND sync_status = 'SYNCED' AND (version_id IS NOT ? OR verses_json IS NOT ?
+                    OR text IS NOT ? OR created_at IS NOT ? OR updated_at IS NOT ? OR deleted_at IS NOT NULL)
                 """.trimIndent(),
-                arrayOf(versionId, versesJson, text, createdAt, updatedAt, existingLocalId)
-            )
-        } else {
-            db.execSQL(
-                """
-                INSERT INTO notes (remote_id, version_id, verses_json, text, created_at, updated_at, sync_status)
-                VALUES (?, ?, ?, ?, ?, ?, 'SYNCED')
-                """.trimIndent(),
-                arrayOf(remoteId, versionId, versesJson, text, createdAt, updatedAt)
-            )
+                versionId, versesJson, text, createdAt, updatedAt,
+                localId, versionId, versesJson, text, createdAt, updatedAt
+            ) > 0
+        }
+        db.execSQL(
+            """
+            INSERT INTO notes (remote_id, version_id, verses_json, text, created_at, updated_at, sync_status)
+            VALUES (?, ?, ?, ?, ?, ?, 'SYNCED')
+            """.trimIndent(),
+            arrayOf(remoteId, versionId, versesJson, text, createdAt, updatedAt)
+        )
+        return true
+    }
+
+    /** Highlights and notes not yet on the server — what signing out would lose (#81). A row
+     *  created and deleted again before it was ever pushed doesn't count: there's nothing to lose. */
+    fun countPendingChanges(context: Context): Int {
+        val db = getDatabase(context)
+        val pendingClause = "sync_status = 'PENDING' AND NOT (deleted_at IS NOT NULL AND remote_id IS NULL)"
+        return listOf("highlights", "notes").sumOf { table ->
+            db.rawQuery("SELECT COUNT(*) FROM $table WHERE $pendingClause", null).use { cursor ->
+                cursor.moveToFirst()
+                cursor.getInt(0)
+            }
+        }
+    }
+
+    // ---- Account changes (#81) — see BibleRepository.removeAccountContent/adoptContentOwner ----
+
+    /** Signing out removes the account's highlights and notes from this device; they're safe on
+     *  the server and come back on the next sign-in. */
+    fun deleteAllUserContent(context: Context) {
+        val db = getDatabase(context)
+        db.beginTransaction()
+        try {
+            db.execSQL("DELETE FROM highlights")
+            db.execSQL("DELETE FROM notes")
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
+        }
+    }
+
+    /** Signing into a different account than the one this device's content was synced with:
+     *  removes everything that came from (or went to) the old account, keeping only items made
+     *  here that were never uploaded anywhere. */
+    fun deleteContentSyncedToAnAccount(context: Context) {
+        val db = getDatabase(context)
+        db.beginTransaction()
+        try {
+            db.execSQL("DELETE FROM highlights WHERE remote_id IS NOT NULL")
+            db.execSQL("DELETE FROM notes WHERE remote_id IS NOT NULL")
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
         }
     }
 

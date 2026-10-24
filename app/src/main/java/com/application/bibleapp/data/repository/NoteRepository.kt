@@ -1,5 +1,6 @@
 package com.application.bibleapp.data.repository
 
+import com.application.bibleapp.data.remote.BackendHttpException
 import com.application.bibleapp.data.remote.CreateNoteRequestDto
 import com.application.bibleapp.data.remote.HttpClientProvider
 import com.application.bibleapp.data.remote.NoteListResponseDto
@@ -16,13 +17,14 @@ import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
+import com.application.bibleapp.worker.NoteSyncApi
 
 /**
  * The backend-synced counterpart to a note — see server/docs/api_contract.md. Requires being
  * signed in (AuthRepository); every call here relies on HttpClientProvider's Auth plugin to
  * attach the access token automatically.
  */
-class NoteRepository {
+class NoteRepository : NoteSyncApi {
 
     private val client get() = HttpClientProvider.client
     private val baseUrl get() = HttpClientProvider.BASE_URL
@@ -46,13 +48,23 @@ class NoteRepository {
             response.body<NoteListResponseDto>().notes
         }
 
+    /** See [HighlightRepository.listHighlightsChangedSince] (#84). */
+    override suspend fun listNotesChangedSince(updatedSince: String?): Result<NoteListResponseDto> =
+        runCatching {
+            val response = client.get("$baseUrl/notes") {
+                url { updatedSince?.let { parameters.append("updatedSince", it) } }
+            }
+            requireSuccess(response)
+            response.body()
+        }
+
     suspend fun getNote(id: String): Result<NoteResponseDto> = runCatching {
         val response = client.get("$baseUrl/notes/$id")
         requireSuccess(response)
         response.body()
     }
 
-    suspend fun createNote(
+    override suspend fun createNote(
         versionId: String,
         verses: List<VerseLocationDto>,
         text: String
@@ -65,7 +77,7 @@ class NoteRepository {
         response.body()
     }
 
-    suspend fun updateNote(id: String, verses: List<VerseLocationDto>, text: String): Result<NoteResponseDto> =
+    override suspend fun updateNote(id: String, verses: List<VerseLocationDto>, text: String): Result<NoteResponseDto> =
         runCatching {
             val response = client.put("$baseUrl/notes/$id") {
                 contentType(ContentType.Application.Json)
@@ -75,14 +87,14 @@ class NoteRepository {
             response.body()
         }
 
-    suspend fun deleteNote(id: String): Result<Unit> = runCatching {
+    override suspend fun deleteNote(id: String): Result<Unit> = runCatching {
         val response = client.delete("$baseUrl/notes/$id")
         requireSuccess(response)
     }
 
     private suspend fun requireSuccess(response: HttpResponse) {
         if (!response.status.isSuccess()) {
-            error("Note request failed: ${response.status.value}")
+            throw BackendHttpException(response.status.value, "Note")
         }
     }
 }

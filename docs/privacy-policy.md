@@ -5,7 +5,7 @@ permalink: /privacy/
 
 # TreasuredWord privacy policy
 
-**Effective date:** October 22, 2026
+**Effective date:** October 23, 2026
 
 TreasuredWord is a free Bible reading app made by Daniel Pino, an independent developer. In this policy, "we" and "us" mean Daniel Pino, the developer of TreasuredWord. It explains what information the app uses, where it goes, and the choices you have. If you have questions, email [pinoponedaniel@gmail.com](mailto:pinoponedaniel@gmail.com).
 
@@ -36,6 +36,8 @@ We use this information only to provide the sync you asked for by creating an ac
 The server runs on [Render](https://render.com) in the United States, and the data is stored in a [Neon](https://neon.tech) PostgreSQL database. If you live outside the United States, your information is transferred to and stored there. Like most web services, the server and its hosting provider keep technical logs of requests (for example, the time, the address requested and the requesting IP address) to run and protect the service.
 
 When you delete a highlight or note, the server keeps it marked as deleted, so your other devices remove it too. It's erased completely when you delete your account.
+
+When you sign out, the app removes your account's highlights and notes from that phone, so the next person to sign in on it doesn't see them. They stay in your account and come back when you sign in again. If some haven't been uploaded yet, the app tells you before removing them.
 
 ## Deleting your account
 
