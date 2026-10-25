@@ -33,12 +33,15 @@
         <!-- configChanges: a language change updates the running activity instead of recreating
              it, which tore the window down and showed black until the new one drew (#34). Compose
              recomposes with the new configuration; MainActivity.onConfigurationChanged covers
-             what's built outside composition. -->
+             what's built outside composition. screenLayout too: it holds a layout-direction
+             field, which the first switch away from "System default" changes along with the
+             language (when the system creates the app's own configuration), so without it that
+             switch still recreated the activity and flashed black (#89). -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_short_name"
-            android:configChanges="locale|layoutDirection"
+            android:configChanges="locale|layoutDirection|screenLayout"
             android:theme="@style/Theme.BibleApp">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

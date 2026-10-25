@@ -27,8 +27,8 @@ import com.application.bibleapp.utils.AppLanguage
 
 /**
  * The app's language: "System default" first, then each language written in its own name, the
- * current one checked. Picking one recreates the activity in that language and leaves you here,
- * so you see the page switch over.
+ * current one checked. Picking one switches the app over in place and leaves you here, so you
+ * see the page change language.
  */
 @Composable
 fun LanguagePickerView(modifier: Modifier = Modifier) {
