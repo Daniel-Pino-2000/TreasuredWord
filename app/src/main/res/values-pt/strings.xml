@@ -224,6 +224,8 @@
     <string name="auth_error_invalid_input">Dados inválidos</string>
     <string name="auth_error_status">Algo deu errado (%1$d)</string>
     <string name="auth_error_unreachable">Não foi possível acessar o servidor. Verifique sua conexão e tente de novo.</string>
+    <string name="auth_error_server_slow">O servidor está demorando demais para responder. Tente de novo em um minuto.</string>
+    <string name="server_waking_hint">O servidor pode estar iniciando. Isso pode levar até um minuto.</string>
 
     <string name="settings_app_version">%1$s · Versão %2$s</string>
     <string name="settings_section_about">Sobre</string>

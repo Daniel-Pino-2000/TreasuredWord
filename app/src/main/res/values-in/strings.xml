@@ -208,6 +208,8 @@
     <string name="auth_error_invalid_input">Input tidak valid</string>
     <string name="auth_error_status">Terjadi kesalahan (%1$d)</string>
     <string name="auth_error_unreachable">Tidak dapat menghubungi server. Periksa koneksi Anda, lalu coba lagi.</string>
+    <string name="auth_error_server_slow">Server terlalu lama merespons. Coba lagi dalam satu menit.</string>
+    <string name="server_waking_hint">Server mungkin sedang dinyalakan. Ini bisa memakan waktu hingga satu menit.</string>
 
     <string name="settings_app_version">%1$s · Versi %2$s</string>
     <string name="settings_section_about">Tentang</string>

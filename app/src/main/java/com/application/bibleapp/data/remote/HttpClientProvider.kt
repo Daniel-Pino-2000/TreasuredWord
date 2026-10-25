@@ -38,16 +38,23 @@ import kotlinx.serialization.json.Json
  */
 object HttpClientProvider {
 
+    /** The deployed TreasuredWord server on Render; [BASE_URL] and [HEALTH_URL] live under it. */
+    private const val SERVER_ROOT = "https://treasuredword.onrender.com"
+
     /**
      * The backend server's API root — see server/docs/api_contract.md for what lives under it.
      * Points at the deployed TreasuredWord backend on Render (server/DEPLOY.md, Phase 5), reachable
      * from an emulator, a real device, or anywhere else — HTTPS, no network_security_config
      * cleartext exception needed. The local-dev alternative
-     * (http://10.0.2.2:8080/api/v1, the emulator's alias for the host machine's own
-     * ./gradlew :server:run) still works for offline backend iteration; swap this constant back
+     * (http://10.0.2.2:8080, the emulator's alias for the host machine's own
+     * ./gradlew :server:run) still works for offline backend iteration; point [SERVER_ROOT] there
      * temporarily if debugging against a local server, but don't commit that swap.
      */
-    const val BASE_URL = "https://treasuredword.onrender.com/api/v1"
+    const val BASE_URL = "$SERVER_ROOT/api/v1"
+
+    /** The server's unauthenticated health check, outside [BASE_URL]. Requested only to wake a
+     *  sleeping server ahead of a sign-in (#87, see [ServerWakeUp]). */
+    const val HEALTH_URL = "$SERVER_ROOT/health"
 
     /**
      * Requests to our own backend wait this long instead of the shared 15 s: Render's free tier

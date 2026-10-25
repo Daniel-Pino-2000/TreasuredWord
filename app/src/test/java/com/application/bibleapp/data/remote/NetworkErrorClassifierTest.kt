@@ -1,5 +1,7 @@
 package com.application.bibleapp.data.remote
 
+import io.ktor.client.network.sockets.ConnectTimeoutException
+import io.ktor.client.plugins.HttpRequestTimeoutException
 import kotlinx.serialization.SerializationException
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -31,5 +33,20 @@ class NetworkErrorClassifierTest {
     fun `validation and parsing errors are not retried`() {
         assertFalse(isRetriableNetworkError(IllegalArgumentException("bad book slug")))
         assertFalse(isRetriableNetworkError(SerializationException("malformed json")))
+    }
+
+    @Test
+    fun `waiting too long for the server's answer is a server timeout`() {
+        assertTrue(isServerResponseTimeout(HttpRequestTimeoutException("https://example.test/health", 90_000)))
+        assertTrue(isServerResponseTimeout(io.ktor.client.network.sockets.SocketTimeoutException("read timed out")))
+    }
+
+    @Test
+    fun `no connection is not a server timeout`() {
+        // Render accepts connections straight away even while asleep, so these mean the phone
+        // couldn't reach it at all: "check your connection" is the right message (#87).
+        assertFalse(isServerResponseTimeout(ConnectTimeoutException("connect timed out")))
+        assertFalse(isServerResponseTimeout(UnknownHostException()))
+        assertFalse(isServerResponseTimeout(ConnectException()))
     }
 }
