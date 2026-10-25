@@ -22,3 +22,13 @@ fun isRetriableNetworkError(e: Throwable): Boolean = when (e) {
     is KtorSocketTimeoutException -> true
     else -> false
 }
+
+/**
+ * True when the request reached the server but no answer came back in time: usually our
+ * server still waking up on Render's free tier (#87), not a problem with the phone's
+ * connection. A connect timeout doesn't count, since Render's edge accepts connections
+ * straight away even while the server sleeps. Ktor's own socket timeout extends
+ * [java.net.SocketTimeoutException] on the JVM, and its connect timeout doesn't.
+ */
+fun isServerResponseTimeout(e: Throwable): Boolean =
+    e is HttpRequestTimeoutException || (e is java.net.SocketTimeoutException && e !is ConnectTimeoutException)

@@ -240,6 +240,8 @@
     <string name="auth_error_invalid_input">Datos no válidos</string>
     <string name="auth_error_status">Algo salió mal (%1$d)</string>
     <string name="auth_error_unreachable">No se pudo conectar con el servidor. Revisa tu conexión y vuelve a intentarlo.</string>
+    <string name="auth_error_server_slow">El servidor está tardando demasiado en responder. Vuelve a intentarlo en un minuto.</string>
+    <string name="server_waking_hint">Es posible que el servidor se esté iniciando. Puede tardar hasta un minuto.</string>
 
     <!-- Settings -->
     <string name="settings_app_version">%1$s · Versión %2$s</string>

@@ -215,6 +215,8 @@
     <string name="auth_error_invalid_input">Ungültige Eingabe</string>
     <string name="auth_error_status">Etwas ist schiefgelaufen (%1$d)</string>
     <string name="auth_error_unreachable">Der Server ist nicht erreichbar. Prüfe deine Verbindung und versuche es erneut.</string>
+    <string name="auth_error_server_slow">Der Server antwortet zu langsam. Versuche es in einer Minute noch einmal.</string>
+    <string name="server_waking_hint">Der Server startet möglicherweise gerade. Das kann bis zu einer Minute dauern.</string>
 
     <string name="settings_app_version">%1$s · Version %2$s</string>
     <string name="settings_section_about">Über</string>

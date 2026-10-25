@@ -2,7 +2,9 @@ package com.application.bibleapp.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.application.bibleapp.data.remote.ServerWakeUp
 import com.application.bibleapp.data.remote.UserResponseDto
+import com.application.bibleapp.data.remote.isServerResponseTimeout
 import com.application.bibleapp.data.repository.AuthException
 import com.application.bibleapp.data.repository.AuthRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -45,8 +47,16 @@ class AuthViewModel(
     private val _currentUser = MutableStateFlow<UserResponseDto?>(null)
     val currentUser: StateFlow<UserResponseDto?> = _currentUser.asStateFlow()
 
+    private val serverWakeUp = ServerWakeUp(ping = authRepository::pingServer)
+
     init {
         if (_isLoggedIn.value) refreshCurrentUser()
+    }
+
+    /** The sign-in and create-account screens call this when they open, so a sleeping server
+     *  starts up while the form is filled in (#87). */
+    fun wakeServer() {
+        viewModelScope.launch { serverWakeUp.wakeUp() }
     }
 
     fun register(email: String, password: String, onSuccess: () -> Unit) {
@@ -149,6 +159,9 @@ class AuthViewModel(
 
     private fun errorText(throwable: Throwable): UiText = when {
         throwable is AuthException -> throwable.error.displayMessage
+        // The server got the request but didn't answer in time (usually still waking up), so
+        // "check your connection" would send people to fix the wrong thing (#87).
+        isServerResponseTimeout(throwable) -> UiText.Res(R.string.auth_error_server_slow)
         // Covers Ktor's ConnectTimeoutException/SocketTimeoutException and plain
         // UnknownHostException — anything where the request never actually reached the
         // server, as opposed to the server responding with an error.

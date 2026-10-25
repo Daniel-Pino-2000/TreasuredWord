@@ -216,6 +216,8 @@
     <string name="auth_error_invalid_input">Maingizo si sahihi</string>
     <string name="auth_error_status">Hitilafu fulani imetokea (%1$d)</string>
     <string name="auth_error_unreachable">Imeshindwa kufikia seva. Angalia muunganisho wako kisha ujaribu tena.</string>
+    <string name="auth_error_server_slow">Seva inachukua muda mrefu kujibu. Jaribu tena baada ya dakika moja.</string>
+    <string name="server_waking_hint">Huenda seva inawashwa. Hii inaweza kuchukua hadi dakika moja.</string>
 
     <string name="settings_app_version">%1$s · Toleo %2$s</string>
     <string name="settings_section_about">Kuhusu</string>

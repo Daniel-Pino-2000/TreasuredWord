@@ -253,6 +253,10 @@
     <!-- %1$d is an HTTP status code -->
     <string name="auth_error_status">Something went wrong (%1$d)</string>
     <string name="auth_error_unreachable">Couldn\'t reach the server. Check your connection and try again.</string>
+    <!-- Our server got the request but didn't answer in time, usually because it was asleep (#87) -->
+    <string name="auth_error_server_slow">The server is taking too long to respond. Please try again in a minute.</string>
+    <!-- Under a spinner that has been waiting on our server for a few seconds (#87) -->
+    <string name="server_waking_hint">The server may be waking up. This can take up to a minute.</string>
 
     <!-- Settings -->
     <!-- %1$s is the app name, %2$s its version number -->

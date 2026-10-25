@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
@@ -19,6 +21,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -29,6 +32,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import com.application.bibleapp.components.ServerWakeHint
+import com.application.bibleapp.components.rememberWaitingLong
 import com.application.bibleapp.ui.theme.Spacing
 import com.application.bibleapp.utils.MIN_PASSWORD_LENGTH
 import com.application.bibleapp.utils.isValidEmailFormat
@@ -60,10 +65,15 @@ fun RegisterView(
 
     val canSubmit = !isLoading && isValidEmailFormat(email) &&
         password.length >= MIN_PASSWORD_LENGTH && password == confirmPassword
+    val waitingLong = rememberWaitingLong(isLoading)
+
+    // A sleeping server starts up while the form is filled in, not after submitting (#87).
+    LaunchedEffect(Unit) { authViewModel.wakeServer() }
 
     Column(
         modifier = modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(Spacing.lg),
         verticalArrangement = Arrangement.spacedBy(Spacing.md)
     ) {
@@ -153,6 +163,8 @@ fun RegisterView(
                 Text(stringResource(R.string.register_submit))
             }
         }
+
+        if (waitingLong) ServerWakeHint()
 
         TextButton(onClick = onNavigateToLogin, modifier = Modifier.fillMaxWidth()) {
             Text(stringResource(R.string.register_have_account))
