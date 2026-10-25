@@ -495,6 +495,7 @@ class BibleViewModel(
             _selectedVersion.value = if (isAvailable) SelectedBibleVersion(id = persistedId) else DEFAULT_VERSION
             _bookNames.value = repository.getBookNames(_selectedVersion.value.id)
             _chapterStructure.value = repository.getChapterStructure(_selectedVersion.value.id)
+            prepareSearch(_selectedVersion.value.id)
             val lastPosition = repository.loadReadingPosition()
             loadChapter(lastPosition.bookId, lastPosition.chapter, lastPosition.verse)
             loadVerseOfTheDay()
@@ -1177,6 +1178,12 @@ class BibleViewModel(
         }
     }
 
+    /** Readies [versionId] for word search in the background, so Search doesn't have to wait
+     *  for it the first time (#90). A failure here only means the first search does it instead. */
+    private fun prepareSearch(versionId: String) {
+        viewModelScope.launch { runCatching { repository.prepareSearch(versionId) } }
+    }
+
     private suspend fun switchToVersion(versionId: String) {
         _selectedVersion.value = SelectedBibleVersion(id = versionId)
         repository.saveSelectedVersion(versionId)
@@ -1184,6 +1191,7 @@ class BibleViewModel(
         _chapterStructure.value = repository.getChapterStructure(versionId)
         loadChapter(_currentBook.value, _currentChapter.value)
         verseSearch.onVersionChange()
+        prepareSearch(versionId)
         // Re-resolve (not re-fetch) so the card matches the newly selected translation
         // right away — the reference is already cached for today, so this is just a
         // local chapter lookup, no network call.

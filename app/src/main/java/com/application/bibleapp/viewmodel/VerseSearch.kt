@@ -31,7 +31,9 @@ data class SearchUiState(
  * follow the version's language, not the app's (#88). Search matches parts of words, so very
  * short words that hide inside others ("fe" in "profeta", "foi" in "fois") are left out.
  * Not every word finds something in every translation: [SearchSuggestionFilter] hides those.
- * Korean and Chinese are missing because search can't match their scripts yet.
+ * Chinese lists both Simplified and Traditional forms where they differ ("爱"/"愛"); each Bible
+ * shows only the ones written its way. Korean and Chinese words were checked against kor_old and
+ * all five cmn translations on bible.helloao.org on 2026-10-25 (#90).
  */
 private val SEARCH_SUGGESTIONS: Map<String, List<String>> = mapOf(
     "eng" to listOf("love", "faith", "hope", "grace", "peace", "joy", "forgiveness"),
@@ -41,7 +43,9 @@ private val SEARCH_SUGGESTIONS: Map<String, List<String>> = mapOf(
     "deu" to listOf("Liebe", "Glaube", "Hoffnung", "Gnade", "Friede", "Freude", "Vergebung"),
     "ind" to listOf("kasih", "iman", "pengharapan", "kasih karunia", "damai", "sukacita", "pengampunan"),
     "tgl" to listOf("pag-ibig", "pananampalataya", "biyaya", "kapayapaan", "kagalakan", "kapatawaran"),
-    "swh" to listOf("upendo", "imani", "tumaini", "neema", "amani", "furaha", "msamaha")
+    "swh" to listOf("upendo", "imani", "tumaini", "neema", "amani", "furaha", "msamaha"),
+    "kor" to listOf("사랑", "믿음", "소망", "은혜", "평안", "기쁨", "용서"),
+    "cmn" to listOf("爱", "愛", "信心", "盼望", "恩典", "平安", "喜乐", "喜樂", "赦免")
 )
 
 /**
@@ -59,9 +63,9 @@ private const val ENGLISH_LANGUAGE_CODE = "eng"
 
 /**
  * Keeps only the suggestions that find something in the version, so no chip ever leads to
- * "No results" (#60, #88): translations word things differently ("gozo" or "alegría"), and
- * search can't match every accent yet. Answers are remembered per version and word, since a
- * version's text doesn't change while it's installed. A failed check isn't remembered.
+ * "No results" (#60, #88): translations word things differently ("gozo" or "alegría", "爱" or
+ * "愛"). Answers are remembered per version and word, since a version's text doesn't change
+ * while it's installed. A failed check isn't remembered.
  */
 class SearchSuggestionFilter(
     private val hasMatch: suspend (word: String, versionId: String) -> Boolean
@@ -113,7 +117,7 @@ class VerseSearch(
     fun onQueryChange(text: String) {
         _query.value = text
         val query = text.trim()
-        if (query.length < MIN_QUERY_LENGTH) {
+        if (query.length < MIN_QUERY_LENGTH && !query.isIdeograph()) {
             reset()
             return
         }
@@ -164,3 +168,7 @@ class VerseSearch(
         const val MIN_QUERY_LENGTH = 2
     }
 }
+
+/** A single Chinese character is a whole word ("爱", love), so it's searched as typed too (#90). */
+private fun String.isIdeograph(): Boolean =
+    codePointCount(0, length) == 1 && Character.isIdeographic(codePointAt(0))
