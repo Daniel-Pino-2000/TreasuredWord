@@ -115,7 +115,7 @@ fun Navigation(
         }
 
         composable(Screen.Licenses.route) {
-            LicensesView(modifier = screenModifier)
+            LicensesView(onMessage = { bibleViewModel.showMessage(it) }, modifier = screenModifier)
         }
 
         composable(
