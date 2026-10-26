@@ -222,6 +222,7 @@
     <string name="settings_app_version">%1$s · Toleo %2$s</string>
     <string name="settings_section_about">Kuhusu</string>
     <string name="settings_privacy_policy">Sera ya faragha</string>
+    <string name="settings_open_source_licenses">Leseni za programu huria</string>
     <string name="settings_section_general">Jumla</string>
     <string name="title_language">Lugha</string>
     <string name="language_system_default">Chaguomsingi la mfumo</string>

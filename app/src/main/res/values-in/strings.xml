@@ -214,6 +214,7 @@
     <string name="settings_app_version">%1$s · Versi %2$s</string>
     <string name="settings_section_about">Tentang</string>
     <string name="settings_privacy_policy">Kebijakan privasi</string>
+    <string name="settings_open_source_licenses">Lisensi open source</string>
     <string name="settings_section_general">Umum</string>
     <string name="title_language">Bahasa</string>
     <string name="language_system_default">Default sistem</string>
