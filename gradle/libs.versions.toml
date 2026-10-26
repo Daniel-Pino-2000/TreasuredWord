@@ -11,6 +11,8 @@ composeBom = "2024.09.00"
 navigationRuntimeAndroid = "2.9.4"
 workManager = "2.9.1"
 browser = "1.8.0"
+# 11.x is built for Kotlin 2.0 / Compose 1.6+; 12+ would pull in Compose 1.8+ (#99)
+aboutLibraries = "11.2.3"
 ktor = "3.0.3"
 exposed = "0.61.0"
 postgresql = "42.7.7"
@@ -37,6 +39,7 @@ androidx-material3 = { group = "androidx.compose.material3", name = "material3" 
 androidx-navigation-runtime-android = { group = "androidx.navigation", name = "navigation-runtime-android", version.ref = "navigationRuntimeAndroid" }
 androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workManager" }
 androidx-browser = { group = "androidx.browser", name = "browser", version.ref = "browser" }
+aboutlibraries-compose-m3 = { group = "com.mikepenz", name = "aboutlibraries-compose-m3", version.ref = "aboutLibraries" }
 
 # Ktor server
 ktor-server-core = { group = "io.ktor", name = "ktor-server-core", version.ref = "ktor" }
@@ -75,4 +78,5 @@ kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "ko
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-plugin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 ktor = { id = "io.ktor.plugin", version.ref = "ktor" }
+aboutlibraries = { id = "com.mikepenz.aboutlibraries.plugin", version.ref = "aboutLibraries" }
 

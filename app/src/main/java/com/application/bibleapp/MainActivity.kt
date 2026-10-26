@@ -257,7 +257,8 @@ class MainActivity : AppCompatActivity() {
                     Screen.Library.route,
                     Screen.LibraryItemDetail.route,
                     Screen.Settings.route,
-                    Screen.LanguagePicker.route
+                    Screen.LanguagePicker.route,
+                    Screen.Licenses.route
                 )
                 val useRail = compactHeight && showNavigation
 
@@ -335,6 +336,7 @@ class MainActivity : AppCompatActivity() {
                                 Screen.You.route -> YouTopBar { navController.navigate(Screen.Settings.route) }
                                 Screen.Settings.route -> SettingsTopBar(stringResource(Screen.Settings.titleRes)) { navController.popBackStack() }
                                 Screen.LanguagePicker.route -> SettingsTopBar(stringResource(Screen.LanguagePicker.titleRes)) { navController.popBackStack() }
+                                Screen.Licenses.route -> SettingsTopBar(stringResource(Screen.Licenses.titleRes)) { navController.popBackStack() }
                                 Screen.Login.route -> LoginTopBar { navController.popBackStack() }
                                 Screen.Register.route -> RegisterTopBar { navController.popBackStack() }
                                 Screen.Library.route -> LibraryTopBar { navController.popBackStack() }

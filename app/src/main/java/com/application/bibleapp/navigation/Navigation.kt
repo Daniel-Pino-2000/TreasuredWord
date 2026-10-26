@@ -28,6 +28,7 @@ import com.application.bibleapp.viewmodel.AuthViewModel
 import com.application.bibleapp.viewmodel.BibleViewModel
 import com.application.bibleapp.worker.SyncScheduler
 import com.application.bibleapp.screens.settings.LanguagePickerView
+import com.application.bibleapp.screens.settings.LicensesView
 
 @Composable
 fun Navigation(
@@ -104,12 +105,17 @@ fun Navigation(
                 authViewModel = authViewModel,
                 modifier = screenModifier,
                 onSignInClick = { navController.navigate(Screen.Login.route) },
-                onLanguageClick = { navController.navigate(Screen.LanguagePicker.route) }
+                onLanguageClick = { navController.navigate(Screen.LanguagePicker.route) },
+                onLicensesClick = { navController.navigate(Screen.Licenses.route) }
             )
         }
 
         composable(Screen.LanguagePicker.route) {
             LanguagePickerView(modifier = screenModifier)
+        }
+
+        composable(Screen.Licenses.route) {
+            LicensesView(modifier = screenModifier)
         }
 
         composable(

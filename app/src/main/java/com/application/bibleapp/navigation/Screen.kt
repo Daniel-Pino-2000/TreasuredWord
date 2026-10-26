@@ -50,4 +50,7 @@ sealed class Screen(val route: String, @StringRes val titleRes: Int) {
 
     /** The app's UI language, one level below Settings. */
     object LanguagePicker: Screen("settings/language", R.string.title_language)
+
+    /** Every library the app ships, with its license (#99), one level below Settings. */
+    object Licenses: Screen("settings/licenses", R.string.settings_open_source_licenses)
 }

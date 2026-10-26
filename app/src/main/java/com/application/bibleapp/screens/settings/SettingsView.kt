@@ -23,9 +23,11 @@ import com.application.bibleapp.R
 import androidx.compose.ui.res.stringResource
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.PrivacyTip
 import androidx.compose.material3.Icon
+import com.application.bibleapp.components.GroupedDivider
 import com.application.bibleapp.components.GroupedRow
 import com.application.bibleapp.components.GroupedSection
 import com.application.bibleapp.utils.AppLanguage
@@ -45,7 +47,8 @@ fun SettingsView(
     authViewModel: AuthViewModel,
     modifier: Modifier = Modifier,
     onSignInClick: () -> Unit,
-    onLanguageClick: () -> Unit
+    onLanguageClick: () -> Unit,
+    onLicensesClick: () -> Unit
 ) {
     val context = LocalContext.current
     val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
@@ -85,6 +88,13 @@ fun SettingsView(
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
+            )
+            GroupedDivider()
+            // The Apache License asks for its text to ship with the libraries it covers (#99).
+            GroupedRow(
+                title = stringResource(R.string.settings_open_source_licenses),
+                icon = Icons.Outlined.Description,
+                onClick = onLicensesClick
             )
         }
 

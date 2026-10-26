@@ -223,6 +223,7 @@
     <string name="settings_app_version">%1$s · Bersyon %2$s</string>
     <string name="settings_section_about">Tungkol</string>
     <string name="settings_privacy_policy">Patakaran sa privacy</string>
+    <string name="settings_open_source_licenses">Mga lisensya ng open source</string>
     <string name="settings_section_general">Pangkalahatan</string>
     <string name="title_language">Wika</string>
     <string name="language_system_default">Default ng system</string>

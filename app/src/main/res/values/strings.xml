@@ -263,6 +263,8 @@
     <string name="settings_app_version">%1$s · Version %2$s</string>
     <string name="settings_section_about">About</string>
     <string name="settings_privacy_policy">Privacy policy</string>
+    <!-- Settings row and page listing the open-source libraries in the app and their licenses (#99) -->
+    <string name="settings_open_source_licenses">Open-source licenses</string>
     <string name="settings_section_general">General</string>
     <string name="title_language">Language</string>
     <!-- Follow the phone's language instead of choosing one for the app -->

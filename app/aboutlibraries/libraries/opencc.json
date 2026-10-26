@@ -1,0 +1,16 @@
+{
+  "uniqueId": "BYVoid:OpenCC",
+  "artifactVersion": "5c764a5",
+  "name": "OpenCC (TSCharacters.txt)",
+  "description": "Traditional-to-Simplified Chinese character table. Search uses a table generated from it (utils/ChineseFolding.kt) so verses are found in either script.",
+  "website": "https://github.com/BYVoid/OpenCC",
+  "developers": [
+    {
+      "name": "Carbo Kuo (BYVoid) and the OpenCC contributors",
+      "organisationUrl": "https://github.com/BYVoid/OpenCC"
+    }
+  ],
+  "licenses": [
+    "Apache-2.0"
+  ]
+}

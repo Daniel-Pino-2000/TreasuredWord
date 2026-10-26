@@ -230,6 +230,7 @@
     <string name="settings_app_version">%1$s · Version %2$s</string>
     <string name="settings_section_about">À propos</string>
     <string name="settings_privacy_policy">Politique de confidentialité</string>
+    <string name="settings_open_source_licenses">Licences open source</string>
     <string name="settings_section_general">Général</string>
     <string name="title_language">Langue</string>
     <string name="language_system_default">Langue du système</string>
