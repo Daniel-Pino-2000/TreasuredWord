@@ -9,4 +9,5 @@ exclude:
   - release.md
   - UI_Integration_Roadmap.md
   - icon-source
+  - play-store
   - screenshots
