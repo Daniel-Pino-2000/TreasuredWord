@@ -41,6 +41,14 @@ class SearchSuggestionsTest {
     }
 
     @Test
+    fun `Korean and Chinese versions get words in their own script`() {
+        val catalog = listOf(translation("kor_old", "kor"), translation("cmn_cu1", "cmn"))
+        assertTrue(searchSuggestionsFor("kor_old", catalog).contains("사랑"))
+        // Both Simplified and Traditional; the filter keeps the ones the Bible actually uses.
+        assertTrue(searchSuggestionsFor("cmn_cu1", catalog).containsAll(listOf("爱", "愛")))
+    }
+
+    @Test
     fun `a language without a list gets none`() {
         assertTrue(searchSuggestionsFor("twi_asa", catalog).isEmpty())
     }

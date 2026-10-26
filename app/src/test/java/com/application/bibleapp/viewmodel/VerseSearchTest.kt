@@ -123,6 +123,16 @@ class VerseSearchTest {
     }
 
     @Test
+    fun `one Chinese character is a word, so it searches as typed`() = runTest {
+        val fake = FakeSearch()
+        val search = verseSearch(fake)
+
+        search.onQueryChange("爱")
+        advanceUntilIdle()
+        assertEquals(listOf("爱" to "kjv"), fake.calls)
+    }
+
+    @Test
     fun `clearing the text goes back to idle and cancels a pending search`() = runTest {
         val fake = FakeSearch()
         val search = verseSearch(fake)

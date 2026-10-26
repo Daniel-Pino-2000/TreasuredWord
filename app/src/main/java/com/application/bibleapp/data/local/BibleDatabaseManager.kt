@@ -40,11 +40,13 @@ data class VersionDownloadSummary(
  * Owns the single on-device SQLite connection and every query/write against it.
  *
  * Storage model: the bundled `KJV_verses` table (shipped as an asset, `text` only)
- * is never modified. Everything downloaded from the helloao API lands in three
- * separate tables instead — `downloaded_versions` (one row per downloaded
- * translation, plus [DownloadedVersionInfo.schemaVersion] recording which shape
- * of [downloadAndSaveVersion] wrote it), `downloaded_verses` (`text` for search,
- * `rich_content` for rendering — see [encodeToJson]/[decodeVerseContentOrNull]),
+ * keeps the asset's verses unchanged; the only thing added to it is the derived
+ * `search_text` column (see [ensureSearchTextColumns]). Everything downloaded from
+ * the helloao API lands in three separate tables instead — `downloaded_versions`
+ * (one row per downloaded translation, plus [DownloadedVersionInfo.schemaVersion]
+ * recording which shape of [downloadAndSaveVersion] wrote it), `downloaded_verses`
+ * (plain `text`, normalized `search_text` for search, `rich_content` for
+ * rendering — see [encodeToJson]/[decodeVerseContentOrNull]),
  * and `downloaded_footnotes` (chapter-wide footnote text, looked up separately
  * from verse rendering by version/book/chapter/noteId rather than duplicated
  * onto every verse that references one).
@@ -178,6 +180,7 @@ object BibleDatabaseManager {
         )
         ensureDownloadedVersionsTable(db)
         ensureUserContentTables(db)
+        ensureSearchTextColumns(db)
         dbInstance = db
         return db
     }
@@ -204,8 +207,8 @@ object BibleDatabaseManager {
 
         // Separate table for downloaded verses — never mixed with bundled KJV.
         // rich_content is nullable JSON (StoredVerseContent) alongside plain `text` —
-        // `text` stays plain on purpose so search's GROUP_CONCAT/LIKE keeps working
-        // unchanged; only the reading screen looks at rich_content.
+        // `text` stays plain on purpose (search's `search_text` is made from it); only
+        // the reading screen looks at rich_content.
         db.execSQL(
             """
             CREATE TABLE IF NOT EXISTS downloaded_verses (
@@ -333,6 +336,80 @@ object BibleDatabaseManager {
             """.trimIndent()
         )
         Log.d("BibleDB", "Highlight/note tables ready")
+    }
+
+    /**
+     * Each verse's text as search matches it, normalized in Kotlin by the same
+     * [normalizeForSearch] as the query (#90). SQL alone can't do that: `LOWER` only knows A-Z,
+     * and folding accents with nested `REPLACE`s covered only Spanish and slowed every search.
+     * New downloads fill it as they're written; the bundled KJV (whose table is replaced
+     * without it whenever the asset changes) and versions downloaded before it existed are
+     * filled by [ensureSearchText] once, when they're first opened or searched.
+     */
+    private fun ensureSearchTextColumns(db: SQLiteDatabase) {
+        addColumnIfMissing(db, "KJV_verses", "search_text", "TEXT")
+        addColumnIfMissing(db, "downloaded_verses", "search_text", "TEXT")
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS search_text_state (id INTEGER PRIMARY KEY CHECK (id = 0), normalizer_version INTEGER NOT NULL)"
+        )
+        val storedVersion = db.rawQuery("SELECT normalizer_version FROM search_text_state WHERE id = 0", null)
+            .use { cursor -> if (cursor.moveToFirst()) cursor.getInt(0) else 0 }
+        if (storedVersion < SEARCH_TEXT_VERSION) {
+            // Text normalized by an older [normalizeForSearch] wouldn't match today's queries.
+            db.beginTransaction()
+            try {
+                db.execSQL("UPDATE KJV_verses SET search_text = NULL")
+                db.execSQL("UPDATE downloaded_verses SET search_text = NULL")
+                db.execSQL("INSERT OR REPLACE INTO search_text_state (id, normalizer_version) VALUES (0, ?)", arrayOf(SEARCH_TEXT_VERSION))
+                db.setTransactionSuccessful()
+            } finally {
+                db.endTransaction()
+            }
+        }
+        synchronized(searchTextReady) { searchTextReady.clear() }
+    }
+
+    /** Bump whenever [normalizeForSearch] changes, so every stored `search_text` is rebuilt. */
+    private const val SEARCH_TEXT_VERSION = 1
+
+    /** Versions whose `search_text` is known to be filled in, so the check runs once per launch. */
+    private val searchTextReady = mutableSetOf<String>()
+
+    /**
+     * Fills in `search_text` for any of [version]'s verses that don't have it yet: a one-time
+     * cost of a second or two for a whole Bible, normally paid in the background by
+     * [prepareSearch] when the version is opened. Synchronized so a search arriving meanwhile
+     * waits for it instead of doing it again.
+     */
+    private fun ensureSearchText(db: SQLiteDatabase, version: String) = synchronized(searchTextReady) {
+        if (version in searchTextReady) return@synchronized
+        val isKjv = version == "kjv"
+        val table = verseTable(version)
+        // Normalized as they're read, so the write transaction below only writes.
+        val missing = db.rawQuery(
+            "SELECT id, text FROM $table WHERE search_text IS NULL" + if (isKjv) "" else " AND version = ?",
+            if (isKjv) null else arrayOf(version)
+        ).use { cursor ->
+            buildList { while (cursor.moveToNext()) add(cursor.getLong(0) to cursor.getString(1).orEmpty().normalizeForSearch()) }
+        }
+
+        if (missing.isNotEmpty()) {
+            db.beginTransaction()
+            try {
+                db.compileStatement("UPDATE $table SET search_text = ? WHERE id = ?").use { statement ->
+                    missing.forEach { (id, searchText) ->
+                        statement.bindString(1, searchText)
+                        statement.bindLong(2, id)
+                        statement.executeUpdateDelete()
+                    }
+                }
+                db.setTransactionSuccessful()
+            } finally {
+                db.endTransaction()
+            }
+            Log.d("BibleDB", "Filled search_text for ${missing.size} verses of $version")
+        }
+        searchTextReady += version
     }
 
     /** Overwrites the cached daily-verse reference — always a single row, replaced wholesale. */
@@ -491,8 +568,8 @@ object BibleDatabaseManager {
                 downloaded.verses.forEach { verse ->
                     db.execSQL(
                         """
-                        INSERT OR REPLACE INTO downloaded_verses (version, book_id, chapter, verse, text, rich_content)
-                        VALUES (?, ?, ?, ?, ?, ?)
+                        INSERT OR REPLACE INTO downloaded_verses (version, book_id, chapter, verse, text, rich_content, search_text)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
                         """.trimIndent(),
                         arrayOf(
                             translationId,
@@ -500,7 +577,8 @@ object BibleDatabaseManager {
                             verse.chapter,
                             verse.verse,
                             verse.text,
-                            verse.richContent?.encodeToJson()
+                            verse.richContent?.encodeToJson(),
+                            verse.text.normalizeForSearch()
                         )
                     )
                 }
@@ -690,70 +768,63 @@ object BibleDatabaseManager {
         return structure
     }
 
-    private fun buildNormalizedSql(textExpr: String): String {
-        val replacements = listOf(
-            "á" to "a", "é" to "e", "í" to "i",
-            "ó" to "o", "ú" to "u", "ü" to "u", "ñ" to "n"
-        )
-        var sql = textExpr
-        replacements.forEach { (from, to) ->
-            sql = "REPLACE($sql,'$from','$to')"
-        }
-        return "LOWER($sql)"
-    }
+    private fun verseTable(version: String) = if (version == "kjv") "KJV_verses" else "downloaded_verses"
 
     /**
-     * Whether a word search for [query] would find anything in [version], matched exactly as
-     * [searchVerses] matches. Checks single rows with LIMIT 1 instead of grouping whole verses,
-     * so it's cheap enough to run for each Search suggestion (#88); a row that matches always
-     * means its verse matches too.
+     * The WHERE clause and arguments shared by [hasSearchMatch] and [searchVerses]: every word of
+     * the normalized [query] must appear somewhere in the verse's `search_text` (parts of words
+     * count). Null if the query has nothing searchable in it. Each table holds one row per verse
+     * (downloaded_verses is UNIQUE on it, and the KJV asset has 31,102 rows for 31,102 verses),
+     * so rows are matched directly instead of grouped into verses first.
      */
-    suspend fun hasSearchMatch(context: Context, query: String, version: String): Boolean = withContext(Dispatchers.IO) {
-        val db = getDatabase(context)
+    private fun searchCondition(query: String, version: String): Pair<String, Array<String>>? {
         val words = query.normalizeForSearch().split(" ").filter { it.isNotBlank() }
-        if (words.isEmpty()) return@withContext false
-
+        if (words.isEmpty()) return null
         val isKjv = version == "kjv"
-        val table = if (isKjv) "KJV_verses" else "downloaded_verses"
-        val normalizedCol = buildNormalizedSql("text")
         val conditions = buildList {
             if (!isKjv) add("version = ?")
-            words.forEach { _ -> add("$normalizedCol LIKE ?") }
+            words.forEach { _ -> add("search_text LIKE ?") }
         }.joinToString(" AND ")
         val args = buildList {
             if (!isKjv) add(version)
             words.forEach { add("%$it%") }
         }.toTypedArray()
+        return conditions to args
+    }
 
-        db.rawQuery("SELECT 1 FROM $table WHERE $conditions LIMIT 1", args).use { it.moveToFirst() }
+    /**
+     * Fills in [version]'s missing `search_text` ahead of its first search, from the background
+     * when a version is opened, so neither Search nor its suggestion checks wait for it.
+     */
+    suspend fun prepareSearch(context: Context, version: String) = withContext(Dispatchers.IO) {
+        ensureSearchText(getDatabase(context), version)
+    }
+
+    /**
+     * Whether a word search for [query] would find anything in [version], matched exactly as
+     * [searchVerses] matches, with LIMIT 1 so it's cheap enough to run for each Search
+     * suggestion (#88).
+     */
+    suspend fun hasSearchMatch(context: Context, query: String, version: String): Boolean = withContext(Dispatchers.IO) {
+        val db = getDatabase(context)
+        val (conditions, args) = searchCondition(query, version) ?: return@withContext false
+        ensureSearchText(db, version)
+        db.rawQuery("SELECT 1 FROM ${verseTable(version)} WHERE $conditions LIMIT 1", args).use { it.moveToFirst() }
     }
 
     suspend fun searchVerses(query: String, version: String): List<VerseUI> = withContext(Dispatchers.IO) {
         if (query.isBlank()) return@withContext emptyList()
 
         val db = dbInstance ?: throw IllegalStateException("DB not initialized")
-        val words = query.normalizeForSearch().split(" ").filter { it.isNotBlank() }
-        if (words.isEmpty()) return@withContext emptyList()
+        val (conditions, args) = searchCondition(query, version) ?: return@withContext emptyList()
 
         try {
-            val isKjv = version == "kjv"
-            val table = if (isKjv) "KJV_verses" else "downloaded_verses"
-            val normalizedCol = buildNormalizedSql("GROUP_CONCAT(text, ' ')")
-            val havingConditions = words.joinToString(" AND ") { "$normalizedCol LIKE ?" }
-
-            val whereClause = if (isKjv) "" else "WHERE version = ?"
-            val args = buildList {
-                if (!isKjv) add(version)
-                words.forEach { add("%$it%") }
-            }.toTypedArray()
-
+            ensureSearchText(db, version)
             val cursor = db.rawQuery(
                 """
-                SELECT book_id, chapter, verse, GROUP_CONCAT(text, ' ') as fullText
-                FROM $table
-                $whereClause
-                GROUP BY book_id, chapter, verse
-                HAVING $havingConditions
+                SELECT book_id, chapter, verse, text
+                FROM ${verseTable(version)}
+                WHERE $conditions
                 ORDER BY book_id, chapter, verse
                 LIMIT 500
                 """.trimIndent(),

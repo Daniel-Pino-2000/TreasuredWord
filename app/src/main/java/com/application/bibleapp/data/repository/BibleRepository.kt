@@ -85,6 +85,9 @@ class BibleRepository(
             BibleDatabaseManager.getFootnotesForChapter(context, bookId, chapter, versionId)
         }
 
+    /** Fills in anything [versionId] still needs for word search (#90); see BibleDatabaseManager.prepareSearch. */
+    suspend fun prepareSearch(versionId: String) = BibleDatabaseManager.prepareSearch(context, versionId)
+
     /** Whether a word search for [query] finds anything in [versionId] (#88). */
     suspend fun hasSearchMatch(query: String, versionId: String): Boolean =
         BibleDatabaseManager.hasSearchMatch(context, query, versionId)
