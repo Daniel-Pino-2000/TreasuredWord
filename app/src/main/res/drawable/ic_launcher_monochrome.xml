@@ -1,0 +1,20 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- The launcher icon's one-color layer for Android 13+ themed icons (#105). The system tints
+         it to match the wallpaper and uses only its shape, so the fill color is never shown.
+         Same size and position as mipmap-*/ic_launcher_foreground.png (book 32x48 dp, centered),
+         so the themed icon isn't bigger or smaller than the normal one. The cross is cut out of
+         the book with evenOdd, like drawable/ic_notification_daily_verse.xml. -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M40.5,30H67.5A2.5,2.5 0 0 1 70,32.5V75.5A2.5,2.5 0 0 1 67.5,78H40.5A2.5,2.5 0 0 1 38,75.5V32.5A2.5,2.5 0 0 1 40.5,30Z
+                          M52.5,36.5L55.5,36.5L55.5,46.5L64,46.5L64,49.5L55.5,49.5L55.5,66L52.5,66L52.5,49.5L44,49.5L44,46.5L52.5,46.5Z" />
+    <!-- The bookmark ribbon under the book, with its notched end. -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M51.5,78L54,78L54,84.5L52.75,82.75L51.5,84.5Z" />
+</vector>
