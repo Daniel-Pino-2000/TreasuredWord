@@ -4,6 +4,7 @@ import android.content.Context
 import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.util.Log
+import com.application.bibleapp.data.model.BibleTranslation
 import com.application.bibleapp.data.model.BibleVerse
 import com.application.bibleapp.data.model.DailyVerseRef
 import com.application.bibleapp.data.model.DownloadedVersionInfo
@@ -11,6 +12,7 @@ import com.application.bibleapp.data.model.Footnote
 import com.application.bibleapp.data.model.Highlight
 import com.application.bibleapp.data.model.Note
 import com.application.bibleapp.data.model.SyncStatus
+import com.application.bibleapp.data.model.TranslationLicense
 import com.application.bibleapp.data.model.VerseUI
 import com.application.bibleapp.data.model.decodeVerseContentOrNull
 import com.application.bibleapp.data.model.encodeToJson
@@ -25,6 +27,8 @@ import com.application.bibleapp.utils.TextUtils.normalizeForSearch
 import com.application.bibleapp.utils.isoTimestampNow
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.SerializationException
+import kotlinx.serialization.json.Json
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -204,6 +208,10 @@ object BibleDatabaseManager {
         // that's exactly what they are, since rich_content/footnotes didn't exist yet
         // when they were downloaded. New downloads always stamp the current version.
         addColumnIfMissing(db, "downloaded_versions", "schema_version", "INTEGER NOT NULL DEFAULT 1")
+        // The translation's full title and its TranslationLicense as JSON, for the reader's credit
+        // offline (#98). Null on older rows until saveMissingCredits fills them in from the catalog.
+        addColumnIfMissing(db, "downloaded_versions", "full_name", "TEXT")
+        addColumnIfMissing(db, "downloaded_versions", "license", "TEXT")
 
         // Separate table for downloaded verses — never mixed with bundled KJV.
         // rich_content is nullable JSON (StoredVerseContent) alongside plain `text` —
@@ -474,13 +482,63 @@ object BibleDatabaseManager {
     fun getDownloadedVersions(context: Context): List<DownloadedVersionInfo> {
         val db = getDatabase(context)
         val results = mutableListOf<DownloadedVersionInfo>()
-        val cursor = db.rawQuery("SELECT id, schema_version, name FROM downloaded_versions", null)
+        val cursor = db.rawQuery("SELECT id, schema_version, name, full_name, license FROM downloaded_versions", null)
         cursor.use {
             while (it.moveToNext()) {
-                results.add(DownloadedVersionInfo(id = it.getString(0), schemaVersion = it.getInt(1), name = it.getString(2)))
+                results.add(
+                    DownloadedVersionInfo(
+                        id = it.getString(0),
+                        schemaVersion = it.getInt(1),
+                        name = it.getString(2),
+                        fullName = if (it.isNull(3)) "" else it.getString(3),
+                        license = if (it.isNull(4)) null else decodeLicenseOrNull(it.getString(4))
+                    )
+                )
             }
         }
         return results
+    }
+
+    /**
+     * Gives downloads made before credits were saved (#98) their title and license from the
+     * catalog entry [catalog], so their credit keeps working offline afterwards. Only fills empty
+     * columns: what was saved with the download describes the text actually on the device.
+     */
+    fun saveMissingCredits(context: Context, catalog: List<BibleTranslation>) {
+        if (catalog.isEmpty()) return
+        val db = getDatabase(context)
+        db.beginTransaction()
+        try {
+            catalog.forEach { version ->
+                db.execSQL(
+                    """
+                    UPDATE downloaded_versions
+                    SET full_name = COALESCE(full_name, ?), license = COALESCE(license, ?)
+                    WHERE id = ? AND (full_name IS NULL OR license IS NULL)
+                    """.trimIndent(),
+                    arrayOf(
+                        version.nativeName,
+                        version.license?.let { licenseJson.encodeToString(TranslationLicense.serializer(), it) },
+                        version.id
+                    )
+                )
+            }
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
+        }
+    }
+
+    private val licenseJson = Json { ignoreUnknownKeys = true }
+
+    private fun decodeLicenseOrNull(json: String): TranslationLicense? = try {
+        licenseJson.decodeFromString(TranslationLicense.serializer(), json)
+    } catch (e: SerializationException) {
+        Log.w("BibleDB", "Unreadable saved license, ignoring: ${e.message}")
+        null
+    } catch (e: IllegalArgumentException) {
+        Log.w("BibleDB", "Unreadable saved license, ignoring: ${e.message}")
+        null
     }
 
     /** Wipes a downloaded translation so it can be cleanly re-fetched (e.g. to pick up a newer schema). */
@@ -616,12 +674,14 @@ object BibleDatabaseManager {
                 }
 
                 db.execSQL(
-                    "INSERT OR REPLACE INTO downloaded_versions (id, name, downloaded_at, schema_version) VALUES (?, ?, ?, ?)",
+                    "INSERT OR REPLACE INTO downloaded_versions (id, name, downloaded_at, schema_version, full_name, license) VALUES (?, ?, ?, ?, ?, ?)",
                     arrayOf(
                         translationId,
                         downloaded.translationName,
                         System.currentTimeMillis(),
-                        DownloadedVersionInfo.CURRENT_DOWNLOAD_SCHEMA_VERSION
+                        DownloadedVersionInfo.CURRENT_DOWNLOAD_SCHEMA_VERSION,
+                        downloaded.fullName.ifBlank { null },
+                        downloaded.license?.let { licenseJson.encodeToString(TranslationLicense.serializer(), it) }
                     )
                 )
                 db.setTransactionSuccessful()

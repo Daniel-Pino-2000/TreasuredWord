@@ -268,4 +268,12 @@
     <string name="daily_verse_notification_title">Mstari wa Siku</string>
     <string name="notification_channel_daily_verse">Mstari wa Kila Siku</string>
     <string name="notification_channel_daily_verse_description">Kikumbusho chako cha kila siku cha mstari wa Biblia</string>
+
+    <!-- Translation credit at the end of every chapter (#98) -->
+    <!-- Link to the Bible translation's license page -->
+    <string name="translation_credit_license">Leseni</string>
+    <!-- The translation has no copyright, e.g. the King James Version -->
+    <string name="translation_credit_public_domain">Kikoa cha umma</string>
+    <!-- %1$s is the website the text was downloaded from, bible.helloao.org (shown as a link) -->
+    <string name="translation_credit_source">Maandishi ya Biblia kutoka %1$s</string>
 </resources>

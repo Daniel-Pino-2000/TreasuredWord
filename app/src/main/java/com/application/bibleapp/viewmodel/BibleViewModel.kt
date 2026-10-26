@@ -2,6 +2,7 @@ package com.application.bibleapp.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.application.bibleapp.data.model.BUNDLED_TRANSLATION
 import com.application.bibleapp.data.model.BibleBooks
 import com.application.bibleapp.data.model.BibleTranslation
 import com.application.bibleapp.data.model.ChapterStructure
@@ -13,6 +14,7 @@ import com.application.bibleapp.data.model.Footnote
 import com.application.bibleapp.data.model.Highlight
 import com.application.bibleapp.data.model.Note
 import com.application.bibleapp.data.model.SelectedBibleVersion
+import com.application.bibleapp.data.model.TranslationLicense
 import com.application.bibleapp.data.model.VerseOfTheDay
 import com.application.bibleapp.data.model.VerseUI
 import com.application.bibleapp.data.model.chapterCount
@@ -108,6 +110,44 @@ fun versionLabelFor(
     return catalog.firstOrNull { it.id == versionId }?.displayName
         ?: downloaded[versionId]?.name?.takeIf { it.isNotBlank() }
         ?: versionId.uppercase()
+}
+
+/**
+ * Who to credit for the text on screen, shown at the end of every chapter (#98). [license] is null
+ * for the bundled KJV ([isBundled], public domain) and for a download whose license isn't known yet.
+ */
+data class TranslationCredit(
+    /** Full title plus abbreviation, e.g. "Bíblia Livre (BLJ)". */
+    val title: String,
+    val license: TranslationLicense?,
+    val isBundled: Boolean = false
+)
+
+/**
+ * The credit for [versionId]. The license saved with the download wins over the catalog's, since
+ * it describes the text actually on the device; the catalog fills in older downloads and is the
+ * only source of a title until those have been backfilled (see BibleRepository.getAllVersions).
+ */
+fun translationCreditFor(
+    versionId: String,
+    catalog: List<BibleTranslation>,
+    downloaded: Map<String, DownloadedVersionInfo>
+): TranslationCredit {
+    if (versionId == DEFAULT_VERSION.id) {
+        return TranslationCredit(
+            title = "${BUNDLED_TRANSLATION.nativeName} (${BUNDLED_TRANSLATION.displayName})",
+            license = null,
+            isBundled = true
+        )
+    }
+    val listed = catalog.firstOrNull { it.id == versionId }
+    val saved = downloaded[versionId]
+    val label = versionLabelFor(versionId, catalog, downloaded)
+    val fullName = listed?.nativeName?.takeIf { it.isNotBlank() } ?: saved?.fullName.orEmpty()
+    return TranslationCredit(
+        title = if (fullName.isBlank() || fullName == label) label else "$fullName ($label)",
+        license = saved?.license ?: listed?.license
+    )
 }
 
 /**
@@ -333,6 +373,16 @@ class BibleViewModel(
                     ?: versionLabelFor(id, versions, downloaded)
             }
         }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
+
+    /** The credit at the end of each chapter (#98) — see [translationCreditFor]. */
+    val currentTranslationCredit: StateFlow<TranslationCredit> =
+        combine(_selectedVersion, _availableVersions, _downloadedVersions) { selected, versions, downloaded ->
+            translationCreditFor(selected.id, versions, downloaded)
+        }.stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5_000),
+            translationCreditFor(DEFAULT_VERSION.id, emptyList(), emptyMap())
+        )
 
     private val searchSuggestionFilter = SearchSuggestionFilter(repository::hasSearchMatch)
 

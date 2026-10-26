@@ -12,7 +12,11 @@ data class DownloadedVersionInfo(
     val id: String,
     val schemaVersion: Int,
     // The name stored at download time — labels a download the catalog no longer lists (#63).
-    val name: String = ""
+    val name: String = "",
+    // Saved with the download so the reader's credit works offline (#98); empty/null for
+    // downloads made before that until the catalog next loads (BibleRepository.getAllVersions).
+    val fullName: String = "",
+    val license: TranslationLicense? = null
 ) {
     val isUpToDate: Boolean get() = schemaVersion >= CURRENT_DOWNLOAD_SCHEMA_VERSION
 
