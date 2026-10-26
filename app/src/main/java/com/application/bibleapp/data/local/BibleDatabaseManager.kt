@@ -23,7 +23,10 @@ import com.application.bibleapp.data.remote.decodeVerseLocationsOrEmpty
 import com.application.bibleapp.data.repository.BibleRepository
 import com.application.bibleapp.data.remote.encodeToJson as encodeVerseLocationsToJson
 import com.application.bibleapp.utils.NetworkUtils
+import com.application.bibleapp.utils.TextUtils.isWrittenWithoutSpaces
 import com.application.bibleapp.utils.TextUtils.normalizeForSearch
+import com.application.bibleapp.utils.TextUtils.searchPattern
+import com.application.bibleapp.utils.TextUtils.wholeWordPattern
 import com.application.bibleapp.utils.isoTimestampNow
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -378,7 +381,7 @@ object BibleDatabaseManager {
     }
 
     /** Bump whenever [normalizeForSearch] changes, so every stored `search_text` is rebuilt. */
-    private const val SEARCH_TEXT_VERSION = 1
+    private const val SEARCH_TEXT_VERSION = 2 // 2: Traditional Chinese folded to Simplified (#96)
 
     /** Versions whose `search_text` is known to be filled in, so the check runs once per launch. */
     private val searchTextReady = mutableSetOf<String>()
@@ -832,8 +835,16 @@ object BibleDatabaseManager {
 
     /**
      * The WHERE clause and arguments shared by [hasSearchMatch] and [searchVerses]: every word of
-     * the normalized [query] must appear somewhere in the verse's `search_text` (parts of words
-     * count). Null if the query has nothing searchable in it. Each table holds one row per verse
+     * the normalized [query] must appear in the verse's `search_text` as [searchPattern] says,
+     * at the start of a word in most languages (#95). [SPACED_SEARCH_TEXT] puts a space on each
+     * side so a verse's first and last words count too.
+     *
+     * A plain `LIKE '%love%'` runs first and the word-start check only on the verses it lets
+     * through: SQLite skips ahead to a pattern's first letter, so "%love%" is fast, while
+     * "% love%" stops at every space, and building the spaced text for every verse tripled the
+     * time to search the KJV.
+     *
+     * Null if the query has nothing searchable in it. Each table holds one row per verse
      * (downloaded_verses is UNIQUE on it, and the KJV asset has 31,102 rows for 31,102 verses),
      * so rows are matched directly instead of grouped into verses first.
      */
@@ -843,13 +854,29 @@ object BibleDatabaseManager {
         val isKjv = version == "kjv"
         val conditions = buildList {
             if (!isKjv) add("version = ?")
-            words.forEach { _ -> add("search_text LIKE ?") }
+            words.forEach { _ -> add("search_text LIKE ? AND $SPACED_SEARCH_TEXT LIKE ?") }
         }.joinToString(" AND ")
         val args = buildList {
             if (!isKjv) add(version)
-            words.forEach { add("%$it%") }
+            words.forEach {
+                add("%$it%")
+                add(it.searchPattern())
+            }
         }.toTypedArray()
         return conditions to args
+    }
+
+    private const val SPACED_SEARCH_TEXT = "(' ' || search_text || ' ')"
+
+    /**
+     * Ranks search results: 0 for a verse with every word of [query] as a whole word, 1 for the
+     * rest, which only have words starting with them. So "amor" lists its verses about love
+     * before those about the Amorites ("amorreus"), and Bible order applies within each group (#95).
+     */
+    private fun wholeWordRank(query: String): Pair<String, Array<String>> {
+        val words = query.normalizeForSearch().split(" ").filter { it.isNotBlank() }
+        val condition = words.joinToString(" AND ") { "$SPACED_SEARCH_TEXT LIKE ?" }
+        return "CASE WHEN $condition THEN 0 ELSE 1 END" to words.map { it.wholeWordPattern() }.toTypedArray()
     }
 
     /**
@@ -863,11 +890,17 @@ object BibleDatabaseManager {
     /**
      * Whether a word search for [query] would find anything in [version], matched exactly as
      * [searchVerses] matches, with LIMIT 1 so it's cheap enough to run for each Search
-     * suggestion (#88).
+     * suggestion (#88). A Chinese suggestion must also be written in the version's own script:
+     * search finds "爱" and "愛" in every Chinese Bible (#96), but the chip should show the one
+     * the reader sees in the text.
      */
     suspend fun hasSearchMatch(context: Context, query: String, version: String): Boolean = withContext(Dispatchers.IO) {
         val db = getDatabase(context)
-        val (conditions, args) = searchCondition(query, version) ?: return@withContext false
+        var (conditions, args) = searchCondition(query, version) ?: return@withContext false
+        if (query.isWrittenWithoutSpaces()) {
+            conditions += " AND text LIKE ?"
+            args += "%${query.trim()}%"
+        }
         ensureSearchText(db, version)
         db.rawQuery("SELECT 1 FROM ${verseTable(version)} WHERE $conditions LIMIT 1", args).use { it.moveToFirst() }
     }
@@ -877,6 +910,7 @@ object BibleDatabaseManager {
 
         val db = dbInstance ?: throw IllegalStateException("DB not initialized")
         val (conditions, args) = searchCondition(query, version) ?: return@withContext emptyList()
+        val (rank, rankArgs) = wholeWordRank(query)
 
         try {
             ensureSearchText(db, version)
@@ -885,10 +919,10 @@ object BibleDatabaseManager {
                 SELECT book_id, chapter, verse, text
                 FROM ${verseTable(version)}
                 WHERE $conditions
-                ORDER BY book_id, chapter, verse
+                ORDER BY $rank, book_id, chapter, verse
                 LIMIT 500
                 """.trimIndent(),
-                args
+                args + rankArgs
             )
 
             val results = mutableListOf<VerseUI>()
