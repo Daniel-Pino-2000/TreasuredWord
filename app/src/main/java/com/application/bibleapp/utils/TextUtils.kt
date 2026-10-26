@@ -10,7 +10,8 @@ object TextUtils {
      * ("Graça" -> "graca", "grâce" -> "grace"), and everything that isn't a letter, mark or
      * digit turned into single spaces. Letters of every script are kept, so Korean, Chinese and
      * other non-Latin queries aren't emptied. NFC at the end puts Hangul syllables back together
-     * after NFD split them, so "사" doesn't match inside "삭".
+     * after NFD split them, so "사" doesn't match inside "삭". Traditional Chinese becomes
+     * Simplified ([ChineseFolding]), so either script's query finds verses written in the other (#96).
      *
      * One pass over the characters instead of regexes: it runs for every verse of a Bible when
      * its `search_text` is filled in, and plain-ASCII text (the whole KJV, nearly) skips the
@@ -36,7 +37,7 @@ object TextUtils {
                 Character.DECIMAL_DIGIT_NUMBER, Character.LETTER_NUMBER, Character.OTHER_NUMBER -> {
                     if (spacePending && out.isNotEmpty()) out.append(' ')
                     spacePending = false
-                    out.appendCodePoint(foldCase(codePoint))
+                    out.appendCodePoint(fold(codePoint))
                 }
                 else -> spacePending = true
             }
@@ -44,9 +45,40 @@ object TextUtils {
         return if (ascii) out.toString() else Normalizer.normalize(out, Normalizer.Form.NFC)
     }
 
-    /** Lowercase, with Greek's word-final sigma treated as the ordinary one, as capitals have no final form. */
-    private fun foldCase(codePoint: Int): Int {
+    /**
+     * Lowercase, with Greek's word-final sigma treated as the ordinary one, as capitals have no
+     * final form, and Traditional Chinese as Simplified.
+     */
+    private fun fold(codePoint: Int): Int {
         val lower = Character.toLowerCase(codePoint)
-        return if (lower == 'ς'.code) 'σ'.code else lower
+        return if (lower == 'ς'.code) 'σ'.code else ChineseFolding.toSimplified(lower)
     }
+
+    /**
+     * The SQL LIKE pattern a normalized search word is matched with, against `search_text` with
+     * a space on each side (BibleDatabaseManager's searchCondition). It must start a word (#95): "paz" finds "pazes" but not "capaz",
+     * "love" finds "loved" but no longer "beloved" or "cloven", and Korean's endings still follow
+     * the stem (사랑하사). Scripts written without spaces still match anywhere, as there's no word
+     * start to find. Normalized words hold only letters and digits, so never a LIKE wildcard.
+     */
+    fun String.searchPattern(): String = if (isWrittenWithoutSpaces()) "%$this%" else "% $this%"
+
+    /**
+     * Like [searchPattern], but the whole word: verses matching every query word this way are
+     * listed first, so "amor" shows love before "amorreus" (Amorites), which starts the same
+     * way (#95).
+     */
+    fun String.wholeWordPattern(): String = if (isWrittenWithoutSpaces()) "%$this%" else "% $this %"
+
+    /**
+     * Whether this text is in a script written without spaces between words (Chinese, Japanese,
+     * Thai, Lao, Khmer, Myanmar), where a word can't be told apart from its neighbours.
+     */
+    fun String.isWrittenWithoutSpaces(): Boolean = codePoints().anyMatch { Character.UnicodeScript.of(it) in SCRIPTS_WITHOUT_SPACES }
+
+    private val SCRIPTS_WITHOUT_SPACES = setOf(
+        Character.UnicodeScript.HAN, Character.UnicodeScript.HIRAGANA, Character.UnicodeScript.KATAKANA,
+        Character.UnicodeScript.THAI, Character.UnicodeScript.LAO, Character.UnicodeScript.KHMER,
+        Character.UnicodeScript.MYANMAR
+    )
 }

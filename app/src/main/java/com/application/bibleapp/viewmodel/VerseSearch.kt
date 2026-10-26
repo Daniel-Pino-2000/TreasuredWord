@@ -28,8 +28,8 @@ data class SearchUiState(
 /**
  * A handful of common topics to search for before the user has typed anything themselves, keyed
  * by the catalog's ISO 639-3 language code. They're matched against the Bible's own text, so they
- * follow the version's language, not the app's (#88). Search matches parts of words, so very
- * short words that hide inside others ("fe" in "profeta", "foi" in "fois") are left out.
+ * follow the version's language, not the app's (#88). Search matches the start of words (#95),
+ * so very short words that start many others ("fe" in "feito", "foi" in "fois") are left out.
  * Not every word finds something in every translation: [SearchSuggestionFilter] hides those.
  * Chinese lists both Simplified and Traditional forms where they differ ("爱"/"愛"); each Bible
  * shows only the ones written its way. Korean and Chinese words were checked against kor_old and
