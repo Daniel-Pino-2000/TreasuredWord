@@ -140,7 +140,6 @@ dependencies {
 
     // Navigation
     implementation("androidx.navigation:navigation-compose:2.9.4")
-    implementation(libs.androidx.benchmark.traceprocessor.android)
 
     // Background scheduling for the daily verse fetch + notification
     implementation(libs.androidx.work.runtime.ktx)
