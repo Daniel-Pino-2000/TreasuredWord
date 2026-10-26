@@ -2,6 +2,7 @@ package com.application.bibleapp.data.remote
 
 import com.application.bibleapp.data.model.BibleTranslation
 import com.application.bibleapp.data.model.TextDirection
+import com.application.bibleapp.data.model.TranslationLicense
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 
@@ -30,8 +31,33 @@ data class HelloAoTranslationDto(
     val textDirection: String? = null,
     // Verified live: every catalog entry carries this, but default to 0 (never
     // mistaken for a complete 66-book canon) in case one ever doesn't.
-    val numberOfBooks: Int = 0
+    val numberOfBooks: Int = 0,
+    // Verified live 2026-10-26: all 207 complete Bibles have both (#98).
+    val licenseUrl: String? = null,
+    val license: HelloAoLicenseDto? = null,
+    val licenseNotice: String? = null
 )
+
+/** The catalog's summary of a translation's license, e.g. `{"attribution": "required", ...}`. */
+@Serializable
+data class HelloAoLicenseDto(
+    val attribution: String? = null,    // "required" | "not-required"
+    val commercialUse: String? = null,  // "allowed" | "not-allowed"
+    val publicDomain: Boolean = false
+)
+
+/** Null without an https license page, the only kind [ExternalLinks][com.application.bibleapp.utils.ExternalLinks] opens. */
+fun HelloAoTranslationDto.toTranslationLicense(): TranslationLicense? {
+    val url = licenseUrl?.trim()?.takeIf { it.startsWith("https://") } ?: return null
+    return TranslationLicense(
+        url = url,
+        // Missing terms are read as the strictest ones: credit it, don't sell it.
+        attributionRequired = license?.attribution != "not-required",
+        publicDomain = license?.publicDomain == true,
+        commercialUseAllowed = license?.commercialUse == "allowed",
+        notice = licenseNotice?.trim()?.takeIf { it.isNotEmpty() }
+    )
+}
 
 fun HelloAoTranslationDto.toBibleTranslation(): BibleTranslation = BibleTranslation(
     id = id,
@@ -40,7 +66,8 @@ fun HelloAoTranslationDto.toBibleTranslation(): BibleTranslation = BibleTranslat
     languageName = languageEnglishName?.takeIf { it.isNotBlank() } ?: languageName ?: language,
     languageCode = language,
     textDirection = if (textDirection == "rtl") TextDirection.RTL else TextDirection.LTR,
-    numberOfBooks = numberOfBooks
+    numberOfBooks = numberOfBooks,
+    license = toTranslationLicense()
 )
 
 /**

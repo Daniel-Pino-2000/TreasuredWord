@@ -97,7 +97,9 @@ class HelloAoBibleDataSource(
                     bookNames = mapping.bookNames,
                     chapterInfo = mapping.chapterInfo,
                     downloadedChapterCount = mapping.downloadedChapterCount,
-                    skippedBookCount = mapping.skippedBookCount
+                    skippedBookCount = mapping.skippedBookCount,
+                    fullName = dto.translation.name,
+                    license = dto.translation.toTranslationLicense()
                 )
             } catch (e: CancellationException) {
                 throw e

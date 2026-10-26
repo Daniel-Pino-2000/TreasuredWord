@@ -51,9 +51,13 @@ data class ReadingPosition(val bookId: Int, val chapter: Int, val verse: Int)
 /** The user's chosen local wall-clock time for the daily verse reminder. */
 data class NotificationTime(val hour: Int, val minute: Int)
 
-/** On-disk cache of [BibleRepository.getAllVersions]'s result — a wrapper so the JSON file has a stable top-level shape. */
+/**
+ * On-disk cache of [BibleRepository.getAllVersions]'s result — a wrapper so the JSON file has a
+ * stable top-level shape. [format] marks what the entries carry: files written before it existed
+ * read as 1 and lack licenses (#98), so they're re-fetched instead of trusted for a day.
+ */
 @Serializable
-private data class CachedTranslations(val translations: List<BibleTranslation>)
+private data class CachedTranslations(val translations: List<BibleTranslation>, val format: Int = 1)
 
 /**
  * Sits between [BibleViewModel][com.application.bibleapp.viewmodel.BibleViewModel] and
@@ -279,11 +283,20 @@ class BibleRepository(
      * failing the whole call.
      */
     suspend fun getAllVersions(): List<BibleTranslation> = withContext(Dispatchers.IO) {
-        readCachedVersions()?.let { return@withContext it }
+        val versions = readCachedVersions() ?: remote.getAvailableTranslations()
+            .filter { it.isCompleteCanon }
+            .also { writeCachedVersions(it) }
+        saveMissingCredits(versions)
+        versions
+    }
 
-        val fresh = remote.getAvailableTranslations().filter { it.isCompleteCanon }
-        writeCachedVersions(fresh)
-        fresh
+    /** Copies catalog titles and licenses onto downloads that lack them, so their credit works offline (#98). */
+    private fun saveMissingCredits(versions: List<BibleTranslation>) {
+        val incomplete = BibleDatabaseManager.getDownloadedVersions(context)
+            .filter { it.fullName.isBlank() || it.license == null }
+            .mapTo(HashSet()) { it.id }
+        if (incomplete.isEmpty()) return
+        BibleDatabaseManager.saveMissingCredits(context, versions.filter { it.id in incomplete })
     }
 
     private fun readCachedVersions(): List<BibleTranslation>? {
@@ -293,7 +306,9 @@ class BibleRepository(
         if (age !in 0..TRANSLATIONS_CACHE_TTL_MS) return null // also covers a clock rollback (negative age)
 
         return try {
-            HttpClientProvider.json.decodeFromString(CachedTranslations.serializer(), file.readText()).translations
+            HttpClientProvider.json.decodeFromString(CachedTranslations.serializer(), file.readText())
+                .takeIf { it.format >= TRANSLATIONS_CACHE_FORMAT }
+                ?.translations
         } catch (e: SerializationException) {
             Log.w("BibleRepository", "Translations cache unreadable, will re-fetch: ${e.message}")
             null
@@ -305,7 +320,7 @@ class BibleRepository(
 
     private fun writeCachedVersions(versions: List<BibleTranslation>) {
         try {
-            val json = HttpClientProvider.json.encodeToString(CachedTranslations.serializer(), CachedTranslations(versions))
+            val json = HttpClientProvider.json.encodeToString(CachedTranslations.serializer(), CachedTranslations(versions, TRANSLATIONS_CACHE_FORMAT))
             translationsCacheFile.writeText(json)
         } catch (e: IOException) {
             Log.w("BibleRepository", "Failed to write translations cache: ${e.message}")
@@ -609,5 +624,7 @@ class BibleRepository(
         // The catalog rarely changes; this just bounds how stale the picker's list can
         // get without forcing a fresh 850KB fetch on every cold start.
         const val TRANSLATIONS_CACHE_TTL_MS = 24 * 60 * 60 * 1000L
+        /** Bump when [BibleTranslation] gains data an older cache file wouldn't have. 2 = licenses (#98). */
+        private const val TRANSLATIONS_CACHE_FORMAT = 2
     }
 }

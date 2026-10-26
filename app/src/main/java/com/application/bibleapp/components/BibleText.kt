@@ -334,7 +334,9 @@ fun BibleText(
     /** Changing this re-scrolls to [scrollToIndex] even when that verse number is unchanged. */
     scrollRequest: Int = 0,
     /** The first verse of the paragraph at the top of the screen, reported as the user scrolls. */
-    onTopVisibleVerseChange: (Int) -> Unit = {}
+    onTopVisibleVerseChange: (Int) -> Unit = {},
+    /** Shown under the last paragraph, e.g. the translation's credit (#98). */
+    chapterFooter: @Composable () -> Unit = {}
 ) {
     // Create a new LazyListState each time the verses list changes
     val listState = remember(verses) { androidx.compose.foundation.lazy.LazyListState() }
@@ -584,6 +586,16 @@ fun BibleText(
                             publishPlacement()
                         }
                     )
+                }
+            }
+        }
+        // After every paragraph, so it never shifts their list indices (see the scroll effects above).
+        if (paragraphs.isNotEmpty()) {
+            item {
+                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
+                    Box(modifier = Modifier.widthIn(max = MAX_READING_WIDTH).fillMaxWidth().padding(top = Spacing.xl)) {
+                        chapterFooter()
+                    }
                 }
             }
         }

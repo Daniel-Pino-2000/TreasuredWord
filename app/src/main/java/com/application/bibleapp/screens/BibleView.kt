@@ -25,10 +25,12 @@ import com.application.bibleapp.components.HighlightActionSheet
 import com.application.bibleapp.components.NoteEditorSheet
 import com.application.bibleapp.components.NoteListSheet
 import com.application.bibleapp.components.SignInNudgeBanner
+import com.application.bibleapp.components.TranslationCreditFooter
 import com.application.bibleapp.data.model.BibleBooks
 import com.application.bibleapp.data.remote.VerseLocationDto
 import com.application.bibleapp.ui.theme.ReadingStyle
 import com.application.bibleapp.ui.theme.Spacing
+import com.application.bibleapp.utils.rememberExternalLinks
 import com.application.bibleapp.utils.verseRefsText
 import com.application.bibleapp.viewmodel.BibleViewModel
 import com.application.bibleapp.R
@@ -55,6 +57,8 @@ fun BibleView(
     val noteEditor by bibleViewModel.noteEditor.collectAsState()
     val noteListVerse by bibleViewModel.noteListVerse.collectAsState()
     val bookNames by bibleViewModel.bookNames.collectAsState()
+    val translationCredit by bibleViewModel.currentTranslationCredit.collectAsState()
+    val links = rememberExternalLinks { bibleViewModel.showMessage(it) }
 
     // Back cancels a verse selection first, like the toolbar's X, instead of leaving the reader
     // with it still pending; with predictive back (on by default from API 36, #66) the swipe
@@ -132,7 +136,8 @@ fun BibleView(
             noteCountsByVerse = noteCountsByVerse,
             onNoteGlyphTap = { location -> bibleViewModel.onNoteBadgeTap(location) },
             scrollRequest = scrollRequest,
-            onTopVisibleVerseChange = { verse -> bibleViewModel.onTopVisibleVerseChange(verse) }
+            onTopVisibleVerseChange = { verse -> bibleViewModel.onTopVisibleVerseChange(verse) },
+            chapterFooter = { TranslationCreditFooter(translationCredit, onOpenLink = links::openPage) }
         )
     }
 

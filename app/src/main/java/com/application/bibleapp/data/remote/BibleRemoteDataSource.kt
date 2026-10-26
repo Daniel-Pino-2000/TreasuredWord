@@ -2,6 +2,7 @@ package com.application.bibleapp.data.remote
 
 import com.application.bibleapp.data.model.BibleTranslation
 import com.application.bibleapp.data.model.StoredVerseContent
+import com.application.bibleapp.data.model.TranslationLicense
 
 /**
  * A single verse ready to persist, already mapped onto the app's internal
@@ -61,7 +62,10 @@ data class DownloadedTranslation(
     val bookNames: List<MappedBookName>,
     val chapterInfo: List<MappedChapterInfo>,
     val downloadedChapterCount: Int,
-    val skippedBookCount: Int
+    val skippedBookCount: Int,
+    /** The translation's own title, e.g. "Bíblia Livre", for the reader's credit (#98). */
+    val fullName: String = "",
+    val license: TranslationLicense? = null
 )
 
 /**

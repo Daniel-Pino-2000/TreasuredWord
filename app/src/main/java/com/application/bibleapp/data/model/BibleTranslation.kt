@@ -23,7 +23,9 @@ data class BibleTranslation(
     val languageName: String,
     val languageCode: String,
     val textDirection: TextDirection,
-    val numberOfBooks: Int = FULL_CANON_BOOK_COUNT
+    val numberOfBooks: Int = FULL_CANON_BOOK_COUNT,
+    // Null for the bundled KJV and for entries cached before licenses were kept (#98).
+    val license: TranslationLicense? = null
 ) {
     /** True for a standard 66-book (Protestant canon) Bible — the only kind this app supports reading. */
     val isCompleteCanon: Boolean get() = numberOfBooks == FULL_CANON_BOOK_COUNT
@@ -32,6 +34,23 @@ data class BibleTranslation(
         const val FULL_CANON_BOOK_COUNT = 66
     }
 }
+
+/**
+ * How a translation may be used, as bible.helloao.org's catalog states it (#98). Most of its Bibles
+ * (146 of 207 complete ones on 2026-10-26) require a credit, which the reader shows at the end of
+ * every chapter. 49 forbid commercial use: fine while the app is free with no ads or purchases,
+ * but those Bibles would have to go before anything paid is added.
+ */
+@Serializable
+data class TranslationLicense(
+    /** The license page (eBible.org's page for the translation, usually); always https. */
+    val url: String,
+    val attributionRequired: Boolean = true,
+    val publicDomain: Boolean = false,
+    val commercialUseAllowed: Boolean = false,
+    /** Wording the license asks to be shown with the text (only the NET Bible has one so far). */
+    val notice: String? = null
+)
 
 /**
  * The KJV that ships inside the app ([DEFAULT_VERSION]). The remote catalog never lists it, so
