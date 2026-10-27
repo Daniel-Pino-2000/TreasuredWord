@@ -1,0 +1,47 @@
+<svg viewBox="0 0 108 108" xmlns="http://www.w3.org/2000/svg">
+  <!-- TreasuredWord launcher icon, full 108 x 108 adaptive-icon grid. Launchers show the
+       middle 72 x 72 (18..90) and keep the 66-unit circle around the centre always visible.
+       Mirrors res/drawable/ic_launcher_background.xml + ic_launcher_foreground.xml. -->
+  <defs>
+    <linearGradient id="bg" gradientUnits="userSpaceOnUse" x1="0" y1="18" x2="0" y2="90">
+      <stop offset="0" stop-color="#2E251B"/><stop offset="1" stop-color="#15110D"/>
+    </linearGradient>
+    <linearGradient id="gold" gradientUnits="userSpaceOnUse" x1="26" y1="32" x2="82" y2="79">
+      <stop offset="0" stop-color="#F6D893"/><stop offset=".5" stop-color="#DDAA5C"/><stop offset="1" stop-color="#B57F37"/>
+    </linearGradient>
+  </defs>
+
+  <!-- background layer -->
+  <rect width="108" height="108" fill="url(#bg)"/>
+
+  <!-- foreground layer: gold-edged cover, then the pages -->
+  <path d="M54 36 C46 33 36 32 26 34 V77 C36 75 46 76 54 79 C62 76 72 75 82 77 V34 C72 32 62 33 54 36 Z" fill="url(#gold)"/>
+  <path d="M53 34 C46 31 37 30 28 32 V74 C37 72 46 73 53 76 Z" fill="#F7EFDF"/>
+  <path d="M55 34 C62 31 71 30 80 32 V74 C71 72 62 73 55 76 Z" fill="#F7EFDF"/>
+
+  <!-- highlights: the app's Blue and Purple swatches (HighlightColors.kt) -->
+  <rect x="31" y="43" width="20" height="6" rx="1" fill="#7FA8C9"/>
+  <rect x="57" y="55" width="20" height="6" rx="1" fill="#A98FC9"/>
+  <rect x="31" y="61" width="15" height="6" rx="1" fill="#A98FC9"/>
+
+  <!-- lines of text; highlighted ones in a deeper shade of their highlight -->
+  <g fill="#C4B08B">
+    <rect x="32" y="40" width="18" height="2" rx="1"/><rect x="32" y="52" width="14" height="2" rx="1"/>
+    <rect x="32" y="58" width="18" height="2" rx="1"/><rect x="58" y="40" width="18" height="2" rx="1"/>
+    <rect x="58" y="46" width="15" height="2" rx="1"/><rect x="58" y="52" width="18" height="2" rx="1"/>
+    <rect x="58" y="64" width="17" height="2" rx="1"/>
+  </g>
+  <rect x="32" y="46" width="18" height="2" rx="1" fill="#4E7293"/>
+  <rect x="58" y="58" width="18" height="2" rx="1" fill="#6E5594"/>
+  <rect x="32" y="64" width="12" height="2" rx="1" fill="#6E5594"/>
+
+  <!-- ribbon down the gutter -->
+  <path d="M51.5 33 H56.5 V88 L54 85 L51.5 88 Z" fill="#B3423B"/>
+
+  <!-- note on the corner of the right page, in the app's Yellow swatch -->
+  <g transform="rotate(8 75 39)">
+    <rect x="68" y="32" width="14" height="14" rx="1.2" fill="#E8C24A"/>
+    <rect x="70.5" y="36" width="9" height="1.6" rx=".8" fill="#8A6A16"/>
+    <rect x="70.5" y="39.6" width="6" height="1.6" rx=".8" fill="#8A6A16"/>
+  </g>
+</svg>

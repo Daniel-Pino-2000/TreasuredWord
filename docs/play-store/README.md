@@ -55,5 +55,7 @@ Play only accepts phone screenshots in a 16:9 or 9:16 ratio, so the full-height 
 use the KJV with sample highlights and a sample note in Psalm 23. At least four screenshots of
 1080 px or more on each side keep the app eligible for Play's promotions.
 
-The feature graphic is the app icon on a dark background matching the icon's, with the name in
-Georgia Bold and the tagline in Segoe UI Light.
+The feature graphic is the app icon's open Bible on the icon's espresso background, with the name
+in Georgia Bold and the tagline in Segoe UI Light. Its source is `feature-graphic.svg`; render it
+at 1024×500 on Windows (where both fonts are installed) and save it as an RGB PNG, since Play
+rejects feature graphics with transparency.
