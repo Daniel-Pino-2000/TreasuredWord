@@ -174,6 +174,32 @@ class AuthRoutesTest {
     }
 
     @Test
+    fun verifyNonAsciiEmailsRegisterAndSignInWhateverTheirCase() = testApplication {
+        environment { config = ApplicationConfig("application.conf") }
+        val client = createClient { install(ContentNegotiation) { json() } }
+
+        // İ and Σ are where Kotlin's lowercase() and Postgres' lower() differ ("i̇" vs "i", final
+        // "ς" vs "σ"): what the routes store must still pass users_email_lowercase, and sign-in
+        // must lower-case the same way register did.
+        val email = "ÜNİCODEΣ+${UUID.randomUUID()}@Exämple.COM"
+        val registerResponse = client.post("/api/v1/auth/register") {
+            contentType(ContentType.Application.Json)
+            setBody(RegisterRequest(email = email, password = "Onezoro22@"))
+        }
+        assertEquals(HttpStatusCode.Created, registerResponse.status)
+        val registered = Json.decodeFromString<AuthResponse>(registerResponse.bodyAsText())
+
+        for (typed in listOf(email, email.lowercase())) {
+            val response = client.post("/api/v1/auth/login") {
+                contentType(ContentType.Application.Json)
+                setBody(LoginRequest(email = typed, password = "Onezoro22@"))
+            }
+            assertEquals(HttpStatusCode.OK, response.status, "signing in as \"$typed\"")
+            assertEquals(registered.userId, Json.decodeFromString<AuthResponse>(response.bodyAsText()).userId)
+        }
+    }
+
+    @Test
     fun verifyRegisterStoresTheEmailInLowerCase() = testApplication {
         environment { config = ApplicationConfig("application.conf") }
         val client = createClient { install(ContentNegotiation) { json() } }
