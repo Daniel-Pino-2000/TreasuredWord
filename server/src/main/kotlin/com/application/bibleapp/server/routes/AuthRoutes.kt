@@ -34,6 +34,15 @@ private const val MIN_PASSWORD_LENGTH = 8
 private val REFRESH_TOKEN_TTL: Duration = Duration.ofDays(30)
 
 /**
+ * Emails are stored and compared in lower case, so "Ana@example.com" and "ana@example.com" are
+ * the same account (#114) - phone keyboards often capitalise the first letter. lowercase() with
+ * no arguments uses Locale.ROOT, so the result doesn't depend on the server's language setting.
+ * V3__lowercase_emails.sql lower-cased the existing rows and makes the database reject any email
+ * that isn't lower case.
+ */
+private fun normalizeEmail(email: String): String = email.trim().lowercase()
+
+/**
  * Issues a fresh access token + a fresh refresh token for [userId], storing only the refresh
  * token's hash. Shared by register, login, and refresh so the "what does a successful auth
  * response look like" logic lives in exactly one place instead of being copied three times.
@@ -70,9 +79,10 @@ fun Route.authRoutes() {
     rateLimit(AUTH_RATE_LIMIT) {
         post("/auth/register") {
             val request = call.receive<RegisterRequest>()
+            val email = normalizeEmail(request.email)
 
             val fieldErrors = mutableMapOf<String, String>()
-            if (!EMAIL_REGEX.matches(request.email)) {
+            if (!EMAIL_REGEX.matches(email)) {
                 fieldErrors["email"] = "must be a valid email address"
             }
             if (request.password.length < MIN_PASSWORD_LENGTH) {
@@ -91,7 +101,7 @@ fun Route.authRoutes() {
             }
 
             val existingUser = transaction {
-                Users.selectAll().where { Users.email eq request.email }.singleOrNull()
+                Users.selectAll().where { Users.email eq email }.singleOrNull()
             }
 
             if (existingUser != null) {
@@ -106,7 +116,7 @@ fun Route.authRoutes() {
 
             val userId = transaction {
                 Users.insert {
-                    it[Users.email] = request.email
+                    it[Users.email] = email
                     it[Users.passwordHash] = passwordHash
                     it[Users.createdAt] = Instant.now()
                 } get Users.id
@@ -118,9 +128,10 @@ fun Route.authRoutes() {
 
         post("/auth/login") {
             val request = call.receive<LoginRequest>()
+            val email = normalizeEmail(request.email)
 
             val user = transaction {
-                Users.selectAll().where { Users.email eq request.email }.singleOrNull()
+                Users.selectAll().where { Users.email eq email }.singleOrNull()
             }
 
             // Same response whether the email doesn't exist or the password is wrong (checking

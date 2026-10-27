@@ -164,6 +164,11 @@ data class AuthResponse(
 )
 ```
 
+**Emails are compared without regard to upper/lower case** (#114). Register and login trim
+spaces and lower-case the email, so `Ana@example.com` and `ana@example.com` are the same account,
+and the server stores and returns emails in lower case (`UserResponse.email` included). Phone
+keyboards often capitalise the first letter, and Google sign-in (#112) gives emails in lower case.
+
 ### `POST /api/v1/auth/register`
 Auth: none
 Request: `RegisterRequest`

@@ -1,5 +1,6 @@
 package com.application.bibleapp.server.db.tables
 
+import org.jetbrains.exposed.exceptions.ExposedSQLException
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.deleteWhere
@@ -12,6 +13,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 // TODO: this points at the local dev Postgres container by default so it's easy to run right
 // now. Worth switching to a dedicated test database (H2 in-memory, or Testcontainers) instead
@@ -61,5 +63,20 @@ class UsersTableTest {
         assertEquals(insertedId, row[Users.id])
         assertEquals(testEmail, row[Users.email])
         assertEquals("hashed-password", row[Users.passwordHash])
+    }
+
+    @Test
+    fun databaseRejectsAnEmailThatIsNotLowerCase() {
+        // users_email_lowercase (#114): even code that skips AuthRoutes' lower-casing can't store
+        // an email nobody could sign in with. The failed insert rolls its own transaction back.
+        assertFailsWith<ExposedSQLException> {
+            transaction(database) {
+                Users.insert {
+                    it[email] = testEmail.uppercase()
+                    it[passwordHash] = "hashed-password"
+                    it[createdAt] = Instant.now()
+                }
+            }
+        }
     }
 }
