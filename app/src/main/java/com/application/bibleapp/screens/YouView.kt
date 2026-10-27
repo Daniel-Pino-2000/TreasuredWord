@@ -62,7 +62,7 @@ fun YouView(
     onBookmarkClick: () -> Unit
 ) {
     val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
-    val currentUser by authViewModel.currentUser.collectAsState()
+    val email by authViewModel.email.collectAsState()
     val isSyncing by bibleViewModel.isSyncing.collectAsState()
     val lastSyncCompletedAt by bibleViewModel.lastSyncCompletedAt.collectAsState()
     val currentBookName by bibleViewModel.currentBookName.collectAsState()
@@ -88,7 +88,7 @@ fun YouView(
         GroupedPanel {
             if (isLoggedIn) {
                 ProfileRow(
-                    email = currentUser?.email,
+                    email = email,
                     status = when {
                         isSyncing -> stringResource(R.string.sync_status_syncing)
                         lastSyncCompletedAt != null ->
@@ -133,8 +133,8 @@ fun YouView(
     }
 }
 
-/** The avatar's initial is the first letter of the signed-in email — there's always something to
- *  put in the circle without an actual avatar-image feature. */
+/** The avatar's initial is the first letter of the signed-in email. With no email known yet (an
+ *  older session, offline), the circle shows the same person icon as signed out, never "?" (#109). */
 @Composable
 private fun ProfileRow(email: String?, status: String) {
     Row(
@@ -150,11 +150,20 @@ private fun ProfileRow(email: String?, status: String) {
             modifier = Modifier.size(48.dp)
         ) {
             Box(contentAlignment = Alignment.Center) {
-                Text(
-                    text = (email?.firstOrNull()?.uppercaseChar() ?: '?').toString(),
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
+                val initial = email?.firstOrNull()?.uppercaseChar()
+                if (initial != null) {
+                    Text(
+                        text = initial.toString(),
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Outlined.Person,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
             }
         }
         Column {

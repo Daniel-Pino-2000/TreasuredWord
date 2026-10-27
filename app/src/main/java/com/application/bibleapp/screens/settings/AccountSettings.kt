@@ -45,7 +45,7 @@ internal fun AccountSettings(
     onSignInClick: () -> Unit
 ) {
     val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
-    val currentUser by authViewModel.currentUser.collectAsState()
+    val email by authViewModel.email.collectAsState()
     val signOutState by authViewModel.signOutState.collectAsState()
     var showDeleteDialog by remember { mutableStateOf(false) }
     // Sign-out removes the account's highlights and notes from this device (#81); the reader
@@ -64,7 +64,7 @@ internal fun AccountSettings(
             )
         } else {
             GroupedRow(
-                title = currentUser?.email ?: stringResource(R.string.account_your_account),
+                title = email ?: stringResource(R.string.account_your_account),
                 subtitle = stringResource(R.string.label_signed_in),
                 icon = Icons.Outlined.Person
             )
