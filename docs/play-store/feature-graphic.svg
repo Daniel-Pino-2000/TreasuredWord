@@ -1,0 +1,51 @@
+<svg width="1024" height="500" viewBox="0 0 1024 500" xmlns="http://www.w3.org/2000/svg">
+  <!-- Play Store feature graphic (1024 x 500): the launcher icon's open Bible on its espresso
+       background, with the app name and tagline. The book is the icon foreground from
+       ../icon-source/icon.svg, scaled 5.4x. Rendered to feature-graphic.png on Windows, where
+       Georgia and Segoe UI Light are installed. -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2E251B"/><stop offset="1" stop-color="#15110D"/>
+    </linearGradient>
+    <radialGradient id="glow" gradientUnits="userSpaceOnUse" cx="225" cy="250" r="300">
+      <stop offset="0" stop-color="#5A4430" stop-opacity=".55"/><stop offset="1" stop-color="#5A4430" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="gold" gradientUnits="userSpaceOnUse" x1="26" y1="32" x2="82" y2="79">
+      <stop offset="0" stop-color="#F6D893"/><stop offset=".5" stop-color="#DDAA5C"/><stop offset="1" stop-color="#B57F37"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1024" height="500" fill="url(#bg)"/>
+  <rect width="1024" height="500" fill="url(#glow)"/>
+
+  <!-- the open Bible: icon.svg's foreground, book centre (54, 59) moved to (225, 250) -->
+  <g transform="translate(-66.6 -68.6) scale(5.4)">
+    <path d="M54 36 C46 33 36 32 26 34 V77 C36 75 46 76 54 79 C62 76 72 75 82 77 V34 C72 32 62 33 54 36 Z" fill="url(#gold)"/>
+    <path d="M53 34 C46 31 37 30 28 32 V74 C37 72 46 73 53 76 Z" fill="#F7EFDF"/>
+    <path d="M55 34 C62 31 71 30 80 32 V74 C71 72 62 73 55 76 Z" fill="#F7EFDF"/>
+    <rect x="31" y="43" width="20" height="6" rx="1" fill="#7FA8C9"/>
+    <rect x="57" y="55" width="20" height="6" rx="1" fill="#A98FC9"/>
+    <rect x="31" y="61" width="15" height="6" rx="1" fill="#A98FC9"/>
+    <g fill="#C4B08B">
+      <rect x="32" y="40" width="18" height="2" rx="1"/><rect x="32" y="52" width="14" height="2" rx="1"/>
+      <rect x="32" y="58" width="18" height="2" rx="1"/><rect x="58" y="40" width="18" height="2" rx="1"/>
+      <rect x="58" y="46" width="15" height="2" rx="1"/><rect x="58" y="52" width="18" height="2" rx="1"/>
+      <rect x="58" y="64" width="17" height="2" rx="1"/>
+    </g>
+    <rect x="32" y="46" width="18" height="2" rx="1" fill="#4E7293"/>
+    <rect x="58" y="58" width="18" height="2" rx="1" fill="#6E5594"/>
+    <rect x="32" y="64" width="12" height="2" rx="1" fill="#6E5594"/>
+    <path d="M51.5 33 H56.5 V88 L54 85 L51.5 88 Z" fill="#B3423B"/>
+    <g transform="rotate(8 75 39)">
+      <rect x="68" y="32" width="14" height="14" rx="1.2" fill="#E8C24A"/>
+      <rect x="70.5" y="36" width="9" height="1.6" rx=".8" fill="#8A6A16"/>
+      <rect x="70.5" y="39.6" width="6" height="1.6" rx=".8" fill="#8A6A16"/>
+    </g>
+  </g>
+
+  <text x="432" y="232" font-family="Georgia" font-weight="bold" font-size="62" fill="#DDAA5C">TreasuredWord</text>
+  <text font-family="Segoe UI" font-weight="300" font-size="31" fill="#EDE3D0">
+    <tspan x="434" y="298">Read, highlight and keep</tspan>
+    <tspan x="434" y="343">notes on the Bible</tspan>
+  </text>
+</svg>

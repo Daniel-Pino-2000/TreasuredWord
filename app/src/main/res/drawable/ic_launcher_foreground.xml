@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Launcher icon foreground (#110): an open Bible with highlighted verses, a note stuck to the page
+     and a ribbon down the gutter. The highlights use the app's own Blue and Purple swatches
+     (ui/theme/HighlightColors.kt) and the note its Yellow, so the icon shows what the app does.
+     Everything sits inside the 66 dp safe circle, so no launcher mask crops the book.
+     Editable source: docs/icon-source/icon.svg. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Gold-edged cover, showing around the pages -->
+    <path android:pathData="M54,36C46,33 36,32 26,34V77C36,75 46,76 54,79C62,76 72,75 82,77V34C72,32 62,33 54,36Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="26"
+                android:startY="32"
+                android:endX="82"
+                android:endY="79">
+                <item android:offset="0" android:color="#FFF6D893" />
+                <item android:offset="0.5" android:color="#FFDDAA5C" />
+                <item android:offset="1" android:color="#FFB57F37" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <!-- Pages -->
+    <path
+        android:fillColor="#FFF7EFDF"
+        android:pathData="M53,34C46,31 37,30 28,32V74C37,72 46,73 53,76Z M55,34C62,31 71,30 80,32V74C71,72 62,73 55,76Z" />
+    <!-- Highlights, under their lines of text -->
+    <path
+        android:fillColor="#FF7FA8C9"
+        android:pathData="M32,43H50A1,1 0 0 1 51,44V48A1,1 0 0 1 50,49H32A1,1 0 0 1 31,48V44A1,1 0 0 1 32,43Z" />
+    <path
+        android:fillColor="#FFA98FC9"
+        android:pathData="M58,55H76A1,1 0 0 1 77,56V60A1,1 0 0 1 76,61H58A1,1 0 0 1 57,60V56A1,1 0 0 1 58,55Z M32,61H45A1,1 0 0 1 46,62V66A1,1 0 0 1 45,67H32A1,1 0 0 1 31,66V62A1,1 0 0 1 32,61Z" />
+    <!-- Lines of text; the highlighted ones are a deeper shade of their highlight -->
+    <path
+        android:fillColor="#FFC4B08B"
+        android:pathData="M33,40H49A1,1 0 0 1 50,41A1,1 0 0 1 49,42H33A1,1 0 0 1 32,41A1,1 0 0 1 33,40Z M33,52H45A1,1 0 0 1 46,53A1,1 0 0 1 45,54H33A1,1 0 0 1 32,53A1,1 0 0 1 33,52Z M33,58H49A1,1 0 0 1 50,59A1,1 0 0 1 49,60H33A1,1 0 0 1 32,59A1,1 0 0 1 33,58Z M59,40H75A1,1 0 0 1 76,41A1,1 0 0 1 75,42H59A1,1 0 0 1 58,41A1,1 0 0 1 59,40Z M59,46H72A1,1 0 0 1 73,47A1,1 0 0 1 72,48H59A1,1 0 0 1 58,47A1,1 0 0 1 59,46Z M59,52H75A1,1 0 0 1 76,53A1,1 0 0 1 75,54H59A1,1 0 0 1 58,53A1,1 0 0 1 59,52Z M59,64H74A1,1 0 0 1 75,65A1,1 0 0 1 74,66H59A1,1 0 0 1 58,65A1,1 0 0 1 59,64Z" />
+    <path
+        android:fillColor="#FF4E7293"
+        android:pathData="M33,46H49A1,1 0 0 1 50,47A1,1 0 0 1 49,48H33A1,1 0 0 1 32,47A1,1 0 0 1 33,46Z" />
+    <path
+        android:fillColor="#FF6E5594"
+        android:pathData="M59,58H75A1,1 0 0 1 76,59A1,1 0 0 1 75,60H59A1,1 0 0 1 58,59A1,1 0 0 1 59,58Z M33,64H43A1,1 0 0 1 44,65A1,1 0 0 1 43,66H33A1,1 0 0 1 32,65A1,1 0 0 1 33,64Z" />
+    <!-- Ribbon bookmark lying down the gutter, hanging out below the book -->
+    <path
+        android:fillColor="#FFB3423B"
+        android:pathData="M51.5,33H56.5V88L54,85L51.5,88Z" />
+    <!-- Note stuck to the corner of the right page -->
+    <group
+        android:pivotX="75"
+        android:pivotY="39"
+        android:rotation="8">
+        <path
+            android:fillColor="#FFE8C24A"
+            android:pathData="M69.2,32H80.8A1.2,1.2 0 0 1 82,33.2V44.8A1.2,1.2 0 0 1 80.8,46H69.2A1.2,1.2 0 0 1 68,44.8V33.2A1.2,1.2 0 0 1 69.2,32Z" />
+        <path
+            android:fillColor="#FF8A6A16"
+            android:pathData="M71.3,36H78.7A0.8,0.8 0 0 1 79.5,36.8A0.8,0.8 0 0 1 78.7,37.6H71.3A0.8,0.8 0 0 1 70.5,36.8A0.8,0.8 0 0 1 71.3,36Z M71.3,39.6H75.7A0.8,0.8 0 0 1 76.5,40.4A0.8,0.8 0 0 1 75.7,41.2H71.3A0.8,0.8 0 0 1 70.5,40.4A0.8,0.8 0 0 1 71.3,39.6Z" />
+    </group>
+</vector>

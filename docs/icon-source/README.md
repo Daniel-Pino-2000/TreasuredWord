@@ -1,53 +1,39 @@
-# TreasuredWord app icon — Android resources
+# TreasuredWord app icon
 
-"Light at the Seam": a closed Bible with a gold cross, and a soft warm glow
-escaping from where the pages meet the cover.
+An open Bible on espresso: gold-edged pages with lines of text, verses highlighted in the app's
+own Blue and Purple swatches (`ui/theme/HighlightColors.kt`), a note in its Yellow stuck to the
+corner of a page, and a red ribbon down the gutter. It shows what the app is for: reading,
+highlighting and taking notes.
 
-## How to install
+`icon.svg` is the editable source: the full 108 × 108 adaptive-icon grid, background and
+foreground together. Launchers show only the middle 72 × 72 (18..90), and keep the 66-unit
+circle around the centre visible under every mask shape, so the book stays inside that circle.
 
-Copy everything inside this folder into your project's `app/src/main/res/`
-directory, merging with what's already there (Android Studio will ask before
-overwriting — say yes, or rename your existing `ic_launcher*` files first if
-you want to keep them as backups).
+## Where it lives in the app
 
 ```
-res/
+app/src/main/res/
 ├── drawable/
-│   └── ic_launcher_background.xml     ← the gradient background (vector, scales perfectly)
+│   ├── ic_launcher_background.xml   ← espresso gradient (vector)
+│   ├── ic_launcher_foreground.xml   ← the open Bible (vector, same shapes as icon.svg)
+│   └── ic_launcher_monochrome.xml   ← one-color version for Android 13+ themed icons
 ├── mipmap-anydpi-v26/
-│   ├── ic_launcher.xml                ← adaptive icon definition (Android 8.0+)
-│   └── ic_launcher_round.xml          ← same, for round-icon launchers
-├── mipmap-mdpi/
-│   ├── ic_launcher.png                ← legacy icon, pre-Android-8 fallback
-│   ├── ic_launcher_round.png
-│   └── ic_launcher_foreground.png     ← adaptive icon foreground layer
-├── mipmap-hdpi/        (same three files, larger)
-├── mipmap-xhdpi/       (same three files, larger)
-├── mipmap-xxhdpi/      (same three files, larger)
-└── mipmap-xxxhdpi/     (same three files, larger)
+│   ├── ic_launcher.xml              ← adaptive icon (Android 8.0+)
+│   └── ic_launcher_round.xml
+└── mipmap-{mdpi…xxxhdpi}/
+    ├── ic_launcher.png              ← Android 7 (minSdk 24) fallback, rounded square
+    └── ic_launcher_round.png        ← same, round
 ```
 
-`playstore-icon-512.png` is **not** part of the app itself — upload it
-separately in the Play Console under Store presence → Main store listing →
-App icon.
+Both layers are vectors, so they're sharp at every density and there are no foreground PNGs.
+Only Android 7 uses the PNGs, which have the shape baked in.
 
-## Why it's built this way
+`playstore-icon-512.png` isn't part of the app. Upload it in the Play Console under
+Grow users → Store presence → Main store listing → App icon. It's a full square; Play rounds it.
 
-- **Android 8.0+ (API 26+)** reads `mipmap-anydpi-v26/ic_launcher.xml`, which
-  layers `ic_launcher_background.xml` (a resolution-independent gradient —
-  no PNG needed) under `ic_launcher_foreground.png` (the book, cross, and
-  glow). The system applies its own mask shape (circle, squircle, rounded
-  square, etc. depending on the device), so the icon looks native everywhere
-  without you doing anything extra.
-- **Older Android versions** ignore the adaptive files and use
-  `ic_launcher.png` / `ic_launcher_round.png` instead, which already have the
-  shape baked in.
+## Changing the icon
 
-## If you want to double-check it in Android Studio
-
-Right-click `res` → New → Image Asset → Launcher Icons (Adaptive and
-Legacy) will let you preview how the foreground/background combo looks
-under different mask shapes before you ship. If you ever want to nudge the
-glow or the cross, the original editable SVG is included below the PNGs are
-generated from — ask and I can hand that over too, or generate the icon
-again at a different scale.
+Edit the foreground drawable and `icon.svg` together; they use the same coordinates. Then
+regenerate the PNGs from `icon.svg`: render its middle 72 × 72 (`viewBox="18 18 72 72"`) as a
+large square, scale it to 512 for the Play Store, and to 48/72/96/144/192 px for the mipmap
+PNGs with a rounded-square mask (corner radius 16/72 of the side) and a round one.

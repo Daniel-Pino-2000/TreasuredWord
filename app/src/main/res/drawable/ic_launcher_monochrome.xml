@@ -3,20 +3,21 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Themed icon (Android 13+, #105): the launcher's book, cross and ribbon in one color,
-         which the system tints to match the wallpaper. Traced from the xxxhdpi foreground PNG
-         (432 px = 108 dp, so 4 px per unit) to keep the same size and position as the normal
-         icon. The fill color is never shown. The cross is one non-overlapping outline cut from
-         the book with evenOdd, as in ic_notification_daily_verse.xml, since two overlapping bars
-         would fill back in where they cross. -->
+    <!-- Themed icon (Android 13+, #105, #110): the launcher's open Bible in one color, which the
+         system tints to match the wallpaper. Same size and position as ic_launcher_foreground.
+         The fill color is never shown. The three highlighted verses are cut out of the pages
+         with evenOdd; the thin text lines are left out, since at icon size they'd only blur. -->
     <path
         android:fillColor="#FFFFFFFF"
         android:fillType="evenOdd"
-        android:pathData="M39.75,30.25H68.25A2,2 0 0 1 70.25,32.25V75.75A2,2 0 0 1 68.25,77.75H39.75A2,2 0 0 1 37.75,75.75V32.25A2,2 0 0 1 39.75,30.25Z
-                           M52.5,38A1.5,1.5 0 0 1 55.5,38V46.5H62.5A1.5,1.5 0 0 1 62.5,49.5H55.5V65A1.5,1.5 0 0 1 52.5,65V49.5H45.5A1.5,1.5 0 0 1 45.5,46.5H52.5Z" />
-    <!-- Bookmark ribbon below the book, with its notched end. It starts just inside the book so
-         no seam shows between the two shapes. -->
+        android:pathData="M53,34C46,31 37,30 28,32V74C37,72 46,73 53,76Z
+                           M55,34C62,31 71,30 80,32V74C71,72 62,73 55,76Z
+                           M32,43H50A1,1 0 0 1 51,44V48A1,1 0 0 1 50,49H32A1,1 0 0 1 31,48V44A1,1 0 0 1 32,43Z
+                           M58,55H76A1,1 0 0 1 77,56V60A1,1 0 0 1 76,61H58A1,1 0 0 1 57,60V56A1,1 0 0 1 58,55Z
+                           M32,61H45A1,1 0 0 1 46,62V66A1,1 0 0 1 45,67H32A1,1 0 0 1 31,66V62A1,1 0 0 1 32,61Z" />
+    <!-- Ribbon tail below the book. Only the tail: drawn down the gutter, it would join the two
+         pages into one block. It starts just inside the pages so no seam shows. -->
     <path
         android:fillColor="#FFFFFFFF"
-        android:pathData="M51.25,77.5H54V86L52.625,84L51.25,86Z" />
+        android:pathData="M51.5,74H56.5V88L54,85L51.5,88Z" />
 </vector>
