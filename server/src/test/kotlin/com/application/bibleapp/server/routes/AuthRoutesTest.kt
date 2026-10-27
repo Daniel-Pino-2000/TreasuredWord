@@ -9,10 +9,12 @@ import com.application.bibleapp.server.models.LoginRequest
 import com.application.bibleapp.server.models.LogoutRequest
 import com.application.bibleapp.server.models.RefreshRequest
 import com.application.bibleapp.server.models.RegisterRequest
+import com.application.bibleapp.server.models.UserResponse
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.bearerAuth
+import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
@@ -119,6 +121,101 @@ class AuthRoutesTest {
             setBody(request)
         }
         assertEquals(HttpStatusCode.Conflict, secondResponse.status)
+    }
+
+    // Phone keyboards often capitalise the first letter, so the case someone types at sign-in
+    // can differ from the case they used to create the account (#114).
+    private fun mixedCaseEmail() = "AuthRoutesTest+${UUID.randomUUID()}@Example.COM"
+
+    @Test
+    fun verifySameEmailWithDifferentCaseCannotRegisterTwice() = testApplication {
+        environment { config = ApplicationConfig("application.conf") }
+        val client = createClient { install(ContentNegotiation) { json() } }
+
+        val email = mixedCaseEmail()
+
+        val firstResponse = client.post("/api/v1/auth/register") {
+            contentType(ContentType.Application.Json)
+            setBody(RegisterRequest(email = email, password = "Onezoro22@"))
+        }
+        assertEquals(HttpStatusCode.Created, firstResponse.status)
+
+        val secondResponse = client.post("/api/v1/auth/register") {
+            contentType(ContentType.Application.Json)
+            setBody(RegisterRequest(email = email.lowercase(), password = "Onezoro22@"))
+        }
+        assertEquals(HttpStatusCode.Conflict, secondResponse.status)
+        val error = Json.decodeFromString<ErrorResponse>(secondResponse.bodyAsText())
+        assertEquals("EMAIL_ALREADY_REGISTERED", error.code)
+    }
+
+    @Test
+    fun verifyLoginIgnoresEmailCaseAndSurroundingSpaces() = testApplication {
+        environment { config = ApplicationConfig("application.conf") }
+        val client = createClient { install(ContentNegotiation) { json() } }
+
+        val email = mixedCaseEmail()
+        val registerResponse = client.post("/api/v1/auth/register") {
+            contentType(ContentType.Application.Json)
+            setBody(RegisterRequest(email = email, password = "Onezoro22@"))
+        }
+        assertEquals(HttpStatusCode.Created, registerResponse.status)
+        val registered = Json.decodeFromString<AuthResponse>(registerResponse.bodyAsText())
+
+        for (typed in listOf(email, email.lowercase(), email.uppercase(), "  ${email.lowercase()} ")) {
+            val response = client.post("/api/v1/auth/login") {
+                contentType(ContentType.Application.Json)
+                setBody(LoginRequest(email = typed, password = "Onezoro22@"))
+            }
+            assertEquals(HttpStatusCode.OK, response.status, "signing in as \"$typed\"")
+            val authResponse = Json.decodeFromString<AuthResponse>(response.bodyAsText())
+            assertEquals(registered.userId, authResponse.userId, "signing in as \"$typed\"")
+        }
+    }
+
+    @Test
+    fun verifyNonAsciiEmailsRegisterAndSignInWhateverTheirCase() = testApplication {
+        environment { config = ApplicationConfig("application.conf") }
+        val client = createClient { install(ContentNegotiation) { json() } }
+
+        // İ and Σ are where Kotlin's lowercase() and Postgres' lower() differ ("i̇" vs "i", final
+        // "ς" vs "σ"): what the routes store must still pass users_email_lowercase, and sign-in
+        // must lower-case the same way register did.
+        val email = "ÜNİCODEΣ+${UUID.randomUUID()}@Exämple.COM"
+        val registerResponse = client.post("/api/v1/auth/register") {
+            contentType(ContentType.Application.Json)
+            setBody(RegisterRequest(email = email, password = "Onezoro22@"))
+        }
+        assertEquals(HttpStatusCode.Created, registerResponse.status)
+        val registered = Json.decodeFromString<AuthResponse>(registerResponse.bodyAsText())
+
+        for (typed in listOf(email, email.lowercase())) {
+            val response = client.post("/api/v1/auth/login") {
+                contentType(ContentType.Application.Json)
+                setBody(LoginRequest(email = typed, password = "Onezoro22@"))
+            }
+            assertEquals(HttpStatusCode.OK, response.status, "signing in as \"$typed\"")
+            assertEquals(registered.userId, Json.decodeFromString<AuthResponse>(response.bodyAsText()).userId)
+        }
+    }
+
+    @Test
+    fun verifyRegisterStoresTheEmailInLowerCase() = testApplication {
+        environment { config = ApplicationConfig("application.conf") }
+        val client = createClient { install(ContentNegotiation) { json() } }
+
+        val email = mixedCaseEmail()
+        val registerResponse = client.post("/api/v1/auth/register") {
+            contentType(ContentType.Application.Json)
+            setBody(RegisterRequest(email = email, password = "Onezoro22@"))
+        }
+        val registered = Json.decodeFromString<AuthResponse>(registerResponse.bodyAsText())
+
+        val meResponse = client.get("/api/v1/users/me") {
+            bearerAuth(registered.accessToken)
+        }
+        assertEquals(HttpStatusCode.OK, meResponse.status)
+        assertEquals(email.lowercase(), Json.decodeFromString<UserResponse>(meResponse.bodyAsText()).email)
     }
 
     @Test
