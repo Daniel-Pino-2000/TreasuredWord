@@ -3,7 +3,6 @@ package com.application.bibleapp.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.application.bibleapp.data.remote.ServerWakeUp
-import com.application.bibleapp.data.remote.UserResponseDto
 import com.application.bibleapp.data.remote.isServerResponseTimeout
 import com.application.bibleapp.data.repository.AuthException
 import com.application.bibleapp.data.repository.AuthRepository
@@ -44,8 +43,11 @@ class AuthViewModel(
     private val _errorMessage = MutableStateFlow<UiText?>(null)
     val errorMessage: StateFlow<UiText?> = _errorMessage.asStateFlow()
 
-    private val _currentUser = MutableStateFlow<UserResponseDto?>(null)
-    val currentUser: StateFlow<UserResponseDto?> = _currentUser.asStateFlow()
+    /** The signed-in account's email, starting from the copy saved on the device so it shows
+     *  on launch even with the server asleep or the phone offline (#109). Null when signed
+     *  out, or for an older session that /users/me hasn't answered for yet. */
+    private val _email = MutableStateFlow(authRepository.savedEmail)
+    val email: StateFlow<String?> = _email.asStateFlow()
 
     private val serverWakeUp = ServerWakeUp(ping = authRepository::pingServer)
 
@@ -89,7 +91,7 @@ class AuthViewModel(
             }
             val refreshToken = accountContent.signOut { authRepository.endLocalSession() }
             _isLoggedIn.value = false
-            _currentUser.value = null
+            _email.value = null
             _signOutState.value = SignOutState.Idle
             onSignedOut()
             authRepository.revokeOnServer(refreshToken)
@@ -109,7 +111,7 @@ class AuthViewModel(
             authRepository.deleteAccount(password).fold(
                 onSuccess = {
                     _isLoggedIn.value = false
-                    _currentUser.value = null
+                    _email.value = null
                     onResult(null)
                 },
                 onFailure = { onResult(errorText(it)) }
@@ -124,7 +126,9 @@ class AuthViewModel(
     fun refreshCurrentUser() {
         viewModelScope.launch {
             authRepository.getCurrentUser().fold(
-                onSuccess = { _currentUser.value = it },
+                // Read back from the store rather than the reply, which only saved it if the
+                // person is still signed in (a sign-out may have happened meanwhile).
+                onSuccess = { _email.value = authRepository.savedEmail },
                 onFailure = {
                     // A failed fetch here often means the access token expired and the
                     // automatic refresh attempt also failed (HttpClientProvider's Auth plugin
@@ -132,6 +136,7 @@ class AuthViewModel(
                     // Re-reading isLoggedIn reflects that in the UI instead of leaving it
                     // showing "Signed in" for a session that's actually already gone.
                     _isLoggedIn.value = authRepository.isLoggedIn
+                    _email.value = authRepository.savedEmail
                 }
             )
         }
@@ -149,6 +154,7 @@ class AuthViewModel(
             result.fold(
                 onSuccess = {
                     _isLoggedIn.value = true
+                    _email.value = authRepository.savedEmail
                     refreshCurrentUser()
                     onSuccess()
                 },

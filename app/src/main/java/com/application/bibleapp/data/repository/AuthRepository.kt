@@ -56,13 +56,15 @@ class AuthRepository(context: Context) {
 
     val isLoggedIn: Boolean get() = tokenStore.isLoggedIn
     val currentUserId: String? get() = tokenStore.userId
+    /** Shown straight away on launch; [getCurrentUser] corrects it if it changed (#109). */
+    val savedEmail: String? get() = tokenStore.email
 
     suspend fun register(email: String, password: String): Result<Unit> = runCatching {
         val response = client.post("$baseUrl/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(RegisterRequestDto(email, password))
         }
-        saveSession(response)
+        saveSession(response, email)
     }
 
     suspend fun login(email: String, password: String): Result<Unit> = runCatching {
@@ -70,7 +72,7 @@ class AuthRepository(context: Context) {
             contentType(ContentType.Application.Json)
             setBody(LoginRequestDto(email, password))
         }
-        saveSession(response)
+        saveSession(response, email)
     }
 
     /**
@@ -104,7 +106,11 @@ class AuthRepository(context: Context) {
     suspend fun getCurrentUser(): Result<UserResponseDto> = runCatching {
         val response = client.get("$baseUrl/users/me")
         if (!response.status.isSuccess()) throw toAuthException(response)
-        response.body()
+        response.body<UserResponseDto>().also { user ->
+            // Not if the person signed out while this was in flight: the email would outlive
+            // the session it belongs to.
+            if (tokenStore.isLoggedIn) tokenStore.updateEmail(user.email)
+        }
     }
 
     suspend fun deleteAccount(password: String): Result<Unit> = runCatching {
@@ -117,10 +123,12 @@ class AuthRepository(context: Context) {
         HttpClientProvider.forgetCachedTokens()
     }
 
-    private suspend fun saveSession(response: HttpResponse) {
+    /** [email] is what the person just typed: the auth responses don't include it, and
+     *  /users/me replaces it later if the server has it differently (#109). */
+    private suspend fun saveSession(response: HttpResponse, email: String) {
         if (!response.status.isSuccess()) throw toAuthException(response)
         val auth = response.body<AuthResponseDto>()
-        tokenStore.saveSession(auth.userId, auth.accessToken, auth.refreshToken)
+        tokenStore.saveSession(auth.userId, email, auth.accessToken, auth.refreshToken)
         // The shared client would otherwise keep sending the previous account's token (#86).
         HttpClientProvider.forgetCachedTokens()
     }

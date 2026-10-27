@@ -8,7 +8,7 @@ import androidx.security.crypto.MasterKey
 import java.security.KeyStore
 
 /**
- * Persists the backend session (access token, refresh token, user id) in an encrypted
+ * Persists the backend session (access token, refresh token, user id, email) in an encrypted
  * SharedPreferences file rather than a plain one. These are real bearer credentials —
  * equivalent to a password for as long as they're valid — so they get the same protection a
  * password would, not the same treatment as an ordinary app preference.
@@ -34,16 +34,27 @@ class TokenStore(context: Context) {
     val accessToken: String? get() = prefs.getString(KEY_ACCESS_TOKEN, null)
     val refreshToken: String? get() = prefs.getString(KEY_REFRESH_TOKEN, null)
 
+    /** The account's email, kept so the You tab can show it on launch without waiting for
+     *  /users/me — which can take 30-50 s while the server wakes up, or never come offline
+     *  (#109). Null for sessions saved before it was stored, until /users/me fills it in. */
+    val email: String? get() = prefs.getString(KEY_EMAIL, null)
+
     /** True once a session has been saved and hasn't been cleared - doesn't verify the
      *  tokens are still valid server-side, just that we have something to try sending. */
     val isLoggedIn: Boolean get() = accessToken != null && refreshToken != null
 
-    fun saveSession(userId: String, accessToken: String, refreshToken: String) {
+    fun saveSession(userId: String, email: String, accessToken: String, refreshToken: String) {
         prefs.edit()
             .putString(KEY_USER_ID, userId)
+            .putString(KEY_EMAIL, email)
             .putString(KEY_ACCESS_TOKEN, accessToken)
             .putString(KEY_REFRESH_TOKEN, refreshToken)
             .apply()
+    }
+
+    /** Replaces the saved email with the one /users/me returned, the account's source of truth. */
+    fun updateEmail(email: String) {
+        prefs.edit().putString(KEY_EMAIL, email).apply()
     }
 
     /** Called after a successful /auth/refresh - the backend rotates the refresh token on
@@ -66,6 +77,7 @@ class TokenStore(context: Context) {
         const val KEY_ACCESS_TOKEN = "access_token"
         const val KEY_REFRESH_TOKEN = "refresh_token"
         const val KEY_USER_ID = "user_id"
+        const val KEY_EMAIL = "email"
 
         fun open(context: Context): SharedPreferences {
             val masterKey = MasterKey.Builder(context)
