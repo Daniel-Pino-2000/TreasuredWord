@@ -2,6 +2,7 @@
 <resources>
     <!-- Google sign-in (#112): the Google Cloud *web* OAuth client ID (ends in
          .apps.googleusercontent.com), the same value as the server's GOOGLE_CLIENT_ID. Not a
-         secret: it's inside every copy of the app. Empty hides the Google buttons. -->
-    <string name="google_web_client_id" translatable="false"></string>
+         secret: it's inside every copy of the app. Empty hides the Google buttons. Google Cloud
+         project treasuredword-513020, client "TreasuredWord server". -->
+    <string name="google_web_client_id" translatable="false">341883509915-7fimvqu3193d2taag6vomuce7s12dn2i.apps.googleusercontent.com</string>
 </resources>
