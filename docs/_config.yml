@@ -5,6 +5,7 @@ title: TreasuredWord
 description: A free Bible reading app
 exclude:
   - "*.pdf"
+  - ai_helper_plan.md
   - api_contract.md
   - release.md
   - UI_Integration_Roadmap.md
