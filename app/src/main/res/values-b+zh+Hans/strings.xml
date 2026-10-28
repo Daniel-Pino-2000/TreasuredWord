@@ -41,6 +41,8 @@
     <string name="label_highlights">标记</string>
     <string name="label_notes">笔记</string>
     <string name="label_signed_in">已登录</string>
+    <!-- Snackbar when sign-in finishes after the person left the sign-in screen (#134). %1$s = the account's email -->
+    <string name="auth_signed_in_as">已登录为 %1$s</string>
     <string name="verse_of_the_day">每日经文</string>
 
     <string name="bookmark_this_place">为此处添加书签</string>

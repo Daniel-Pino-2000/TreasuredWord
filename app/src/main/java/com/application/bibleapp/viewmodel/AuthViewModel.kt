@@ -6,9 +6,12 @@ import com.application.bibleapp.data.remote.ServerWakeUp
 import com.application.bibleapp.data.remote.isServerResponseTimeout
 import com.application.bibleapp.data.repository.AuthException
 import com.application.bibleapp.data.repository.AuthRepository
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import com.application.bibleapp.R
 import com.application.bibleapp.utils.UiText
@@ -49,6 +52,14 @@ class AuthViewModel(
     private val _email = MutableStateFlow(authRepository.savedEmail)
     val email: StateFlow<String?> = _email.asStateFlow()
 
+    private val _signedIn = Channel<String?>(Channel.BUFFERED)
+    /** One event per successful sign-in or new account, with the account's email. The
+     *  after-sign-in work and leaving the sign-in screen key off this and [isLoggedIn], not a
+     *  callback from the screen: a waking server can take ~50 s, and by then the person may be
+     *  on another screen, or the screen recreated by a rotation (#134). Buffered, so an event
+     *  sent while nothing is collecting (mid-rotation) is still delivered. */
+    val signedIn: Flow<String?> = _signedIn.receiveAsFlow()
+
     private val serverWakeUp = ServerWakeUp(ping = authRepository::pingServer)
 
     init {
@@ -61,12 +72,12 @@ class AuthViewModel(
         viewModelScope.launch { serverWakeUp.wakeUp() }
     }
 
-    fun register(email: String, password: String, onSuccess: () -> Unit) {
-        runAuthAction(onSuccess) { authRepository.register(email, password) }
+    fun register(email: String, password: String) {
+        runAuthAction { authRepository.register(email, password) }
     }
 
-    fun login(email: String, password: String, onSuccess: () -> Unit) {
-        runAuthAction(onSuccess) { authRepository.login(email, password) }
+    fun login(email: String, password: String) {
+        runAuthAction { authRepository.login(email, password) }
     }
 
     private val _signOutState = MutableStateFlow<SignOutState>(SignOutState.Idle)
@@ -142,12 +153,12 @@ class AuthViewModel(
         }
     }
 
-    private fun runAuthAction(onSuccess: () -> Unit, action: suspend () -> Result<Unit>) {
+    private fun runAuthAction(action: suspend () -> Result<Unit>) {
         _errorMessage.value = null
         _isLoading.value = true
         viewModelScope.launch {
             val result = action()
-            // Before the session's first sync (onSuccess triggers it), so a different account's
+            // Before the session's first sync (a [signedIn] collector triggers it), so a different account's
             // content left on the device is cleared first instead of mixed in (#81).
             if (result.isSuccess) accountContent.onSignedIn(authRepository.currentUserId)
             _isLoading.value = false
@@ -156,7 +167,7 @@ class AuthViewModel(
                     _isLoggedIn.value = true
                     _email.value = authRepository.savedEmail
                     refreshCurrentUser()
-                    onSuccess()
+                    _signedIn.send(authRepository.savedEmail)
                 },
                 onFailure = { _errorMessage.value = errorText(it) }
             )

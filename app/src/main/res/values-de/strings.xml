@@ -41,6 +41,8 @@
     <string name="label_highlights">Markierungen</string>
     <string name="label_notes">Notizen</string>
     <string name="label_signed_in">Angemeldet</string>
+    <!-- Snackbar when sign-in finishes after the person left the sign-in screen (#134). %1$s = the account's email -->
+    <string name="auth_signed_in_as">Angemeldet als %1$s</string>
     <string name="verse_of_the_day">Vers des Tages</string>
 
     <string name="bookmark_this_place">Diese Stelle merken</string>
