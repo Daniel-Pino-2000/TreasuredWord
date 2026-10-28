@@ -1,5 +1,8 @@
 package com.application.bibleapp.server.routes
 
+import com.application.bibleapp.server.auth.GoogleIdTokenVerifier
+import com.application.bibleapp.server.auth.GoogleIdentity
+import com.application.bibleapp.server.auth.GoogleKeysUnavailableException
 import com.application.bibleapp.server.auth.JwtConfig
 import com.application.bibleapp.server.auth.JwtIssuer
 import com.application.bibleapp.server.auth.PasswordHasher
@@ -9,6 +12,7 @@ import com.application.bibleapp.server.db.tables.RefreshTokens
 import com.application.bibleapp.server.db.tables.Users
 import com.application.bibleapp.server.models.AuthResponse
 import com.application.bibleapp.server.models.ErrorResponse
+import com.application.bibleapp.server.models.GoogleSignInRequest
 import com.application.bibleapp.server.models.LoginRequest
 import com.application.bibleapp.server.models.LogoutRequest
 import com.application.bibleapp.server.models.RefreshRequest
@@ -17,6 +21,7 @@ import com.application.bibleapp.server.plugins.AUTH_RATE_LIMIT
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.auth.authenticate
 import io.ktor.server.plugins.ratelimit.rateLimit
+import io.ktor.server.application.ApplicationCall
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
@@ -74,7 +79,41 @@ private fun issueTokensFor(userId: UUID, jwtConfig: JwtConfig): AuthResponse {
     )
 }
 
-fun Route.authRoutes() {
+/**
+ * Checks [idToken] with [verifier], or answers the error itself and returns null: the server
+ * isn't set up for Google (503), Google's keys can't be fetched (503), or the token fails a
+ * check (401). Shared by Google sign-in and deleting a Google account (#112).
+ */
+internal suspend fun ApplicationCall.verifyGoogleToken(
+    verifier: GoogleIdTokenVerifier?,
+    idToken: String
+): GoogleIdentity? {
+    if (verifier == null) {
+        respond(
+            HttpStatusCode.ServiceUnavailable,
+            ErrorResponse(code = "GOOGLE_SIGN_IN_UNAVAILABLE", message = "Google sign-in isn't set up on this server")
+        )
+        return null
+    }
+    val identity = try {
+        verifier.verify(idToken)
+    } catch (e: GoogleKeysUnavailableException) {
+        respond(
+            HttpStatusCode.ServiceUnavailable,
+            ErrorResponse(code = "GOOGLE_SIGN_IN_UNAVAILABLE", message = "Couldn't reach Google to check the sign-in")
+        )
+        return null
+    }
+    if (identity == null) {
+        respond(
+            HttpStatusCode.Unauthorized,
+            ErrorResponse(code = "INVALID_GOOGLE_TOKEN", message = "Google sign-in couldn't be verified")
+        )
+    }
+    return identity
+}
+
+fun Route.authRoutes(googleVerifier: GoogleIdTokenVerifier?) {
 
     rateLimit(AUTH_RATE_LIMIT) {
         post("/auth/register") {
@@ -138,7 +177,9 @@ fun Route.authRoutes() {
             // user != null with the && short-circuits before ever calling PasswordHasher.verify
             // when there's no row to compare against) - see docs/api_contract.md decision 4. The
             // API should never let a caller distinguish "wrong password" from "no such account".
-            val credentialsAreValid = user != null && PasswordHasher.verify(request.password, user[Users.passwordHash])
+            // An account made with Google has no password, so no password can match it (#112).
+            val passwordHash = user?.get(Users.passwordHash)
+            val credentialsAreValid = passwordHash != null && PasswordHasher.verify(request.password, passwordHash)
 
             if (!credentialsAreValid) {
                 call.respond(
@@ -150,6 +191,58 @@ fun Route.authRoutes() {
 
             val jwtConfig = call.application.getJwtConfig()
             call.respond(HttpStatusCode.OK, issueTokensFor(user!![Users.id], jwtConfig))
+        }
+
+        // Google sign-in (#112): signs in to the account this Google account is linked to, links
+        // it to an existing account with the same email, or creates a new account without a
+        // password. Linking by email is safe because the verifier only accepts emails Google has
+        // verified, so whoever holds the token controls that inbox.
+        post("/auth/google") {
+            val request = call.receive<GoogleSignInRequest>()
+            val identity = call.verifyGoogleToken(googleVerifier, request.idToken) ?: return@post
+            val email = normalizeEmail(identity.email)
+
+            var created = false
+            val userId = transaction {
+                Users.selectAll().where { Users.googleSubject eq identity.subject }.singleOrNull()
+                    ?.let { return@transaction it[Users.id] }
+
+                val sameEmail = Users.selectAll().where { Users.email eq email }.singleOrNull()
+                if (sameEmail != null) {
+                    // Already linked to a different Google account with this email (Google
+                    // accounts can be deleted and the address reused): don't take it over.
+                    if (sameEmail[Users.googleSubject] != null) return@transaction null
+                    Users.update({ Users.id eq sameEmail[Users.id] }) {
+                        it[googleSubject] = identity.subject
+                    }
+                    return@transaction sameEmail[Users.id]
+                }
+
+                created = true
+                Users.insert {
+                    it[Users.email] = email
+                    it[Users.passwordHash] = null
+                    it[Users.googleSubject] = identity.subject
+                    it[Users.createdAt] = Instant.now()
+                } get Users.id
+            }
+
+            if (userId == null) {
+                call.respond(
+                    HttpStatusCode.Conflict,
+                    ErrorResponse(
+                        code = "EMAIL_LINKED_TO_OTHER_GOOGLE_ACCOUNT",
+                        message = "This email's account is linked to a different Google account"
+                    )
+                )
+                return@post
+            }
+
+            val jwtConfig = call.application.getJwtConfig()
+            call.respond(
+                if (created) HttpStatusCode.Created else HttpStatusCode.OK,
+                issueTokensFor(userId, jwtConfig)
+            )
         }
 
         post("/auth/refresh") {

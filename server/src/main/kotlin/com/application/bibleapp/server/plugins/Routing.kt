@@ -1,5 +1,6 @@
 package com.application.bibleapp.server.plugins
 
+import com.application.bibleapp.server.auth.GoogleIdTokenVerifier
 import com.application.bibleapp.server.models.ErrorResponse
 import com.application.bibleapp.server.routes.authRoutes
 import com.application.bibleapp.server.routes.syncRoutes
@@ -23,14 +24,16 @@ fun Application.configureRouting() {
         }
     }
 
+    val googleVerifier = GoogleIdTokenVerifier.fromConfig(environment.config)
+
     routing {
         get("/health") {
             call.respond(HttpStatusCode.OK, mapOf("status" to "ok"))
         }
 
         route("/api/v1") {
-            authRoutes()
-            userRoutes()
+            authRoutes(googleVerifier)
+            userRoutes(googleVerifier)
             syncRoutes()
         }
     }
