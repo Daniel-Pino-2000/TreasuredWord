@@ -42,6 +42,8 @@
     <string name="label_highlights">Surlignages</string>
     <string name="label_notes">Notes</string>
     <string name="label_signed_in">Connecté</string>
+    <!-- Snackbar when sign-in finishes after the person left the sign-in screen (#134). %1$s = the account's email -->
+    <string name="auth_signed_in_as">Connecté en tant que %1$s</string>
     <string name="verse_of_the_day">Verset du jour</string>
 
     <string name="bookmark_this_place">Marquer cet endroit</string>

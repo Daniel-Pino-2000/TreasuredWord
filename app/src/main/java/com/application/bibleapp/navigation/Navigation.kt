@@ -3,13 +3,18 @@ package com.application.bibleapp.navigation
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.application.bibleapp.R
 import com.application.bibleapp.data.repository.BibleRepository
 import com.application.bibleapp.screens.BibleView
 import com.application.bibleapp.screens.BookPickerView
@@ -24,6 +29,7 @@ import com.application.bibleapp.screens.VersionPickerView
 import com.application.bibleapp.screens.YouView
 import com.application.bibleapp.screens.settings.SettingsView
 import com.application.bibleapp.ui.theme.centeredContentWidth
+import com.application.bibleapp.utils.UiText
 import com.application.bibleapp.viewmodel.AuthViewModel
 import com.application.bibleapp.viewmodel.BibleViewModel
 import com.application.bibleapp.worker.SyncScheduler
@@ -41,6 +47,24 @@ fun Navigation(
     // Every screen but the reader (which caps its own reading column) is laid out in a centered,
     // max-width column, so nothing stretches edge to edge in landscape.
     val screenModifier = Modifier.padding(padding).centeredContentWidth()
+
+    // The after-sign-in work runs here, not in the sign-in screen, so it happens wherever the
+    // person is when a slow (waking) server finally answers (#134).
+    LaunchedEffect(authViewModel) {
+        authViewModel.signedIn.collect { email ->
+            bibleViewModel.syncReadingProgressFromServer()
+            bibleViewModel.dismissSignInNudge()
+            SyncScheduler.triggerImmediateSync(context)
+            // Someone who wandered off while waiting otherwise wouldn't know it worked.
+            val route = navController.currentDestination?.route
+            if (route != Screen.Login.route && route != Screen.Register.route) {
+                bibleViewModel.showMessage(
+                    email?.let { UiText.Res(R.string.auth_signed_in_as, it) }
+                        ?: UiText.Res(R.string.label_signed_in)
+                )
+            }
+        }
+    }
 
     NavHost(
         navController = navController,
@@ -159,32 +183,26 @@ fun Navigation(
             )
         }
 
-        composable(Screen.Login.route) {
+        composable(Screen.Login.route) { entry ->
+            CloseWhenSignedIn(authViewModel, navController, entry) { navController.popBackStack() }
             LoginView(
                 authViewModel = authViewModel,
                 modifier = screenModifier,
-                onLoginSuccess = {
-                    bibleViewModel.syncReadingProgressFromServer()
-                    bibleViewModel.dismissSignInNudge()
-                    SyncScheduler.triggerImmediateSync(context)
-                    navController.popBackStack()
-                },
                 onNavigateToRegister = { navController.navigate(Screen.Register.route) }
             )
         }
 
-        composable(Screen.Register.route) {
+        composable(Screen.Register.route) { entry ->
+            CloseWhenSignedIn(authViewModel, navController, entry) {
+                // Back past Login too, to wherever sign-in started (You tab, a settings page,
+                // the reader's nudge) rather than a fixed screen that may not be on the stack.
+                if (!navController.popBackStack(Screen.Login.route, inclusive = true)) {
+                    navController.popBackStack()
+                }
+            }
             RegisterView(
                 authViewModel = authViewModel,
                 modifier = screenModifier,
-                onRegisterSuccess = {
-                    bibleViewModel.syncReadingProgressFromServer()
-                    bibleViewModel.dismissSignInNudge()
-                    SyncScheduler.triggerImmediateSync(context)
-                    // Back past Login too, to wherever sign-in started (You tab, a settings page,
-                    // the reader's nudge) rather than a fixed screen that may not be on the stack.
-                    navController.popBackStack(Screen.Login.route, inclusive = true)
-                },
                 onNavigateToLogin = { navController.popBackStack() }
             )
         }
@@ -243,3 +261,20 @@ fun Navigation(
     }
 }
 
+/**
+ * Leaves a sign-in screen once the person is signed in, but only while it's the screen showing:
+ * if they left during a slow sign-in, closing then would pop whatever they went to instead
+ * (#134). If they come back to it later, it closes then.
+ */
+@Composable
+private fun CloseWhenSignedIn(
+    authViewModel: AuthViewModel,
+    navController: NavHostController,
+    entry: NavBackStackEntry,
+    close: () -> Unit
+) {
+    val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
+    LaunchedEffect(isLoggedIn) {
+        if (isLoggedIn && navController.currentBackStackEntry?.id == entry.id) close()
+    }
+}

@@ -47,7 +47,6 @@ import com.application.bibleapp.utils.asString
 fun RegisterView(
     authViewModel: AuthViewModel,
     modifier: Modifier = Modifier,
-    onRegisterSuccess: () -> Unit,
     onNavigateToLogin: () -> Unit
 ) {
     var email by remember { mutableStateOf("") }
@@ -149,7 +148,7 @@ fun RegisterView(
         }
 
         Button(
-            onClick = { authViewModel.register(email.trim(), password, onSuccess = onRegisterSuccess) },
+            onClick = { authViewModel.register(email.trim(), password) },
             enabled = canSubmit,
             modifier = Modifier.fillMaxWidth()
         ) {
