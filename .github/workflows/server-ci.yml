@@ -2,6 +2,8 @@ name: Server CI
 
 # Only runs on changes that could actually affect :server — the repo also has an :app module
 # (Android/Compose) with its own separate build; this workflow deliberately never touches it.
+# The root Dockerfile and build files are listed because the deployed image is built from them.
+# A push to main that passes the tests also deploys to Render (the deploy job below, #116).
 on:
   push:
     branches: [main, ktorAppImplementation]
@@ -9,13 +11,22 @@ on:
       - "server/**"
       - "gradle/**"
       - "settings.gradle.kts"
+      - "build.gradle.kts"
+      - "Dockerfile"
+      - ".dockerignore"
       - ".github/workflows/server-ci.yml"
   pull_request:
     paths:
       - "server/**"
       - "gradle/**"
       - "settings.gradle.kts"
+      - "build.gradle.kts"
+      - "Dockerfile"
+      - ".dockerignore"
       - ".github/workflows/server-ci.yml"
+  # "Run workflow" in the Actions tab: tests main again and redeploys it, e.g. after a change
+  # only to Render's environment variables or a failed deploy.
+  workflow_dispatch:
 
 jobs:
   test:
@@ -68,3 +79,35 @@ jobs:
         with:
           name: server-test-report
           path: server/build/reports/tests/test
+
+  # Deploys from here instead of Render's own auto-deploy, which never fired for pushes to main
+  # (#116), and this way a commit only reaches production after its tests pass. Render's
+  # Auto-Deploy setting is Off so the same commit isn't deployed twice.
+  deploy:
+    needs: test
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    # One deploy at a time, in push order; a newer push waits rather than cancelling one that
+    # may already be running migrations.
+    concurrency:
+      group: render-deploy
+      cancel-in-progress: false
+
+    steps:
+      - name: Trigger the Render deploy of this commit
+        env:
+          # Render → treasuredword → Settings → Deploy Hook. It's a secret: anyone with the URL
+          # can deploy, so it lives only in this repo's Actions secrets (server/DEPLOY.md).
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$RENDER_DEPLOY_HOOK_URL" ]; then
+            echo "::error::The RENDER_DEPLOY_HOOK_URL secret isn't set - see server/DEPLOY.md."
+            exit 1
+          fi
+          # ref= deploys exactly the commit that was just tested, not whatever main is by now.
+          # 200 = deploy started, 202 = queued behind one already running; --fail turns 4xx/5xx
+          # into a failed job. The response is discarded so the hook URL never reaches the log.
+          status=$(curl --silent --show-error --fail --output /dev/null --write-out "%{http_code}" \
+            -X POST "${RENDER_DEPLOY_HOOK_URL}&ref=${GITHUB_SHA}")
+          echo "Render accepted the deploy of ${GITHUB_SHA} (HTTP ${status})."
+          echo "Render accepted the deploy of \`${GITHUB_SHA}\` (HTTP ${status}). Follow it in the Render dashboard → treasuredword → Events." >> "$GITHUB_STEP_SUMMARY"
