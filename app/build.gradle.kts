@@ -169,6 +169,7 @@ dependencies {
     kapt("androidx.room:room-compiler:$room_version")
 
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.core.splashscreen)
     // "Continue with Google" through Credential Manager (#112)
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services.auth)

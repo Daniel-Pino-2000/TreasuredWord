@@ -48,6 +48,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import kotlinx.coroutines.flow.collectLatest
 import androidx.core.view.WindowInsetsCompat
@@ -98,6 +99,8 @@ private const val SCROLL_COMMIT_DP = 120
 class MainActivity : AppCompatActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Before super.onCreate: swaps the startup theme (#135) for the app's own.
+        installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         // Names the channel (shown in the system's notification settings) in the app language.
@@ -214,6 +217,19 @@ class MainActivity : AppCompatActivity() {
                 ThemeMode.SYSTEM -> isSystemInDarkTheme()
                 ThemeMode.LIGHT -> false
                 ThemeMode.DARK -> true
+            }
+            // Android 13+ lets the app pick the next launch's startup screen, so it matches the
+            // app's own Light/Dark setting rather than the phone's (#135).
+            LaunchedEffect(themeMode) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    splashScreen.setSplashScreenTheme(
+                        when (themeMode) {
+                            ThemeMode.SYSTEM -> R.style.Theme_BibleApp_Splash
+                            ThemeMode.LIGHT -> R.style.Theme_BibleApp_SplashLight
+                            ThemeMode.DARK -> R.style.Theme_BibleApp_SplashDark
+                        }
+                    )
+                }
             }
 
             BibleAppTheme(darkTheme = useDarkTheme) {
