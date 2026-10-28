@@ -46,6 +46,8 @@
     <string name="label_highlights">Highlights</string>
     <string name="label_notes">Notes</string>
     <string name="label_signed_in">Signed in</string>
+    <!-- Snackbar when sign-in finishes after the person left the sign-in screen (#134). %1$s = the account's email -->
+    <string name="auth_signed_in_as">Signed in as %1$s</string>
     <string name="verse_of_the_day">Verse of the Day</string>
 
     <!-- Bookmark button in the reader's top bar. %1$s is a verse reference, e.g. "John 3:16". -->

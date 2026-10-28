@@ -42,6 +42,8 @@
     <string name="label_highlights">Viangazio</string>
     <string name="label_notes">Madokezo</string>
     <string name="label_signed_in">Umeingia</string>
+    <!-- Snackbar when sign-in finishes after the person left the sign-in screen (#134). %1$s = the account's email -->
+    <string name="auth_signed_in_as">Umeingia kama %1$s</string>
     <string name="verse_of_the_day">Mstari wa Siku</string>
 
     <string name="bookmark_this_place">Weka alamisho hapa</string>

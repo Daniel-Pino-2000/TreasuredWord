@@ -42,6 +42,8 @@
     <string name="label_highlights">Sorotan</string>
     <string name="label_notes">Catatan</string>
     <string name="label_signed_in">Sudah masuk</string>
+    <!-- Snackbar when sign-in finishes after the person left the sign-in screen (#134). %1$s = the account's email -->
+    <string name="auth_signed_in_as">Masuk sebagai %1$s</string>
     <string name="verse_of_the_day">Ayat Hari Ini</string>
 
     <string name="bookmark_this_place">Tandai tempat ini</string>

@@ -45,6 +45,8 @@
     <string name="label_highlights">Resaltados</string>
     <string name="label_notes">Notas</string>
     <string name="label_signed_in">Sesión iniciada</string>
+    <!-- Snackbar when sign-in finishes after the person left the sign-in screen (#134). %1$s = the account's email -->
+    <string name="auth_signed_in_as">Sesión iniciada como %1$s</string>
     <string name="verse_of_the_day">Versículo del día</string>
 
     <!-- Bookmark button -->
