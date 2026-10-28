@@ -52,8 +52,10 @@ android {
         minSdk = 24
         // Google Play only accepts new apps and updates that target API 36 or higher (#66).
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        // Every bundle uploaded to Play needs a higher versionCode (docs/release.md).
+        // 1.1: startup name (#135), sign-in fix (#134), Google sign-in (#112).
+        versionCode = 2
+        versionName = "1.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
