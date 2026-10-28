@@ -27,9 +27,13 @@ normal speed. That's the cost of "genuinely cannot be billed."
 
 ## Every deploy
 
-Unlike Fly's CLI-driven `flyctl deploy`, Render auto-deploys on every push to the connected
-branch by default — there's no separate deploy command to run day-to-day. Everything below is
-either one-time or only needed when a secret changes.
+Deploys start from GitHub Actions, not from Render itself: when a push to `main` touches the
+server, `.github/workflows/server-ci.yml` runs the server tests and, only if they pass, its
+`deploy` job calls Render's deploy hook for that exact commit. Render's own auto-deploy is
+**Off**. It was on, but no push to `main` ever triggered it between 21 September and
+27 October 2026, although the GitHub App had access to the repo (#116). Deploying from CI also
+means a commit whose tests fail never reaches production. Everything below is either one-time or
+only needed when a secret changes.
 
 1. **Set the secrets**, in the Render dashboard under the service → **Environment**:
    - `DATABASE_URL` — `jdbc:postgresql://<neon-host>/<db>?sslmode=require`. Use Neon's
@@ -41,16 +45,27 @@ either one-time or only needed when a secret changes.
 
    Saving env var changes triggers a redeploy automatically.
 
-2. **Deploy** happens on `git push` to the branch Render is watching (set this under the
-   service's **Settings** → **Build & Deploy** if you need to change which branch). To trigger one
-   manually without a new commit, use the dashboard's **Manual Deploy** button, or the Render CLI
-   (`render deploy`) if you install it.
+2. **Connect CI to Render** (one-time, or again after regenerating the hook):
+   - In Render: the service → **Settings** → **Deploy Hook**, copy the URL. It's a secret:
+     anyone who has it can deploy, so never put it in code, issues or chat.
+   - Store it as the repo's Actions secret `RENDER_DEPLOY_HOOK_URL`: run
+     `gh secret set RENDER_DEPLOY_HOOK_URL` and paste the URL when asked, or use GitHub → repo
+     **Settings** → **Secrets and variables** → **Actions**.
+   - In Render: **Settings** → **Auto-Deploy** → **Off**, so a commit isn't deployed twice if
+     Render's own trigger ever starts working again.
 
-3. **Verify**:
+3. **Deploy** happens by itself when a server change is merged to `main` and its tests pass;
+   the `deploy` job in the **Server CI** run shows it. To redeploy without a new commit (after
+   changing an env var, or if a deploy failed), use **Actions** → **Server CI** →
+   **Run workflow** on `main`, or the Render dashboard's **Manual Deploy** button.
+
+4. **Verify**:
    ```bash
    curl https://treasuredword.onrender.com/health
    ```
    Logs are under the service's **Logs** tab in the dashboard (or `render logs` via the CLI).
+   When a release adds a migration, check the log shows Flyway's "Successfully applied" line
+   for it before calling the deploy done.
 
 ## What was verified locally before writing this doc (Phase 5)
 
