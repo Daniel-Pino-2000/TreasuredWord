@@ -17,6 +17,9 @@ data class RegisterRequestDto(val email: String, val password: String)
 data class LoginRequestDto(val email: String, val password: String)
 
 @Serializable
+data class GoogleSignInRequestDto(val idToken: String)
+
+@Serializable
 data class RefreshRequestDto(val refreshToken: String)
 
 @Serializable
@@ -30,11 +33,19 @@ data class AuthResponseDto(
     val refreshToken: String
 )
 
+/** [hasPassword]/[hasGoogle] default to "unknown" for a server from before Google sign-in (#112). */
 @Serializable
-data class UserResponseDto(val id: String, val email: String, val createdAt: String)
+data class UserResponseDto(
+    val id: String,
+    val email: String,
+    val createdAt: String,
+    val hasPassword: Boolean? = null,
+    val hasGoogle: Boolean? = null
+)
 
+/** One of the two: the password, or a fresh Google ID token (#112). */
 @Serializable
-data class DeleteAccountRequestDto(val password: String)
+data class DeleteAccountRequestDto(val password: String? = null, val googleIdToken: String? = null)
 
 /** Matches every non-2xx response shape from the backend (server/models/ErrorResponse.kt). */
 @Serializable

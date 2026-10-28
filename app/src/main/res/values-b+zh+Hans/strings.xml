@@ -43,6 +43,15 @@
     <string name="label_signed_in">已登录</string>
     <!-- Snackbar when sign-in finishes after the person left the sign-in screen (#134). %1$s = the account's email -->
     <string name="auth_signed_in_as">已登录为 %1$s</string>
+    <!-- Google sign-in (#112) -->
+    <string name="auth_or">或</string>
+    <string name="auth_continue_with_google">使用 Google 账号继续</string>
+    <string name="auth_error_google_failed">无法使用 Google 登录。请重试，或使用你的邮箱。</string>
+    <string name="auth_error_google_no_account">此手机上没有 Google 账号。请在手机设置中添加，或使用你的邮箱。</string>
+    <string name="auth_error_google_unavailable">Google 登录暂时不可用。请使用你的邮箱和密码。</string>
+    <string name="auth_error_google_other_account">使用此邮箱的账号已关联另一个 Google 账号。</string>
+    <string name="account_delete_confirm_with_google">请使用你登录时所用的 Google 账号确认。</string>
+    <string name="account_delete_google_wrong_account">这不是此账号所用的 Google 账号。</string>
     <string name="verse_of_the_day">每日经文</string>
 
     <string name="bookmark_this_place">为此处添加书签</string>

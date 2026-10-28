@@ -32,6 +32,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import com.application.bibleapp.components.GoogleSignInSection
 import com.application.bibleapp.components.ServerWakeHint
 import com.application.bibleapp.components.rememberWaitingLong
 import com.application.bibleapp.ui.theme.Spacing
@@ -51,6 +52,7 @@ fun LoginView(
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     val isLoading by authViewModel.isLoading.collectAsState()
+    val isGoogleLoading by authViewModel.isGoogleLoading.collectAsState()
     val errorMessage by authViewModel.errorMessage.collectAsState()
 
     // Only flagged once there's something to judge — an empty field isn't "invalid" yet,
@@ -128,7 +130,7 @@ fun LoginView(
             enabled = !isLoading && isValidEmailFormat(email) && password.isNotBlank(),
             modifier = Modifier.fillMaxWidth()
         ) {
-            if (isLoading) {
+            if (isLoading && !isGoogleLoading) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(20.dp),
                     strokeWidth = 2.dp,
@@ -138,6 +140,8 @@ fun LoginView(
                 Text(stringResource(R.string.action_sign_in))
             }
         }
+
+        GoogleSignInSection(authViewModel)
 
         if (waitingLong) ServerWakeHint()
 

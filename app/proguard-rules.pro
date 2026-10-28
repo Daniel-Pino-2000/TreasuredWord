@@ -17,6 +17,12 @@
 -dontwarn com.google.errorprone.annotations.Immutable
 -dontwarn com.google.errorprone.annotations.RestrictedApi
 
+# Credential Manager finds its Google Play services provider by reflection (#112), as its docs say.
+-if class androidx.credentials.CredentialManager
+-keep class androidx.credentials.playservices.** {
+  *;
+}
+
 # Ktor logs through slf4j, which looks for an optional logger binder. Without one it falls back to
 # a no-op logger, which is what we want on Android.
 -dontwarn org.slf4j.impl.StaticLoggerBinder

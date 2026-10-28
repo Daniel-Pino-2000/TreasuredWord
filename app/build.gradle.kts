@@ -169,6 +169,10 @@ dependencies {
     kapt("androidx.room:room-compiler:$room_version")
 
     implementation(libs.androidx.core.ktx)
+    // "Continue with Google" through Credential Manager (#112)
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services.auth)
+    implementation(libs.googleid)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
     // Per-app language below Android 13 (AppCompatDelegate.setApplicationLocales) - see utils/AppLanguage.kt

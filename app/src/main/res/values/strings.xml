@@ -48,6 +48,15 @@
     <string name="label_signed_in">Signed in</string>
     <!-- Snackbar when sign-in finishes after the person left the sign-in screen (#134). %1$s = the account's email -->
     <string name="auth_signed_in_as">Signed in as %1$s</string>
+    <!-- Google sign-in (#112) -->
+    <string name="auth_or">or</string>
+    <string name="auth_continue_with_google">Continue with Google</string>
+    <string name="auth_error_google_failed">Couldn\'t sign in with Google. Try again, or use your email.</string>
+    <string name="auth_error_google_no_account">There\'s no Google account on this phone. Add one in the phone\'s settings, or use your email.</string>
+    <string name="auth_error_google_unavailable">Google sign-in isn\'t available right now. Use your email and password.</string>
+    <string name="auth_error_google_other_account">The account with this email uses a different Google account.</string>
+    <string name="account_delete_confirm_with_google">Confirm with the Google account you sign in with.</string>
+    <string name="account_delete_google_wrong_account">That\'s not the Google account this account uses.</string>
     <string name="verse_of_the_day">Verse of the Day</string>
 
     <!-- Bookmark button in the reader's top bar. %1$s is a verse reference, e.g. "John 3:16". -->

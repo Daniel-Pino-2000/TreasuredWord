@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.application.bibleapp.data.remote.ServerWakeUp
 import com.application.bibleapp.data.remote.isServerResponseTimeout
+import com.application.bibleapp.data.repository.AuthError
 import com.application.bibleapp.data.repository.AuthException
 import com.application.bibleapp.data.repository.AuthRepository
 import kotlinx.coroutines.channels.Channel
@@ -14,6 +15,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import com.application.bibleapp.R
+import com.application.bibleapp.utils.GoogleSignInResult
 import com.application.bibleapp.utils.UiText
 import com.application.bibleapp.worker.AccountContentSync
 
@@ -25,6 +27,9 @@ sealed interface SignOutState {
     /** Some couldn't be uploaded (e.g. offline): signing out now would lose them, so ask first. */
     data object UnsyncedChanges : SignOutState
 }
+
+/** How the signed-in account can sign in, from /users/me (#112). Null fields: not known yet. */
+data class SignInMethods(val hasPassword: Boolean?, val hasGoogle: Boolean?)
 
 /**
  * Backs the login/register screens and the account section in Settings. [isLoggedIn] is
@@ -42,6 +47,13 @@ class AuthViewModel(
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
+    /** The [isLoading] action is Google sign-in, so its button shows the spinner (#112). */
+    private val _isGoogleLoading = MutableStateFlow(false)
+    val isGoogleLoading: StateFlow<Boolean> = _isGoogleLoading.asStateFlow()
+
+    private val _signInMethods = MutableStateFlow(SignInMethods(hasPassword = null, hasGoogle = null))
+    val signInMethods: StateFlow<SignInMethods> = _signInMethods.asStateFlow()
 
     private val _errorMessage = MutableStateFlow<UiText?>(null)
     val errorMessage: StateFlow<UiText?> = _errorMessage.asStateFlow()
@@ -80,6 +92,17 @@ class AuthViewModel(
         runAuthAction { authRepository.login(email, password) }
     }
 
+    /** What the sign-in screens' "Continue with Google" got from Credential Manager (#112). */
+    fun onGoogleResult(result: GoogleSignInResult) {
+        when (result) {
+            is GoogleSignInResult.Success -> runAuthAction(google = true) {
+                authRepository.signInWithGoogle(result.idToken, result.email)
+            }
+            GoogleSignInResult.Cancelled -> Unit
+            is GoogleSignInResult.Failed -> _errorMessage.value = result.message
+        }
+    }
+
     private val _signOutState = MutableStateFlow<SignOutState>(SignOutState.Idle)
     val signOutState: StateFlow<SignOutState> = _signOutState.asStateFlow()
 
@@ -103,6 +126,7 @@ class AuthViewModel(
             val refreshToken = accountContent.signOut { authRepository.endLocalSession() }
             _isLoggedIn.value = false
             _email.value = null
+            _signInMethods.value = SignInMethods(hasPassword = null, hasGoogle = null)
             _signOutState.value = SignOutState.Idle
             onSignedOut()
             authRepository.revokeOnServer(refreshToken)
@@ -116,16 +140,29 @@ class AuthViewModel(
 
     /** [onResult] receives null on success, or a message to show on failure (e.g. the
      *  password was wrong) — the caller (Settings' delete-account dialog) decides how to
-     *  present that rather than this ViewModel owning dialog-specific error state. */
-    fun deleteAccount(password: String, onResult: (errorMessage: UiText?) -> Unit) {
+     *  present that rather than this ViewModel owning dialog-specific error state. Confirmed
+     *  with the [password] or, for a Google account, a fresh [googleIdToken] (#112). */
+    fun deleteAccount(
+        password: String? = null,
+        googleIdToken: String? = null,
+        onResult: (errorMessage: UiText?) -> Unit
+    ) {
         viewModelScope.launch {
-            authRepository.deleteAccount(password).fold(
+            authRepository.deleteAccount(password, googleIdToken).fold(
                 onSuccess = {
                     _isLoggedIn.value = false
                     _email.value = null
+                    _signInMethods.value = SignInMethods(hasPassword = null, hasGoogle = null)
                     onResult(null)
                 },
-                onFailure = { onResult(errorText(it)) }
+                onFailure = {
+                    val wrongGoogleAccount = googleIdToken != null &&
+                        (it as? AuthException)?.error == AuthError.InvalidCredentials
+                    onResult(
+                        if (wrongGoogleAccount) UiText.Res(R.string.account_delete_google_wrong_account)
+                        else errorText(it)
+                    )
+                }
             )
         }
     }
@@ -139,7 +176,10 @@ class AuthViewModel(
             authRepository.getCurrentUser().fold(
                 // Read back from the store rather than the reply, which only saved it if the
                 // person is still signed in (a sign-out may have happened meanwhile).
-                onSuccess = { _email.value = authRepository.savedEmail },
+                onSuccess = { user ->
+                    _email.value = authRepository.savedEmail
+                    _signInMethods.value = SignInMethods(user.hasPassword, user.hasGoogle)
+                },
                 onFailure = {
                     // A failed fetch here often means the access token expired and the
                     // automatic refresh attempt also failed (HttpClientProvider's Auth plugin
@@ -153,15 +193,17 @@ class AuthViewModel(
         }
     }
 
-    private fun runAuthAction(action: suspend () -> Result<Unit>) {
+    private fun runAuthAction(google: Boolean = false, action: suspend () -> Result<Unit>) {
         _errorMessage.value = null
         _isLoading.value = true
+        _isGoogleLoading.value = google
         viewModelScope.launch {
             val result = action()
             // Before the session's first sync (a [signedIn] collector triggers it), so a different account's
             // content left on the device is cleared first instead of mixed in (#81).
             if (result.isSuccess) accountContent.onSignedIn(authRepository.currentUserId)
             _isLoading.value = false
+            _isGoogleLoading.value = false
             result.fold(
                 onSuccess = {
                     _isLoggedIn.value = true

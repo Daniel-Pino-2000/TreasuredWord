@@ -45,6 +45,15 @@
     <string name="label_signed_in">Naka-sign in</string>
     <!-- Snackbar when sign-in finishes after the person left the sign-in screen (#134). %1$s = the account's email -->
     <string name="auth_signed_in_as">Naka-sign in bilang %1$s</string>
+    <!-- Google sign-in (#112) -->
+    <string name="auth_or">o</string>
+    <string name="auth_continue_with_google">Magpatuloy gamit ang Google</string>
+    <string name="auth_error_google_failed">Hindi makapag-sign in gamit ang Google. Subukan ulit, o gamitin ang iyong email.</string>
+    <string name="auth_error_google_no_account">Walang Google account sa teleponong ito. Magdagdag sa settings ng telepono, o gamitin ang iyong email.</string>
+    <string name="auth_error_google_unavailable">Hindi available ngayon ang pag-sign in gamit ang Google. Gamitin ang iyong email at password.</string>
+    <string name="auth_error_google_other_account">Ibang Google account ang ginagamit ng account na may ganitong email.</string>
+    <string name="account_delete_confirm_with_google">Kumpirmahin gamit ang Google account na ginagamit mo sa pag-sign in.</string>
+    <string name="account_delete_google_wrong_account">Hindi iyan ang Google account na ginagamit ng account na ito.</string>
     <string name="verse_of_the_day">Talata ng Araw</string>
 
     <string name="bookmark_this_place">I-bookmark ang bahaging ito</string>

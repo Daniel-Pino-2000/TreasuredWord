@@ -5,6 +5,7 @@ import com.application.bibleapp.data.local.TokenStore
 import com.application.bibleapp.data.remote.AuthResponseDto
 import com.application.bibleapp.data.remote.BackendErrorResponseDto
 import com.application.bibleapp.data.remote.DeleteAccountRequestDto
+import com.application.bibleapp.data.remote.GoogleSignInRequestDto
 import com.application.bibleapp.data.remote.HttpClientProvider
 import com.application.bibleapp.data.remote.LoginRequestDto
 import com.application.bibleapp.data.remote.LogoutRequestDto
@@ -32,6 +33,10 @@ sealed class AuthError(val displayMessage: UiText) {
     data object EmailAlreadyRegistered : AuthError(UiText.Res(R.string.auth_error_email_registered))
     // The server's own field messages are English-only; the client validates the same rules
     // first (utils/AuthValidation.kt), so these are rarely seen.
+    // Google sign-in (#112)
+    data object GoogleTokenRejected : AuthError(UiText.Res(R.string.auth_error_google_failed))
+    data object GoogleUnavailable : AuthError(UiText.Res(R.string.auth_error_google_unavailable))
+    data object GoogleLinkedToOtherAccount : AuthError(UiText.Res(R.string.auth_error_google_other_account))
     data class Validation(val fieldErrors: Map<String, String>) :
         AuthError(fieldErrors.values.firstOrNull()?.let { UiText.Raw(it) } ?: UiText.Res(R.string.auth_error_invalid_input))
     data class Unknown(val text: UiText) : AuthError(text)
@@ -75,6 +80,16 @@ class AuthRepository(context: Context) {
         saveSession(response, email)
     }
 
+    /** [idToken] from Credential Manager; [email] is the Google account's, shown until
+     *  /users/me answers (#112). */
+    suspend fun signInWithGoogle(idToken: String, email: String): Result<Unit> = runCatching {
+        val response = client.post("$baseUrl/auth/google") {
+            contentType(ContentType.Application.Json)
+            setBody(GoogleSignInRequestDto(idToken))
+        }
+        saveSession(response, email)
+    }
+
     /**
      * Signing out, step one: clears the local session right away and returns its refresh token
      * for [revokeOnServer]. Split in two so the device is signed out without waiting on the
@@ -113,10 +128,11 @@ class AuthRepository(context: Context) {
         }
     }
 
-    suspend fun deleteAccount(password: String): Result<Unit> = runCatching {
+    /** Confirmed with the [password], or with a fresh [googleIdToken] (#112). */
+    suspend fun deleteAccount(password: String?, googleIdToken: String?): Result<Unit> = runCatching {
         val response = client.delete("$baseUrl/users/me") {
             contentType(ContentType.Application.Json)
-            setBody(DeleteAccountRequestDto(password))
+            setBody(DeleteAccountRequestDto(password, googleIdToken))
         }
         if (!response.status.isSuccess()) throw toAuthException(response)
         tokenStore.clear()
@@ -139,6 +155,9 @@ class AuthRepository(context: Context) {
             "INVALID_CREDENTIALS" -> AuthError.InvalidCredentials
             "EMAIL_ALREADY_REGISTERED" -> AuthError.EmailAlreadyRegistered
             "VALIDATION_ERROR" -> AuthError.Validation(error.fieldErrors ?: emptyMap())
+            "INVALID_GOOGLE_TOKEN" -> AuthError.GoogleTokenRejected
+            "GOOGLE_SIGN_IN_UNAVAILABLE" -> AuthError.GoogleUnavailable
+            "EMAIL_LINKED_TO_OTHER_GOOGLE_ACCOUNT" -> AuthError.GoogleLinkedToOtherAccount
             else -> AuthError.Unknown(
                 error?.message?.let { UiText.Raw(it) }
                     ?: UiText.Res(R.string.auth_error_status, response.status.value)
