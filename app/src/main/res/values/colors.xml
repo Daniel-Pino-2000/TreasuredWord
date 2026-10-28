@@ -7,4 +7,9 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <!-- Startup screen (#135): the app's own light and dark backgrounds (ui/theme/Color.kt), so
+         nothing flashes when the first screen replaces it, and the launcher icon's espresso. -->
+    <color name="splash_background_light">#FFFAF6EF</color>
+    <color name="splash_background_dark">#FF1E1B16</color>
+    <color name="splash_icon_background">#FF2E251B</color>
 </resources>

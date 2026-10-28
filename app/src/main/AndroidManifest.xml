@@ -42,7 +42,7 @@
             android:exported="true"
             android:label="@string/app_short_name"
             android:configChanges="locale|layoutDirection|screenLayout"
-            android:theme="@style/Theme.BibleApp">
+            android:theme="@style/Theme.BibleApp.Splash">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
