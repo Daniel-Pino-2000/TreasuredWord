@@ -44,6 +44,15 @@
     <string name="label_signed_in">Conectado</string>
     <!-- Snackbar when sign-in finishes after the person left the sign-in screen (#134). %1$s = the account's email -->
     <string name="auth_signed_in_as">Conectado como %1$s</string>
+    <!-- Google sign-in (#112) -->
+    <string name="auth_or">ou</string>
+    <string name="auth_continue_with_google">Continuar com o Google</string>
+    <string name="auth_error_google_failed">Não foi possível entrar com o Google. Tente de novo ou use seu e-mail.</string>
+    <string name="auth_error_google_no_account">Não há nenhuma Conta do Google neste telefone. Adicione uma nas configurações do telefone ou use seu e-mail.</string>
+    <string name="auth_error_google_unavailable">Entrar com o Google não está disponível agora. Use seu e-mail e sua senha.</string>
+    <string name="auth_error_google_other_account">A conta com este e-mail usa outra Conta do Google.</string>
+    <string name="account_delete_confirm_with_google">Confirme com a Conta do Google que você usa para entrar.</string>
+    <string name="account_delete_google_wrong_account">Essa não é a Conta do Google que esta conta usa.</string>
     <string name="verse_of_the_day">Versículo do dia</string>
 
     <string name="bookmark_this_place">Marcar este lugar</string>

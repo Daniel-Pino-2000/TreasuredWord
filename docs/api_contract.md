@@ -44,11 +44,23 @@ before code.
    password" from "no such account" — standard defense against account enumeration.
 5. **Account deletion requires re-entering the password**, not just a valid access token. A
    destructive, irreversible action deserves a stronger check than "whoever is currently holding
-   the bearer token" — that token could be from a device the user no longer trusts.
+   the bearer token" — that token could be from a device the user no longer trusts. An account
+   that uses Google sign-in can instead confirm by signing in with that same Google account
+   again (#112), since an account made with Google has no password.
 6. **Account deletion cascades** to every highlight, note, reading-progress record, and refresh
    token owned by that user. This isn't optional polish: Google Play's User Data policy requires
    an in-app path to delete an account and its data for any app that lets users create one, so
    this endpoint has to exist before accounts can ship at all, not just be a nice-to-have.
+
+21. **Google sign-in finds the account by Google's account ID, then by email** (#112). The
+    server checks the Google ID token itself (Google's signature, issuer, audience = our web
+    client ID, expiry, and `email_verified`), never just the email the app reports. A Google
+    account already linked signs in to its account even if its email changed since. Otherwise
+    an account with the same email is linked to it, rather than a second account created:
+    Google has verified that the person controls the inbox, which is all a password account's
+    email proves anyway. If that account is already linked to a *different* Google account,
+    it's refused rather than taken over. Accounts made with Google have no password until one
+    is added (no endpoint for that yet), so password login can't match them.
 
 ### Reading progress
 
@@ -150,6 +162,9 @@ data class RegisterRequest(val email: String, val password: String)
 data class LoginRequest(val email: String, val password: String)
 
 @Serializable
+data class GoogleSignInRequest(val idToken: String)
+
+@Serializable
 data class RefreshRequest(val refreshToken: String)
 
 @Serializable
@@ -181,6 +196,17 @@ Request: `LoginRequest`
 Success: `200 OK` → `AuthResponse`
 Errors: `400 VALIDATION_ERROR`, `401 INVALID_CREDENTIALS`
 
+### `POST /api/v1/auth/google`
+Auth: none
+Request: `GoogleSignInRequest`: the Google ID token the app got from Credential Manager, requested
+with our **web** client ID as the server client ID (#112, decision 21)
+Success: `201 Created` → `AuthResponse` for a new account; `200 OK` → `AuthResponse` when the
+Google account was already linked, or has just been linked to the account with its email
+Errors: `401 INVALID_GOOGLE_TOKEN` (fails any check: signature, issuer, audience, expiry,
+unverified email), `409 EMAIL_LINKED_TO_OTHER_GOOGLE_ACCOUNT`, `503 GOOGLE_SIGN_IN_UNAVAILABLE`
+(the server has no `GOOGLE_CLIENT_ID`, or couldn't fetch Google's keys)
+Rate limited like register and login.
+
 ### `POST /api/v1/auth/refresh`
 Auth: none — the refresh token itself is the credential
 Request: `RefreshRequest`
@@ -199,11 +225,20 @@ Errors: `401 UNAUTHORIZED`
 
 ```kotlin
 @Serializable
-data class UserResponse(val id: String, val email: String, val createdAt: String)
+data class UserResponse(
+    val id: String,
+    val email: String,
+    val createdAt: String,
+    val hasPassword: Boolean,   // false for an account made with Google (#112)
+    val hasGoogle: Boolean      // Google sign-in is linked
+)
 
 @Serializable
-data class DeleteAccountRequest(val password: String)
+data class DeleteAccountRequest(val password: String? = null, val googleIdToken: String? = null)
 ```
+
+`hasPassword` and `hasGoogle` tell the app how to confirm deleting the account: the password, or
+signing in with Google again (#112). Older apps ignore them.
 
 ### `GET /api/v1/users/me`
 Auth: required
@@ -212,9 +247,12 @@ Errors: `401 UNAUTHORIZED`
 
 ### `DELETE /api/v1/users/me`
 Auth: required
-Request: `DeleteAccountRequest` (decision 5)
+Request: `DeleteAccountRequest` with exactly one of `password` or `googleIdToken`, a fresh Google
+ID token for the Google account linked to this account (decision 5)
 Success: `204 No Content` — deletes the account and cascades to all owned highlights, notes, reading progress, and refresh tokens (decision 6)
-Errors: `401 UNAUTHORIZED` (bad/missing token), `401 INVALID_CREDENTIALS` (wrong password confirmation)
+Errors: `400 VALIDATION_ERROR` (neither given), `401 UNAUTHORIZED` (bad/missing token),
+`401 INVALID_CREDENTIALS` (wrong password, or a Google account that isn't this account's),
+`401 INVALID_GOOGLE_TOKEN`, `503 GOOGLE_SIGN_IN_UNAVAILABLE`
 
 ---
 

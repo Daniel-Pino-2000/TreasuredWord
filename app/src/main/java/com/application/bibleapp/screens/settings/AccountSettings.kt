@@ -20,13 +20,17 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.application.bibleapp.components.GroupedDivider
 import com.application.bibleapp.components.GroupedRow
+import com.application.bibleapp.components.GoogleSignInButton
 import com.application.bibleapp.components.GroupedSection
+import com.application.bibleapp.components.OrDivider
 import com.application.bibleapp.components.ServerWakeHint
 import com.application.bibleapp.components.rememberWaitingLong
 import com.application.bibleapp.ui.theme.Spacing
@@ -35,8 +39,12 @@ import com.application.bibleapp.viewmodel.BibleViewModel
 import com.application.bibleapp.viewmodel.SignOutState
 import com.application.bibleapp.R
 import androidx.compose.ui.res.stringResource
+import com.application.bibleapp.utils.GoogleSignIn
+import com.application.bibleapp.utils.GoogleSignInResult
 import com.application.bibleapp.utils.UiText
 import com.application.bibleapp.utils.asString
+import com.application.bibleapp.viewmodel.SignInMethods
+import kotlinx.coroutines.launch
 
 @Composable
 internal fun AccountSettings(
@@ -47,6 +55,7 @@ internal fun AccountSettings(
     val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
     val email by authViewModel.email.collectAsState()
     val signOutState by authViewModel.signOutState.collectAsState()
+    val signInMethods by authViewModel.signInMethods.collectAsState()
     var showDeleteDialog by remember { mutableStateOf(false) }
     // Sign-out removes the account's highlights and notes from this device (#81); the reader
     // and Library drop them straight away.
@@ -114,9 +123,10 @@ internal fun AccountSettings(
 
     if (showDeleteDialog) {
         DeleteAccountDialog(
+            signInMethods = signInMethods,
             onDismiss = { showDeleteDialog = false },
-            onConfirm = { password, onError ->
-                authViewModel.deleteAccount(password) { errorMessage ->
+            onConfirm = { password, googleIdToken, onError ->
+                authViewModel.deleteAccount(password, googleIdToken) { errorMessage ->
                     if (errorMessage == null) {
                         // The account and its server-side backup are gone, but this device's
                         // own copies of its highlights/notes are not what just got deleted —
@@ -137,17 +147,30 @@ internal fun AccountSettings(
 /**
  * Re-asks for the password before deleting — the backend requires this too
  * (server/docs/api_contract.md decision 5), since a destructive, irreversible action
- * deserves a stronger check than "whoever is holding a still-valid access token."
+ * deserves a stronger check than "whoever is holding a still-valid access token." An account
+ * that uses Google can confirm with Google instead, and one made with Google has no password to
+ * ask for (#112). Until /users/me has said which applies, both are offered.
  */
 @Composable
 private fun DeleteAccountDialog(
+    signInMethods: SignInMethods,
     onDismiss: () -> Unit,
-    onConfirm: (password: String, onError: (UiText) -> Unit) -> Unit
+    onConfirm: (password: String?, googleIdToken: String?, onError: (UiText) -> Unit) -> Unit
 ) {
     var password by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<UiText?>(null) }
     var isSubmitting by remember { mutableStateOf(false) }
+    var isGoogleSubmitting by remember { mutableStateOf(false) }
     val submittingLong = rememberWaitingLong(isSubmitting)
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val askPassword = signInMethods.hasPassword != false
+    val offerGoogle = signInMethods.hasGoogle != false && GoogleSignIn.isConfigured(context)
+    val onError = { error: UiText ->
+        isSubmitting = false
+        isGoogleSubmitting = false
+        errorMessage = error
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -155,17 +178,40 @@ private fun DeleteAccountDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                 Text(stringResource(R.string.account_delete_message))
-                OutlinedTextField(
-                    value = password,
-                    onValueChange = {
-                        password = it
-                        errorMessage = null
-                    },
-                    label = { Text(stringResource(R.string.account_confirm_password)) },
-                    singleLine = true,
-                    visualTransformation = PasswordVisualTransformation(),
-                    modifier = Modifier.fillMaxWidth()
-                )
+                if (askPassword) {
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = {
+                            password = it
+                            errorMessage = null
+                        },
+                        label = { Text(stringResource(R.string.account_confirm_password)) },
+                        singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+                if (offerGoogle) {
+                    if (askPassword) OrDivider() else Text(stringResource(R.string.account_delete_confirm_with_google))
+                    GoogleSignInButton(
+                        onClick = {
+                            errorMessage = null
+                            scope.launch {
+                                when (val result = GoogleSignIn.requestIdToken(context)) {
+                                    is GoogleSignInResult.Success -> {
+                                        isSubmitting = true
+                                        isGoogleSubmitting = true
+                                        onConfirm(null, result.idToken, onError)
+                                    }
+                                    GoogleSignInResult.Cancelled -> Unit
+                                    is GoogleSignInResult.Failed -> errorMessage = result.message
+                                }
+                            }
+                        },
+                        enabled = !isSubmitting,
+                        isLoading = isGoogleSubmitting
+                    )
+                }
                 errorMessage?.let {
                     Text(it.asString(), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
                 }
@@ -173,17 +219,16 @@ private fun DeleteAccountDialog(
             }
         },
         confirmButton = {
-            TextButton(
-                enabled = password.isNotBlank() && !isSubmitting,
-                onClick = {
-                    isSubmitting = true
-                    onConfirm(password) { error ->
-                        isSubmitting = false
-                        errorMessage = error
+            if (askPassword) {
+                TextButton(
+                    enabled = password.isNotBlank() && !isSubmitting,
+                    onClick = {
+                        isSubmitting = true
+                        onConfirm(password, null, onError)
                     }
+                ) {
+                    Text(stringResource(R.string.action_delete), color = MaterialTheme.colorScheme.error)
                 }
-            ) {
-                Text(stringResource(R.string.action_delete), color = MaterialTheme.colorScheme.error)
             }
         },
         dismissButton = {

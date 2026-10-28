@@ -47,6 +47,15 @@
     <string name="label_signed_in">Sesión iniciada</string>
     <!-- Snackbar when sign-in finishes after the person left the sign-in screen (#134). %1$s = the account's email -->
     <string name="auth_signed_in_as">Sesión iniciada como %1$s</string>
+    <!-- Google sign-in (#112) -->
+    <string name="auth_or">o</string>
+    <string name="auth_continue_with_google">Continuar con Google</string>
+    <string name="auth_error_google_failed">No se pudo iniciar sesión con Google. Vuelve a intentarlo o usa tu correo.</string>
+    <string name="auth_error_google_no_account">No hay ninguna cuenta de Google en este teléfono. Añade una en los ajustes del teléfono o usa tu correo.</string>
+    <string name="auth_error_google_unavailable">Iniciar sesión con Google no está disponible ahora. Usa tu correo y tu contraseña.</string>
+    <string name="auth_error_google_other_account">La cuenta con este correo usa otra cuenta de Google.</string>
+    <string name="account_delete_confirm_with_google">Confirma con la cuenta de Google con la que inicias sesión.</string>
+    <string name="account_delete_google_wrong_account">Esa no es la cuenta de Google que usa esta cuenta.</string>
     <string name="verse_of_the_day">Versículo del día</string>
 
     <!-- Bookmark button -->

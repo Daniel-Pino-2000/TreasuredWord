@@ -28,3 +28,7 @@ services:
         sync: false
       - key: DATABASE_PASSWORD
         sync: false
+      # Google sign-in (#112): the Google Cloud *web* client ID. Not a secret, but set per
+      # deployment; without it /auth/google answers GOOGLE_SIGN_IN_UNAVAILABLE.
+      - key: GOOGLE_CLIENT_ID
+        sync: false

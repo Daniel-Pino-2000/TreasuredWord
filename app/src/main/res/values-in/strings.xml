@@ -44,6 +44,15 @@
     <string name="label_signed_in">Sudah masuk</string>
     <!-- Snackbar when sign-in finishes after the person left the sign-in screen (#134). %1$s = the account's email -->
     <string name="auth_signed_in_as">Masuk sebagai %1$s</string>
+    <!-- Google sign-in (#112) -->
+    <string name="auth_or">atau</string>
+    <string name="auth_continue_with_google">Lanjutkan dengan Google</string>
+    <string name="auth_error_google_failed">Tidak dapat masuk dengan Google. Coba lagi, atau gunakan email Anda.</string>
+    <string name="auth_error_google_no_account">Tidak ada Akun Google di ponsel ini. Tambahkan di setelan ponsel, atau gunakan email Anda.</string>
+    <string name="auth_error_google_unavailable">Masuk dengan Google sedang tidak tersedia. Gunakan email dan sandi Anda.</string>
+    <string name="auth_error_google_other_account">Akun dengan email ini menggunakan Akun Google lain.</string>
+    <string name="account_delete_confirm_with_google">Konfirmasi dengan Akun Google yang Anda gunakan untuk masuk.</string>
+    <string name="account_delete_google_wrong_account">Itu bukan Akun Google yang digunakan akun ini.</string>
     <string name="verse_of_the_day">Ayat Hari Ini</string>
 
     <string name="bookmark_this_place">Tandai tempat ini</string>

@@ -44,6 +44,15 @@
     <string name="label_signed_in">Umeingia</string>
     <!-- Snackbar when sign-in finishes after the person left the sign-in screen (#134). %1$s = the account's email -->
     <string name="auth_signed_in_as">Umeingia kama %1$s</string>
+    <!-- Google sign-in (#112) -->
+    <string name="auth_or">au</string>
+    <string name="auth_continue_with_google">Endelea ukitumia Google</string>
+    <string name="auth_error_google_failed">Imeshindwa kuingia ukitumia Google. Jaribu tena, au tumia barua pepe yako.</string>
+    <string name="auth_error_google_no_account">Hakuna Akaunti ya Google kwenye simu hii. Ongeza moja kwenye mipangilio ya simu, au tumia barua pepe yako.</string>
+    <string name="auth_error_google_unavailable">Kuingia ukitumia Google hakupatikani kwa sasa. Tumia barua pepe na nenosiri lako.</string>
+    <string name="auth_error_google_other_account">Akaunti yenye barua pepe hii inatumia Akaunti nyingine ya Google.</string>
+    <string name="account_delete_confirm_with_google">Thibitisha ukitumia Akaunti ya Google unayotumia kuingia.</string>
+    <string name="account_delete_google_wrong_account">Hiyo si Akaunti ya Google inayotumiwa na akaunti hii.</string>
     <string name="verse_of_the_day">Mstari wa Siku</string>
 
     <string name="bookmark_this_place">Weka alamisho hapa</string>

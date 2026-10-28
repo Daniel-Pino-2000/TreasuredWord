@@ -42,6 +42,9 @@ only needed when a secret changes.
    - `DATABASE_USER` / `DATABASE_PASSWORD` — from the same Neon connection string.
    - `JWT_SECRET` — a real random value (e.g. generate one locally with
      `openssl rand -base64 48`), never the `application.conf` dev placeholder.
+   - `GOOGLE_CLIENT_ID` — the Google Cloud **web** OAuth client ID for "Continue with Google"
+     (#112), the same value as the app's `res/values/google_sign_in.xml`. Not a secret. Without
+     it the server still runs, and `/auth/google` answers `GOOGLE_SIGN_IN_UNAVAILABLE`.
 
    Saving env var changes triggers a redeploy automatically.
 

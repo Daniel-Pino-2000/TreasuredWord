@@ -5,7 +5,7 @@ permalink: /privacy/
 
 # TreasuredWord privacy policy
 
-**Effective date:** October 23, 2026
+**Effective date:** October 28, 2026
 
 TreasuredWord is a free Bible reading app made by Daniel Pino, an independent developer. In this policy, "we" and "us" mean Daniel Pino, the developer of TreasuredWord. It explains what information the app uses, where it goes, and the choices you have. If you have questions, email [pinoponedaniel@gmail.com](mailto:pinoponedaniel@gmail.com).
 
@@ -13,7 +13,7 @@ TreasuredWord is a free Bible reading app made by Daniel Pino, an independent de
 
 - You can use TreasuredWord without an account. Your highlights, notes, bookmark and settings then stay on your phone.
 - There are no ads, no analytics and no tracking in the app. We don't sell or share your information.
-- If you create an account, we store your email address, a scrambled form of your password, and your highlights, notes and reading position so they sync between your devices. You can delete the account and all of it from inside the app, or by emailing us.
+- If you create an account, we store your email address, a scrambled form of your password (or, if you sign in with Google, your Google account ID instead), and your highlights, notes and reading position so they sync between your devices. You can delete the account and all of it from inside the app, or by emailing us.
 - Some content comes from other websites, and some links open other services. Those services see that visit.
 
 ## Using the app without an account
@@ -25,11 +25,16 @@ Everything you create (highlights, notes, your bookmark, reading position, theme
 Creating an account is optional. When you sign up and sync, our server stores:
 
 - **Your email address**, to identify your account and let you sign in.
-- **Your password**, only as a one-way hash (bcrypt). We never store or see the password itself.
+- **Your password**, only as a one-way hash (bcrypt). We never store or see the password itself. Accounts made with Google sign-in have no password.
+- **Your Google account ID**, if you use "Continue with Google" (see below).
 - **Your highlights:** which verses, which translation, and the color.
 - **Your notes:** the text you write and the verses it's attached to.
 - **Your reading position:** translation, book, chapter and verse.
 - **Sign-in tokens**, so you stay signed in. The server keeps only a hash of each one, and on your phone they're encrypted with a key that never leaves the device.
+
+### Signing in with Google
+
+If you choose **Continue with Google**, Google's own sign-in screen on your phone asks which Google account to use, and Google gives the app a signed token with that account's email address and its Google account ID. The app sends the token to our server, which checks with Google's published keys that it's genuine and then signs you in. We store the Google account ID (a number Google assigns, which identifies the account to us but not to anyone else) so we recognize you next time, and the email address as for any account. If you already had an account with the same email, the two are joined into one. We don't receive your Google password, contacts or anything else from your Google account, and we don't use the token for anything but signing you in. Google learns that you signed in to TreasuredWord; that's covered by [Google's privacy policy](https://policies.google.com/privacy).
 
 We use this information only to provide the sync you asked for by creating an account. We don't use it for advertising, and we don't share it with anyone except the hosting providers below, who store it on our behalf.
 
@@ -46,7 +51,7 @@ You can delete your account at any time:
 - **In the app:** open **Settings** (the gear on the You tab), and under **Account** tap **Delete account**.
 - **By email:** if you no longer have the app, email [pinoponedaniel@gmail.com](mailto:pinoponedaniel@gmail.com) from your account's email address and ask us to delete it. We'll delete it within 30 days.
 
-Deleting your account permanently erases it from our server, together with everything synced to it: highlights, notes (including ones marked as deleted), reading position and sign-in tokens. Copies can remain in our database provider's backups for a short time until they're replaced. Highlights and notes already on your phone stay there until you remove the app.
+Deleting your account permanently erases it from our server, together with everything synced to it: highlights, notes (including ones marked as deleted), reading position, sign-in tokens and the Google account ID if you used Google sign-in. If you signed up with Google, the app asks you to confirm with Google instead of a password. Copies can remain in our database provider's backups for a short time until they're replaced. Highlights and notes already on your phone stay there until you remove the app.
 
 ## How long we keep information
 

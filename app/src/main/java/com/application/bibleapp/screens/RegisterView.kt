@@ -32,6 +32,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import com.application.bibleapp.components.GoogleSignInSection
 import com.application.bibleapp.components.ServerWakeHint
 import com.application.bibleapp.components.rememberWaitingLong
 import com.application.bibleapp.ui.theme.Spacing
@@ -54,6 +55,7 @@ fun RegisterView(
     var confirmPassword by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     val isLoading by authViewModel.isLoading.collectAsState()
+    val isGoogleLoading by authViewModel.isGoogleLoading.collectAsState()
     val remoteError by authViewModel.errorMessage.collectAsState()
 
     // Each only flags once there's something to judge, so the form doesn't start red before
@@ -152,7 +154,7 @@ fun RegisterView(
             enabled = canSubmit,
             modifier = Modifier.fillMaxWidth()
         ) {
-            if (isLoading) {
+            if (isLoading && !isGoogleLoading) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(20.dp),
                     strokeWidth = 2.dp,
@@ -162,6 +164,8 @@ fun RegisterView(
                 Text(stringResource(R.string.register_submit))
             }
         }
+
+        GoogleSignInSection(authViewModel)
 
         if (waitingLong) ServerWakeHint()
 
