@@ -1,4 +1,5 @@
-# GitHub Pages (Settings → Pages: branch main, folder /docs) publishes only the privacy policy,
+# GitHub Pages (Settings → Pages: branch main, folder /docs) publishes only the home page (index.md,
+# needed by Google sign-in's branding, #112) and the privacy policy,
 # at https://daniel-pino-2000.github.io/TreasuredWord/privacy/ — the URL given to Google Play.
 # Everything else in docs/ is for development and stays out of the site.
 title: TreasuredWord
