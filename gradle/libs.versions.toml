@@ -19,7 +19,8 @@ postgresql = "42.7.7"
 logback = "1.6.3"
 kotlinxSerializationJson = "1.6.3"
 hashing = "0.4"
-flyway = "10.20.1"
+# 11.13.3 is the first release that supports PostgreSQL 18, which production runs (#117)
+flyway = "11.13.3"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
