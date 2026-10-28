@@ -50,6 +50,8 @@ closed; after that, the instructions and the evaluation are written around them.
 | AI provider | Cloudflare Workers AI, free plan | See section 3 |
 | Model | Gemma 4 26B (Apache 2.0), with Qwen3 30B (Apache 2.0) as the runner-up; the comparison in #122 makes the final choice | Good answers per neuron, permissive licenses, no "Built with…" display rule like Llama's |
 | Release | After the production launch | Keeps the current Play review and closed test unaffected |
+| Until release | The Bible Helper shows only in debug builds (`BuildConfig.AI_HELPER_ENABLED`); #131 turns it on for release builds | Work can merge to `main` without reaching closed-test or production users |
+| Who writes the doctrine summary | You (the developer), reviewed by a pastor if possible; Claude drafts the rest of #121 (answer rules and test questions) | It's the heart of the feature and may take a while, so nothing else waits for it (section 9) |
 
 ## 3. Why Cloudflare Workers AI (free options compared, checked 2026-10-27)
 
@@ -111,6 +113,7 @@ sequenceDiagram
 | Verse cards | `components/AiVerseCard.kt` | Verse text from the user's translation through `BibleRepository`; tap to open the reader; "Read the whole chapter" |
 | Report sheet and help card | `components/` | Reporting (a Play requirement) and crisis help |
 | Waking the server | the existing `ServerWakeUp` and `rememberWaitingLong` (#87) | Hides most of Render's cold start |
+| Debug-only switch | `app/build.gradle.kts` → `BuildConfig.AI_HELPER_ENABLED` | `true` in debug builds; `false` in release builds until #131, so unfinished work never reaches users |
 
 ### On the server (`server/`, `backend` label: you write it, Claude guides)
 
@@ -192,6 +195,10 @@ Stored **without the user's ID** and deleted after 90 days. You read reports in 
 
 ## 6. How the instructions shape an answer
 
+Until the doctrine summary is ready, `doctrine.md` holds a few lines marked **TEMPORARY**, so the
+server, the app and the tests can be built and tried in debug builds. Replacing it later changes
+no code, and #131 checks that the placeholder is gone.
+
 `system_prompt.md` (written in #121) covers, in this order:
 
 1. **Who it is:** the Bible Helper inside TreasuredWord, an AI that helps people understand the
@@ -233,8 +240,9 @@ lines (link only, source named), through `utils/ExternalLinks.kt`.
 - **No question text in logs:** the server never logs questions or answers, including inside
   provider error messages.
 - **Privacy policy:** a "Bible Helper" section (what's sent, to whom, that Cloudflare doesn't
-  train on it or keep it, the daily counter, reports) with a new effective date, **in the same PR
-  that lets the app send questions** (#128).
+  train on it or keep it, the daily counter, reports) with a new effective date, **in the PR that
+  turns the switch on for release builds** (#131). That's when the app starts sending users'
+  questions; until then only the developer's debug builds call the Bible Helper.
 - **Play Console Data safety:** update before release (#131). Questions are user-generated
   content sent to us and processed by Cloudflare as our service provider.
 - **Credits:** the model and its license in Settings → Open-source licenses.
@@ -264,22 +272,28 @@ lines (link only, source named), through `utils/ExternalLinks.kt`.
 
 | Phase | Issue | Labels | Who writes it |
 |---|---|---|---|
-| 0. Foundations | #121 Doctrine summary, instructions and evaluation questions | `ai-helper`, `documentation` | Claude drafts, you approve |
+| 0. Foundations | #121 Doctrine summary, instructions and evaluation questions | `ai-helper`, `documentation` | You write the doctrine; Claude drafts the instructions and test questions |
 | | #122 Cloudflare account, a first call by hand, and the model choice | `ai-helper`, `backend` | You, with guidance |
 | 1. Server | #123 AI provider client | `ai-helper`, `backend` | You, with guidance |
 | | #124 `POST /api/v1/ai/ask` with limits and tests | `ai-helper`, `backend` | You, with guidance |
 | | #125 `POST /api/v1/ai/reports` | `ai-helper`, `backend` | You, with guidance |
 | | #126 Evaluation runner | `ai-helper`, `backend` | Your choice |
 | 2. App | #127 Conversation storage and API client | `ai-helper`, `ui` | Claude |
-| | #128 Ask tab, chat screen and privacy policy | `ai-helper`, `ui`, `landscape` | Claude |
+| | #128 Ask tab and chat screen | `ai-helper`, `ui`, `landscape` | Claude |
 | | #129 Verse cards in answers | `ai-helper`, `ui` | Claude |
 | | #130 Report an answer, and the crisis help card | `ai-helper`, `ui` | Claude |
-| 3. Release | #131 Release checklist | `ai-helper` | Together |
+| 3. Release | #131 Release checklist: turn it on, with the privacy policy update | `ai-helper` | Together |
 | v1.1 | #132 "Ask about this verse" from the reader | `ai-helper`, `ui`, `backend` | Claude (app), you (the small server change) |
 
-Order: #121 and #122 → #123 → #124 → #125 and #126. The app work
-(#127) can start once #124's contract is agreed; then #128 → #129 and #130 →
-#131 → #132.
+**Order.** Two tracks run side by side, since they touch different folders:
+
+- **Server (you):** #122 → #123 → #124 → #125 and #126, with the temporary instructions.
+- **App (Claude):** #127 (which adds the debug-only switch) and #129 first, since they need
+  neither the doctrine nor a deployed server; then #128 and #130 once #124 and #125 are deployed.
+
+**Only these wait for the doctrine summary (#121):** comparing the models on doctrine, grading
+the core-doctrine test questions, the pastor review, and the release (#131). #132 comes after
+the release.
 
 ### Later ideas (no issues yet)
 
