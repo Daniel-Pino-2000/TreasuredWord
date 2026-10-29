@@ -56,11 +56,16 @@ before code.
     server checks the Google ID token itself (Google's signature, issuer, audience = our web
     client ID, expiry, and `email_verified`), never just the email the app reports. A Google
     account already linked signs in to its account even if its email changed since. Otherwise
-    an account with the same email is linked to it, rather than a second account created:
-    Google has verified that the person controls the inbox, which is all a password account's
-    email proves anyway. If that account is already linked to a *different* Google account,
-    it's refused rather than taken over. Accounts made with Google have no password until one
-    is added (no endpoint for that yet), so password login can't match them.
+    an account with the same email is linked to it, rather than a second account created.
+    Google has verified that the person controls the inbox, but registering with a password
+    never checks the email, so whoever set that password may not be its owner (someone can
+    register another person's address and wait for them to arrive with Google). So linking
+    hands the account to the Google user: **the password is removed and every existing refresh
+    token revoked**, in the same transaction (#142). Afterwards it signs in with Google only.
+    Access tokens already issued still work until they expire (15 minutes). If that account is
+    already linked to a *different* Google account, it's refused rather than taken over.
+    Accounts made with Google have no password until one is added (no endpoint for that yet),
+    so password login can't match them.
 
 ### Reading progress
 
@@ -201,7 +206,8 @@ Auth: none
 Request: `GoogleSignInRequest`: the Google ID token the app got from Credential Manager, requested
 with our **web** client ID as the server client ID (#112, decision 21)
 Success: `201 Created` → `AuthResponse` for a new account; `200 OK` → `AuthResponse` when the
-Google account was already linked, or has just been linked to the account with its email
+Google account was already linked, or has just been linked to the account with its email (which
+removes that account's password and revokes its other sessions, decision 21)
 Errors: `401 INVALID_GOOGLE_TOKEN` (fails any check: signature, issuer, audience, expiry,
 unverified email), `409 EMAIL_LINKED_TO_OTHER_GOOGLE_ACCOUNT`, `503 GOOGLE_SIGN_IN_UNAVAILABLE`
 (the server has no `GOOGLE_CLIENT_ID`, or couldn't fetch Google's keys)
