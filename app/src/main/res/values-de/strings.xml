@@ -273,7 +273,7 @@
     <string name="account_sign_out_anyway">Trotzdem abmelden</string>
     <string name="account_delete">Konto löschen</string>
     <string name="account_delete_title">Konto löschen?</string>
-    <string name="account_delete_message">Dein Konto und alles, was darin gesichert ist, werden endgültig gelöscht. Das lässt sich nicht rückgängig machen. Markierungen und Notizen auf diesem Gerät bleiben hier, werden aber nicht mehr synchronisiert.</string>
+    <string name="account_delete_message">Dein Konto und alle Markierungen und Notizen darin werden endgültig gelöscht, sowohl die Sicherung als auch die Kopien auf diesem Gerät. Das lässt sich nicht rückgängig machen.</string>
     <string name="account_confirm_password">Bestätige dein Passwort</string>
 
     <string name="daily_verse_notification_title">Vers des Tages</string>

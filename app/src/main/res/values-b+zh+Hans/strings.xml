@@ -265,7 +265,7 @@
     <string name="account_sign_out_anyway">仍然退出登录</string>
     <string name="account_delete">删除账号</string>
     <string name="account_delete_title">删除账号？</string>
-    <string name="account_delete_message">这会永久删除你的账号及其中备份的所有内容，且无法撤销。此设备上已有的标记和笔记会保留，但不会再同步到其他地方。</string>
+    <string name="account_delete_message">这会永久删除你的账号及其所有标记和笔记，包括备份和此设备上的副本，且无法撤销。</string>
     <string name="account_confirm_password">请确认密码</string>
 
     <string name="daily_verse_notification_title">每日经文</string>

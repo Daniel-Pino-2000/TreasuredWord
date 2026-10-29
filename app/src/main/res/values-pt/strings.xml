@@ -282,7 +282,7 @@
     <string name="account_sign_out_anyway">Sair mesmo assim</string>
     <string name="account_delete">Excluir conta</string>
     <string name="account_delete_title">Excluir a conta?</string>
-    <string name="account_delete_message">Sua conta e tudo o que foi salvo nela serão excluídos para sempre. Isso não pode ser desfeito. Os destaques e notas que já estão neste dispositivo continuarão aqui, mas não serão mais sincronizados.</string>
+    <string name="account_delete_message">Sua conta e todos os destaques e notas dela serão excluídos para sempre, tanto o backup quanto as cópias neste dispositivo. Isso não pode ser desfeito.</string>
     <string name="account_confirm_password">Confirme sua senha</string>
 
     <string name="daily_verse_notification_title">Versículo do dia</string>

@@ -298,7 +298,7 @@
     <string name="account_sign_out_anyway">Cerrar sesión igualmente</string>
     <string name="account_delete">Eliminar cuenta</string>
     <string name="account_delete_title">¿Eliminar la cuenta?</string>
-    <string name="account_delete_message">Se eliminarán para siempre tu cuenta y todo lo que tenga guardado. No se puede deshacer. Los resaltados y notas que ya están en este dispositivo se quedarán aquí, pero no se sincronizarán con ningún otro.</string>
+    <string name="account_delete_message">Se eliminarán para siempre tu cuenta y todos sus resaltados y notas, tanto la copia guardada como los de este dispositivo. No se puede deshacer.</string>
     <string name="account_confirm_password">Confirma tu contraseña</string>
 
     <!-- Daily verse notification -->

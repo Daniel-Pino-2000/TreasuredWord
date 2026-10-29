@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- "TreasuredWord" at the bottom of the Android 12+ startup screen, for light mode (#135). The
-     splash screen's branding image slot is 200x80 dp. The letters are Droid Serif (Apache 2.0)
+<!-- "TreasuredWord" under the logo on the startup screen, for light mode (#135, #143), drawn
+     inside drawable/splash_icon_light.xml. The letters are Droid Serif (Apache 2.0)
      outlines rather than text, so no font ships with the app. Not translated: it's the app's
      name. VectorPath: the system draws this once per launch, so a long letter outline costs
      nothing worth simplifying the lettering for. -->

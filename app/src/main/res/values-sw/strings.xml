@@ -274,7 +274,7 @@
     <string name="account_sign_out_anyway">Ondoka hata hivyo</string>
     <string name="account_delete">Futa akaunti</string>
     <string name="account_delete_title">Futa akaunti?</string>
-    <string name="account_delete_message">Hii itafuta kabisa akaunti yako na kila kitu kilichohifadhiwa ndani yake. Haiwezi kutenduliwa. Viangazio na madokezo yaliyo kwenye kifaa hiki yatabaki hapa, lakini hayatasawazishwa popote pengine.</string>
+    <string name="account_delete_message">Hii itafuta kabisa akaunti yako na viangazio na madokezo yake yote, nakala iliyohifadhiwa pamoja na zilizo kwenye kifaa hiki. Haiwezi kutenduliwa.</string>
     <string name="account_confirm_password">Thibitisha nenosiri lako</string>
 
     <string name="daily_verse_notification_title">Mstari wa Siku</string>

@@ -129,6 +129,7 @@ class AuthViewModel(
             _signInMethods.value = SignInMethods(hasPassword = null, hasGoogle = null)
             _signOutState.value = SignOutState.Idle
             onSignedOut()
+            authRepository.forgetGoogleSignIn()
             authRepository.revokeOnServer(refreshToken)
         }
     }
@@ -141,7 +142,11 @@ class AuthViewModel(
     /** [onResult] receives null on success, or a message to show on failure (e.g. the
      *  password was wrong) — the caller (Settings' delete-account dialog) decides how to
      *  present that rather than this ViewModel owning dialog-specific error state. Confirmed
-     *  with the [password] or, for a Google account, a fresh [googleIdToken] (#112). */
+     *  with the [password] or, for a Google account, a fresh [googleIdToken] (#112).
+     *
+     *  The account's highlights and notes leave the device too, exactly as on sign-out (#141):
+     *  kept here, the next sign-in would upload them into the new account, and deleting the
+     *  account would look like it did nothing. */
     fun deleteAccount(
         password: String? = null,
         googleIdToken: String? = null,
@@ -150,6 +155,9 @@ class AuthViewModel(
         viewModelScope.launch {
             authRepository.deleteAccount(password, googleIdToken).fold(
                 onSuccess = {
+                    // The server already deleted its refresh tokens, so there's nothing to revoke.
+                    accountContent.signOut { authRepository.endLocalSession() }
+                    authRepository.forgetGoogleSignIn()
                     _isLoggedIn.value = false
                     _email.value = null
                     _signInMethods.value = SignInMethods(hasPassword = null, hasGoogle = null)

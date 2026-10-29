@@ -266,7 +266,7 @@
     <string name="account_sign_out_anyway">Tetap keluar</string>
     <string name="account_delete">Hapus akun</string>
     <string name="account_delete_title">Hapus akun?</string>
-    <string name="account_delete_message">Akun Anda dan semua yang dicadangkan di dalamnya akan dihapus secara permanen. Tindakan ini tidak dapat diurungkan. Sorotan dan catatan yang sudah ada di perangkat ini akan tetap di sini, tetapi tidak akan disinkronkan ke mana pun.</string>
+    <string name="account_delete_message">Akun Anda serta semua sorotan dan catatannya akan dihapus secara permanen, baik cadangannya maupun salinan di perangkat ini. Tindakan ini tidak dapat diurungkan.</string>
     <string name="account_confirm_password">Konfirmasi sandi Anda</string>
 
     <string name="daily_verse_notification_title">Ayat Hari Ini</string>

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Startup screen icon, dark mode (#143): the launcher's book on its espresso circle, with the
+     app's name right under it. Android 12+ only allows a name at the very bottom of the screen
+     (the "branding image"), so the name is part of the icon instead, and Android 7-11 show it too.
+     Laid out on the 288 dp icon area of a splash without an icon background, inside the 192 dp
+     circle the system actually shows. Insets are percentages because the system scales the icon
+     to its own size. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Gives the icon its 288 dp size -->
+    <item>
+        <shape>
+            <size android:width="288dp" android:height="288dp" />
+            <solid android:color="@android:color/transparent" />
+        </shape>
+    </item>
+    <!-- 116 dp circle, its top 72 dp down -->
+    <item>
+        <inset
+            android:insetLeft="29.861%"
+            android:insetRight="29.861%"
+            android:insetTop="25%"
+            android:insetBottom="34.722%">
+            <shape android:shape="oval">
+                <solid android:color="@color/splash_icon_background" />
+            </shape>
+        </inset>
+    </item>
+    <!-- The launcher foreground at the same size relative to the circle as on the launcher: its
+         72 dp visible area fills the circle -->
+    <item>
+        <inset
+            android:drawable="@drawable/ic_launcher_foreground"
+            android:insetLeft="19.792%"
+            android:insetRight="19.792%"
+            android:insetTop="14.931%"
+            android:insetBottom="24.653%" />
+    </item>
+    <!-- The name at 85%, its letters starting 12 dp below the circle -->
+    <item>
+        <inset
+            android:drawable="@drawable/splash_wordmark_dark"
+            android:insetLeft="20.486%"
+            android:insetRight="20.486%"
+            android:insetTop="59.896%"
+            android:insetBottom="16.493%" />
+    </item>
+</layer-list>
