@@ -6,20 +6,21 @@
     <style name="Theme.BibleApp" parent="Theme.AppCompat.Light.NoActionBar" />
 
     <!-- Startup screen (#135), through core-splashscreen so Android 7–11 show the icon too, not
-         a blank window. The launcher icon's foreground on its espresso circle, then the app's
-         theme. Splash follows the phone's light/dark; SplashLight and SplashDark are the fixed
-         versions MainActivity picks on Android 13+ to follow the app's own theme setting. The
-         name at the bottom is only possible on Android 12+ (values-v31). -->
-    <style name="Theme.BibleApp.SplashBase" parent="Theme.SplashScreen.IconBackground">
-        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
-        <item name="windowSplashScreenIconBackgroundColor">@color/splash_icon_background</item>
+         a blank window. The launcher icon's book on its espresso circle with the app's name under
+         it (#143), then the app's theme. No system icon background: the circle is part of the
+         icon, which gets the larger 288 dp area that way so the name fits. Splash follows the
+         phone's light/dark; SplashLight and SplashDark are the fixed versions MainActivity picks
+         on Android 13+ to follow the app's own theme setting. -->
+    <style name="Theme.BibleApp.SplashBase" parent="Theme.SplashScreen">
         <item name="postSplashScreenTheme">@style/Theme.BibleApp</item>
     </style>
     <style name="Theme.BibleApp.SplashLight" parent="Theme.BibleApp.SplashBase">
         <item name="windowSplashScreenBackground">@color/splash_background_light</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_icon_light</item>
     </style>
     <style name="Theme.BibleApp.SplashDark" parent="Theme.BibleApp.SplashBase">
         <item name="windowSplashScreenBackground">@color/splash_background_dark</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_icon_dark</item>
     </style>
     <style name="Theme.BibleApp.Splash" parent="Theme.BibleApp.SplashLight" />
 </resources>
