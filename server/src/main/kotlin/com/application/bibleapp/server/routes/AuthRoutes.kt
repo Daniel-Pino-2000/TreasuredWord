@@ -26,6 +26,8 @@ import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.post
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.isNull
+import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -196,7 +198,8 @@ fun Route.authRoutes(googleVerifier: GoogleIdTokenVerifier?) {
         // Google sign-in (#112): signs in to the account this Google account is linked to, links
         // it to an existing account with the same email, or creates a new account without a
         // password. Linking by email is safe because the verifier only accepts emails Google has
-        // verified, so whoever holds the token controls that inbox.
+        // verified, so whoever holds the token controls that inbox (and linking takes the
+        // account away from whoever set its password, #142).
         post("/auth/google") {
             val request = call.receive<GoogleSignInRequest>()
             val identity = call.verifyGoogleToken(googleVerifier, request.idToken) ?: return@post
@@ -212,8 +215,19 @@ fun Route.authRoutes(googleVerifier: GoogleIdTokenVerifier?) {
                     // Already linked to a different Google account with this email (Google
                     // accounts can be deleted and the address reused): don't take it over.
                     if (sameEmail[Users.googleSubject] != null) return@transaction null
+                    // Registering never checks the email, so whoever set this account's password
+                    // may not own the inbox; Google has checked it. The account goes to the Google
+                    // user: the password is removed and every existing session revoked, so nobody
+                    // who registered someone else's email keeps access (#142). Same transaction,
+                    // so it all happens or none of it does; the token issued below comes after.
                     Users.update({ Users.id eq sameEmail[Users.id] }) {
                         it[googleSubject] = identity.subject
+                        it[passwordHash] = null
+                    }
+                    RefreshTokens.update({
+                        (RefreshTokens.userId eq sameEmail[Users.id]) and RefreshTokens.revokedAt.isNull()
+                    }) {
+                        it[revokedAt] = Instant.now()
                     }
                     return@transaction sameEmail[Users.id]
                 }

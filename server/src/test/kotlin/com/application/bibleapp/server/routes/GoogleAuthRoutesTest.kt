@@ -6,6 +6,7 @@ import com.application.bibleapp.server.models.DeleteAccountRequest
 import com.application.bibleapp.server.models.ErrorResponse
 import com.application.bibleapp.server.models.GoogleSignInRequest
 import com.application.bibleapp.server.models.LoginRequest
+import com.application.bibleapp.server.models.RefreshRequest
 import com.application.bibleapp.server.models.UserResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -45,6 +46,12 @@ class GoogleAuthRoutesTest {
         post("/api/v1/auth/google") {
             contentType(ContentType.Application.Json)
             setBody(GoogleSignInRequest(idToken))
+        }
+
+    private suspend fun HttpClient.refresh(refreshToken: String): HttpResponse =
+        post("/api/v1/auth/refresh") {
+            contentType(ContentType.Application.Json)
+            setBody(RefreshRequest(refreshToken))
         }
 
     private suspend fun HttpClient.me(accessToken: String): UserResponse =
@@ -99,8 +106,13 @@ class GoogleAuthRoutesTest {
         assertEquals(first.userId, Json.decodeFromString<AuthResponse>(again.bodyAsText()).userId)
     }
 
+    /**
+     * Registering never checks that the email is the person's, so whoever set the password may
+     * not own the inbox. Google has checked it, so linking hands the account to the Google
+     * user: the password and every existing session stop working (#142, "pre-hijacking").
+     */
     @Test
-    fun anExistingPasswordAccountWithTheSameEmailIsLinkedNotDuplicated() = testApplication {
+    fun linkingAPasswordAccountRemovesThePasswordAndItsSessions() = testApplication {
         val client = googleClient()
         val passwordUser = client.registerTestUser()
         val subject = TestGoogle.newSubject()
@@ -108,21 +120,27 @@ class GoogleAuthRoutesTest {
         // Upper case from Google still finds the lower-case account (#114).
         val response = client.signInWithGoogle(TestGoogle.idToken(subject, passwordUser.email.uppercase()))
 
+        // Linked, not duplicated.
         assertEquals(HttpStatusCode.OK, response.status)
         val auth = Json.decodeFromString<AuthResponse>(response.bodyAsText())
         assertEquals(passwordUser.auth.userId, auth.userId)
         assertEquals(subject, userRow(auth.userId)[Users.googleSubject])
 
         val me = client.me(auth.accessToken)
-        assertTrue(me.hasPassword)
+        assertFalse(me.hasPassword)
         assertTrue(me.hasGoogle)
 
-        // The password still works too.
+        // The password no longer signs in.
         val login = client.post("/api/v1/auth/login") {
             contentType(ContentType.Application.Json)
             setBody(LoginRequest(passwordUser.email, passwordUser.password))
         }
-        assertEquals(HttpStatusCode.OK, login.status)
+        assertEquals(HttpStatusCode.Unauthorized, login.status)
+
+        // The session from before the link is revoked...
+        assertEquals(HttpStatusCode.Unauthorized, client.refresh(passwordUser.auth.refreshToken).status)
+        // ...but not the one the Google sign-in just started.
+        assertEquals(HttpStatusCode.OK, client.refresh(auth.refreshToken).status)
     }
 
     @Test
