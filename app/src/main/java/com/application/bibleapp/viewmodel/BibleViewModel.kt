@@ -511,16 +511,6 @@ class BibleViewModel(
         }
     }
 
-    /** See [BibleRepository.detachLocalContentFromDeletedAccount] — called once account deletion
-     *  succeeds (Phase H). Refreshes the sync status flows afterward since the watermarks/status
-     *  it just cleared feed straight into them. */
-    fun detachLocalContentFromDeletedAccount() {
-        viewModelScope.launch {
-            repository.detachLocalContentFromDeletedAccount()
-            refreshSyncStatus()
-        }
-    }
-
     // Download state
     private val _downloadingVersionId = MutableStateFlow<String?>(null)
     val downloadingVersionId: StateFlow<String?> = _downloadingVersionId.asStateFlow()
@@ -620,8 +610,8 @@ class BibleViewModel(
         loadLibrary()
     }
 
-    /** Sign-out removed the account's highlights and notes from the device (#81): close anything
-     *  still showing one, and reload the screens. */
+    /** Sign-out (#81) or deleting the account (#141) removed its highlights and notes from the
+     *  device: close anything still showing one, and reload the screens. */
     fun onAccountContentRemoved() {
         _highlightPopup.value = null
         if (_noteEditor.value?.existingNote != null) _noteEditor.value = null

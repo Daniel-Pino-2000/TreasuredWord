@@ -2,9 +2,11 @@ package com.application.bibleapp.utils
 
 import android.content.Context
 import android.util.Log
+import androidx.credentials.ClearCredentialStateRequest
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
+import androidx.credentials.exceptions.ClearCredentialException
 import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.credentials.exceptions.GetCredentialException
 import androidx.credentials.exceptions.NoCredentialException
@@ -62,6 +64,19 @@ object GoogleSignIn {
         } catch (e: GoogleIdTokenParsingException) {
             Log.w(TAG, "Google sign-in returned an unreadable token", e)
             GoogleSignInResult.Failed(UiText.Res(R.string.auth_error_google_failed))
+        }
+    }
+
+    /**
+     * After signing out or deleting the account (#141), Google recommends telling Credential
+     * Manager, so the next sign-in starts fresh rather than from the account that just left.
+     * Best effort: the person is already signed out of TreasuredWord either way.
+     */
+    suspend fun clearCredentialState(context: Context) {
+        try {
+            CredentialManager.create(context).clearCredentialState(ClearCredentialStateRequest())
+        } catch (e: ClearCredentialException) {
+            Log.w(TAG, "Couldn't clear the Google sign-in state: ${e.type}", e)
         }
     }
 

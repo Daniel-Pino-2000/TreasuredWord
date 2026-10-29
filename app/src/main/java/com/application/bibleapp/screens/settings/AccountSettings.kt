@@ -128,12 +128,8 @@ internal fun AccountSettings(
             onConfirm = { password, googleIdToken, onError ->
                 authViewModel.deleteAccount(password, googleIdToken) { errorMessage ->
                     if (errorMessage == null) {
-                        // The account and its server-side backup are gone, but this device's
-                        // own copies of its highlights/notes are not what just got deleted —
-                        // detach them from the dead account instead of leaving every row
-                        // pointing at a remote_id that will 404 forever (Phase H; see
-                        // BibleRepository.detachLocalContentFromDeletedAccount).
-                        bibleViewModel.detachLocalContentFromDeletedAccount()
+                        // Its highlights and notes are gone from the device too (#141).
+                        bibleViewModel.onAccountContentRemoved()
                         showDeleteDialog = false
                     } else {
                         onError(errorMessage)

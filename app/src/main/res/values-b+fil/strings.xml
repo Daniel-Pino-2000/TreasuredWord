@@ -275,7 +275,7 @@
     <string name="account_sign_out_anyway">Mag-sign out pa rin</string>
     <string name="account_delete">I-delete ang account</string>
     <string name="account_delete_title">I-delete ang account?</string>
-    <string name="account_delete_message">Permanenteng mabubura ang iyong account at lahat ng naka-back up dito. Hindi na ito maibabalik. Mananatili rito ang mga highlight at tala na nasa device na ito, pero hindi na masi-sync kahit saan.</string>
+    <string name="account_delete_message">Permanenteng mabubura ang iyong account at lahat ng highlight at tala nito, pati ang backup at ang mga kopya sa device na ito. Hindi na ito maibabalik.</string>
     <string name="account_confirm_password">Kumpirmahin ang iyong password</string>
 
     <string name="daily_verse_notification_title">Talata ng Araw</string>

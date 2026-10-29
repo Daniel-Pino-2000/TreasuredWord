@@ -21,6 +21,7 @@ import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import com.application.bibleapp.R
+import com.application.bibleapp.utils.GoogleSignIn
 import com.application.bibleapp.utils.UiText
 
 /**
@@ -55,7 +56,8 @@ class AuthException(val error: AuthError) : Exception(error.toString())
  */
 class AuthRepository(context: Context) {
 
-    private val tokenStore = TokenStore(context.applicationContext)
+    private val appContext = context.applicationContext
+    private val tokenStore = TokenStore(appContext)
     private val client get() = HttpClientProvider.client
     private val baseUrl get() = HttpClientProvider.BASE_URL
 
@@ -113,6 +115,11 @@ class AuthRepository(context: Context) {
         }
     }
 
+    /** After signing out or deleting the account (#141): see [GoogleSignIn.clearCredentialState]. */
+    suspend fun forgetGoogleSignIn() {
+        GoogleSignIn.clearCredentialState(appContext)
+    }
+
     /** Asks the server's health check for nothing but a reply, to wake it if it's asleep (#87). */
     suspend fun pingServer() {
         client.get(HttpClientProvider.HEALTH_URL)
@@ -128,15 +135,15 @@ class AuthRepository(context: Context) {
         }
     }
 
-    /** Confirmed with the [password], or with a fresh [googleIdToken] (#112). */
+    /** Confirmed with the [password], or with a fresh [googleIdToken] (#112). Only the server
+     *  side: the caller then ends the local session with [endLocalSession], together with
+     *  removing the account's content from the device (#141). */
     suspend fun deleteAccount(password: String?, googleIdToken: String?): Result<Unit> = runCatching {
         val response = client.delete("$baseUrl/users/me") {
             contentType(ContentType.Application.Json)
             setBody(DeleteAccountRequestDto(password, googleIdToken))
         }
         if (!response.status.isSuccess()) throw toAuthException(response)
-        tokenStore.clear()
-        HttpClientProvider.forgetCachedTokens()
     }
 
     /** [email] is what the person just typed: the auth responses don't include it, and

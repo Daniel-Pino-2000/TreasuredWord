@@ -282,7 +282,7 @@
     <string name="account_sign_out_anyway">Se déconnecter quand même</string>
     <string name="account_delete">Supprimer le compte</string>
     <string name="account_delete_title">Supprimer le compte ?</string>
-    <string name="account_delete_message">Ton compte et tout ce qui y est sauvegardé seront supprimés définitivement. Cette action est irréversible. Les surlignages et notes déjà présents sur cet appareil y resteront, mais ne seront plus synchronisés.</string>
+    <string name="account_delete_message">Ton compte et tous ses surlignages et notes seront supprimés définitivement, la sauvegarde comme les copies sur cet appareil. Cette action est irréversible.</string>
     <string name="account_confirm_password">Confirme ton mot de passe</string>
 
     <string name="daily_verse_notification_title">Verset du jour</string>

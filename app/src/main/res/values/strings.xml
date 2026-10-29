@@ -317,7 +317,7 @@
     <string name="account_sign_out_anyway">Sign out anyway</string>
     <string name="account_delete">Delete account</string>
     <string name="account_delete_title">Delete account?</string>
-    <string name="account_delete_message">This permanently deletes your account and everything backed up to it. This can\'t be undone. Highlights and notes already on this device will stay here, but won\'t sync anywhere else.</string>
+    <string name="account_delete_message">This permanently deletes your account and all its highlights and notes, both the backup and the copies on this device. This can\'t be undone.</string>
     <string name="account_confirm_password">Confirm your password</string>
 
     <!-- Daily verse notification -->
