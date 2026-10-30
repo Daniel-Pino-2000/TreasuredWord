@@ -2,6 +2,11 @@
 
 **Status:** planned, 2026-10-27 · **Tracking issue:** #120 · **Label:** `ai-helper`
 
+> **Release order (the developer's decision, 2026-10-30).** TreasuredWord's first production
+> release on Google Play goes out **without** the Bible Helper. The Bible Helper is built and
+> tested afterwards, in debug builds only, and reaches users later as an **app update** (#131).
+> Nothing in this plan may delay or change the first production release.
+
 A chat screen where people ask questions about the Bible and the Christian faith and get short,
 clear answers from a Baptist point of view, built so that every answer sends them back into
 Scripture. It must cost **$0** to run.
@@ -50,7 +55,7 @@ updating those too.
 | Conversation history | Saved on the phone only, removed on sign-out like highlights and notes | Nothing to leak from the server; the next person on a shared phone doesn't see it |
 | AI provider | Cloudflare Workers AI, free plan | See section 3 |
 | Model | Gemma 4 26B (Apache 2.0), with Qwen3 30B (Apache 2.0) as the runner-up; the comparison in #122 makes the final choice | Good answers per neuron, permissive licenses, no "Built with…" display rule like Llama's |
-| Release | After the production launch | Keeps the current Play review and closed test unaffected |
+| Release | **Not in the first production release.** The app is published on Google Play without it; once the Bible Helper is complete and tested, it ships as a later app update (#131) | Keeps the first launch, its Play review and the closed test unaffected |
 | Until release | The Bible Helper shows only in debug builds (`BuildConfig.AI_HELPER_ENABLED`); #131 turns it on for release builds | Work can merge to `main` without reaching closed-test or production users |
 | Who writes the doctrine summary | Claude drafted it from the BF&M 2000 at your request (2026-10-30); you read every line and approve it, reviewed by a pastor if possible. Claude also drafts the rest of #121 (answer rules and test questions) | It's the heart of the feature, so nothing else waits for its approval (section 9) |
 
