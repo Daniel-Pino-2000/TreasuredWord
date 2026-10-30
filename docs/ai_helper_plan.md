@@ -51,7 +51,7 @@ closed; after that, the instructions and the evaluation are written around them.
 | Model | Gemma 4 26B (Apache 2.0), with Qwen3 30B (Apache 2.0) as the runner-up; the comparison in #122 makes the final choice | Good answers per neuron, permissive licenses, no "Built with…" display rule like Llama's |
 | Release | After the production launch | Keeps the current Play review and closed test unaffected |
 | Until release | The Bible Helper shows only in debug builds (`BuildConfig.AI_HELPER_ENABLED`); #131 turns it on for release builds | Work can merge to `main` without reaching closed-test or production users |
-| Who writes the doctrine summary | You (the developer), reviewed by a pastor if possible; Claude drafts the rest of #121 (answer rules and test questions) | It's the heart of the feature and may take a while, so nothing else waits for it (section 9) |
+| Who writes the doctrine summary | Claude drafted it from the BF&M 2000 at your request (2026-10-30); you read every line and approve it, reviewed by a pastor if possible. Claude also drafts the rest of #121 (answer rules and test questions) | It's the heart of the feature, so nothing else waits for its approval (section 9) |
 
 ## 3. Why Cloudflare Workers AI (free options compared, checked 2026-10-27)
 
@@ -195,11 +195,12 @@ Stored **without the user's ID** and deleted after 90 days. You read reports in 
 
 ## 6. How the instructions shape an answer
 
-Until the doctrine summary is ready, `doctrine.md` holds a few lines marked **TEMPORARY**, so the
-server, the app and the tests can be built and tried in debug builds. Replacing it later changes
-no code, and #131 checks that the placeholder is gone.
+`doctrine.md` starts as a draft with a `DRAFT` comment at the top; the server, the app and the
+tests can be built and tried with it in debug builds. Approving it later changes no code, and
+#131 checks that the `DRAFT` comment is gone.
 
-`system_prompt.md` (written in #121) covers, in this order:
+`system_prompt.md` (written in #121) covers, in this order, with `{doctrine}`, `{language}` and
+`{bookCodes}` filled in by `SystemPrompt.kt`:
 
 1. **Who it is:** the Bible Helper inside TreasuredWord, an AI that helps people understand the
    Bible from a Baptist perspective; not a pastor, and not God's voice.
