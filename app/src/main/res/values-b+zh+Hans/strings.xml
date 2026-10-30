@@ -259,6 +259,7 @@
     <string name="account_your_account">你的账号</string>
     <string name="account_sign_out">退出登录</string>
     <string name="account_sign_out_subtitle">会从这部手机上移除你的标记和笔记，它们仍保存在你的账号中。</string>
+    <string name="account_sign_out_subtitle_ai_helper">会从这部手机上移除你的标记、笔记和圣经助手对话。标记和笔记仍保存在你的账号中，对话则不会保存。</string>
     <string name="account_signing_out">正在退出登录…</string>
     <string name="account_sign_out_unsynced_title">不同步就退出登录？</string>
     <string name="account_sign_out_unsynced_message">部分标记或笔记还没有保存到你的账号。现在退出登录会把它们从这部手机上删除。如要保留，请连接网络后重试。</string>
@@ -266,6 +267,7 @@
     <string name="account_delete">删除账号</string>
     <string name="account_delete_title">删除账号？</string>
     <string name="account_delete_message">这会永久删除你的账号及其所有标记和笔记，包括备份和此设备上的副本，且无法撤销。</string>
+    <string name="account_delete_message_ai_helper">这会永久删除你的账号及其所有标记和笔记，包括备份和此设备上的副本，以及你的圣经助手对话，且无法撤销。</string>
     <string name="account_confirm_password">请确认密码</string>
 
     <string name="daily_verse_notification_title">每日经文</string>

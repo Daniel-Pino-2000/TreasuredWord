@@ -260,6 +260,7 @@
     <string name="account_your_account">내 계정</string>
     <string name="account_sign_out">로그아웃</string>
     <string name="account_sign_out_subtitle">이 휴대전화에서 하이라이트와 메모를 삭제해요. 계정에는 그대로 저장돼 있어요.</string>
+    <string name="account_sign_out_subtitle_ai_helper">이 휴대전화에서 하이라이트, 메모, 성경 도우미 대화를 삭제해요. 하이라이트와 메모는 계정에 그대로 저장돼 있지만 대화는 저장되지 않아요.</string>
     <string name="account_signing_out">로그아웃하는 중…</string>
     <string name="account_sign_out_unsynced_title">동기화하지 않고 로그아웃할까요?</string>
     <string name="account_sign_out_unsynced_message">아직 계정에 저장되지 않은 하이라이트나 메모가 있어요. 지금 로그아웃하면 이 휴대전화에서 삭제돼요. 보관하려면 인터넷에 연결한 후 다시 시도하세요.</string>
@@ -267,6 +268,7 @@
     <string name="account_delete">계정 삭제</string>
     <string name="account_delete_title">계정을 삭제할까요?</string>
     <string name="account_delete_message">계정과 그 안의 모든 하이라이트와 메모가 백업과 이 기기의 사본까지 영구적으로 삭제돼요. 되돌릴 수 없어요.</string>
+    <string name="account_delete_message_ai_helper">계정과 그 안의 모든 하이라이트와 메모가 백업과 이 기기의 사본까지, 성경 도우미 대화와 함께 영구적으로 삭제돼요. 되돌릴 수 없어요.</string>
     <string name="account_confirm_password">비밀번호를 확인하세요</string>
 
     <string name="daily_verse_notification_title">오늘의 말씀</string>

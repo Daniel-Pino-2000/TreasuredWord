@@ -524,7 +524,8 @@ class BibleRepository(
 
     /** Sign-out (#81): the account's highlights and notes leave this device — they're safe on the
      *  server and come back on the next sign-in — so the next person to sign in here never sees
-     *  them, and none of them get uploaded to another account. */
+     *  them, and none of them get uploaded to another account. Bible Helper conversations, kept
+     *  only on the phone, are removed for good (#127). */
     suspend fun removeAccountContent() = withContext(Dispatchers.IO) {
         BibleDatabaseManager.deleteAllUserContent(context)
         clearSyncState(context)

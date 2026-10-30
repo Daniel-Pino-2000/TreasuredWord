@@ -269,6 +269,7 @@
     <string name="account_your_account">Iyong account</string>
     <string name="account_sign_out">Mag-sign out</string>
     <string name="account_sign_out_subtitle">Inaalis ang iyong mga highlight at tala sa phone na ito. Nananatiling naka-save ang mga ito sa iyong account.</string>
+    <string name="account_sign_out_subtitle_ai_helper">Inaalis ang iyong mga highlight, tala at usapan sa Katulong sa Bibliya sa phone na ito. Nananatiling naka-save sa iyong account ang mga highlight at tala, pero hindi ang mga usapan.</string>
     <string name="account_signing_out">Nagsa-sign out…</string>
     <string name="account_sign_out_unsynced_title">Mag-sign out nang hindi nagsi-sync?</string>
     <string name="account_sign_out_unsynced_message">May mga highlight o tala na hindi pa naka-save sa iyong account. Kapag nag-sign out ka ngayon, mabubura ang mga ito sa phone na ito. Para manatili ang mga ito, kumonekta sa internet at subukan ulit.</string>
@@ -276,6 +277,7 @@
     <string name="account_delete">I-delete ang account</string>
     <string name="account_delete_title">I-delete ang account?</string>
     <string name="account_delete_message">Permanenteng mabubura ang iyong account at lahat ng highlight at tala nito, pati ang backup at ang mga kopya sa device na ito. Hindi na ito maibabalik.</string>
+    <string name="account_delete_message_ai_helper">Permanenteng mabubura ang iyong account at lahat ng highlight at tala nito, pati ang backup at ang mga kopya sa device na ito, at ang iyong mga usapan sa Katulong sa Bibliya. Hindi na ito maibabalik.</string>
     <string name="account_confirm_password">Kumpirmahin ang iyong password</string>
 
     <string name="daily_verse_notification_title">Talata ng Araw</string>

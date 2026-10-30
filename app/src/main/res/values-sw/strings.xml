@@ -268,6 +268,7 @@
     <string name="account_your_account">Akaunti yako</string>
     <string name="account_sign_out">Ondoka</string>
     <string name="account_sign_out_subtitle">Huondoa viangazio na madokezo yako kwenye simu hii. Yanabaki yamehifadhiwa kwenye akaunti yako.</string>
+    <string name="account_sign_out_subtitle_ai_helper">Huondoa viangazio, madokezo na mazungumzo yako na Msaidizi wa Biblia kwenye simu hii. Viangazio na madokezo yanabaki yamehifadhiwa kwenye akaunti yako; mazungumzo hayabaki.</string>
     <string name="account_signing_out">Inaondoka…</string>
     <string name="account_sign_out_unsynced_title">Ondoka bila kusawazisha?</string>
     <string name="account_sign_out_unsynced_message">Baadhi ya viangazio au madokezo bado hayajahifadhiwa kwenye akaunti yako. Ukiondoka sasa, yatafutwa kwenye simu hii. Ili kuyabakiza, unganisha kwenye intaneti kisha ujaribu tena.</string>
@@ -275,6 +276,7 @@
     <string name="account_delete">Futa akaunti</string>
     <string name="account_delete_title">Futa akaunti?</string>
     <string name="account_delete_message">Hii itafuta kabisa akaunti yako na viangazio na madokezo yake yote, nakala iliyohifadhiwa pamoja na zilizo kwenye kifaa hiki. Haiwezi kutenduliwa.</string>
+    <string name="account_delete_message_ai_helper">Hii itafuta kabisa akaunti yako na viangazio na madokezo yake yote, nakala iliyohifadhiwa pamoja na zilizo kwenye kifaa hiki, pamoja na mazungumzo yako na Msaidizi wa Biblia. Haiwezi kutenduliwa.</string>
     <string name="account_confirm_password">Thibitisha nenosiri lako</string>
 
     <string name="daily_verse_notification_title">Mstari wa Siku</string>

@@ -276,6 +276,7 @@
     <string name="account_your_account">Sua conta</string>
     <string name="account_sign_out">Sair</string>
     <string name="account_sign_out_subtitle">Remove seus destaques e notas deste celular. Eles continuam salvos na sua conta.</string>
+    <string name="account_sign_out_subtitle_ai_helper">Remove seus destaques, notas e conversas com o Ajudante bíblico deste celular. Destaques e notas continuam salvos na sua conta; as conversas, não.</string>
     <string name="account_signing_out">Saindo…</string>
     <string name="account_sign_out_unsynced_title">Sair sem sincronizar?</string>
     <string name="account_sign_out_unsynced_message">Alguns destaques ou notas ainda não foram salvos na sua conta. Se você sair agora, eles serão apagados deste celular. Para mantê-los, conecte-se à internet e tente de novo.</string>
@@ -283,6 +284,7 @@
     <string name="account_delete">Excluir conta</string>
     <string name="account_delete_title">Excluir a conta?</string>
     <string name="account_delete_message">Sua conta e todos os destaques e notas dela serão excluídos para sempre, tanto o backup quanto as cópias neste dispositivo. Isso não pode ser desfeito.</string>
+    <string name="account_delete_message_ai_helper">Sua conta e todos os destaques e notas dela serão excluídos para sempre, tanto o backup quanto as cópias neste dispositivo, além das suas conversas com o Ajudante bíblico. Isso não pode ser desfeito.</string>
     <string name="account_confirm_password">Confirme sua senha</string>
 
     <string name="daily_verse_notification_title">Versículo do dia</string>
