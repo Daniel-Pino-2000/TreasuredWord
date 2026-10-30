@@ -53,9 +53,9 @@ android {
         // Google Play only accepts new apps and updates that target API 36 or higher (#66).
         targetSdk = 36
         // Every bundle uploaded to Play needs a higher versionCode (docs/release.md).
-        // 1.1: startup name (#135), sign-in fix (#134), Google sign-in (#112).
-        versionCode = 2
-        versionName = "1.1"
+        // 1.2: account deletion removes local highlights/notes (#141), name under the startup logo (#143).
+        versionCode = 3
+        versionName = "1.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
