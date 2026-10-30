@@ -32,8 +32,9 @@ general-purpose AI. It politely declines questions that aren't about the Bible o
 
 ## 2. Decisions
 
-These are the defaults this plan is built on. Change any of them before Phase 0 (#121) is
-closed; after that, the instructions and the evaluation are written around them.
+These are the decisions this plan is built on, **confirmed by the developer on 2026-10-30**
+(#121). The instructions and the evaluation are written around them, so changing one now means
+updating those too.
 
 | Question | Decision | Why |
 |---|---|---|
