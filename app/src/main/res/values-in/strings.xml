@@ -280,4 +280,9 @@
     <string name="translation_credit_public_domain">Domain publik</string>
     <!-- %1$s is the website the text was downloaded from, bible.helloao.org (shown as a link) -->
     <string name="translation_credit_source">Teks Alkitab dari %1$s</string>
+    <string name="ai_verse_read_chapter">Baca seluruh pasal</string>
+    <string name="ai_verse_not_found">Perikop ini tidak dapat dimuat.</string>
+    <plurals name="ai_verse_cards_show_more">
+        <item quantity="other">Tampilkan %1$d lagi</item>
+    </plurals>
 </resources>

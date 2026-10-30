@@ -313,4 +313,11 @@
     <string name="translation_credit_public_domain">Dominio público</string>
     <!-- %1$s is the website the text was downloaded from, bible.helloao.org (shown as a link) -->
     <string name="translation_credit_source">Texto bíblico de %1$s</string>
+    <string name="ai_verse_read_chapter">Leer el capítulo completo</string>
+    <string name="ai_verse_not_found">No se pudo cargar este pasaje.</string>
+    <plurals name="ai_verse_cards_show_more">
+        <item quantity="one">Mostrar %1$d más</item>
+        <item quantity="many">Mostrar %1$d más</item>
+        <item quantity="other">Mostrar %1$d más</item>
+    </plurals>
 </resources>
