@@ -281,4 +281,9 @@
     <string name="translation_credit_public_domain">公有领域</string>
     <!-- %1$s is the website the text was downloaded from, bible.helloao.org (shown as a link) -->
     <string name="translation_credit_source">圣经文本来源：%1$s</string>
+    <string name="ai_verse_read_chapter">阅读整章</string>
+    <string name="ai_verse_not_found">无法加载这段经文。</string>
+    <plurals name="ai_verse_cards_show_more">
+        <item quantity="other">再显示 %1$d 段</item>
+    </plurals>
 </resources>

@@ -7,6 +7,8 @@ import com.application.bibleapp.data.model.BibleBooks
 import com.application.bibleapp.data.model.BibleTranslation
 import com.application.bibleapp.data.model.ChapterStructure
 import com.application.bibleapp.data.model.DEFAULT_VERSION
+import com.application.bibleapp.data.model.AiVersePassage
+import com.application.bibleapp.data.model.loadAiVersePassage
 import com.application.bibleapp.data.model.DailyVerseRef
 import com.application.bibleapp.data.model.DailyVerseUI
 import com.application.bibleapp.data.model.DownloadedVersionInfo
@@ -52,6 +54,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import com.application.bibleapp.R
 import com.application.bibleapp.utils.UiText
+import com.application.bibleapp.utils.VerseReference
 import com.application.bibleapp.data.local.NoContentException
 import com.application.bibleapp.data.local.NoInternetException
 
@@ -576,6 +579,17 @@ class BibleViewModel(
         val chapterVerses = repository.getChapter(ref.bookId, ref.chapter, _selectedVersion.value.id)
         return resolveDailyVerseUI(bookName, ref, chapterVerses)
     }
+
+    /** A Bible Helper answer's cited passage, from the selected translation or the bundled KJV
+     *  when it lacks the verses (#129) — see [loadAiVersePassage]. */
+    suspend fun aiVersePassage(reference: VerseReference): AiVersePassage? =
+        loadAiVersePassage(reference, _selectedVersion.value.id) { versionId ->
+            repository.getChapter(reference.bookId, reference.chapter, versionId)
+        }
+
+    /** [versionId]'s short label ("KJV", "RV1909"), as on the version button — see [versionLabelFor]. */
+    fun versionLabel(versionId: String): String =
+        versionLabelFor(versionId, _availableVersions.value, _downloadedVersions.value)
 
     fun loadChapter(bookId: Int, chapterId: Int, verseId: Int = 1) {
         // A new chapter means any in-progress selection or open popup belongs to verses that

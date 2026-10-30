@@ -291,4 +291,10 @@
     <string name="translation_credit_public_domain">Pampublikong domain</string>
     <!-- %1$s is the website the text was downloaded from, bible.helloao.org (shown as a link) -->
     <string name="translation_credit_source">Teksto ng Bibliya mula sa %1$s</string>
+    <string name="ai_verse_read_chapter">Basahin ang buong kabanata</string>
+    <string name="ai_verse_not_found">Hindi ma-load ang talatang ito.</string>
+    <plurals name="ai_verse_cards_show_more">
+        <item quantity="one">Ipakita ang %1$d pa</item>
+        <item quantity="other">Ipakita ang %1$d pa</item>
+    </plurals>
 </resources>

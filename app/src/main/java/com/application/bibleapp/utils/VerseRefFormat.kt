@@ -85,6 +85,15 @@ fun formatFullVerseRefs(verses: List<VerseLocationDto>, bookName: (Int) -> Strin
     }
 }
 
+/** A cited passage as text, e.g. "Juan 3:16", "Juan 3:16-18" or a whole chapter "Salmos 23" —
+ *  how a Bible Helper verse card names it (#129). */
+fun formatVerseReference(reference: VerseReference, bookName: (Int) -> String): String {
+    val chapter = "${bookName(reference.bookId)} ${reference.chapter}"
+    val start = reference.startVerse ?: return chapter
+    val end = reference.endVerse?.takeIf { it > start }
+    return if (end == null) "$chapter:$start" else "$chapter:$start-$end"
+}
+
 /**
  * [bookId]'s name in translation [versionId] itself. A highlight or note is labelled in the
  * translation it was made in, matching the verse text shown with it, whatever version is selected

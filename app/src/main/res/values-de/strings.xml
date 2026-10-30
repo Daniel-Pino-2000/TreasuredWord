@@ -289,4 +289,10 @@
     <string name="translation_credit_public_domain">Gemeinfrei</string>
     <!-- %1$s is the website the text was downloaded from, bible.helloao.org (shown as a link) -->
     <string name="translation_credit_source">Bibeltext von %1$s</string>
+    <string name="ai_verse_read_chapter">Ganzes Kapitel lesen</string>
+    <string name="ai_verse_not_found">Diese Stelle konnte nicht geladen werden.</string>
+    <plurals name="ai_verse_cards_show_more">
+        <item quantity="one">%1$d weitere anzeigen</item>
+        <item quantity="other">%1$d weitere anzeigen</item>
+    </plurals>
 </resources>
