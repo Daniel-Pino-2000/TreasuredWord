@@ -260,6 +260,7 @@
     <string name="account_your_account">Akun Anda</string>
     <string name="account_sign_out">Keluar</string>
     <string name="account_sign_out_subtitle">Menghapus sorotan dan catatan Anda dari ponsel ini. Semuanya tetap tersimpan di akun Anda.</string>
+    <string name="account_sign_out_subtitle_ai_helper">Menghapus sorotan, catatan, dan percakapan Asisten Alkitab Anda dari ponsel ini. Sorotan dan catatan tetap tersimpan di akun Anda, tetapi percakapan tidak.</string>
     <string name="account_signing_out">Sedang keluar…</string>
     <string name="account_sign_out_unsynced_title">Keluar tanpa menyinkronkan?</string>
     <string name="account_sign_out_unsynced_message">Beberapa sorotan atau catatan belum tersimpan di akun Anda. Jika keluar sekarang, semuanya akan dihapus dari ponsel ini. Agar tetap tersimpan, sambungkan ke internet dan coba lagi.</string>
@@ -267,6 +268,7 @@
     <string name="account_delete">Hapus akun</string>
     <string name="account_delete_title">Hapus akun?</string>
     <string name="account_delete_message">Akun Anda serta semua sorotan dan catatannya akan dihapus secara permanen, baik cadangannya maupun salinan di perangkat ini. Tindakan ini tidak dapat diurungkan.</string>
+    <string name="account_delete_message_ai_helper">Akun Anda serta semua sorotan dan catatannya akan dihapus secara permanen, baik cadangannya maupun salinan di perangkat ini, begitu juga percakapan Asisten Alkitab Anda. Tindakan ini tidak dapat diurungkan.</string>
     <string name="account_confirm_password">Konfirmasi sandi Anda</string>
 
     <string name="daily_verse_notification_title">Ayat Hari Ini</string>

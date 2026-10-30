@@ -311,6 +311,8 @@
     <string name="account_your_account">Your account</string>
     <string name="account_sign_out">Sign out</string>
     <string name="account_sign_out_subtitle">Removes your highlights and notes from this phone. They stay saved in your account.</string>
+    <!-- Debug builds only until #131: sign-out also removes Bible Helper conversations (#127) -->
+    <string name="account_sign_out_subtitle_ai_helper">Removes your highlights, notes and Bible Helper conversations from this phone. Highlights and notes stay saved in your account; conversations don\'t.</string>
     <string name="account_signing_out">Signing out…</string>
     <string name="account_sign_out_unsynced_title">Sign out without syncing?</string>
     <string name="account_sign_out_unsynced_message">Some highlights or notes haven\'t been saved to your account yet. Signing out now deletes them from this phone. To keep them, connect to the internet and try again.</string>
@@ -318,6 +320,8 @@
     <string name="account_delete">Delete account</string>
     <string name="account_delete_title">Delete account?</string>
     <string name="account_delete_message">This permanently deletes your account and all its highlights and notes, both the backup and the copies on this device. This can\'t be undone.</string>
+    <!-- Debug builds only until #131: account deletion also removes Bible Helper conversations (#127) -->
+    <string name="account_delete_message_ai_helper">This permanently deletes your account and all its highlights and notes, both the backup and the copies on this device, and your Bible Helper conversations. This can\'t be undone.</string>
     <string name="account_confirm_password">Confirm your password</string>
 
     <!-- Daily verse notification -->

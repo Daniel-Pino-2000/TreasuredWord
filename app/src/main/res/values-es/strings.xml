@@ -292,6 +292,7 @@
     <string name="account_your_account">Tu cuenta</string>
     <string name="account_sign_out">Cerrar sesión</string>
     <string name="account_sign_out_subtitle">Quita tus resaltados y notas de este teléfono. Siguen guardados en tu cuenta.</string>
+    <string name="account_sign_out_subtitle_ai_helper">Quita tus resaltados, notas y conversaciones con el Ayudante bíblico de este teléfono. Los resaltados y las notas siguen guardados en tu cuenta; las conversaciones no.</string>
     <string name="account_signing_out">Cerrando sesión…</string>
     <string name="account_sign_out_unsynced_title">¿Cerrar sesión sin sincronizar?</string>
     <string name="account_sign_out_unsynced_message">Algunos resaltados o notas aún no se han guardado en tu cuenta. Si cierras sesión ahora, se borrarán de este teléfono. Para conservarlos, conéctate a internet y vuelve a intentarlo.</string>
@@ -299,6 +300,7 @@
     <string name="account_delete">Eliminar cuenta</string>
     <string name="account_delete_title">¿Eliminar la cuenta?</string>
     <string name="account_delete_message">Se eliminarán para siempre tu cuenta y todos sus resaltados y notas, tanto la copia guardada como los de este dispositivo. No se puede deshacer.</string>
+    <string name="account_delete_message_ai_helper">Se eliminarán para siempre tu cuenta y todos sus resaltados y notas, tanto la copia guardada como los de este dispositivo, y tus conversaciones con el Ayudante bíblico. No se puede deshacer.</string>
     <string name="account_confirm_password">Confirma tu contraseña</string>
 
     <!-- Daily verse notification -->

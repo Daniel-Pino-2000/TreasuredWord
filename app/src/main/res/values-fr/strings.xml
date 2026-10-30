@@ -276,6 +276,7 @@
     <string name="account_your_account">Ton compte</string>
     <string name="account_sign_out">Se déconnecter</string>
     <string name="account_sign_out_subtitle">Retire tes surlignages et notes de ce téléphone. Ils restent enregistrés dans ton compte.</string>
+    <string name="account_sign_out_subtitle_ai_helper">Retire tes surlignages, notes et conversations avec l\'Assistant biblique de ce téléphone. Les surlignages et notes restent enregistrés dans ton compte, pas les conversations.</string>
     <string name="account_signing_out">Déconnexion…</string>
     <string name="account_sign_out_unsynced_title">Se déconnecter sans synchroniser ?</string>
     <string name="account_sign_out_unsynced_message">Certains surlignages ou notes ne sont pas encore enregistrés dans ton compte. Si tu te déconnectes maintenant, ils seront supprimés de ce téléphone. Pour les garder, connecte-toi à Internet et réessaie.</string>
@@ -283,6 +284,7 @@
     <string name="account_delete">Supprimer le compte</string>
     <string name="account_delete_title">Supprimer le compte ?</string>
     <string name="account_delete_message">Ton compte et tous ses surlignages et notes seront supprimés définitivement, la sauvegarde comme les copies sur cet appareil. Cette action est irréversible.</string>
+    <string name="account_delete_message_ai_helper">Ton compte et tous ses surlignages et notes seront supprimés définitivement, la sauvegarde comme les copies sur cet appareil, ainsi que tes conversations avec l\'Assistant biblique. Cette action est irréversible.</string>
     <string name="account_confirm_password">Confirme ton mot de passe</string>
 
     <string name="daily_verse_notification_title">Verset du jour</string>

@@ -38,6 +38,7 @@ import com.application.bibleapp.viewmodel.AuthViewModel
 import com.application.bibleapp.viewmodel.BibleViewModel
 import com.application.bibleapp.viewmodel.SignOutState
 import com.application.bibleapp.R
+import com.application.bibleapp.BuildConfig
 import androidx.compose.ui.res.stringResource
 import com.application.bibleapp.utils.GoogleSignIn
 import com.application.bibleapp.utils.GoogleSignInResult
@@ -81,7 +82,12 @@ internal fun AccountSettings(
             val isUploading = signOutState == SignOutState.Uploading
             GroupedRow(
                 title = stringResource(if (isUploading) R.string.account_signing_out else R.string.account_sign_out),
-                subtitle = stringResource(R.string.account_sign_out_subtitle),
+                // Bible Helper conversations go too, and unlike highlights and notes they don't come
+                // back (#127). Release builds keep the old wording until #131.
+                subtitle = stringResource(
+                    if (BuildConfig.AI_HELPER_ENABLED) R.string.account_sign_out_subtitle_ai_helper
+                    else R.string.account_sign_out_subtitle
+                ),
                 icon = Icons.AutoMirrored.Outlined.Logout,
                 showChevron = false,
                 trailing = if (isUploading) {
@@ -173,7 +179,12 @@ private fun DeleteAccountDialog(
         title = { Text(stringResource(R.string.account_delete_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                Text(stringResource(R.string.account_delete_message))
+                Text(
+                    stringResource(
+                        if (BuildConfig.AI_HELPER_ENABLED) R.string.account_delete_message_ai_helper
+                        else R.string.account_delete_message
+                    )
+                )
                 if (askPassword) {
                     OutlinedTextField(
                         value = password,

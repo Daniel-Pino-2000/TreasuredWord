@@ -267,6 +267,7 @@
     <string name="account_your_account">Dein Konto</string>
     <string name="account_sign_out">Abmelden</string>
     <string name="account_sign_out_subtitle">Entfernt deine Markierungen und Notizen von diesem Telefon. In deinem Konto bleiben sie gespeichert.</string>
+    <string name="account_sign_out_subtitle_ai_helper">Entfernt deine Markierungen, Notizen und Gespräche mit dem Bibelhelfer von diesem Telefon. Markierungen und Notizen bleiben in deinem Konto gespeichert, Gespräche nicht.</string>
     <string name="account_signing_out">Wird abgemeldet…</string>
     <string name="account_sign_out_unsynced_title">Ohne Synchronisierung abmelden?</string>
     <string name="account_sign_out_unsynced_message">Einige Markierungen oder Notizen sind noch nicht in deinem Konto gespeichert. Wenn du dich jetzt abmeldest, werden sie von diesem Telefon gelöscht. Um sie zu behalten, verbinde dich mit dem Internet und versuche es erneut.</string>
@@ -274,6 +275,7 @@
     <string name="account_delete">Konto löschen</string>
     <string name="account_delete_title">Konto löschen?</string>
     <string name="account_delete_message">Dein Konto und alle Markierungen und Notizen darin werden endgültig gelöscht, sowohl die Sicherung als auch die Kopien auf diesem Gerät. Das lässt sich nicht rückgängig machen.</string>
+    <string name="account_delete_message_ai_helper">Dein Konto und alle Markierungen und Notizen darin werden endgültig gelöscht, sowohl die Sicherung als auch die Kopien auf diesem Gerät, ebenso deine Gespräche mit dem Bibelhelfer. Das lässt sich nicht rückgängig machen.</string>
     <string name="account_confirm_password">Bestätige dein Passwort</string>
 
     <string name="daily_verse_notification_title">Vers des Tages</string>

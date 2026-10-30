@@ -4,6 +4,10 @@ import android.content.Context
 import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.util.Log
+import com.application.bibleapp.BuildConfig
+import com.application.bibleapp.data.model.AiConversation
+import com.application.bibleapp.data.model.AiMessage
+import com.application.bibleapp.data.model.AiRole
 import com.application.bibleapp.data.model.BibleTranslation
 import com.application.bibleapp.data.model.BibleVerse
 import com.application.bibleapp.data.model.DailyVerseRef
@@ -187,6 +191,8 @@ object BibleDatabaseManager {
         )
         ensureDownloadedVersionsTable(db)
         ensureUserContentTables(db)
+        // Release builds don't get the Bible Helper's tables until #131 turns it on (#127).
+        if (BuildConfig.AI_HELPER_ENABLED) ensureAiHelperTables(db)
         ensureSearchTextColumns(db)
         dbInstance = db
         return db
@@ -315,7 +321,7 @@ object BibleDatabaseManager {
      * NULL until the first successful push. Soft deletes (`deleted_at`) mirror the server's
      * tombstone model so a pending deletion can still be pushed after the row is "gone" locally.
      */
-    private fun ensureUserContentTables(db: SQLiteDatabase) {
+    internal fun ensureUserContentTables(db: SQLiteDatabase) {
         db.execSQL(
             """
             CREATE TABLE IF NOT EXISTS highlights (
@@ -347,6 +353,41 @@ object BibleDatabaseManager {
             """.trimIndent()
         )
         Log.d("BibleDB", "Highlight/note tables ready")
+    }
+
+    /**
+     * The Bible Helper's conversations (#127), kept only on this phone: there's no sync status or
+     * remote id, and sign-out removes them with the highlights and notes ([deleteAllUserContent]).
+     * `crisis` and `prompt_version` are only set on answers. A conversation's messages are deleted
+     * with it by [deleteAiConversation] itself: SQLite ignores `ON DELETE CASCADE` unless
+     * `PRAGMA foreign_keys` is on, which this shared connection never turns on.
+     */
+    internal fun ensureAiHelperTables(db: SQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS ai_conversations (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )
+            """.trimIndent()
+        )
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS ai_messages (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                conversation_id INTEGER NOT NULL,
+                role TEXT NOT NULL,
+                content TEXT NOT NULL,
+                crisis INTEGER NOT NULL DEFAULT 0,
+                prompt_version TEXT,
+                created_at TEXT NOT NULL
+            )
+            """.trimIndent()
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS ai_messages_by_conversation ON ai_messages (conversation_id, id)")
+        Log.d("BibleDB", "Bible Helper tables ready")
     }
 
     /**
@@ -1324,16 +1365,116 @@ object BibleDatabaseManager {
         }
     }
 
+    // ---- Bible Helper conversations (#127) — see data/repository/AiHelperRepository.kt ----
+
+    fun insertAiConversation(context: Context, title: String): AiConversation {
+        val db = getDatabase(context)
+        val now = isoTimestampNow()
+        val id = db.compileStatement("INSERT INTO ai_conversations (title, created_at, updated_at) VALUES (?, ?, ?)")
+            .use { statement ->
+                statement.bindString(1, title)
+                statement.bindString(2, now)
+                statement.bindString(3, now)
+                statement.executeInsert()
+            }
+        return AiConversation(id, title, now, now)
+    }
+
+    /** Saves a question or answer and moves its conversation to the top of the list. */
+    fun insertAiMessage(
+        context: Context,
+        conversationId: Long,
+        role: AiRole,
+        content: String,
+        crisis: Boolean = false,
+        promptVersion: String? = null
+    ): AiMessage {
+        val db = getDatabase(context)
+        val now = isoTimestampNow()
+        db.beginTransaction()
+        try {
+            val id = db.compileStatement(
+                "INSERT INTO ai_messages (conversation_id, role, content, crisis, prompt_version, created_at) VALUES (?, ?, ?, ?, ?, ?)"
+            ).use { statement ->
+                statement.bindLong(1, conversationId)
+                statement.bindString(2, role.stored)
+                statement.bindString(3, content)
+                statement.bindLong(4, if (crisis) 1 else 0)
+                if (promptVersion == null) statement.bindNull(5) else statement.bindString(5, promptVersion)
+                statement.bindString(6, now)
+                statement.executeInsert()
+            }
+            db.execSQL("UPDATE ai_conversations SET updated_at = ? WHERE id = ?", arrayOf(now, conversationId))
+            db.setTransactionSuccessful()
+            return AiMessage(id, conversationId, role, content, crisis, promptVersion, now)
+        } finally {
+            db.endTransaction()
+        }
+    }
+
+    /** Most recently used first — for the conversation list (#128). */
+    fun getAiConversations(context: Context): List<AiConversation> =
+        getDatabase(context).rawQuery(
+            "SELECT id, title, created_at, updated_at FROM ai_conversations ORDER BY updated_at DESC, id DESC",
+            null
+        ).use { cursor ->
+            generateSequence {
+                if (cursor.moveToNext()) {
+                    AiConversation(cursor.getLong(0), cursor.getString(1), cursor.getString(2), cursor.getString(3))
+                } else {
+                    null
+                }
+            }.toList()
+        }
+
+    /** Oldest first, in the order they were saved. */
+    fun getAiMessages(context: Context, conversationId: Long): List<AiMessage> =
+        getDatabase(context).rawQuery(
+            "SELECT id, conversation_id, role, content, crisis, prompt_version, created_at FROM ai_messages WHERE conversation_id = ? ORDER BY id",
+            arrayOf(conversationId.toString())
+        ).use { cursor ->
+            generateSequence {
+                if (cursor.moveToNext()) {
+                    AiMessage(
+                        id = cursor.getLong(0),
+                        conversationId = cursor.getLong(1),
+                        role = AiRole.fromStored(cursor.getString(2)),
+                        content = cursor.getString(3),
+                        crisis = cursor.getInt(4) != 0,
+                        promptVersion = if (cursor.isNull(5)) null else cursor.getString(5),
+                        createdAt = cursor.getString(6)
+                    )
+                } else {
+                    null
+                }
+            }.toList()
+        }
+
+    fun deleteAiConversation(context: Context, conversationId: Long) {
+        val db = getDatabase(context)
+        db.beginTransaction()
+        try {
+            db.execSQL("DELETE FROM ai_messages WHERE conversation_id = ?", arrayOf(conversationId))
+            db.execSQL("DELETE FROM ai_conversations WHERE id = ?", arrayOf(conversationId))
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
+        }
+    }
+
     // ---- Account changes (#81) — see BibleRepository.removeAccountContent/adoptContentOwner ----
 
     /** Signing out removes the account's highlights and notes from this device; they're safe on
-     *  the server and come back on the next sign-in. */
-    fun deleteAllUserContent(context: Context) {
-        val db = getDatabase(context)
+     *  the server and come back on the next sign-in. Bible Helper conversations go too, for good:
+     *  they were only ever on this phone (#127). */
+    fun deleteAllUserContent(context: Context) = deleteAllUserContent(getDatabase(context))
+
+    internal fun deleteAllUserContent(db: SQLiteDatabase) {
         db.beginTransaction()
         try {
             db.execSQL("DELETE FROM highlights")
             db.execSQL("DELETE FROM notes")
+            if (BuildConfig.AI_HELPER_ENABLED) deleteAllAiConversations(db)
             db.setTransactionSuccessful()
         } finally {
             db.endTransaction()
@@ -1342,17 +1483,25 @@ object BibleDatabaseManager {
 
     /** Signing into a different account than the one this device's content was synced with:
      *  removes everything that came from (or went to) the old account, keeping only items made
-     *  here that were never uploaded anywhere. */
-    fun deleteContentSyncedToAnAccount(context: Context) {
-        val db = getDatabase(context)
+     *  here that were never uploaded anywhere. Every Bible Helper conversation belongs to the old
+     *  account, since asking needs an account (#127). */
+    fun deleteContentSyncedToAnAccount(context: Context) = deleteContentSyncedToAnAccount(getDatabase(context))
+
+    internal fun deleteContentSyncedToAnAccount(db: SQLiteDatabase) {
         db.beginTransaction()
         try {
             db.execSQL("DELETE FROM highlights WHERE remote_id IS NOT NULL")
             db.execSQL("DELETE FROM notes WHERE remote_id IS NOT NULL")
+            if (BuildConfig.AI_HELPER_ENABLED) deleteAllAiConversations(db)
             db.setTransactionSuccessful()
         } finally {
             db.endTransaction()
         }
+    }
+
+    private fun deleteAllAiConversations(db: SQLiteDatabase) {
+        db.execSQL("DELETE FROM ai_messages")
+        db.execSQL("DELETE FROM ai_conversations")
     }
 }
 

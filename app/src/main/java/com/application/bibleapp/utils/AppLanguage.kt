@@ -37,6 +37,11 @@ object AppLanguage {
             ?: chosen.toLanguageTag()
     }
 
+    /** The supported tag for the language the app is showing in [locale], or "en" — what the
+     *  Bible Helper answers in (#127). Unlike [currentTag], "System default" resolves too. */
+    fun answerLanguageTag(locale: Locale): String =
+        supportedTags.firstOrNull { matches(Locale.forLanguageTag(it), locale) } ?: "en"
+
     /** Same language, and same script when the supported one names it — so Traditional Chinese
      *  ("zh-TW", "zh-Hant") isn't shown as Simplified. A chosen locale without a script counts
      *  as Simplified unless its region writes Traditional. */
