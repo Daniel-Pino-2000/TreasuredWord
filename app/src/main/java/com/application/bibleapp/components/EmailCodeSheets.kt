@@ -37,6 +37,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -91,7 +93,7 @@ fun VerifyEmailSheet(authViewModel: AuthViewModel) {
                 authViewModel.clearVerifyEmailError()
             },
             enabled = !state.isVerifying,
-            onDone = { if (code.length == EMAIL_CODE_LENGTH) authViewModel.verifyEmailCode(code) }
+            onImeAction = { if (code.length == EMAIL_CODE_LENGTH) authViewModel.verifyEmailCode(code) }
         )
         state.error?.let { ErrorText(it.asString()) }
         Button(
@@ -191,6 +193,10 @@ private fun ColumnScope.PasswordResetCodeStep(
     val canReset = code.length == EMAIL_CODE_LENGTH && password.length >= MIN_PASSWORD_LENGTH &&
         password == confirmPassword && !isBusy
     val clearError = authViewModel::clearPasswordResetError
+    // The keyboard's Next goes field to field. Without these it would stop on the show-password
+    // button between the two password fields.
+    val passwordFocus = remember { FocusRequester() }
+    val confirmFocus = remember { FocusRequester() }
 
     Text(
         text = stringResource(R.string.password_reset_code_sent, email),
@@ -204,7 +210,8 @@ private fun ColumnScope.PasswordResetCodeStep(
             clearError()
         },
         enabled = !isBusy,
-        imeAction = ImeAction.Next
+        imeAction = ImeAction.Next,
+        onImeAction = { passwordFocus.requestFocus() }
     )
     // Same rules and show-password button as Create account.
     OutlinedTextField(
@@ -227,7 +234,10 @@ private fun ColumnScope.PasswordResetCodeStep(
             }
         },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Next),
-        modifier = Modifier.fillMaxWidth()
+        keyboardActions = KeyboardActions(onNext = { confirmFocus.requestFocus() }),
+        modifier = Modifier
+            .fillMaxWidth()
+            .focusRequester(passwordFocus)
     )
     OutlinedTextField(
         value = confirmPassword,
@@ -244,7 +254,9 @@ private fun ColumnScope.PasswordResetCodeStep(
         visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
         keyboardActions = KeyboardActions(onDone = { if (canReset) authViewModel.resetPassword(code, password) }),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .focusRequester(confirmFocus)
     )
     Text(
         text = stringResource(R.string.password_reset_signs_out),
@@ -297,7 +309,7 @@ private fun EmailCodeField(
     onValueChange: (String) -> Unit,
     enabled: Boolean,
     imeAction: ImeAction = ImeAction.Done,
-    onDone: () -> Unit = {}
+    onImeAction: () -> Unit = {}
 ) {
     OutlinedTextField(
         value = value,
@@ -307,7 +319,7 @@ private fun EmailCodeField(
         enabled = enabled,
         textStyle = MaterialTheme.typography.titleLarge.copy(letterSpacing = 6.sp),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = imeAction),
-        keyboardActions = KeyboardActions(onDone = { onDone() }),
+        keyboardActions = KeyboardActions(onDone = { onImeAction() }, onNext = { onImeAction() }),
         modifier = Modifier.fillMaxWidth()
     )
 }
