@@ -37,7 +37,7 @@ import java.time.Instant
 import java.util.UUID
 
 private val EMAIL_REGEX = Regex("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")
-private const val MIN_PASSWORD_LENGTH = 8
+internal const val MIN_PASSWORD_LENGTH = 8
 private val REFRESH_TOKEN_TTL: Duration = Duration.ofDays(30)
 
 /**
@@ -47,7 +47,7 @@ private val REFRESH_TOKEN_TTL: Duration = Duration.ofDays(30)
  * V3__lowercase_emails.sql lower-cased the existing rows and makes the database reject any email
  * that isn't lower case.
  */
-private fun normalizeEmail(email: String): String = email.trim().lowercase()
+internal fun normalizeEmail(email: String): String = email.trim().lowercase()
 
 /**
  * Issues a fresh access token + a fresh refresh token for [userId], storing only the refresh
@@ -198,8 +198,8 @@ fun Route.authRoutes(googleVerifier: GoogleIdTokenVerifier?) {
         // Google sign-in (#112): signs in to the account this Google account is linked to, links
         // it to an existing account with the same email, or creates a new account without a
         // password. Linking by email is safe because the verifier only accepts emails Google has
-        // verified, so whoever holds the token controls that inbox (and linking takes the
-        // account away from whoever set its password, #142).
+        // verified, so whoever holds the token controls that inbox (and linking an unverified
+        // account takes it away from whoever set its password, #142, #158).
         post("/auth/google") {
             val request = call.receive<GoogleSignInRequest>()
             val identity = call.verifyGoogleToken(googleVerifier, request.idToken) ?: return@post
@@ -215,19 +215,29 @@ fun Route.authRoutes(googleVerifier: GoogleIdTokenVerifier?) {
                     // Already linked to a different Google account with this email (Google
                     // accounts can be deleted and the address reused): don't take it over.
                     if (sameEmail[Users.googleSubject] != null) return@transaction null
-                    // Registering never checks the email, so whoever set this account's password
-                    // may not own the inbox; Google has checked it. The account goes to the Google
-                    // user: the password is removed and every existing session revoked, so nobody
-                    // who registered someone else's email keeps access (#142). Same transaction,
-                    // so it all happens or none of it does; the token issued below comes after.
+                    // If the email is verified (#158), whoever set the password proved they own
+                    // the inbox, the same thing Google just proved: they're the same person, so
+                    // the password and their other sessions stay.
+                    // If it isn't, whoever set the password may not own the inbox: anyone can
+                    // register someone else's email. The account goes to the Google user: the
+                    // password is removed and every existing session revoked, so nobody who
+                    // registered someone else's email keeps access (#142).
+                    // Same transaction, so it all happens or none of it does; the token issued
+                    // below comes after.
+                    val wasVerified = sameEmail[Users.emailVerifiedAt] != null
                     Users.update({ Users.id eq sameEmail[Users.id] }) {
                         it[googleSubject] = identity.subject
-                        it[passwordHash] = null
+                        if (!wasVerified) {
+                            it[passwordHash] = null
+                            it[emailVerifiedAt] = Instant.now()
+                        }
                     }
-                    RefreshTokens.update({
-                        (RefreshTokens.userId eq sameEmail[Users.id]) and RefreshTokens.revokedAt.isNull()
-                    }) {
-                        it[revokedAt] = Instant.now()
+                    if (!wasVerified) {
+                        RefreshTokens.update({
+                            (RefreshTokens.userId eq sameEmail[Users.id]) and RefreshTokens.revokedAt.isNull()
+                        }) {
+                            it[revokedAt] = Instant.now()
+                        }
                     }
                     return@transaction sameEmail[Users.id]
                 }

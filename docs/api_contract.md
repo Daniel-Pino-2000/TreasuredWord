@@ -57,15 +57,17 @@ before code.
     client ID, expiry, and `email_verified`), never just the email the app reports. A Google
     account already linked signs in to its account even if its email changed since. Otherwise
     an account with the same email is linked to it, rather than a second account created.
-    Google has verified that the person controls the inbox, but registering with a password
-    never checks the email, so whoever set that password may not be its owner (someone can
-    register another person's address and wait for them to arrive with Google). So linking
-    hands the account to the Google user: **the password is removed and every existing refresh
-    token revoked**, in the same transaction (#142). Afterwards it signs in with Google only.
-    Access tokens already issued still work until they expire (15 minutes). If that account is
-    already linked to a *different* Google account, it's refused rather than taken over.
-    Accounts made with Google have no password until one is added (no endpoint for that yet),
-    so password login can't match them.
+    Google has verified that the person controls the inbox. If the account's email is verified
+    too (decision 22), whoever set the password proved the same thing, so they're the same
+    person: linking **keeps the password and every session** (#158). If it isn't verified,
+    whoever set that password may not be its owner (someone can register another person's
+    address and wait for them to arrive with Google), so linking hands the account to the
+    Google user: **the password is removed and every existing refresh token revoked**, in the
+    same transaction (#142), and it signs in with Google only until a password reset adds one.
+    Access tokens already issued still work until they expire (15 minutes). Either way the
+    account is verified afterwards. If that account is already linked to a *different* Google
+    account, it's refused rather than taken over. Accounts made with Google have no password
+    until a password reset adds one (decision 24), so password login can't match them.
 22. **Emails are verified with a 6-digit code, not a link** (#148, #156). The person types the
     code into the app, so it needs no web page or deep link, and it works on whichever device
     reads the email. Each code works once, for 15 minutes and 5 tries; asking for a new one
@@ -80,6 +82,13 @@ before code.
     rate-limit zone, much stricter than the `auth` zone's 10 a minute), and 5 codes an hour per
     account across every kind of code, so one person's inbox can't be flooded from many IPs.
     Each email also costs part of the provider's daily allowance.
+24. **"Forgot password" never says whether an account exists** (#157, like decision 4).
+    `password-reset/send` always answers `204`: it answers first and looks the email up
+    afterwards, so neither the answer nor its timing depends on the account. Resetting needs the
+    email, the newest reset code and a new password; an unknown email gets the same
+    `INVALID_CODE` as a wrong code. A reset **revokes every refresh token** (every device signs
+    in again), and marks the email verified, since the code reached the inbox. A Google-only
+    account can use it to add a password: the code proves the inbox is theirs, as Google does.
 
 ### Reading progress
 
@@ -245,12 +254,20 @@ Errors: `401 UNAUTHORIZED`
 
 ---
 
-## Email verification
+## Email verification and password reset
 
 ```kotlin
 @Serializable
 data class VerifyEmailRequest(val code: String)   // the 6 digits from the email; spaces ignored
+
+@Serializable
+data class PasswordResetSendRequest(val email: String)
+
+@Serializable
+data class PasswordResetRequest(val email: String, val code: String, val newPassword: String)
 ```
+
+Emails are compared without regard to case, as in register and login.
 
 A rate limit that's hit answers `429` with no body: the `email` zone for endpoints that send
 email, the `auth` zone for the others (decision 23).
@@ -269,6 +286,23 @@ Request: `VerifyEmailRequest`
 Success: `204 No Content` — the email is verified (`emailVerified` in `GET /users/me`). Also
 `204` if it already was, so a second tap or another device isn't an error.
 Errors: `400 INVALID_CODE`, `401 UNAUTHORIZED`, `429` (`auth` zone)
+
+### `POST /api/v1/auth/password-reset/send`
+Auth: none
+Request: `PasswordResetSendRequest`
+Success: `204 No Content`, **whether or not the email has an account** (decision 24). If it has
+one, a reset code is emailed to it shortly after; any older one stops working. Nothing is sent
+when the account has been sent 5 codes in the last hour, and the answer is still `204`.
+Errors: `429` (`email` zone), `503 EMAIL_UNAVAILABLE` (no provider configured; the same for
+every email)
+
+### `POST /api/v1/auth/password-reset`
+Auth: none — the emailed code is the credential
+Request: `PasswordResetRequest` (`newPassword`: same rules as register)
+Success: `204 No Content` — the password is changed, every refresh token for the account is
+revoked, and the email is verified (decision 24). The app then signs in with the new password.
+Errors: `400 VALIDATION_ERROR` (new password too short; checked before the code, so it doesn't
+use up a try), `400 INVALID_CODE` (also for an email with no account), `429` (`auth` zone)
 
 ---
 
@@ -485,8 +519,6 @@ Errors: `401 UNAUTHORIZED`, `404 NOT_FOUND`
 
 ## Deliberately deferred (not in v1)
 
-- **Password reset / forgot-password flow** — needs an email-sending provider, which isn't set up
-  yet. Until then, a lost password means a lost account; worth revisiting before a wider release.
 - **Change password / change email** — straightforward additions once the account exists, but no
   screen or need for them yet.
 - **Multi-session management** (list active devices, revoke one remotely) — `logout` only ends
