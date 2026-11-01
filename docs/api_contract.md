@@ -236,7 +236,8 @@ data class UserResponse(
     val email: String,
     val createdAt: String,
     val hasPassword: Boolean,   // false for an account made with Google (#112)
-    val hasGoogle: Boolean      // Google sign-in is linked
+    val hasGoogle: Boolean,     // Google sign-in is linked
+    val emailVerified: Boolean  // the owner has proved the inbox is theirs (#155)
 )
 
 @Serializable
@@ -245,6 +246,11 @@ data class DeleteAccountRequest(val password: String? = null, val googleIdToken:
 
 `hasPassword` and `hasGoogle` tell the app how to confirm deleting the account: the password, or
 signing in with Google again (#112). Older apps ignore them.
+
+`emailVerified` is true once the owner has proved the inbox is theirs (#155): with an emailed
+code, or by signing in with Google, which only gives verified emails. Accounts made or linked
+with Google before this field existed count as verified; password-only accounts start
+unverified. The app uses it to offer "Verify your email".
 
 ### `GET /api/v1/users/me`
 Auth: required

@@ -79,6 +79,8 @@ class GoogleAuthRoutesTest {
         val me = client.me(auth.accessToken)
         assertFalse(me.hasPassword)
         assertTrue(me.hasGoogle)
+        // Google only gives verified emails (#155).
+        assertTrue(me.emailVerified)
     }
 
     @Test

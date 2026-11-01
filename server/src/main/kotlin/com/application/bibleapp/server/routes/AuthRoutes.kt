@@ -233,11 +233,14 @@ fun Route.authRoutes(googleVerifier: GoogleIdTokenVerifier?) {
                 }
 
                 created = true
+                val now = Instant.now()
                 Users.insert {
                     it[Users.email] = email
                     it[Users.passwordHash] = null
                     it[Users.googleSubject] = identity.subject
-                    it[Users.createdAt] = Instant.now()
+                    it[Users.createdAt] = now
+                    // Google only gives verified emails (#155).
+                    it[Users.emailVerifiedAt] = now
                 } get Users.id
             }
 

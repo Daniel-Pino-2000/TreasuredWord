@@ -1,5 +1,5 @@
 # Render Blueprint (Phase 5) — see server/DEPLOY.md for the full setup story. Secrets
-# (DATABASE_URL, DATABASE_USER, DATABASE_PASSWORD, JWT_SECRET) are deliberately NOT here — this
+# (DATABASE_URL, DATABASE_USER, DATABASE_PASSWORD, JWT_SECRET, RESEND_API_KEY) are deliberately NOT here — this
 # file is committed to git, so `sync: false` below just reserves the env var name and leaves the
 # actual value to be filled in through Render's dashboard, which stores it encrypted.
 #
@@ -31,4 +31,10 @@ services:
       # Google sign-in (#112): the Google Cloud *web* client ID. Not a secret, but set per
       # deployment; without it /auth/google answers GOOGLE_SIGN_IN_UNAVAILABLE.
       - key: GOOGLE_CLIENT_ID
+        sync: false
+      # Email (#154): Resend's API key (a secret) and the sender address on the domain verified
+      # in Resend. Without both, the endpoints that send email answer EMAIL_UNAVAILABLE.
+      - key: RESEND_API_KEY
+        sync: false
+      - key: EMAIL_FROM
         sync: false

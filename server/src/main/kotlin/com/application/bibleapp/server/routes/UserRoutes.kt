@@ -43,7 +43,8 @@ fun Route.userRoutes(googleVerifier: GoogleIdTokenVerifier?) {
                     email = user[Users.email],
                     createdAt = user[Users.createdAt].toString(),
                     hasPassword = user[Users.passwordHash] != null,
-                    hasGoogle = user[Users.googleSubject] != null
+                    hasGoogle = user[Users.googleSubject] != null,
+                    emailVerified = user[Users.emailVerifiedAt] != null
                 )
             )
         }
