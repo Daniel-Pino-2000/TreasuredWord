@@ -20,11 +20,13 @@ val AUTH_RATE_LIMIT = RateLimitName("auth")
 val EMAIL_RATE_LIMIT = RateLimitName("email")
 
 /**
- * The caller's IP address, as the rate limits' key. On Render the server sits behind Cloudflare
- * and Render's proxy, so the TCP connection always comes from a proxy: Cloudflare puts the real
- * address in True-Client-IP, and Render puts it first in X-Forwarded-For. Either header can be
- * forged by a client that reaches the server another way, so this limit slows abuse rather than
- * stopping it; the per-account limit in EmailCodeStore is what protects one person's inbox.
+ * The caller's IP address, as both rate limits' key. Ktor's own default key is the same for
+ * every caller, which made a limit server-wide (#162). On Render the server sits behind
+ * Cloudflare and Render's proxy, so the TCP connection always comes from a proxy: Cloudflare puts
+ * the real address in True-Client-IP, and Render puts it first in X-Forwarded-For. Either header
+ * can be forged by a client that reaches the server another way, so these limits slow abuse
+ * rather than stop it; the per-account limit in EmailCodeStore is what protects one person's
+ * inbox, and bcrypt's slowness what protects a password.
  */
 internal fun ApplicationCall.clientIp(): String =
     request.headers["True-Client-IP"]?.trim()?.takeIf { it.isNotEmpty() }
@@ -32,17 +34,21 @@ internal fun ApplicationCall.clientIp(): String =
         ?: request.origin.remoteHost
 
 /**
- * Keyed by the caller's IP (Ktor's default key) rather than by account, since the whole point is
+ * Keyed by the caller's IP ([clientIp]) rather than by account, since the whole point is
  * limiting an attacker who doesn't have valid credentials yet — a per-account key would do
  * nothing for the register/credential-stuffing case, only for an already-known email. 10
  * requests/minute is generous for a real user (a handful of login attempts, or a client retrying
  * a dropped connection) while still cutting off a brute-force loop by roughly two orders of
  * magnitude (Phase 5).
+ *
+ * Until #162 the auth zone had no key of its own, so Ktor's default (one key for everyone) made
+ * it 10 a minute for the whole server: ten people signing in at once locked out the eleventh.
  */
 fun Application.configureRateLimiting() {
     install(RateLimit) {
         register(AUTH_RATE_LIMIT) {
             rateLimiter(limit = 10, refillPeriod = 1.minutes)
+            requestKey { call -> call.clientIp() }
         }
         // 10 emails an hour from one IP: enough for a household creating accounts and asking
         // for a new code or two, far too few to be worth abusing (#156).
