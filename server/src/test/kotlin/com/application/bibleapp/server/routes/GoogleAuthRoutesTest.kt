@@ -8,6 +8,7 @@ import com.application.bibleapp.server.models.GoogleSignInRequest
 import com.application.bibleapp.server.models.LoginRequest
 import com.application.bibleapp.server.models.RefreshRequest
 import com.application.bibleapp.server.models.UserResponse
+import com.application.bibleapp.server.models.VerifyEmailRequest
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.bearerAuth
@@ -109,12 +110,12 @@ class GoogleAuthRoutesTest {
     }
 
     /**
-     * Registering never checks that the email is the person's, so whoever set the password may
-     * not own the inbox. Google has checked it, so linking hands the account to the Google
-     * user: the password and every existing session stop working (#142, "pre-hijacking").
+     * An unverified email may not be the password owner's (anyone can register someone else's
+     * address). Google has checked it, so linking hands the account to the Google user: the
+     * password and every existing session stop working (#142, "pre-hijacking").
      */
     @Test
-    fun linkingAPasswordAccountRemovesThePasswordAndItsSessions() = testApplication {
+    fun linkingAnUnverifiedPasswordAccountRemovesThePasswordAndItsSessions() = testApplication {
         val client = googleClient()
         val passwordUser = client.registerTestUser()
         val subject = TestGoogle.newSubject()
@@ -131,6 +132,7 @@ class GoogleAuthRoutesTest {
         val me = client.me(auth.accessToken)
         assertFalse(me.hasPassword)
         assertTrue(me.hasGoogle)
+        assertTrue(me.emailVerified)
 
         // The password no longer signs in.
         val login = client.post("/api/v1/auth/login") {
@@ -143,6 +145,40 @@ class GoogleAuthRoutesTest {
         assertEquals(HttpStatusCode.Unauthorized, client.refresh(passwordUser.auth.refreshToken).status)
         // ...but not the one the Google sign-in just started.
         assertEquals(HttpStatusCode.OK, client.refresh(auth.refreshToken).status)
+    }
+
+    /** A verified email proves the password's owner owns the inbox, as Google does: they're the
+     *  same person, so linking keeps the password and their other sessions (#158). */
+    @Test
+    fun linkingAVerifiedPasswordAccountKeepsThePasswordAndItsSessions() = testApplication {
+        val (client, email) = startWithFakeEmail(TestGoogle.config())
+        val passwordUser = client.registerTestUser()
+        client.post("/api/v1/auth/verify-email/send") { bearerAuth(passwordUser.auth.accessToken) }
+        client.post("/api/v1/auth/verify-email") {
+            contentType(ContentType.Application.Json)
+            bearerAuth(passwordUser.auth.accessToken)
+            setBody(VerifyEmailRequest(email.awaitCodeTo(passwordUser.email)))
+        }
+        val subject = TestGoogle.newSubject()
+
+        val response = client.signInWithGoogle(TestGoogle.idToken(subject, passwordUser.email))
+
+        assertEquals(HttpStatusCode.OK, response.status)
+        val auth = Json.decodeFromString<AuthResponse>(response.bodyAsText())
+        assertEquals(passwordUser.auth.userId, auth.userId)
+        assertEquals(subject, userRow(auth.userId)[Users.googleSubject])
+        val me = client.me(auth.accessToken)
+        assertTrue(me.hasPassword)
+        assertTrue(me.hasGoogle)
+        assertTrue(me.emailVerified)
+
+        // The password still signs in, and the session from before the link still refreshes.
+        val login = client.post("/api/v1/auth/login") {
+            contentType(ContentType.Application.Json)
+            setBody(LoginRequest(passwordUser.email, passwordUser.password))
+        }
+        assertEquals(HttpStatusCode.OK, login.status)
+        assertEquals(HttpStatusCode.OK, client.refresh(passwordUser.auth.refreshToken).status)
     }
 
     @Test

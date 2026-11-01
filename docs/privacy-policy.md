@@ -14,7 +14,7 @@ TreasuredWord is a free Bible reading app made by Daniel Pino, an independent de
 - You can use TreasuredWord without an account. Your highlights, notes, bookmark and settings then stay on your phone.
 - There are no ads, no analytics and no tracking in the app. We don't sell or share your information.
 - If you create an account, we store your email address, a scrambled form of your password (or, if you sign in with Google, your Google account ID instead), and your highlights, notes and reading position so they sync between your devices. You can delete the account and all of it from inside the app, or by emailing us.
-- We email you only when you ask for it, to check that your email address is yours. Those emails are sent through Resend.
+- We email you only when you ask for it: to check that your email address is yours, or to reset a forgotten password. Those emails are sent through Resend.
 - Some content comes from other websites, and some links open other services. Those services see that visit.
 
 ## Using the app without an account
@@ -36,9 +36,14 @@ Creating an account is optional. When you sign up and sync, our server stores:
 
 ### Emails we send
 
-If you create an account with a password, the app offers to check that the email address is yours: we email you a 6-digit code, and you type it into the app. We send this email only when you ask for it in the app, and we never send newsletters or advertising.
+We email you a 6-digit code, which you type into the app, in two cases:
 
-The email is sent through [Resend](https://resend.com), an email delivery service in the United States. To deliver it, Resend receives your email address and the email itself, which contains the code. Resend handles them on our behalf only to deliver the email, and keeps delivery records for a limited time, as described in [Resend's privacy policy](https://resend.com/legal/privacy-policy). If you sign in with Google, your address is already checked by Google and we don't email you.
+- **To check that your email address is yours**, which the app offers after you create an account with a password.
+- **To reset a forgotten password**, when you tap **Forgot password?** on the sign-in screen. Resetting it signs you out on all your devices.
+
+We send these emails only when you ask for them in the app, and we never send newsletters or advertising.
+
+The email is sent through [Resend](https://resend.com), an email delivery service in the United States. To deliver it, Resend receives your email address and the email itself, which contains the code. Resend handles them on our behalf only to deliver the email, and keeps delivery records for a limited time, as described in [Resend's privacy policy](https://resend.com/legal/privacy-policy). If you sign in with Google, your address is already checked by Google, so we don't need to email you to check it.
 
 ### Signing in with Google
 
