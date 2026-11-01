@@ -430,6 +430,17 @@ class BibleViewModel(
     private val _verseOfTheDay = MutableStateFlow<DailyVerseUI?>(null)
     val verseOfTheDay: StateFlow<DailyVerseUI?> = _verseOfTheDay.asStateFlow()
 
+    // Each turns true once its first load has finished, whatever it found. MainActivity keeps the
+    // startup screen up until all three have, so Home opens on the real chapter, highlights and
+    // verse instead of Genesis 1 and an empty list that then jump (#161).
+    private val _startupChapterLoaded = MutableStateFlow(false)
+    private val _startupLibraryLoaded = MutableStateFlow(false)
+    private val _startupVerseOfTheDayLoaded = MutableStateFlow(false)
+    val isStartupContentReady: StateFlow<Boolean> =
+        combine(_startupChapterLoaded, _startupLibraryLoaded, _startupVerseOfTheDayLoaded) { chapter, library, verse ->
+            chapter && library && verse
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
     private val _notificationEnabled = MutableStateFlow(repository.isNotificationEnabled())
     val notificationEnabled: StateFlow<Boolean> = _notificationEnabled.asStateFlow()
 
@@ -571,6 +582,7 @@ class BibleViewModel(
                 .mapCatching { ref -> resolveVerse(ref) ?: error("Reference not found: $ref") }
                 .getOrNull()
             _verseOfTheDay.value = remoteVerse ?: resolveVerse(VerseOfTheDay.forToday())
+            _startupVerseOfTheDayLoaded.value = true
         }
     }
 
@@ -613,6 +625,7 @@ class BibleViewModel(
             }
             _highlightsInChapter.value = repository.getHighlightsForChapter(bookId, chapterId)
             _notesInChapter.value = repository.getNotesForChapter(bookId, chapterId)
+            _startupChapterLoaded.value = true
         }
     }
 
@@ -948,6 +961,7 @@ class BibleViewModel(
             _libraryMissingVersions.value = missingVersions
             _libraryHighlights.value = highlights
             _libraryNotes.value = notes
+            _startupLibraryLoaded.value = true
         }
     }
 
