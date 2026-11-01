@@ -1,8 +1,12 @@
 package com.application.bibleapp.server.plugins
 
+import com.application.bibleapp.server.auth.EmailCodeStore
 import com.application.bibleapp.server.auth.GoogleIdTokenVerifier
+import com.application.bibleapp.server.auth.getJwtConfig
+import com.application.bibleapp.server.email.EmailSender
 import com.application.bibleapp.server.models.ErrorResponse
 import com.application.bibleapp.server.routes.authRoutes
+import com.application.bibleapp.server.routes.emailRoutes
 import com.application.bibleapp.server.routes.syncRoutes
 import com.application.bibleapp.server.routes.userRoutes
 import io.ktor.http.HttpStatusCode
@@ -14,7 +18,7 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
 
-fun Application.configureRouting() {
+fun Application.configureRouting(emailSender: EmailSender?) {
     install(StatusPages) {
         exception<Throwable> { call, cause ->
             call.respond(HttpStatusCode.InternalServerError, ErrorResponse(
@@ -25,6 +29,8 @@ fun Application.configureRouting() {
     }
 
     val googleVerifier = GoogleIdTokenVerifier.fromConfig(environment.config)
+    // Codes are HMAC'd with the JWT secret, which lives outside the database (#156).
+    val emailCodes = EmailCodeStore(getJwtConfig().secret)
 
     routing {
         get("/health") {
@@ -33,6 +39,7 @@ fun Application.configureRouting() {
 
         route("/api/v1") {
             authRoutes(googleVerifier)
+            emailRoutes(emailSender, emailCodes)
             userRoutes(googleVerifier)
             syncRoutes()
         }
