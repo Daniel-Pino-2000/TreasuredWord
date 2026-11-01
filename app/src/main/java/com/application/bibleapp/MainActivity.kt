@@ -4,6 +4,7 @@ import android.content.Intent
 import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
+import android.os.SystemClock
 import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -53,6 +54,7 @@ import androidx.core.view.WindowCompat
 import kotlinx.coroutines.flow.collectLatest
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
@@ -94,14 +96,30 @@ import com.application.bibleapp.utils.isSpanishUi
  *  chrome commits to hiding or showing — see the effect in [MainActivity.onCreate]. */
 private const val SCROLL_COMMIT_DP = 120
 
+/** The longest the startup screen waits for Home's content (#161), so a slow disk or a slow
+ *  verse-of-the-day fetch never leaves the logo up; Home then fills in as it loads. */
+internal const val STARTUP_SCREEN_MAX_WAIT_MS = 1_000L
+
+/** Whether the startup screen stays up [elapsedMs] after launch — see [STARTUP_SCREEN_MAX_WAIT_MS]. */
+internal fun keepStartupScreen(contentReady: Boolean, elapsedMs: Long): Boolean =
+    !contentReady && elapsedMs < STARTUP_SCREEN_MAX_WAIT_MS
+
 /** An AppCompatActivity (not a plain ComponentActivity) so the in-app language applies below
  *  Android 13 too — see [com.application.bibleapp.utils.AppLanguage]. */
 class MainActivity : AppCompatActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         // Before super.onCreate: swaps the startup theme (#135) for the app's own.
-        installSplashScreen()
+        val startupScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
+        // The same instance setContent's viewModel() returns (same owner, same default key).
+        val startupViewModel = ViewModelProvider(this, BibleViewModelFactory(context = this))[BibleViewModel::class.java]
+        // Home's first frame would otherwise show Genesis 1 and no highlights for a moment, then
+        // jump to the real ones (#161). Checked on every frame until it lets go.
+        val launchedAt = SystemClock.uptimeMillis()
+        startupScreen.setKeepOnScreenCondition {
+            keepStartupScreen(startupViewModel.isStartupContentReady.value, SystemClock.uptimeMillis() - launchedAt)
+        }
         enableEdgeToEdge()
         // Names the channel (shown in the system's notification settings) in the app language.
         createDailyVerseNotificationChannel(this)
