@@ -220,6 +220,38 @@
     <string name="auth_error_status">Terjadi kesalahan (%1$d)</string>
     <string name="auth_error_unreachable">Tidak dapat menghubungi server. Periksa koneksi Anda, lalu coba lagi.</string>
     <string name="auth_error_server_slow">Server terlalu lama merespons. Coba lagi dalam satu menit.</string>
+    <!-- Email verification and password reset (#159, #160) -->
+    <string name="verify_email_title">Periksa email Anda</string>
+    <!-- %1$s is the account's email address -->
+    <string name="verify_email_message">Kami telah mengirim kode 6 digit ke %1$s. Masukkan di sini untuk mengonfirmasi bahwa email ini milik Anda.</string>
+    <!-- %1$s is the account's email address -->
+    <string name="verify_email_sending">Mengirim kode ke %1$s…</string>
+    <string name="verify_email_submit">Verifikasi</string>
+    <string name="verify_email_later">Nanti</string>
+    <string name="verify_email_done">Email terverifikasi</string>
+    <string name="verify_email_row_title">Verifikasi email Anda</string>
+    <string name="verify_email_row_subtitle">Kami akan mengirim kode untuk mengonfirmasi bahwa alamat ini milik Anda</string>
+    <string name="email_code_label">Kode 6 digit</string>
+    <string name="email_code_resend">Kirim kode baru</string>
+    <!-- %d is the number of seconds left -->
+    <plurals name="email_code_resend_wait">
+        <item quantity="other">Kirim kode baru dalam %d detik</item>
+    </plurals>
+    <string name="email_code_error_invalid">Kode salah atau sudah tidak berlaku. Periksa kembali, atau kirim kode baru.</string>
+    <string name="email_code_error_too_many_emails">Terlalu banyak kode yang dikirim. Coba lagi dalam satu jam.</string>
+    <string name="email_code_error_unavailable">Email tidak dapat dikirim saat ini. Coba lagi nanti.</string>
+    <string name="auth_error_too_many_attempts">Terlalu banyak percobaan. Tunggu satu menit, lalu coba lagi.</string>
+    <string name="login_forgot_password">Lupa sandi?</string>
+    <string name="password_reset_title">Atur ulang sandi Anda</string>
+    <string name="password_reset_message">Masukkan email akun Anda, dan kami akan mengirim kode untuk membuat sandi baru.</string>
+    <string name="password_reset_send">Kirim kode</string>
+    <!-- %1$s is the email address the person typed -->
+    <string name="password_reset_code_sent">Jika ada akun untuk %1$s, kami telah mengirim kode ke sana. Mungkin perlu satu menit hingga kode tiba.</string>
+    <string name="password_reset_new_password">Sandi baru</string>
+    <string name="password_reset_submit">Atur ulang sandi</string>
+    <string name="password_reset_change_email">Gunakan email lain</string>
+    <string name="password_reset_signs_out">Mengatur ulang sandi akan membuat Anda keluar dari semua perangkat.</string>
+    <string name="password_reset_done">Sandi telah diubah. Masuk dengan sandi baru Anda.</string>
     <string name="server_waking_hint">Server mungkin sedang dinyalakan. Ini bisa memakan waktu hingga satu menit.</string>
 
     <string name="settings_app_version">%1$s · Versi %2$s</string>

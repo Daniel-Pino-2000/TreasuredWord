@@ -220,6 +220,38 @@
     <string name="auth_error_status">문제가 발생했어요 (%1$d)</string>
     <string name="auth_error_unreachable">서버에 연결할 수 없어요. 연결 상태를 확인한 뒤 다시 시도하세요.</string>
     <string name="auth_error_server_slow">서버 응답이 너무 늦어요. 1분 뒤에 다시 시도하세요.</string>
+    <!-- Email verification and password reset (#159, #160) -->
+    <string name="verify_email_title">이메일을 확인하세요</string>
+    <!-- %1$s is the account's email address -->
+    <string name="verify_email_message">%1$s(으)로 6자리 코드를 보냈어요. 이 이메일이 본인 것인지 확인하려면 여기에 입력하세요.</string>
+    <!-- %1$s is the account's email address -->
+    <string name="verify_email_sending">%1$s(으)로 코드를 보내는 중…</string>
+    <string name="verify_email_submit">인증</string>
+    <string name="verify_email_later">나중에</string>
+    <string name="verify_email_done">이메일 인증 완료</string>
+    <string name="verify_email_row_title">이메일 인증하기</string>
+    <string name="verify_email_row_subtitle">이 주소가 본인 것인지 확인할 수 있도록 코드를 보내 드려요</string>
+    <string name="email_code_label">6자리 코드</string>
+    <string name="email_code_resend">새 코드 보내기</string>
+    <!-- %d is the number of seconds left -->
+    <plurals name="email_code_resend_wait">
+        <item quantity="other">%d초 후에 새 코드 보내기</item>
+    </plurals>
+    <string name="email_code_error_invalid">코드가 틀렸거나 더 이상 사용할 수 없어요. 다시 확인하거나 새 코드를 받으세요.</string>
+    <string name="email_code_error_too_many_emails">코드를 너무 많이 보냈어요. 1시간 뒤에 다시 시도하세요.</string>
+    <string name="email_code_error_unavailable">지금은 이메일을 보낼 수 없어요. 나중에 다시 시도하세요.</string>
+    <string name="auth_error_too_many_attempts">시도 횟수가 너무 많아요. 1분 뒤에 다시 시도하세요.</string>
+    <string name="login_forgot_password">비밀번호를 잊으셨나요?</string>
+    <string name="password_reset_title">비밀번호 재설정</string>
+    <string name="password_reset_message">계정 이메일을 입력하면 새 비밀번호를 설정할 수 있는 코드를 보내 드려요.</string>
+    <string name="password_reset_send">코드 보내기</string>
+    <!-- %1$s is the email address the person typed -->
+    <string name="password_reset_code_sent">%1$s 계정이 있다면 코드를 보냈어요. 도착하는 데 1분 정도 걸릴 수 있어요.</string>
+    <string name="password_reset_new_password">새 비밀번호</string>
+    <string name="password_reset_submit">비밀번호 재설정</string>
+    <string name="password_reset_change_email">다른 이메일 사용</string>
+    <string name="password_reset_signs_out">비밀번호를 재설정하면 모든 기기에서 로그아웃돼요.</string>
+    <string name="password_reset_done">비밀번호를 변경했어요. 새 비밀번호로 로그인하세요.</string>
     <string name="server_waking_hint">서버가 시작되는 중일 수 있어요. 최대 1분 정도 걸릴 수 있어요.</string>
 
     <string name="settings_app_version">%1$s · 버전 %2$s</string>

@@ -228,6 +228,39 @@
     <string name="auth_error_status">Hitilafu fulani imetokea (%1$d)</string>
     <string name="auth_error_unreachable">Imeshindwa kufikia seva. Angalia muunganisho wako kisha ujaribu tena.</string>
     <string name="auth_error_server_slow">Seva inachukua muda mrefu kujibu. Jaribu tena baada ya dakika moja.</string>
+    <!-- Email verification and password reset (#159, #160) -->
+    <string name="verify_email_title">Angalia barua pepe yako</string>
+    <!-- %1$s is the account's email address -->
+    <string name="verify_email_message">Tumetuma msimbo wa tarakimu 6 kwa %1$s. Uweke hapa ili kuthibitisha kuwa barua pepe hii ni yako.</string>
+    <!-- %1$s is the account's email address -->
+    <string name="verify_email_sending">Inatuma msimbo kwa %1$s…</string>
+    <string name="verify_email_submit">Thibitisha</string>
+    <string name="verify_email_later">Baadaye</string>
+    <string name="verify_email_done">Barua pepe imethibitishwa</string>
+    <string name="verify_email_row_title">Thibitisha barua pepe yako</string>
+    <string name="verify_email_row_subtitle">Tutakutumia msimbo ili kuthibitisha kuwa anwani hii ni yako</string>
+    <string name="email_code_label">Msimbo wa tarakimu 6</string>
+    <string name="email_code_resend">Tuma msimbo mpya</string>
+    <!-- %d is the number of seconds left -->
+    <plurals name="email_code_resend_wait">
+        <item quantity="one">Tuma msimbo mpya baada ya sekunde %d</item>
+        <item quantity="other">Tuma msimbo mpya baada ya sekunde %d</item>
+    </plurals>
+    <string name="email_code_error_invalid">Msimbo si sahihi au haufanyi kazi tena. Uangalie, au utume mpya.</string>
+    <string name="email_code_error_too_many_emails">Misimbo mingi mno imetumwa. Jaribu tena baada ya saa moja.</string>
+    <string name="email_code_error_unavailable">Imeshindwa kutuma barua pepe sasa hivi. Jaribu tena baadaye.</string>
+    <string name="auth_error_too_many_attempts">Majaribio mengi mno. Subiri dakika moja kisha ujaribu tena.</string>
+    <string name="login_forgot_password">Umesahau nenosiri?</string>
+    <string name="password_reset_title">Weka upya nenosiri lako</string>
+    <string name="password_reset_message">Weka barua pepe ya akaunti yako, nasi tutakutumia msimbo wa kuweka nenosiri jipya.</string>
+    <string name="password_reset_send">Tuma msimbo</string>
+    <!-- %1$s is the email address the person typed -->
+    <string name="password_reset_code_sent">Ikiwa kuna akaunti ya %1$s, tumeitumia msimbo. Huenda ukachukua dakika moja kufika.</string>
+    <string name="password_reset_new_password">Nenosiri jipya</string>
+    <string name="password_reset_submit">Weka upya nenosiri</string>
+    <string name="password_reset_change_email">Tumia barua pepe nyingine</string>
+    <string name="password_reset_signs_out">Ukiweka upya nenosiri, utaondolewa kwenye vifaa vyako vyote.</string>
+    <string name="password_reset_done">Nenosiri limebadilishwa. Ingia kwa nenosiri lako jipya.</string>
     <string name="server_waking_hint">Huenda seva inawashwa. Hii inaweza kuchukua hadi dakika moja.</string>
 
     <string name="settings_app_version">%1$s · Toleo %2$s</string>

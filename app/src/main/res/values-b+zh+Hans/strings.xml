@@ -219,6 +219,38 @@
     <string name="auth_error_status">出了点问题（%1$d）</string>
     <string name="auth_error_unreachable">无法连接服务器。请检查网络后重试。</string>
     <string name="auth_error_server_slow">服务器响应时间过长。请一分钟后重试。</string>
+    <!-- Email verification and password reset (#159, #160) -->
+    <string name="verify_email_title">查看你的邮箱</string>
+    <!-- %1$s is the account's email address -->
+    <string name="verify_email_message">我们已向 %1$s 发送了一个 6 位数验证码。请在此输入，以确认该邮箱属于你。</string>
+    <!-- %1$s is the account's email address -->
+    <string name="verify_email_sending">正在向 %1$s 发送验证码…</string>
+    <string name="verify_email_submit">验证</string>
+    <string name="verify_email_later">以后再说</string>
+    <string name="verify_email_done">邮箱已验证</string>
+    <string name="verify_email_row_title">验证你的邮箱</string>
+    <string name="verify_email_row_subtitle">我们会向你发送验证码，确认该地址属于你</string>
+    <string name="email_code_label">6 位数验证码</string>
+    <string name="email_code_resend">重新发送验证码</string>
+    <!-- %d is the number of seconds left -->
+    <plurals name="email_code_resend_wait">
+        <item quantity="other">%d 秒后可重新发送</item>
+    </plurals>
+    <string name="email_code_error_invalid">验证码错误或已失效。请检查，或重新获取。</string>
+    <string name="email_code_error_too_many_emails">发送的验证码过多。请一小时后重试。</string>
+    <string name="email_code_error_unavailable">暂时无法发送邮件。请稍后重试。</string>
+    <string name="auth_error_too_many_attempts">尝试次数过多。请等待一分钟后重试。</string>
+    <string name="login_forgot_password">忘记密码？</string>
+    <string name="password_reset_title">重置密码</string>
+    <string name="password_reset_message">输入你的账号邮箱，我们会发送验证码，让你设置新密码。</string>
+    <string name="password_reset_send">发送验证码</string>
+    <!-- %1$s is the email address the person typed -->
+    <string name="password_reset_code_sent">如果 %1$s 有对应的账号，我们已向其发送验证码。可能需要一分钟才能收到。</string>
+    <string name="password_reset_new_password">新密码</string>
+    <string name="password_reset_submit">重置密码</string>
+    <string name="password_reset_change_email">使用其他邮箱</string>
+    <string name="password_reset_signs_out">重置密码后，你将在所有设备上退出登录。</string>
+    <string name="password_reset_done">密码已更改。请使用新密码登录。</string>
     <string name="server_waking_hint">服务器可能正在启动，最多可能需要一分钟。</string>
 
     <string name="settings_app_version">%1$s · 版本 %2$s</string>

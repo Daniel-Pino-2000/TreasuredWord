@@ -31,6 +31,30 @@ sealed interface SignOutState {
 /** How the signed-in account can sign in, from /users/me (#112). Null fields: not known yet. */
 data class SignInMethods(val hasPassword: Boolean?, val hasGoogle: Boolean?)
 
+/** Seconds before "Send a new code" works again, so an impatient tap doesn't use up the
+ *  server's limit of 5 codes an hour (#159). */
+const val RESEND_CODE_WAIT_SECONDS = 60
+
+/** The "Check your email" sheet (#159). [resendAt] is when "Send a new code" works again, in
+ *  [System.currentTimeMillis] time. */
+data class VerifyEmailState(
+    val isOpen: Boolean = false,
+    val isSending: Boolean = false,
+    val isVerifying: Boolean = false,
+    val error: UiText? = null,
+    val resendAt: Long = 0L
+)
+
+/** The "Forgot password?" sheet (#160): first the email, then the code and new password. */
+data class PasswordResetState(
+    val isOpen: Boolean = false,
+    val codeSent: Boolean = false,
+    val email: String = "",
+    val isBusy: Boolean = false,
+    val error: UiText? = null,
+    val resendAt: Long = 0L
+)
+
 /**
  * Backs the login/register screens and the account section in Settings. [isLoggedIn] is
  * mirrored here (not read fresh from AuthRepository each time) so Compose can actually
@@ -54,6 +78,25 @@ class AuthViewModel(
 
     private val _signInMethods = MutableStateFlow(SignInMethods(hasPassword = null, hasGoogle = null))
     val signInMethods: StateFlow<SignInMethods> = _signInMethods.asStateFlow()
+
+    /** Whether the account's email is verified, from /users/me (#159). Null: not known yet, or
+     *  a server from before verification. */
+    private val _emailVerified = MutableStateFlow<Boolean?>(null)
+    val emailVerified: StateFlow<Boolean?> = _emailVerified.asStateFlow()
+
+    private val _verifyEmail = MutableStateFlow(VerifyEmailState())
+    val verifyEmail: StateFlow<VerifyEmailState> = _verifyEmail.asStateFlow()
+
+    private val _passwordReset = MutableStateFlow(PasswordResetState())
+    val passwordReset: StateFlow<PasswordResetState> = _passwordReset.asStateFlow()
+
+    private val _passwordResetDone = Channel<String>(Channel.BUFFERED)
+    /** The email whose password was just reset, so the sign-in screen can fill it in (#160). */
+    val passwordResetDone: Flow<String> = _passwordResetDone.receiveAsFlow()
+
+    private val _messages = Channel<UiText>(Channel.BUFFERED)
+    /** Snackbar messages for the app's main snackbar, e.g. "Email verified" (#159). */
+    val messages: Flow<UiText> = _messages.receiveAsFlow()
 
     private val _errorMessage = MutableStateFlow<UiText?>(null)
     val errorMessage: StateFlow<UiText?> = _errorMessage.asStateFlow()
@@ -85,7 +128,123 @@ class AuthViewModel(
     }
 
     fun register(email: String, password: String) {
-        runAuthAction { authRepository.register(email, password) }
+        // The server doesn't email a code by itself; the app asks right after (decision 22).
+        // The sheet opens only once the email is on its way, so a server that can't send email
+        // yet doesn't greet every new account with an error. Settings keeps offering it.
+        runAuthAction(onSuccess = { sendVerificationCode(openWhenSent = true) }) {
+            authRepository.register(email, password)
+        }
+    }
+
+    /** Settings' "Verify your email" row (#159): opens the sheet and sends a code, unless one
+     *  went out less than a minute ago. */
+    fun openVerifyEmail() {
+        _verifyEmail.value = _verifyEmail.value.copy(isOpen = true, error = null)
+        if (System.currentTimeMillis() >= _verifyEmail.value.resendAt) sendVerificationCode()
+    }
+
+    fun dismissVerifyEmail() {
+        _verifyEmail.value = _verifyEmail.value.copy(isOpen = false, error = null)
+    }
+
+    fun clearVerifyEmailError() {
+        _verifyEmail.value = _verifyEmail.value.copy(error = null)
+    }
+
+    /** "Send a new code" in the sheet, and the first code after Create account. */
+    fun sendVerificationCode(openWhenSent: Boolean = false) {
+        if (_verifyEmail.value.isSending) return
+        _verifyEmail.value = _verifyEmail.value.copy(isSending = true, error = null)
+        viewModelScope.launch {
+            authRepository.sendVerificationCode().fold(
+                onSuccess = {
+                    _verifyEmail.value = _verifyEmail.value.copy(
+                        isOpen = _verifyEmail.value.isOpen || openWhenSent,
+                        isSending = false,
+                        resendAt = System.currentTimeMillis() + RESEND_CODE_WAIT_SECONDS * 1000L
+                    )
+                },
+                onFailure = {
+                    // Verified meanwhile (another device): nothing left to do.
+                    if ((it as? AuthException)?.error == AuthError.EmailAlreadyVerified) {
+                        onEmailVerified()
+                    } else {
+                        _verifyEmail.value = _verifyEmail.value.copy(isSending = false, error = errorText(it))
+                    }
+                }
+            )
+        }
+    }
+
+    fun verifyEmailCode(code: String) {
+        if (_verifyEmail.value.isVerifying) return
+        _verifyEmail.value = _verifyEmail.value.copy(isVerifying = true, error = null)
+        viewModelScope.launch {
+            authRepository.verifyEmail(code).fold(
+                onSuccess = { onEmailVerified() },
+                onFailure = { _verifyEmail.value = _verifyEmail.value.copy(isVerifying = false, error = errorText(it)) }
+            )
+        }
+    }
+
+    private suspend fun onEmailVerified() {
+        _emailVerified.value = true
+        _verifyEmail.value = VerifyEmailState()
+        _messages.send(UiText.Res(R.string.verify_email_done))
+    }
+
+    /** "Forgot password?" on the sign-in screen (#160), starting from the email typed there. */
+    fun openPasswordReset(email: String) {
+        _passwordReset.value = PasswordResetState(isOpen = true, email = email.trim())
+    }
+
+    fun dismissPasswordReset() {
+        _passwordReset.value = _passwordReset.value.copy(isOpen = false, error = null)
+    }
+
+    fun clearPasswordResetError() {
+        _passwordReset.value = _passwordReset.value.copy(error = null)
+    }
+
+    /** Back from the code step to change the email. */
+    fun changePasswordResetEmail() {
+        _passwordReset.value = _passwordReset.value.copy(codeSent = false, error = null)
+    }
+
+    fun sendPasswordResetCode(email: String) {
+        if (_passwordReset.value.isBusy) return
+        val trimmed = email.trim()
+        _passwordReset.value = _passwordReset.value.copy(email = trimmed, isBusy = true, error = null)
+        viewModelScope.launch {
+            authRepository.sendPasswordResetCode(trimmed).fold(
+                // The server says the same for every email, so this does too: it moves on to
+                // the code step whether or not an account exists.
+                onSuccess = {
+                    _passwordReset.value = _passwordReset.value.copy(
+                        codeSent = true,
+                        isBusy = false,
+                        resendAt = System.currentTimeMillis() + RESEND_CODE_WAIT_SECONDS * 1000L
+                    )
+                },
+                onFailure = { _passwordReset.value = _passwordReset.value.copy(isBusy = false, error = errorText(it)) }
+            )
+        }
+    }
+
+    fun resetPassword(code: String, newPassword: String) {
+        if (_passwordReset.value.isBusy) return
+        val email = _passwordReset.value.email
+        _passwordReset.value = _passwordReset.value.copy(isBusy = true, error = null)
+        viewModelScope.launch {
+            authRepository.resetPassword(email, code, newPassword).fold(
+                onSuccess = {
+                    _passwordReset.value = PasswordResetState()
+                    _passwordResetDone.send(email)
+                    _messages.send(UiText.Res(R.string.password_reset_done))
+                },
+                onFailure = { _passwordReset.value = _passwordReset.value.copy(isBusy = false, error = errorText(it)) }
+            )
+        }
     }
 
     fun login(email: String, password: String) {
@@ -127,6 +286,7 @@ class AuthViewModel(
             _isLoggedIn.value = false
             _email.value = null
             _signInMethods.value = SignInMethods(hasPassword = null, hasGoogle = null)
+            forgetVerification()
             _signOutState.value = SignOutState.Idle
             onSignedOut()
             authRepository.forgetGoogleSignIn()
@@ -161,6 +321,7 @@ class AuthViewModel(
                     _isLoggedIn.value = false
                     _email.value = null
                     _signInMethods.value = SignInMethods(hasPassword = null, hasGoogle = null)
+                    forgetVerification()
                     onResult(null)
                 },
                 onFailure = {
@@ -179,6 +340,12 @@ class AuthViewModel(
         _errorMessage.value = null
     }
 
+    /** The next account starts from scratch, its own resend wait included. */
+    private fun forgetVerification() {
+        _emailVerified.value = null
+        _verifyEmail.value = VerifyEmailState()
+    }
+
     fun refreshCurrentUser() {
         viewModelScope.launch {
             authRepository.getCurrentUser().fold(
@@ -187,6 +354,7 @@ class AuthViewModel(
                 onSuccess = { user ->
                     _email.value = authRepository.savedEmail
                     _signInMethods.value = SignInMethods(user.hasPassword, user.hasGoogle)
+                    _emailVerified.value = user.emailVerified
                 },
                 onFailure = {
                     // A failed fetch here often means the access token expired and the
@@ -201,7 +369,11 @@ class AuthViewModel(
         }
     }
 
-    private fun runAuthAction(google: Boolean = false, action: suspend () -> Result<Unit>) {
+    private fun runAuthAction(
+        google: Boolean = false,
+        onSuccess: () -> Unit = {},
+        action: suspend () -> Result<Unit>
+    ) {
         _errorMessage.value = null
         _isLoading.value = true
         _isGoogleLoading.value = google
@@ -216,7 +388,9 @@ class AuthViewModel(
                 onSuccess = {
                     _isLoggedIn.value = true
                     _email.value = authRepository.savedEmail
+                    forgetVerification()
                     refreshCurrentUser()
+                    onSuccess()
                     _signedIn.send(authRepository.savedEmail)
                 },
                 onFailure = { _errorMessage.value = errorText(it) }

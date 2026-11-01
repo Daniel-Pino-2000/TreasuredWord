@@ -7,6 +7,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Login
 import androidx.compose.material.icons.automirrored.outlined.Logout
 import androidx.compose.material.icons.outlined.DeleteForever
+import androidx.compose.material.icons.outlined.MarkEmailUnread
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.AlertDialog
@@ -57,6 +58,7 @@ internal fun AccountSettings(
     val email by authViewModel.email.collectAsState()
     val signOutState by authViewModel.signOutState.collectAsState()
     val signInMethods by authViewModel.signInMethods.collectAsState()
+    val emailVerified by authViewModel.emailVerified.collectAsState()
     var showDeleteDialog by remember { mutableStateOf(false) }
     // Sign-out removes the account's highlights and notes from this device (#81); the reader
     // and Library drop them straight away.
@@ -79,6 +81,18 @@ internal fun AccountSettings(
                 icon = Icons.Outlined.Person
             )
             GroupedDivider()
+            // Until the email is verified (#159), accounts from before verification included.
+            // Only for password accounts: Google already verified the others' emails. Hidden
+            // while unknown (offline, or a server from before verification).
+            if (signInMethods.hasPassword == true && emailVerified == false) {
+                GroupedRow(
+                    title = stringResource(R.string.verify_email_row_title),
+                    subtitle = stringResource(R.string.verify_email_row_subtitle),
+                    icon = Icons.Outlined.MarkEmailUnread,
+                    onClick = authViewModel::openVerifyEmail
+                )
+                GroupedDivider()
+            }
             val isUploading = signOutState == SignOutState.Uploading
             GroupedRow(
                 title = stringResource(if (isUploading) R.string.account_signing_out else R.string.account_sign_out),
