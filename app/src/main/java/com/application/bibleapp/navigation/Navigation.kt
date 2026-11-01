@@ -15,6 +15,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.application.bibleapp.R
+import com.application.bibleapp.components.VerifyEmailSheet
 import com.application.bibleapp.data.repository.BibleRepository
 import com.application.bibleapp.screens.BibleView
 import com.application.bibleapp.screens.BookPickerView
@@ -65,6 +66,14 @@ fun Navigation(
             }
         }
     }
+    LaunchedEffect(authViewModel) {
+        authViewModel.messages.collect { bibleViewModel.showMessage(it) }
+    }
+
+    // "Check your email" (#159) shows over whatever screen is open: after Create account that's
+    // wherever sign-in started, and otherwise Settings.
+    val verifyEmail by authViewModel.verifyEmail.collectAsState()
+    if (verifyEmail.isOpen) VerifyEmailSheet(authViewModel)
 
     NavHost(
         navController = navController,

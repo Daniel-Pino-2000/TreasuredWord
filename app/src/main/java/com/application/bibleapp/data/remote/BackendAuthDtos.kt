@@ -33,15 +33,29 @@ data class AuthResponseDto(
     val refreshToken: String
 )
 
-/** [hasPassword]/[hasGoogle] default to "unknown" for a server from before Google sign-in (#112). */
+/** [hasPassword]/[hasGoogle] default to "unknown" for a server from before Google sign-in (#112),
+ *  and [emailVerified] for one from before email verification (#159). */
 @Serializable
 data class UserResponseDto(
     val id: String,
     val email: String,
     val createdAt: String,
     val hasPassword: Boolean? = null,
-    val hasGoogle: Boolean? = null
+    val hasGoogle: Boolean? = null,
+    val emailVerified: Boolean? = null
 )
+
+/** The 6 digits from the verification email (#159). */
+@Serializable
+data class VerifyEmailRequestDto(val code: String)
+
+/** Forgot password, step one (#160). */
+@Serializable
+data class PasswordResetSendRequestDto(val email: String)
+
+/** Forgot password, step two (#160). */
+@Serializable
+data class PasswordResetRequestDto(val email: String, val code: String, val newPassword: String)
 
 /** One of the two: the password, or a fresh Google ID token (#112). */
 @Serializable

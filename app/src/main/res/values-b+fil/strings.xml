@@ -229,6 +229,39 @@
     <string name="auth_error_status">Nagkaproblema (%1$d)</string>
     <string name="auth_error_unreachable">Hindi maabot ang server. Tingnan ang iyong koneksyon at subukan ulit.</string>
     <string name="auth_error_server_slow">Masyadong matagal sumagot ang server. Subukan ulit pagkalipas ng isang minuto.</string>
+    <!-- Email verification and password reset (#159, #160) -->
+    <string name="verify_email_title">Tingnan ang iyong email</string>
+    <!-- %1$s is the account's email address -->
+    <string name="verify_email_message">Nagpadala kami ng 6-digit na code sa %1$s. Ilagay ito rito para makumpirmang sa iyo ang email na ito.</string>
+    <!-- %1$s is the account's email address -->
+    <string name="verify_email_sending">Ipinapadala ang code sa %1$s…</string>
+    <string name="verify_email_submit">I-verify</string>
+    <string name="verify_email_later">Mamaya na</string>
+    <string name="verify_email_done">Na-verify na ang email</string>
+    <string name="verify_email_row_title">I-verify ang iyong email</string>
+    <string name="verify_email_row_subtitle">Magpapadala kami ng code para makumpirmang sa iyo ang address na ito</string>
+    <string name="email_code_label">6-digit na code</string>
+    <string name="email_code_resend">Magpadala ng bagong code</string>
+    <!-- %d is the number of seconds left -->
+    <plurals name="email_code_resend_wait">
+        <item quantity="one">Magpadala ng bagong code pagkalipas ng %d segundo</item>
+        <item quantity="other">Magpadala ng bagong code pagkalipas ng %d segundo</item>
+    </plurals>
+    <string name="email_code_error_invalid">Mali o hindi na gumagana ang code. Tingnan ito, o magpadala ng bago.</string>
+    <string name="email_code_error_too_many_emails">Masyadong maraming code na ang naipadala. Subukan ulit pagkalipas ng isang oras.</string>
+    <string name="email_code_error_unavailable">Hindi maipadala ang email ngayon. Subukan ulit mamaya.</string>
+    <string name="auth_error_too_many_attempts">Masyadong maraming pagsubok. Maghintay ng isang minuto at subukan ulit.</string>
+    <string name="login_forgot_password">Nakalimutan ang password?</string>
+    <string name="password_reset_title">I-reset ang iyong password</string>
+    <string name="password_reset_message">Ilagay ang email ng iyong account, at padadalhan ka namin ng code para makapagtakda ng bagong password.</string>
+    <string name="password_reset_send">Ipadala ang code</string>
+    <!-- %1$s is the email address the person typed -->
+    <string name="password_reset_code_sent">Kung may account para sa %1$s, pinadalhan namin ito ng code. Maaaring abutin ng isang minuto bago ito dumating.</string>
+    <string name="password_reset_new_password">Bagong password</string>
+    <string name="password_reset_submit">I-reset ang password</string>
+    <string name="password_reset_change_email">Gumamit ng ibang email</string>
+    <string name="password_reset_signs_out">Kapag ni-reset mo ang password, masa-sign out ka sa lahat ng iyong device.</string>
+    <string name="password_reset_done">Napalitan na ang password. Mag-sign in gamit ang bago mong password.</string>
     <string name="server_waking_hint">Maaaring nagsisimula pa ang server. Puwedeng umabot ito nang hanggang isang minuto.</string>
 
     <string name="settings_app_version">%1$s · Bersyon %2$s</string>

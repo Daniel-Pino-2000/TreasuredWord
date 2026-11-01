@@ -236,6 +236,40 @@
     <string name="auth_error_status">Algo deu errado (%1$d)</string>
     <string name="auth_error_unreachable">Não foi possível acessar o servidor. Verifique sua conexão e tente de novo.</string>
     <string name="auth_error_server_slow">O servidor está demorando demais para responder. Tente de novo em um minuto.</string>
+    <!-- Email verification and password reset (#159, #160) -->
+    <string name="verify_email_title">Confira seu e-mail</string>
+    <!-- %1$s is the account's email address -->
+    <string name="verify_email_message">Enviamos um código de 6 dígitos para %1$s. Digite-o aqui para confirmar que este e-mail é seu.</string>
+    <!-- %1$s is the account's email address -->
+    <string name="verify_email_sending">Enviando um código para %1$s…</string>
+    <string name="verify_email_submit">Verificar</string>
+    <string name="verify_email_later">Mais tarde</string>
+    <string name="verify_email_done">E-mail verificado</string>
+    <string name="verify_email_row_title">Verifique seu e-mail</string>
+    <string name="verify_email_row_subtitle">Vamos enviar um código para confirmar que este endereço é seu</string>
+    <string name="email_code_label">Código de 6 dígitos</string>
+    <string name="email_code_resend">Enviar um novo código</string>
+    <!-- %d is the number of seconds left -->
+    <plurals name="email_code_resend_wait">
+        <item quantity="one">Enviar um novo código em %d segundo</item>
+        <item quantity="many">Enviar um novo código em %d segundos</item>
+        <item quantity="other">Enviar um novo código em %d segundos</item>
+    </plurals>
+    <string name="email_code_error_invalid">O código está errado ou não vale mais. Confira ou peça um novo.</string>
+    <string name="email_code_error_too_many_emails">Foram enviados códigos demais. Tente de novo em uma hora.</string>
+    <string name="email_code_error_unavailable">Não foi possível enviar o e-mail agora. Tente de novo mais tarde.</string>
+    <string name="auth_error_too_many_attempts">Tentativas demais. Espere um minuto e tente de novo.</string>
+    <string name="login_forgot_password">Esqueceu a senha?</string>
+    <string name="password_reset_title">Redefina sua senha</string>
+    <string name="password_reset_message">Digite o e-mail da sua conta e vamos enviar um código para você criar uma nova senha.</string>
+    <string name="password_reset_send">Enviar código</string>
+    <!-- %1$s is the email address the person typed -->
+    <string name="password_reset_code_sent">Se houver uma conta para %1$s, enviamos um código para ela. Pode levar um minuto para chegar.</string>
+    <string name="password_reset_new_password">Nova senha</string>
+    <string name="password_reset_submit">Redefinir senha</string>
+    <string name="password_reset_change_email">Usar outro e-mail</string>
+    <string name="password_reset_signs_out">Redefinir a senha faz você sair em todos os seus dispositivos.</string>
+    <string name="password_reset_done">Senha alterada. Entre com a nova senha.</string>
     <string name="server_waking_hint">O servidor pode estar iniciando. Isso pode levar até um minuto.</string>
 
     <string name="settings_app_version">%1$s · Versão %2$s</string>

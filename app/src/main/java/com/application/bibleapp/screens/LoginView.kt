@@ -27,12 +27,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.application.bibleapp.components.GoogleSignInSection
+import com.application.bibleapp.components.PasswordResetSheet
 import com.application.bibleapp.components.ServerWakeHint
 import com.application.bibleapp.components.rememberWaitingLong
 import com.application.bibleapp.ui.theme.Spacing
@@ -54,6 +56,7 @@ fun LoginView(
     val isLoading by authViewModel.isLoading.collectAsState()
     val isGoogleLoading by authViewModel.isGoogleLoading.collectAsState()
     val errorMessage by authViewModel.errorMessage.collectAsState()
+    val passwordReset by authViewModel.passwordReset.collectAsState()
 
     // Only flagged once there's something to judge — an empty field isn't "invalid" yet,
     // it just hasn't been filled in.
@@ -62,6 +65,16 @@ fun LoginView(
 
     // A sleeping server starts up while the form is filled in, not after Sign in (#87).
     LaunchedEffect(Unit) { authViewModel.wakeServer() }
+
+    // Back from "Forgot password?" (#160): ready to sign in with the new password.
+    LaunchedEffect(authViewModel) {
+        authViewModel.passwordResetDone.collect { resetEmail ->
+            email = resetEmail
+            password = ""
+            authViewModel.clearError()
+        }
+    }
+    if (passwordReset.isOpen) PasswordResetSheet(authViewModel)
 
     Column(
         modifier = modifier
@@ -113,6 +126,13 @@ fun LoginView(
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             modifier = Modifier.fillMaxWidth()
         )
+
+        TextButton(
+            onClick = { authViewModel.openPasswordReset(email) },
+            modifier = Modifier.align(Alignment.End)
+        ) {
+            Text(stringResource(R.string.login_forgot_password))
+        }
 
         // Deliberately the same message whether the email doesn't exist or the password is
         // wrong — never reveals which one — matching the backend's own INVALID_CREDENTIALS

@@ -9,8 +9,11 @@ import com.application.bibleapp.data.remote.GoogleSignInRequestDto
 import com.application.bibleapp.data.remote.HttpClientProvider
 import com.application.bibleapp.data.remote.LoginRequestDto
 import com.application.bibleapp.data.remote.LogoutRequestDto
+import com.application.bibleapp.data.remote.PasswordResetRequestDto
+import com.application.bibleapp.data.remote.PasswordResetSendRequestDto
 import com.application.bibleapp.data.remote.RegisterRequestDto
 import com.application.bibleapp.data.remote.UserResponseDto
+import com.application.bibleapp.data.remote.VerifyEmailRequestDto
 import io.ktor.client.call.body
 import io.ktor.client.request.delete
 import io.ktor.client.request.get
@@ -38,6 +41,13 @@ sealed class AuthError(val displayMessage: UiText) {
     data object GoogleTokenRejected : AuthError(UiText.Res(R.string.auth_error_google_failed))
     data object GoogleUnavailable : AuthError(UiText.Res(R.string.auth_error_google_unavailable))
     data object GoogleLinkedToOtherAccount : AuthError(UiText.Res(R.string.auth_error_google_other_account))
+    // Emailed codes (#159, #160)
+    data object InvalidCode : AuthError(UiText.Res(R.string.email_code_error_invalid))
+    data object TooManyEmails : AuthError(UiText.Res(R.string.email_code_error_too_many_emails))
+    data object EmailUnavailable : AuthError(UiText.Res(R.string.email_code_error_unavailable))
+    data object EmailAlreadyVerified : AuthError(UiText.Res(R.string.verify_email_done))
+    /** A rate limit (429 with no body) on an endpoint that doesn't send email. */
+    data object TooManyAttempts : AuthError(UiText.Res(R.string.auth_error_too_many_attempts))
     data class Validation(val fieldErrors: Map<String, String>) :
         AuthError(fieldErrors.values.firstOrNull()?.let { UiText.Raw(it) } ?: UiText.Res(R.string.auth_error_invalid_input))
     data class Unknown(val text: UiText) : AuthError(text)
@@ -46,6 +56,33 @@ sealed class AuthError(val displayMessage: UiText) {
 /** Wraps an [AuthError] as a throwable so it can travel through [Result.failure] and be
  *  pattern-matched back out in the UI layer via [AuthException.error]. */
 class AuthException(val error: AuthError) : Exception(error.toString())
+
+/**
+ * Turns a failed response into an [AuthError]: the backend's ErrorResponse.code when there is
+ * one, otherwise the status. A rate limit answers 429 with no body; on an endpoint that sends
+ * email ([sendsEmail]) that's the hourly email limit, elsewhere a burst of tries (#159).
+ */
+internal fun authErrorFor(status: Int, error: BackendErrorResponseDto?, sendsEmail: Boolean = false): AuthError =
+    when (error?.code) {
+        "INVALID_CREDENTIALS" -> AuthError.InvalidCredentials
+        "EMAIL_ALREADY_REGISTERED" -> AuthError.EmailAlreadyRegistered
+        "VALIDATION_ERROR" -> AuthError.Validation(error.fieldErrors ?: emptyMap())
+        "INVALID_GOOGLE_TOKEN" -> AuthError.GoogleTokenRejected
+        "GOOGLE_SIGN_IN_UNAVAILABLE" -> AuthError.GoogleUnavailable
+        "EMAIL_LINKED_TO_OTHER_GOOGLE_ACCOUNT" -> AuthError.GoogleLinkedToOtherAccount
+        "INVALID_CODE" -> AuthError.InvalidCode
+        "TOO_MANY_EMAILS" -> AuthError.TooManyEmails
+        "EMAIL_UNAVAILABLE" -> AuthError.EmailUnavailable
+        "EMAIL_ALREADY_VERIFIED" -> AuthError.EmailAlreadyVerified
+        else -> when {
+            status == 429 -> if (sendsEmail) AuthError.TooManyEmails else AuthError.TooManyAttempts
+            // A server from before emailed codes doesn't have these endpoints yet.
+            status == 404 && sendsEmail -> AuthError.EmailUnavailable
+            else -> AuthError.Unknown(
+                error?.message?.let { UiText.Raw(it) } ?: UiText.Res(R.string.auth_error_status, status)
+            )
+        }
+    }
 
 /**
  * Handles register/login/logout and the current account, talking to the backend's Auth and
@@ -146,6 +183,41 @@ class AuthRepository(context: Context) {
         if (!response.status.isSuccess()) throw toAuthException(response)
     }
 
+    /** Emails the signed-in account a new verification code (#159); the older one stops working. */
+    suspend fun sendVerificationCode(): Result<Unit> = runCatching {
+        val response = client.post("$baseUrl/auth/verify-email/send")
+        if (!response.status.isSuccess()) throw toAuthException(response, sendsEmail = true)
+    }
+
+    /** Checks the [code] from the verification email; success means the email is verified. */
+    suspend fun verifyEmail(code: String): Result<Unit> = runCatching {
+        val response = client.post("$baseUrl/auth/verify-email") {
+            contentType(ContentType.Application.Json)
+            setBody(VerifyEmailRequestDto(code))
+        }
+        if (!response.status.isSuccess()) throw toAuthException(response)
+    }
+
+    /** Forgot password (#160): the server answers the same whether or not [email] has an
+     *  account, and emails a code if it does. */
+    suspend fun sendPasswordResetCode(email: String): Result<Unit> = runCatching {
+        val response = client.post("$baseUrl/auth/password-reset/send") {
+            contentType(ContentType.Application.Json)
+            setBody(PasswordResetSendRequestDto(email))
+        }
+        if (!response.status.isSuccess()) throw toAuthException(response, sendsEmail = true)
+    }
+
+    /** Sets [newPassword] if [code] is right. The server signs out every device, so the caller
+     *  then signs in with the new password. */
+    suspend fun resetPassword(email: String, code: String, newPassword: String): Result<Unit> = runCatching {
+        val response = client.post("$baseUrl/auth/password-reset") {
+            contentType(ContentType.Application.Json)
+            setBody(PasswordResetRequestDto(email, code, newPassword))
+        }
+        if (!response.status.isSuccess()) throw toAuthException(response)
+    }
+
     /** [email] is what the person just typed: the auth responses don't include it, and
      *  /users/me replaces it later if the server has it differently (#109). */
     private suspend fun saveSession(response: HttpResponse, email: String) {
@@ -156,20 +228,8 @@ class AuthRepository(context: Context) {
         HttpClientProvider.forgetCachedTokens()
     }
 
-    private suspend fun toAuthException(response: HttpResponse): AuthException {
+    private suspend fun toAuthException(response: HttpResponse, sendsEmail: Boolean = false): AuthException {
         val error = runCatching { response.body<BackendErrorResponseDto>() }.getOrNull()
-        val authError = when (error?.code) {
-            "INVALID_CREDENTIALS" -> AuthError.InvalidCredentials
-            "EMAIL_ALREADY_REGISTERED" -> AuthError.EmailAlreadyRegistered
-            "VALIDATION_ERROR" -> AuthError.Validation(error.fieldErrors ?: emptyMap())
-            "INVALID_GOOGLE_TOKEN" -> AuthError.GoogleTokenRejected
-            "GOOGLE_SIGN_IN_UNAVAILABLE" -> AuthError.GoogleUnavailable
-            "EMAIL_LINKED_TO_OTHER_GOOGLE_ACCOUNT" -> AuthError.GoogleLinkedToOtherAccount
-            else -> AuthError.Unknown(
-                error?.message?.let { UiText.Raw(it) }
-                    ?: UiText.Res(R.string.auth_error_status, response.status.value)
-            )
-        }
-        return AuthException(authError)
+        return AuthException(authErrorFor(response.status.value, error, sendsEmail))
     }
 }
