@@ -66,6 +66,20 @@ before code.
     already linked to a *different* Google account, it's refused rather than taken over.
     Accounts made with Google have no password until one is added (no endpoint for that yet),
     so password login can't match them.
+22. **Emails are verified with a 6-digit code, not a link** (#148, #156). The person types the
+    code into the app, so it needs no web page or deep link, and it works on whichever device
+    reads the email. Each code works once, for 15 minutes and 5 tries; asking for a new one
+    cancels the old one. The server stores only an HMAC of each code, keyed with the server's
+    secret, since with a million possible codes a plain hash could be reversed by trying them
+    all. A failed check gives the same answer whether the code was wrong, expired, used or out
+    of tries. Registering doesn't send a code itself: the app calls `verify-email/send` right
+    after, so a register never fails because email is down, and every email goes through the
+    stricter email rate limit. Unverified accounts work fully (sync included); verification
+    only matters for linking Google (decision 21) and later features that rely on the email.
+23. **Sending email is limited twice** (#156): 10 emails an hour per IP address (the `email`
+    rate-limit zone, much stricter than the `auth` zone's 10 a minute), and 5 codes an hour per
+    account across every kind of code, so one person's inbox can't be flooded from many IPs.
+    Each email also costs part of the provider's daily allowance.
 
 ### Reading progress
 
@@ -153,6 +167,10 @@ data class ErrorResponse(
 | `INVALID_CREDENTIALS` | 401 | Login or account-deletion password confirmation failed — same response whether the email doesn't exist or the password is wrong (decision 4) |
 | `UNAUTHORIZED` | 401 | Missing, invalid, or expired access/refresh token |
 | `EMAIL_ALREADY_REGISTERED` | 409 | Registration attempted with an email already in use |
+| `EMAIL_ALREADY_VERIFIED` | 409 | Asked for a verification code for an email that's already verified |
+| `INVALID_CODE` | 400 | An emailed code is wrong, expired, already used or out of tries (one answer for all, decision 22) |
+| `TOO_MANY_EMAILS` | 429 | This account has been sent 5 codes in the last hour (decision 23) |
+| `EMAIL_UNAVAILABLE` | 503 | The server can't send email: no provider configured, or the provider refused or didn't answer |
 | `NOT_FOUND` | 404 | No resource with that id — **also returned when the id belongs to another user**, so ownership is never leaked by a 403 |
 
 ---
@@ -224,6 +242,33 @@ Auth: required
 Request: `LogoutRequest`
 Success: `204 No Content` — revokes only that refresh token/session; other devices stay logged in
 Errors: `401 UNAUTHORIZED`
+
+---
+
+## Email verification
+
+```kotlin
+@Serializable
+data class VerifyEmailRequest(val code: String)   // the 6 digits from the email; spaces ignored
+```
+
+A rate limit that's hit answers `429` with no body: the `email` zone for endpoints that send
+email, the `auth` zone for the others (decision 23).
+
+### `POST /api/v1/auth/verify-email/send`
+Auth: required
+Request: none
+Success: `204 No Content` — a new code was emailed to the account's address (decision 22); any
+older one stops working. Sent before answering, so a `204` means the provider accepted it.
+Errors: `401 UNAUTHORIZED`, `409 EMAIL_ALREADY_VERIFIED`, `429 TOO_MANY_EMAILS`,
+`429` (`email` zone), `503 EMAIL_UNAVAILABLE`
+
+### `POST /api/v1/auth/verify-email`
+Auth: required
+Request: `VerifyEmailRequest`
+Success: `204 No Content` — the email is verified (`emailVerified` in `GET /users/me`). Also
+`204` if it already was, so a second tap or another device isn't an error.
+Errors: `400 INVALID_CODE`, `401 UNAUTHORIZED`, `429` (`auth` zone)
 
 ---
 
@@ -442,7 +487,6 @@ Errors: `401 UNAUTHORIZED`, `404 NOT_FOUND`
 
 - **Password reset / forgot-password flow** — needs an email-sending provider, which isn't set up
   yet. Until then, a lost password means a lost account; worth revisiting before a wider release.
-- **Email verification on register** — same email-infrastructure dependency.
 - **Change password / change email** — straightforward additions once the account exists, but no
   screen or need for them yet.
 - **Multi-session management** (list active devices, revoke one remotely) — `logout` only ends
