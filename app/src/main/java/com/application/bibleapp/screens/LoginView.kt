@@ -42,7 +42,10 @@ import com.application.bibleapp.utils.isValidEmailFormat
 import com.application.bibleapp.viewmodel.AuthViewModel
 import com.application.bibleapp.R
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.autofill.ContentType
 import com.application.bibleapp.utils.asString
+import com.application.bibleapp.utils.autofill
+import com.application.bibleapp.utils.AccountEmail
 
 @Composable
 fun LoginView(
@@ -103,7 +106,7 @@ fun LoginView(
             } else null,
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth().autofill(AccountEmail)
         )
 
         OutlinedTextField(
@@ -124,7 +127,7 @@ fun LoginView(
                 }
             },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth().autofill(ContentType.Password)
         )
 
         TextButton(

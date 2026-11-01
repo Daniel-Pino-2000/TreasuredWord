@@ -48,12 +48,15 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.autofill.ContentType
 import com.application.bibleapp.R
 import com.application.bibleapp.ui.theme.Spacing
 import com.application.bibleapp.ui.theme.isCompactHeight
 import com.application.bibleapp.utils.MIN_PASSWORD_LENGTH
 import com.application.bibleapp.utils.asString
+import com.application.bibleapp.utils.autofill
 import com.application.bibleapp.utils.isValidEmailFormat
+import com.application.bibleapp.utils.AccountEmail
 import com.application.bibleapp.viewmodel.AuthViewModel
 import kotlinx.coroutines.delay
 
@@ -164,7 +167,9 @@ private fun ColumnScope.PasswordResetEmailStep(
         singleLine = true,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Send),
         keyboardActions = KeyboardActions(onSend = { if (canSend) authViewModel.sendPasswordResetCode(email) }),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .autofill(AccountEmail)
     )
     error?.let { ErrorText(it) }
     Button(
@@ -238,6 +243,7 @@ private fun ColumnScope.PasswordResetCodeStep(
         modifier = Modifier
             .fillMaxWidth()
             .focusRequester(passwordFocus)
+            .autofill(ContentType.NewPassword)
     )
     OutlinedTextField(
         value = confirmPassword,
@@ -257,6 +263,7 @@ private fun ColumnScope.PasswordResetCodeStep(
         modifier = Modifier
             .fillMaxWidth()
             .focusRequester(confirmFocus)
+            .autofill(ContentType.NewPassword)
     )
     Text(
         text = stringResource(R.string.password_reset_signs_out),
@@ -302,7 +309,8 @@ private fun EmailCodeSheet(onDismiss: () -> Unit, content: @Composable ColumnSco
     }
 }
 
-/** Digits only, number keyboard; pasting a whole code (with spaces) works. */
+/** Digits only, number keyboard; pasting a whole code (with spaces) works, and so does the
+ *  keyboard's one-time-code suggestion (#169). */
 @Composable
 private fun EmailCodeField(
     value: String,
@@ -320,7 +328,9 @@ private fun EmailCodeField(
         textStyle = MaterialTheme.typography.titleLarge.copy(letterSpacing = 6.sp),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = imeAction),
         keyboardActions = KeyboardActions(onDone = { onImeAction() }, onNext = { onImeAction() }),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .autofill(ContentType.SmsOtpCode)
     )
 }
 
