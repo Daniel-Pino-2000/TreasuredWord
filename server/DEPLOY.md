@@ -85,7 +85,9 @@ only needed when a secret changes.
   correctly applies a brand-new `V2` migration to a database that was already at `V1` — not just
   a fresh empty database.
 - Rate limiting on `/auth/register`, `/auth/login`, `/auth/refresh`: the 11th request within a
-  minute gets `429`, the first 10 get through.
+  minute gets `429`, the first 10 get through. That test came from one machine, so it couldn't
+  show that the limit was shared by every caller; since #162 it's per IP (`clientIp()` in
+  `plugins/RateLimiting.kt`, from Cloudflare's `True-Client-IP` header on Render).
 - **Real bug found and fixed**: `flyway-core` and `flyway-database-postgresql` both ship a
   `META-INF/services/org.flywaydb.core.extensibility.Plugin` file at the same path. Without
   `mergeServiceFiles()` on the `shadowJar` task (see `server/build.gradle.kts`), the packaged fat
