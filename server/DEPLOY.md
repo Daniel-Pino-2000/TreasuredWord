@@ -45,6 +45,13 @@ only needed when a secret changes.
    - `GOOGLE_CLIENT_ID` — the Google Cloud **web** OAuth client ID for "Continue with Google"
      (#112), the same value as the app's `res/values/google_sign_in.xml`. Not a secret. Without
      it the server still runs, and `/auth/google` answers `GOOGLE_SIGN_IN_UNAVAILABLE`.
+   - `RESEND_API_KEY` — the [Resend](https://resend.com) API key the server sends email with
+     (verification and password-reset codes, #154). A secret: only ever here, never in the repo,
+     an issue or chat. Create it in Resend → **API Keys** with **Sending access** only.
+   - `EMAIL_FROM` — who the emails come from, an address on the domain verified in Resend →
+     **Domains**, written as `TreasuredWord <codes@your-domain>`. Not a secret. Without it or
+     the key, the server still runs and the endpoints that send email answer
+     `EMAIL_UNAVAILABLE`.
 
    Saving env var changes triggers a redeploy automatically.
 

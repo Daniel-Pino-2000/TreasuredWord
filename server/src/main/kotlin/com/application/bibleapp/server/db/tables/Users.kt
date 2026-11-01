@@ -16,6 +16,9 @@ object Users : Table("users") {
     // used; null otherwise. Mirrors V4__google_sign_in.sql.
     val googleSubject = text("google_subject").nullable().uniqueIndex("users_google_subject_unique")
     val createdAt = timestamp("created_at")
+    // When the owner proved the inbox is theirs: an emailed code, or Google sign-in (Google only
+    // gives verified emails); null until then (#155). Mirrors V5__email_verification.sql.
+    val emailVerifiedAt = timestamp("email_verified_at").nullable()
 
     override val primaryKey = PrimaryKey(id)
 
