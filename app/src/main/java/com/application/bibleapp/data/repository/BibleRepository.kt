@@ -5,12 +5,14 @@ import android.util.Log
 import com.application.bibleapp.data.local.BibleDatabaseManager
 import com.application.bibleapp.data.local.VersionDownloadSummary
 import com.application.bibleapp.data.model.BibleTranslation
+import com.application.bibleapp.data.model.CachedDailyVerse
 import com.application.bibleapp.data.model.DEFAULT_VERSION
 import com.application.bibleapp.data.model.DailyVerseRef
 import com.application.bibleapp.data.model.DownloadedVersionInfo
 import com.application.bibleapp.data.model.Footnote
 import com.application.bibleapp.data.model.Highlight
 import com.application.bibleapp.data.model.Note
+import com.application.bibleapp.data.model.VerseOfTheDay
 import com.application.bibleapp.data.model.VerseUI
 import com.application.bibleapp.data.model.toUI
 import com.application.bibleapp.data.remote.BibleRemoteDataSource
@@ -29,6 +31,7 @@ import com.application.bibleapp.utils.passage
 import com.application.bibleapp.worker.DailyVerseScheduler
 import com.application.bibleapp.worker.LocalReadingProgress
 import com.application.bibleapp.worker.SyncLocalStore
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
@@ -38,12 +41,37 @@ import java.io.IOException
 import java.util.Calendar
 
 /**
- * Year + day-of-year — descriptive metadata only (which day a cached row was fetched
- * for), not used to decide cache hit/miss: freshness is [DailyVerseFetchWorker]'s job
- * now, this is just what gets stamped on the row when it writes one.
+ * Year + day-of-year, in local time — stamped on the cached daily-verse row and compared with
+ * today's when it's read, so a row from a previous day is never shown as today's verse (#183).
+ * The background job can't be relied on to replace it: battery restrictions can delay or skip it.
  */
 internal fun dailyVerseDateKey(now: Calendar = Calendar.getInstance()): String =
     "${now.get(Calendar.YEAR)}-${now.get(Calendar.DAY_OF_YEAR)}"
+
+/** [cached]'s reference if it was fetched for [todayKey], else null. */
+internal fun CachedDailyVerse?.refFor(todayKey: String): DailyVerseRef? =
+    this?.takeIf { it.dateKey == todayKey }?.ref
+
+/**
+ * Today's daily verse: [cached] if it's from [todayKey], else a fresh [refresh]; if that fails
+ * (offline, OurManna down), the [curated] verse — which changes daily too — rather than an old
+ * cached one (#183). Pure apart from the two lambdas, so the date check is unit tested.
+ */
+internal suspend fun pickDailyVerse(
+    cached: CachedDailyVerse?,
+    todayKey: String,
+    refresh: suspend () -> DailyVerseRef,
+    curated: () -> DailyVerseRef
+): DailyVerseRef {
+    cached.refFor(todayKey)?.let { return it }
+    return try {
+        refresh()
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        curated()
+    }
+}
 
 /** The last book/chapter/verse the user had open, restored on app launch. */
 data class ReadingPosition(val bookId: Int, val chapter: Int, val verse: Int)
@@ -213,13 +241,24 @@ class BibleRepository(
     }
 
     /**
-     * Reads the reference [DailyVerseFetchWorker][com.application.bibleapp.worker.DailyVerseFetchWorker]
-     * cached in the local DB — a plain read, no network involved. Falls back to a
-     * direct (uncached) [refreshDailyVerse] only if nothing has been cached yet, e.g.
-     * right after install before the background worker's first run.
+     * Today's daily verse. Usually a plain read of the reference
+     * [DailyVerseFetchWorker][com.application.bibleapp.worker.DailyVerseFetchWorker] cached; when
+     * that's missing or from a previous day (the job didn't run — battery restrictions, #183), it
+     * fetches today's with [refreshDailyVerse], and offline falls back to [VerseOfTheDay.forToday].
+     * Never throws, except on cancellation.
      */
     suspend fun getDailyVerse(): DailyVerseRef = withContext(Dispatchers.IO) {
-        BibleDatabaseManager.getCachedDailyVerse(context) ?: refreshDailyVerse()
+        pickDailyVerse(
+            cached = BibleDatabaseManager.getCachedDailyVerse(context),
+            todayKey = dailyVerseDateKey(),
+            refresh = { refreshDailyVerse() },
+            curated = { VerseOfTheDay.forToday() }
+        )
+    }
+
+    /** The cached daily-verse reference if it's today's, else null — a plain read, no network. */
+    suspend fun getTodaysCachedDailyVerse(): DailyVerseRef? = withContext(Dispatchers.IO) {
+        BibleDatabaseManager.getCachedDailyVerse(context).refFor(dailyVerseDateKey())
     }
 
     /**

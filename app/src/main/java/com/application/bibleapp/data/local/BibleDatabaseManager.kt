@@ -10,6 +10,7 @@ import com.application.bibleapp.data.model.AiMessage
 import com.application.bibleapp.data.model.AiRole
 import com.application.bibleapp.data.model.BibleTranslation
 import com.application.bibleapp.data.model.BibleVerse
+import com.application.bibleapp.data.model.CachedDailyVerse
 import com.application.bibleapp.data.model.DailyVerseRef
 import com.application.bibleapp.data.model.DownloadedVersionInfo
 import com.application.bibleapp.data.model.Footnote
@@ -476,20 +477,24 @@ object BibleDatabaseManager {
         )
     }
 
-    /** The cached daily-verse reference, or null if the background worker hasn't populated it yet. */
-    fun getCachedDailyVerse(context: Context): DailyVerseRef? {
+    /** The cached daily-verse reference and the day it's for, or null if nothing has been cached
+     *  yet. The caller checks the day — the row can be days old when the background job didn't run (#183). */
+    fun getCachedDailyVerse(context: Context): CachedDailyVerse? {
         val db = getDatabase(context)
         val cursor = db.rawQuery(
-            "SELECT book_id, chapter, start_verse, end_verse FROM daily_verse_cache WHERE id = 0",
+            "SELECT date_key, book_id, chapter, start_verse, end_verse FROM daily_verse_cache WHERE id = 0",
             null
         )
         return cursor.use {
             if (!it.moveToFirst()) return@use null
-            DailyVerseRef(
-                bookId = it.getInt(0),
-                chapter = it.getInt(1),
-                startVerse = it.getInt(2),
-                endVerse = if (it.isNull(3)) null else it.getInt(3)
+            CachedDailyVerse(
+                dateKey = it.getString(0),
+                ref = DailyVerseRef(
+                    bookId = it.getInt(1),
+                    chapter = it.getInt(2),
+                    startVerse = it.getInt(3),
+                    endVerse = if (it.isNull(4)) null else it.getInt(4)
+                )
             )
         }
     }
