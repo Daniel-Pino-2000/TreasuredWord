@@ -54,16 +54,16 @@ updating those too.
 | Name | **Bible Helper**, with no human name or face | Honest that it's a tool, not a person |
 | Conversation history | Saved on the phone only, removed on sign-out like highlights and notes | Nothing to leak from the server; the next person on a shared phone doesn't see it |
 | AI provider | Cloudflare Workers AI, free plan | See section 3 |
-| Model | Gemma 4 26B (Apache 2.0), with Qwen3 30B (Apache 2.0) as the runner-up; the comparison in #122 makes the final choice | Good answers per neuron, permissive licenses, no "Built with…" display rule like Llama's |
+| Model | Gemma 4 26B (Apache 2.0) with thinking off, chosen in #122 (2026-11-02); Qwen3 30B (Apache 2.0) is the runner-up if Gemma falls short in #131's evaluation run | Followed our answer rules best in #122's comparison (section 3), permissive licenses, no "Built with…" display rule like Llama's |
 | Release | **Not in the first production release.** The app is published on Google Play without it; once the Bible Helper is complete and tested, it ships as a later app update (#131) | Keeps the first launch, its Play review and the closed test unaffected |
 | Until release | The Bible Helper shows only in debug builds (`BuildConfig.AI_HELPER_ENABLED`); #131 turns it on for release builds | Work can merge to `main` without reaching closed-test or production users |
 | Who writes the doctrine summary | Claude drafted it from the BF&M 2000 at your request (2026-10-30); you reviewed it and approved it on 2026-11-02. Claude also drafts the rest of #121 (answer rules and test questions) | It's the heart of the feature, so nothing else waits for its approval (section 9) |
 
-## 3. Why Cloudflare Workers AI (free options compared, checked 2026-10-27)
+## 3. Why Cloudflare Workers AI (free options compared, checked 2026-10-27, Cloudflare re-checked 2026-11-02)
 
 | Option | Cost | Why or why not |
 |---|---|---|
-| **Cloudflare Workers AI, free plan** | $0: 10,000 "neurons" a day | **Chosen.** On the free plan, going over the limit returns an error instead of a bill, so it can never charge us. Cloudflare doesn't train on what we send and doesn't keep it after answering. Roughly 250–400 answers a day with our instructions. |
+| **Cloudflare Workers AI, free plan** | $0: 10,000 "neurons" a day | **Chosen.** On the free plan, going over the limit returns an error instead of a bill, so it can never charge us. Cloudflare doesn't train on what we send and doesn't keep it after answering. Roughly 250–320 answers a day with our instructions (measured in #122). |
 | Gemini API free tier | $0 | **Ruled out by its terms:** no apps "likely to be accessed by individuals under the age of 18" (we allow 13+), and apps offered in the EU, the UK or Switzerland must use the paid plan. Free-tier questions may also be used for training and read by human reviewers. |
 | Groq free tier | $0 | Doesn't train on what we send, but its terms don't say whether the free tier may be used in production, and limits vary by model. A possible backup provider later. |
 | OpenRouter free models | $0 | A small daily cap unless we buy credits, and requests go to many providers with different data policies. |
@@ -75,10 +75,20 @@ Free tiers change often: re-check the numbers in #122 and again before release (
 
 Cloudflare measures free-plan usage in neurons per million tokens (a token is about ¾ of an
 English word). Gemma 4 26B costs 9,091 neurons per million input tokens and 27,273 per million
-output tokens. One question with our ~1,500-token instructions and a little history (about 2,500
-input tokens) plus a ~450-token answer is about **35 neurons**, so 10,000 neurons a day is about
-**285 answers**. Qwen3 30B works out to about 400. Shorter instructions and history mean more
-answers.
+output tokens (unchanged when re-checked on 2026-11-02). Every response reports the neurons it
+used in `usage.neurons`.
+
+Measured in #122 (2026-11-02, 10 test questions, thinking off): our instructions plus one question
+are about **2,650 input tokens**, and an answer is about 260 tokens (66–430). That's about
+**31 neurons** per answer (26–36), so 10,000 neurons a day is about **320 first questions**. Each
+earlier message sent as history adds input tokens: with three earlier exchanges an answer is
+about 40 neurons, or 250 a day. Shorter instructions and history mean more answers.
+
+Gemma 4 thinks before it answers unless the request sets `chat_template_kwargs.enable_thinking`
+to `false`. With thinking on, an answer cost about 56 neurons and took 20–40 seconds, and 4 of 10
+used up their tokens thinking and returned no answer, so the server always turns it off. Qwen3
+30B was cheaper (about 17 neurons with thinking off) but quoted verse text and offered to help
+with off-topic requests, so it stays the runner-up.
 
 ## 4. Architecture
 
