@@ -14,6 +14,11 @@ data class DailyVerseRef(
     val endVerse: Int? = null
 )
 
+/** The cached daily-verse reference with the day it was fetched for — [dateKey] is a
+ *  [com.application.bibleapp.data.repository.dailyVerseDateKey], so a row from a previous
+ *  day is never mistaken for today's (#183). */
+data class CachedDailyVerse(val dateKey: String, val ref: DailyVerseRef)
+
 /**
  * A small curated set of well-known verses, picked deterministically by day-of-year
  * so the Home screen shows the same verse all day and a different one tomorrow.

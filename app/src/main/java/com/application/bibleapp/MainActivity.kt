@@ -55,6 +55,8 @@ import androidx.core.view.WindowCompat
 import kotlinx.coroutines.flow.collectLatest
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -121,6 +123,10 @@ class MainActivity : AppCompatActivity() {
         startupScreen.setKeepOnScreenCondition {
             keepStartupScreen(startupViewModel.isStartupContentReady.value, SystemClock.uptimeMillis() - launchedAt)
         }
+        // An app left open overnight shows the new day's verse when it comes back (#183).
+        lifecycle.addObserver(LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_START) startupViewModel.refreshVerseOfTheDayIfStale()
+        })
         enableEdgeToEdge()
         // Names the channel (shown in the system's notification settings) in the app language.
         createDailyVerseNotificationChannel(this)

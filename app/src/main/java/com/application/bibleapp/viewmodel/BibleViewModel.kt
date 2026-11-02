@@ -30,6 +30,7 @@ import com.application.bibleapp.data.repository.BibleRepository
 import com.application.bibleapp.data.repository.NotificationTime
 import com.application.bibleapp.data.repository.ReadingPosition
 import com.application.bibleapp.data.repository.ReadingProgressRepository
+import com.application.bibleapp.data.repository.dailyVerseDateKey
 import com.application.bibleapp.ui.theme.ThemeMode
 import com.application.bibleapp.ui.theme.VerseTextScale
 import com.application.bibleapp.utils.buildVerseShareText
@@ -430,6 +431,10 @@ class BibleViewModel(
     private val _verseOfTheDay = MutableStateFlow<DailyVerseUI?>(null)
     val verseOfTheDay: StateFlow<DailyVerseUI?> = _verseOfTheDay.asStateFlow()
 
+    // The day the verse on Home was loaded for and the reference the repository gave for it —
+    // what refreshVerseOfTheDayIfStale compares with today's (#183). Null until the first load.
+    private var verseOfTheDayLoadedFor: Pair<String, DailyVerseRef>? = null
+
     // Each turns true once its first load has finished, whatever it found. MainActivity keeps the
     // startup screen up until all three have, so Home opens on the real chapter, highlights and
     // verse instead of Genesis 1 and an empty list that then jump (#161).
@@ -571,18 +576,35 @@ class BibleViewModel(
         }
     }
 
-    // Tries the remote daily-verse API first (cached once per day by the repository);
-    // falls back to the local curated list if the app is offline, the API is down, or
-    // it returns a reference this app can't resolve (unrecognized book name, verse not
-    // present in the currently selected translation, etc.) — this must never throw, so
-    // the Home screen always has something to show instead of crashing on launch.
+    // Today's verse from the repository (OurManna's, cached once per day, or the curated one
+    // when it can't be fetched); falls back to the local curated list too if it returns a
+    // reference this app can't resolve (unrecognized book name, verse not present in the
+    // currently selected translation, etc.) — this must never throw, so the Home screen
+    // always has something to show instead of crashing on launch.
     private fun loadVerseOfTheDay() {
         viewModelScope.launch {
-            val remoteVerse = runCatching { repository.getDailyVerse() }
-                .mapCatching { ref -> resolveVerse(ref) ?: error("Reference not found: $ref") }
-                .getOrNull()
+            val todayKey = dailyVerseDateKey()
+            val ref = runCatching { repository.getDailyVerse() }.getOrElse { VerseOfTheDay.forToday() }
+            val remoteVerse = runCatching { resolveVerse(ref) }.getOrNull()
             _verseOfTheDay.value = remoteVerse ?: resolveVerse(VerseOfTheDay.forToday())
+            verseOfTheDayLoadedFor = todayKey to ref
             _startupVerseOfTheDayLoaded.value = true
+        }
+    }
+
+    /**
+     * Called each time the app comes to the foreground (#183): reloads the Verse of the Day when
+     * the one on Home is from an earlier day — the app was left open overnight — or isn't the one
+     * cached for today, e.g. it's the offline fallback and today's can now be fetched. A plain
+     * one-row read otherwise, so a fresh verse costs nothing.
+     */
+    fun refreshVerseOfTheDayIfStale() {
+        // Null while the first load (from init) is still running — that one already gets today's.
+        val loaded = verseOfTheDayLoadedFor ?: return
+        viewModelScope.launch {
+            val todaysCached = runCatching { repository.getTodaysCachedDailyVerse() }.getOrNull()
+            if (loaded.first == dailyVerseDateKey() && loaded.second == todaysCached) return@launch
+            loadVerseOfTheDay()
         }
     }
 
@@ -1261,7 +1283,7 @@ class BibleViewModel(
         verseSearch.onVersionChange()
         prepareSearch(versionId)
         // Re-resolve (not re-fetch) so the card matches the newly selected translation
-        // right away — the reference is already cached for today, so this is just a
+        // right away — the reference is usually already cached for today, so this is just a
         // local chapter lookup, no network call.
         loadVerseOfTheDay()
     }
