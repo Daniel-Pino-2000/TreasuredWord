@@ -1,7 +1,7 @@
 package com.application.bibleapp.server
 
 import com.application.bibleapp.server.email.EmailSender
-import com.application.bibleapp.server.email.ResendEmailSender
+import com.application.bibleapp.server.email.GmailEmailSender
 import com.application.bibleapp.server.plugins.configureDatabases
 import com.application.bibleapp.server.plugins.configureMonitoring
 import com.application.bibleapp.server.plugins.configureRateLimiting
@@ -15,10 +15,10 @@ fun main(args: Array<String>) {
     EngineMain.main(args)
 }
 
-/** The module application.conf starts: the real server, sending email through Resend when
- *  RESEND_API_KEY and EMAIL_FROM are set. */
+/** The module application.conf starts: the real server, sending email through Gmail when the
+ *  GMAIL_* settings and EMAIL_FROM are set (#154). */
 fun Application.module() {
-    serverModule(emailSender = ResendEmailSender.fromConfig(environment.config))
+    serverModule(emailSender = GmailEmailSender.fromConfig(environment.config))
 }
 
 /**

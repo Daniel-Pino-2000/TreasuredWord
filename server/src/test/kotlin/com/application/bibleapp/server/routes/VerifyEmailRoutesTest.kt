@@ -202,7 +202,7 @@ class VerifyEmailRoutesTest {
 
     @Test
     fun withoutAnEmailProviderSendingAnswersUnavailable() = testApplication {
-        // application.conf alone, as on a server where RESEND_API_KEY isn't set.
+        // application.conf alone, as on a server without the Gmail settings.
         environment { config = ApplicationConfig("application.conf") }
         val client = createClient { install(ContentNegotiation) { json() } }
         val user = client.registerTestUser()
