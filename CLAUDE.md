@@ -11,6 +11,19 @@ leave internal identifiers alone unless asked. The installed app's ID (`applicat
   Deploy notes: `server/DEPLOY.md`. API contract: `docs/api_contract.md`.
 - `docs/` — contracts, roadmaps, and the privacy policy (see Privacy below).
 
+## Everything must be free
+
+The project has no budget. Anything added to the app, the server or the release process (hosting,
+databases, APIs, email, AI, domains, libraries, tools) must work on a free plan at the app's
+scale, with no credit card needed to keep it running.
+
+- If something can't be done for free, don't build or plan it on a paid service. Tell the
+  developer what it would cost and why, and offer the free alternatives, even worse ones, so they
+  decide.
+- In issues and PRs, name the free plan's limits (per day, per month, sleep or expiry rules) and
+  what the app does when one is reached.
+- Prefer services whose free plan doesn't quietly start charging when it's exceeded.
+
 ## How to work with the developer
 
 - **Android/UI work (`ui` label): implement directly and fast**, like a SWE using Claude Code.
