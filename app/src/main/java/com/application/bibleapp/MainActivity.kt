@@ -137,6 +137,8 @@ class MainActivity : AppCompatActivity() {
         // Before super.onCreate: swaps the startup theme (#135) for the app's own.
         val startupScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
+        // Fades out over Home once it's ready, rather than vanishing in one frame (#182).
+        startupScreen.setOnExitAnimationListener(::animateStartupScreenExit)
         // The same instance setContent's viewModel() returns (same owner, same default key).
         val startupViewModel = ViewModelProvider(this, BibleViewModelFactory(context = this))[BibleViewModel::class.java]
         // Home's first frame would otherwise show Genesis 1 and no highlights for a moment, then
@@ -145,7 +147,6 @@ class MainActivity : AppCompatActivity() {
         startupScreen.setKeepOnScreenCondition {
             keepStartupScreen(startupViewModel.isStartupContentReady.value, SystemClock.uptimeMillis() - launchedAt)
         }
-        startupScreen.setOnExitAnimationListener(::animateStartupScreenExit)
         enableEdgeToEdge()
         // Names the channel (shown in the system's notification settings) in the app language.
         createDailyVerseNotificationChannel(this)
