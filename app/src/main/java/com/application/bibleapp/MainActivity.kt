@@ -5,6 +5,7 @@ import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
 import android.os.SystemClock
+import android.view.animation.PathInterpolator
 import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -51,6 +52,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.core.splashscreen.SplashScreenViewProvider
 import androidx.core.view.WindowCompat
 import kotlinx.coroutines.flow.collectLatest
 import androidx.core.view.WindowInsetsCompat
@@ -107,6 +109,28 @@ internal const val STARTUP_SCREEN_MAX_WAIT_MS = 1_000L
 internal fun keepStartupScreen(contentReady: Boolean, elapsedMs: Long): Boolean =
     !contentReady && elapsedMs < STARTUP_SCREEN_MAX_WAIT_MS
 
+/** How long the logo and name take to fade out over Home once it's ready (#182). Not a delay:
+ *  Home is already drawn and usable underneath, this only keeps the logo from vanishing in one frame. */
+private const val STARTUP_SCREEN_EXIT_MS = 450L
+
+/** Fades the startup screen out over Home, the logo growing slightly as it goes (#182), then
+ *  removes it. With animations off the animators end at once, so it's removed straight away. */
+private fun animateStartupScreenExit(provider: SplashScreenViewProvider) {
+    val easing = PathInterpolator(0.4f, 0f, 0.2f, 1f)
+    // On Android 12+ the icon view is missing when the app wasn't started from the launcher
+    // (e.g. from Android Studio), and reading it throws — the background still fades.
+    runCatching { provider.iconView }.getOrNull()?.animate()
+        ?.alpha(0f)?.scaleX(1.1f)?.scaleY(1.1f)
+        ?.setDuration(STARTUP_SCREEN_EXIT_MS)?.setInterpolator(easing)
+        ?.start()
+    provider.view.animate()
+        .alpha(0f)
+        .setDuration(STARTUP_SCREEN_EXIT_MS)
+        .setInterpolator(easing)
+        .withEndAction { provider.remove() }
+        .start()
+}
+
 /** An AppCompatActivity (not a plain ComponentActivity) so the in-app language applies below
  *  Android 13 too — see [com.application.bibleapp.utils.AppLanguage]. */
 class MainActivity : AppCompatActivity() {
@@ -115,6 +139,8 @@ class MainActivity : AppCompatActivity() {
         // Before super.onCreate: swaps the startup theme (#135) for the app's own.
         val startupScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
+        // Fades out over Home once it's ready, rather than vanishing in one frame (#182).
+        startupScreen.setOnExitAnimationListener(::animateStartupScreenExit)
         // The same instance setContent's viewModel() returns (same owner, same default key).
         val startupViewModel = ViewModelProvider(this, BibleViewModelFactory(context = this))[BibleViewModel::class.java]
         // Home's first frame would otherwise show Genesis 1 and no highlights for a moment, then
