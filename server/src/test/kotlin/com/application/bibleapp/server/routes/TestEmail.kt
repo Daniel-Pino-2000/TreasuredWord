@@ -16,8 +16,8 @@ import kotlinx.coroutines.withTimeout
 import java.util.concurrent.CopyOnWriteArrayList
 
 /**
- * Stands in for Resend in the tests (#154): records each email instead of sending it, so
- * `:server:test` never sends real mail. Set [failing] to act like Resend refusing the email.
+ * Stands in for Gmail in the tests (#154): records each email instead of sending it, so
+ * `:server:test` never sends real mail. Set [failing] to act like Gmail refusing the email.
  */
 class FakeEmailSender : EmailSender {
     val sent = CopyOnWriteArrayList<EmailMessage>()
@@ -43,7 +43,7 @@ class FakeEmailSender : EmailSender {
 }
 
 /**
- * Starts the server with a [FakeEmailSender] in place of Resend and returns it with a JSON
+ * Starts the server with a [FakeEmailSender] in place of Gmail and returns it with a JSON
  * client. application.conf's module list is emptied so its module(), which would use the real
  * sender, doesn't start too; serverModule() is the same server with the sender passed in.
  */

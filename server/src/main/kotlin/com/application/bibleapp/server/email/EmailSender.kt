@@ -9,7 +9,7 @@ class EmailSendException(message: String, cause: Throwable? = null) : RuntimeExc
 /**
  * Sends email for the server (#154): the codes that verify an address and reset a password.
  *
- * An interface so the routes don't care who delivers it: in production it's [ResendEmailSender],
+ * An interface so the routes don't care who delivers it: in production it's [GmailEmailSender],
  * and the tests use a fake that only records what would have been sent, so `:server:test` never
  * sends real mail.
  */

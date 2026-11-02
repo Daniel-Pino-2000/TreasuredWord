@@ -34,7 +34,7 @@ import java.time.Instant
 
 private val log = LoggerFactory.getLogger("com.application.bibleapp.server.routes.EmailRoutes")
 
-/** The answer for a server without RESEND_API_KEY/EMAIL_FROM, or when Resend fails. */
+/** The answer for a server without the email settings, or when Gmail fails. */
 internal suspend fun ApplicationCall.respondEmailUnavailable() = respond(
     HttpStatusCode.ServiceUnavailable,
     ErrorResponse(code = "EMAIL_UNAVAILABLE", message = "The server can't send email right now")
@@ -111,8 +111,8 @@ fun Route.emailRoutes(emailSender: EmailSender?, codes: EmailCodeStore) {
                     return@post
                 }
 
-                // Sent while the app waits, so it can say whether the email went out. Resend
-                // answers in well under a second.
+                // Sent while the app waits, so it can say whether the email went out. Gmail
+                // answers in about a second.
                 try {
                     emailSender.send(EmailTemplates.verifyEmail(user[Users.email], code))
                 } catch (e: EmailSendException) {

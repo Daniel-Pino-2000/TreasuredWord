@@ -45,13 +45,14 @@ only needed when a secret changes.
    - `GOOGLE_CLIENT_ID` — the Google Cloud **web** OAuth client ID for "Continue with Google"
      (#112), the same value as the app's `res/values/google_sign_in.xml`. Not a secret. Without
      it the server still runs, and `/auth/google` answers `GOOGLE_SIGN_IN_UNAVAILABLE`.
-   - `RESEND_API_KEY` — the [Resend](https://resend.com) API key the server sends email with
-     (verification and password-reset codes, #154). A secret: only ever here, never in the repo,
-     an issue or chat. Create it in Resend → **API Keys** with **Sending access** only.
-   - `EMAIL_FROM` — who the emails come from, an address on the domain verified in Resend →
-     **Domains**, written as `TreasuredWord <codes@your-domain>`. Not a secret. Without it or
-     the key, the server still runs and the endpoints that send email answer
-     `EMAIL_UNAVAILABLE`.
+   - `GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`, `GMAIL_REFRESH_TOKEN` — how the server sends
+     email (verification and password-reset codes, #154) through the Gmail API, from
+     TreasuredWord's own Gmail account. Free. The secret and the refresh token are secrets: only
+     ever here, never in the repo, an issue or chat. How to get them: **Email: the Gmail
+     sender** below.
+   - `EMAIL_FROM` — that Gmail account with a name, `TreasuredWord <name@gmail.com>`. Not a
+     secret. Without it or any of the three above, the server still runs and the endpoints that
+     send email answer `EMAIL_UNAVAILABLE`.
 
    Saving env var changes triggers a redeploy automatically.
 
@@ -76,6 +77,48 @@ only needed when a secret changes.
    Logs are under the service's **Logs** tab in the dashboard (or `render logs` via the CLI).
    When a release adds a migration, check the log shows Flyway's "Successfully applied" line
    for it before calling the deploy done.
+
+## Email: the Gmail sender (#154)
+
+The server sends codes through the Gmail API, from a Gmail account made just for TreasuredWord.
+It's free: Resend, the first choice, delivers to other people only from a domain of our own, and
+a domain costs money. SMTP isn't an option either, since Render's free tier blocks SMTP ports.
+One-time setup, all in a browser:
+
+1. **Create a Gmail account for the app**, e.g. `treasuredword.app@gmail.com`, not your personal
+   one: the codes come from it, and its Sent folder keeps a copy of each. Turn on 2-Step
+   Verification for it.
+2. **Signed in as that account**, open [Google Cloud Console](https://console.cloud.google.com)
+   and create a project, e.g. "TreasuredWord email". No billing account is needed. It's separate
+   from the Google sign-in project (#112), so that project's consent screen stays as it is.
+3. **APIs & Services → Library → Gmail API → Enable.**
+4. **Google Auth Platform** (the OAuth consent screen): type *External*, app name
+   "TreasuredWord email", support email the app's Gmail. Then **Audience → Publish app**, so it
+   says *In production*. In *Testing*, the refresh token stops working after 7 days. No Google
+   review is needed: only this one account ever authorizes it.
+5. **Clients → Create client → Web application**, named e.g. "Gmail sender", with the
+   authorized redirect URI `https://developers.google.com/oauthplayground`. Keep the client ID
+   and secret for step 7.
+6. **Get the refresh token** in [OAuth 2.0 Playground](https://developers.google.com/oauthplayground):
+   the gear icon → *Use your own OAuth credentials* → paste the client ID and secret. In Step 1,
+   type `https://www.googleapis.com/auth/gmail.send` in the box and **Authorize APIs**; sign in as
+   the app's Gmail account. Google warns that the app isn't verified: **Advanced → Go to
+   TreasuredWord email**, then **Continue**. In Step 2, **Exchange authorization code for
+   tokens** and copy the **Refresh token**.
+7. **Render → treasuredword → Environment**: set `GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`,
+   `GMAIL_REFRESH_TOKEN` and `EMAIL_FROM` (`TreasuredWord <treasuredword.app@gmail.com>`).
+   Saving redeploys the server.
+8. **Check it**: in the app, **Forgot password?** with your own account's email. The code should
+   arrive from the app's Gmail account within a minute (check spam the first time).
+
+**Limits** (free Gmail): about 500 emails a day. The server allows 5 codes an hour per account and
+10 emails an hour per IP, far below that. If Gmail refuses one anyway, the endpoint answers
+`EMAIL_UNAVAILABLE` and the app says it couldn't send the email.
+
+**If emails stop**, the Render log says `Couldn't get a Gmail access token ... invalid_grant`: the
+refresh token stopped working, because the Gmail account's password changed, its access was
+removed under *Google Account → Security → Third-party connections*, or it sent nothing for six
+months. Repeat step 6 and update `GMAIL_REFRESH_TOKEN`.
 
 ## What was verified locally before writing this doc (Phase 5)
 

@@ -14,7 +14,7 @@ TreasuredWord is a free Bible reading app made by Daniel Pino, an independent de
 - You can use TreasuredWord without an account. Your highlights, notes, bookmark and settings then stay on your phone.
 - There are no ads, no analytics and no tracking in the app. We don't sell or share your information.
 - If you create an account, we store your email address, a scrambled form of your password (or, if you sign in with Google, your Google account ID instead), and your highlights, notes and reading position so they sync between your devices. You can delete the account and all of it from inside the app, or by emailing us.
-- We email you only when you ask for it: to check that your email address is yours, or to reset a forgotten password. Those emails are sent through Resend.
+- We email you only when you ask for it: to check that your email address is yours, or to reset a forgotten password. Those emails are sent through Gmail, from TreasuredWord's own Gmail account.
 - Some content comes from other websites, and some links open other services. Those services see that visit.
 
 ## Using the app without an account
@@ -43,13 +43,13 @@ We email you a 6-digit code, which you type into the app, in two cases:
 
 We send these emails only when you ask for them in the app, and we never send newsletters or advertising.
 
-The email is sent through [Resend](https://resend.com), an email delivery service in the United States. To deliver it, Resend receives your email address and the email itself, which contains the code. Resend handles them on our behalf only to deliver the email, and keeps delivery records for a limited time, as described in [Resend's privacy policy](https://resend.com/legal/privacy-policy). If you sign in with Google, your address is already checked by Google, so we don't need to email you to check it.
+The email is sent through Gmail, Google's email service, from a Gmail account that belongs to TreasuredWord. To deliver it, Google receives your email address and the email itself, which contains the code, as described in [Google's privacy policy](https://policies.google.com/privacy). Gmail keeps a copy in that account's sent mail, which only we can open; the code in it stops working after 15 minutes. If you sign in with Google, your address is already checked by Google, so we don't need to email you to check it.
 
 ### Signing in with Google
 
 If you choose **Continue with Google**, Google's own sign-in screen on your phone asks which Google account to use, and Google gives the app a signed token with that account's email address and its Google account ID. The app sends the token to our server, which checks with Google's published keys that it's genuine and then signs you in. We store the Google account ID (a number Google assigns, which identifies the account to us but not to anyone else) so we recognize you next time, and the email address as for any account. If you already had an account with the same email, the two are joined into one. We don't receive your Google password, contacts or anything else from your Google account, and we don't use the token for anything but signing you in. Google learns that you signed in to TreasuredWord; that's covered by [Google's privacy policy](https://policies.google.com/privacy).
 
-We use this information only to provide the sync you asked for by creating an account. We don't use it for advertising, and we don't share it with anyone except the hosting providers below, who store it on our behalf, and the email provider above, which delivers the emails you ask for.
+We use this information only to provide the sync you asked for by creating an account. We don't use it for advertising, and we don't share it with anyone except the hosting providers below, who store it on our behalf, and Google, which delivers the emails you ask for.
 
 The server runs on [Render](https://render.com) in the United States, and the data is stored in a [Neon](https://neon.tech) PostgreSQL database. If you live outside the United States, your information is transferred to and stored there. Like most web services, the server and its hosting provider keep technical logs of requests (for example, the time, the address requested and the requesting IP address) to run and protect the service.
 
