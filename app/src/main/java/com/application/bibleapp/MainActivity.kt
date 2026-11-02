@@ -31,6 +31,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.TopAppBarState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -141,7 +142,19 @@ class MainActivity : AppCompatActivity() {
             // "enterAlways" bar and is left alone — this only governs the snap to fully
             // shown/hidden once the gesture ends).
             val scrollBehavior = if (currentRoute == Screen.Bible.route) {
+                // A fresh state whenever the bar's height changes, never a restored one: the
+                // default rememberTopAppBarState() kept portrait's hidden offset (-64dp) through a
+                // rotation, leaving landscape's 56dp bar -8dp tall, which crashed the app (#175).
+                // barsHidden starts fresh after a rotation too, so the two stay in step.
+                val topBarState = remember(isCompactHeight()) {
+                    TopAppBarState(
+                        initialHeightOffsetLimit = -Float.MAX_VALUE,
+                        initialHeightOffset = 0f,
+                        initialContentOffset = 0f
+                    )
+                }
                 TopAppBarDefaults.enterAlwaysScrollBehavior(
+                    state = topBarState,
                     snapAnimationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
                 )
             } else {
