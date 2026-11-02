@@ -1,6 +1,6 @@
 # Bible Helper — evaluation questions
 
-**Status:** draft, 2026-10-30 · **Issue:** #121 · **Plan:** [`ai_helper_plan.md`](ai_helper_plan.md),
+**Status:** approved by the developer, 2026-11-02 · **Issue:** #121 · **Plan:** [`ai_helper_plan.md`](ai_helper_plan.md),
 section 8 · Not published by GitHub Pages (`_config.yml`).
 
 Run every question before each change to the instructions (`server/src/main/resources/ai/`) or

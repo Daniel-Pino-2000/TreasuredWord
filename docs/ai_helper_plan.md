@@ -57,7 +57,7 @@ updating those too.
 | Model | Gemma 4 26B (Apache 2.0), with Qwen3 30B (Apache 2.0) as the runner-up; the comparison in #122 makes the final choice | Good answers per neuron, permissive licenses, no "Built with…" display rule like Llama's |
 | Release | **Not in the first production release.** The app is published on Google Play without it; once the Bible Helper is complete and tested, it ships as a later app update (#131) | Keeps the first launch, its Play review and the closed test unaffected |
 | Until release | The Bible Helper shows only in debug builds (`BuildConfig.AI_HELPER_ENABLED`); #131 turns it on for release builds | Work can merge to `main` without reaching closed-test or production users |
-| Who writes the doctrine summary | Claude drafted it from the BF&M 2000 at your request (2026-10-30); you read every line and approve it, reviewed by a pastor if possible. Claude also drafts the rest of #121 (answer rules and test questions) | It's the heart of the feature, so nothing else waits for its approval (section 9) |
+| Who writes the doctrine summary | Claude drafted it from the BF&M 2000 at your request (2026-10-30); you reviewed it and approved it on 2026-11-02. Claude also drafts the rest of #121 (answer rules and test questions) | It's the heart of the feature, so nothing else waits for its approval (section 9) |
 
 ## 3. Why Cloudflare Workers AI (free options compared, checked 2026-10-27)
 
@@ -201,9 +201,9 @@ Stored **without the user's ID** and deleted after 90 days. You read reports in 
 
 ## 6. How the instructions shape an answer
 
-`doctrine.md` starts as a draft with a `DRAFT` comment at the top; the server, the app and the
-tests can be built and tried with it in debug builds. Approving it later changes no code, and
-#131 checks that the `DRAFT` comment is gone.
+`doctrine.md` started as a draft with a `DRAFT` comment at the top, so the server, the app and
+the tests could be built and tried with it in debug builds. The developer approved it on
+2026-11-02 and the comment was removed (#121); #131 still checks that it hasn't come back.
 
 `system_prompt.md` (written in #121) covers, in this order, with `{doctrine}`, `{language}` and
 `{bookCodes}` filled in by `SystemPrompt.kt`:
@@ -294,7 +294,7 @@ lines (link only, source named), through `utils/ExternalLinks.kt`.
 
 **Order.** Two tracks run side by side, since they touch different folders:
 
-- **Server (you):** #122 → #123 → #124 → #125 and #126, with the temporary instructions.
+- **Server (you):** #122 → #123 → #124 → #125 and #126, with the approved instructions.
 - **App (Claude):** #127 (which adds the debug-only switch) and #129 first, since they need
   neither the doctrine nor a deployed server; then #128 and #130 once #124 and #125 are deployed.
 

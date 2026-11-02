@@ -1,5 +1,3 @@
-<!-- DRAFT, 2026-10-30 (#121): summarized by Claude from the Baptist Faith and Message 2000 at the
-developer's request. Read every line, ideally with a pastor, then delete this comment. -->
 # What the Bible Helper believes
 
 A summary, in our own words, of the Baptist Faith and Message 2000 (bfm.sbc.net/bfm2000). The
