@@ -339,7 +339,9 @@ class AuthRoutesTest {
     }
 
     @Test
-    fun verifyLogoutWithoutAnAccessTokenFails() = testApplication {
+    fun logoutWithOnlyTheRefreshTokenRevokesIt() = testApplication {
+        // How the app signs out: the tokens are already gone from the phone, so the request
+        // carries no access token, only the refresh token in the body (#173).
         environment { config = ApplicationConfig("application.conf") }
         val client = createClient { install(ContentNegotiation) { json() } }
 
@@ -349,7 +351,33 @@ class AuthRoutesTest {
             contentType(ContentType.Application.Json)
             setBody(LogoutRequest(refreshToken = user.auth.refreshToken))
         }
+        assertEquals(HttpStatusCode.NoContent, response.status)
 
-        assertEquals(HttpStatusCode.Unauthorized, response.status)
+        val refreshAfterLogout = client.post("/api/v1/auth/refresh") {
+            contentType(ContentType.Application.Json)
+            setBody(RefreshRequest(refreshToken = user.auth.refreshToken))
+        }
+        assertEquals(HttpStatusCode.Unauthorized, refreshAfterLogout.status)
+    }
+
+    @Test
+    fun logoutWithAnUnknownTokenAnswersTheSameAndChangesNothing() = testApplication {
+        environment { config = ApplicationConfig("application.conf") }
+        val client = createClient { install(ContentNegotiation) { json() } }
+
+        val user = client.registerTestUser()
+
+        val response = client.post("/api/v1/auth/logout") {
+            contentType(ContentType.Application.Json)
+            setBody(LogoutRequest(refreshToken = "not-a-real-token"))
+        }
+        assertEquals(HttpStatusCode.NoContent, response.status)
+
+        // The real session is untouched.
+        val refresh = client.post("/api/v1/auth/refresh") {
+            contentType(ContentType.Application.Json)
+            setBody(RefreshRequest(refreshToken = user.auth.refreshToken))
+        }
+        assertEquals(HttpStatusCode.OK, refresh.status)
     }
 }

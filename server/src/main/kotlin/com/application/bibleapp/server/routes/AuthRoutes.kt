@@ -19,7 +19,6 @@ import com.application.bibleapp.server.models.RefreshRequest
 import com.application.bibleapp.server.models.RegisterRequest
 import com.application.bibleapp.server.plugins.AUTH_RATE_LIMIT
 import io.ktor.http.HttpStatusCode
-import io.ktor.server.auth.authenticate
 import io.ktor.server.plugins.ratelimit.rateLimit
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.request.receive
@@ -305,9 +304,10 @@ fun Route.authRoutes(googleVerifier: GoogleIdTokenVerifier?) {
             val jwtConfig = call.application.getJwtConfig()
             call.respond(HttpStatusCode.OK, issueTokensFor(tokenRow[RefreshTokens.userId], jwtConfig))
         }
-    }
 
-    authenticate("auth-jwt") {
+        // No access token needed, like /auth/refresh: the refresh token is the credential (#173).
+        // The app signs out on the phone first and only then calls this, with no access token
+        // left to send, so requiring one meant every sign-out got 401 and revoked nothing.
         post("/auth/logout") {
             val request = call.receive<LogoutRequest>()
             val tokenHash = RefreshTokenIssuer.hash(request.refreshToken)
@@ -315,7 +315,8 @@ fun Route.authRoutes(googleVerifier: GoogleIdTokenVerifier?) {
             // Revokes only the one session this specific refresh token belongs to - other
             // devices stay logged in, per the contract. No need to check that it belongs to
             // the caller: only whoever already holds this exact raw token could have computed
-            // this hash in the first place.
+            // this hash in the first place. An unknown token changes nothing and gets the same
+            // 204, so the answer says nothing about which tokens exist.
             transaction {
                 RefreshTokens.update({ RefreshTokens.tokenHash eq tokenHash }) {
                     it[revokedAt] = Instant.now()
