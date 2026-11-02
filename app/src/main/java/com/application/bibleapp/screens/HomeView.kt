@@ -3,6 +3,7 @@ package com.application.bibleapp.screens
 import android.content.Intent
 import android.os.Build
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -90,6 +91,7 @@ fun HomeView(
     onContinueReadingClick: () -> Unit,
     onBookmarkClick: () -> Unit,
     onHighlightClick: (Highlight) -> Unit,
+    onVerseOfTheDayClick: () -> Unit,
     onSeeAllHighlightsClick: () -> Unit
 ) {
     // The recent-highlights strip reads the Library's data; reload on every visit so a highlight
@@ -124,6 +126,7 @@ fun HomeView(
             VerseOfTheDayCard(
                 verse = verse,
                 textScale = verseTextScale.multiplier,
+                onOpen = onVerseOfTheDayClick,
                 onCopy = {
                     bibleViewModel.verseOfTheDayShareText()?.let { text ->
                         clipboardManager.setText(AnnotatedString(text))
@@ -260,6 +263,7 @@ private fun HomeGreeting() {
 private fun VerseOfTheDayCard(
     verse: DailyVerseUI,
     textScale: Float,
+    onOpen: () -> Unit,
     onCopy: () -> Unit,
     onShare: () -> Unit
 ) {
@@ -287,13 +291,18 @@ private fun VerseOfTheDayCard(
         color = MaterialTheme.colorScheme.primaryContainer,
         contentColor = contentColor
     ) {
+        // Tapping anywhere but Copy/Share opens the verse in the reader (#181). On the Column, not
+        // the Surface, so the ripple is clipped to the card's rounded shape.
         Column(
-            modifier = Modifier.padding(
-                start = Spacing.xl,
-                end = Spacing.sm,
-                top = if (isCompactHeight()) Spacing.lg else Spacing.xl,
-                bottom = Spacing.sm
-            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClickLabel = stringResource(R.string.verse_of_the_day_open), onClick = onOpen)
+                .padding(
+                    start = Spacing.xl,
+                    end = Spacing.sm,
+                    top = if (isCompactHeight()) Spacing.lg else Spacing.xl,
+                    bottom = Spacing.sm
+                ),
             verticalArrangement = Arrangement.spacedBy(Spacing.sm)
         ) {
             Text(

@@ -54,6 +54,7 @@
     <string name="account_delete_confirm_with_google">Thibitisha ukitumia Akaunti ya Google unayotumia kuingia.</string>
     <string name="account_delete_google_wrong_account">Hiyo si Akaunti ya Google inayotumiwa na akaunti hii.</string>
     <string name="verse_of_the_day">Mstari wa Siku</string>
+    <string name="verse_of_the_day_open">Fungua katika Biblia</string>
 
     <string name="bookmark_this_place">Weka alamisho hapa</string>
     <string name="bookmark_content_description">Alamisho: %1$s</string>

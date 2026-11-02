@@ -55,6 +55,7 @@
     <string name="account_delete_confirm_with_google">Kumpirmahin gamit ang Google account na ginagamit mo sa pag-sign in.</string>
     <string name="account_delete_google_wrong_account">Hindi iyan ang Google account na ginagamit ng account na ito.</string>
     <string name="verse_of_the_day">Talata ng Araw</string>
+    <string name="verse_of_the_day_open">Buksan sa Bibliya</string>
 
     <string name="bookmark_this_place">I-bookmark ang bahaging ito</string>
     <string name="bookmark_content_description">Bookmark: %1$s</string>

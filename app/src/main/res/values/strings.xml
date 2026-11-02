@@ -58,6 +58,8 @@
     <string name="account_delete_confirm_with_google">Confirm with the Google account you sign in with.</string>
     <string name="account_delete_google_wrong_account">That\'s not the Google account this account uses.</string>
     <string name="verse_of_the_day">Verse of the Day</string>
+    <!-- TalkBack's action for tapping the Verse of the Day card on Home, which opens it in the reader. -->
+    <string name="verse_of_the_day_open">Open in Bible</string>
 
     <!-- Bookmark button in the reader's top bar. %1$s is a verse reference, e.g. "John 3:16". -->
     <string name="bookmark_this_place">Bookmark this place</string>

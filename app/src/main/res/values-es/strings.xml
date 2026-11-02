@@ -57,6 +57,7 @@
     <string name="account_delete_confirm_with_google">Confirma con la cuenta de Google con la que inicias sesión.</string>
     <string name="account_delete_google_wrong_account">Esa no es la cuenta de Google que usa esta cuenta.</string>
     <string name="verse_of_the_day">Versículo del día</string>
+    <string name="verse_of_the_day_open">Abrir en la Biblia</string>
 
     <!-- Bookmark button -->
     <string name="bookmark_this_place">Marcar este lugar</string>

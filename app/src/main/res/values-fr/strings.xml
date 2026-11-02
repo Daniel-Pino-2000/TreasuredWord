@@ -54,6 +54,7 @@
     <string name="account_delete_confirm_with_google">Confirme avec le compte Google que tu utilises pour te connecter.</string>
     <string name="account_delete_google_wrong_account">Ce n\'est pas le compte Google utilisé par ce compte.</string>
     <string name="verse_of_the_day">Verset du jour</string>
+    <string name="verse_of_the_day_open">Ouvrir dans la Bible</string>
 
     <string name="bookmark_this_place">Marquer cet endroit</string>
     <string name="bookmark_content_description">Signet : %1$s</string>

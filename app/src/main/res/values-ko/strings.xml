@@ -54,6 +54,7 @@
     <string name="account_delete_confirm_with_google">로그인할 때 쓰는 Google 계정으로 확인하세요.</string>
     <string name="account_delete_google_wrong_account">이 계정이 사용하는 Google 계정이 아니에요.</string>
     <string name="verse_of_the_day">오늘의 말씀</string>
+    <string name="verse_of_the_day_open">성경에서 열기</string>
 
     <string name="bookmark_this_place">이 위치에 책갈피</string>
     <string name="bookmark_content_description">책갈피: %1$s</string>
