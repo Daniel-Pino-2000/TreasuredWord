@@ -247,10 +247,12 @@ Success: `200 OK` → `AuthResponse` (new access token **and** a newly-rotated r
 Errors: `401 UNAUTHORIZED` (invalid, expired, or already-rotated refresh token)
 
 ### `POST /api/v1/auth/logout`
-Auth: required
+Auth: none — the refresh token in the body is the credential, as for `refresh` (#173). The app
+signs out on the phone first and has no access token left by the time it calls this.
 Request: `LogoutRequest`
-Success: `204 No Content` — revokes only that refresh token/session; other devices stay logged in
-Errors: `401 UNAUTHORIZED`
+Success: `204 No Content` — revokes only that refresh token/session; other devices stay logged in.
+The same `204` for an unknown or already-revoked token, which changes nothing.
+Errors: `429` (`auth` zone)
 
 ---
 
