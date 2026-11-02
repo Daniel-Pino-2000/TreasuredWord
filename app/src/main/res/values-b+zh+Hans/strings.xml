@@ -53,6 +53,7 @@
     <string name="account_delete_confirm_with_google">请使用你登录时所用的 Google 账号确认。</string>
     <string name="account_delete_google_wrong_account">这不是此账号所用的 Google 账号。</string>
     <string name="verse_of_the_day">每日经文</string>
+    <string name="verse_of_the_day_open">在圣经中打开</string>
 
     <string name="bookmark_this_place">为此处添加书签</string>
     <string name="bookmark_content_description">书签：%1$s</string>

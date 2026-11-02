@@ -53,6 +53,7 @@
     <string name="account_delete_confirm_with_google">Bestätige mit dem Google-Konto, mit dem du dich anmeldest.</string>
     <string name="account_delete_google_wrong_account">Das ist nicht das Google-Konto, das dieses Konto verwendet.</string>
     <string name="verse_of_the_day">Vers des Tages</string>
+    <string name="verse_of_the_day_open">In der Bibel öffnen</string>
 
     <string name="bookmark_this_place">Diese Stelle merken</string>
     <string name="bookmark_content_description">Lesezeichen: %1$s</string>

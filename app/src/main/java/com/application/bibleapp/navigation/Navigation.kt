@@ -94,6 +94,10 @@ fun Navigation(
                     bibleViewModel.openHighlightFromLibrary(highlight)
                     navController.navigate(Screen.Bible.route)
                 },
+                onVerseOfTheDayClick = {
+                    bibleViewModel.openVerseOfTheDay()
+                    navController.navigate(Screen.Bible.route)
+                },
                 onSeeAllHighlightsClick = {
                     navController.navigate(Screen.Library.createRoute(Screen.Library.TAB_HIGHLIGHTS))
                 }

@@ -431,6 +431,10 @@ class BibleViewModel(
     private val _verseOfTheDay = MutableStateFlow<DailyVerseUI?>(null)
     val verseOfTheDay: StateFlow<DailyVerseUI?> = _verseOfTheDay.asStateFlow()
 
+    // The reference of the verse on Home — OurManna's or the curated fallback, whichever is
+    // shown — so tapping the card opens the very verse it displays (#181). Set with it.
+    private var verseOfTheDayRef: DailyVerseRef? = null
+
     // The day the verse on Home was loaded for and the reference the repository gave for it —
     // what refreshVerseOfTheDayIfStale compares with today's (#183). Null until the first load.
     private var verseOfTheDayLoadedFor: Pair<String, DailyVerseRef>? = null
@@ -586,7 +590,9 @@ class BibleViewModel(
             val todayKey = dailyVerseDateKey()
             val ref = runCatching { repository.getDailyVerse() }.getOrElse { VerseOfTheDay.forToday() }
             val remoteVerse = runCatching { resolveVerse(ref) }.getOrNull()
-            _verseOfTheDay.value = remoteVerse ?: resolveVerse(VerseOfTheDay.forToday())
+            val curated = VerseOfTheDay.forToday()
+            verseOfTheDayRef = if (remoteVerse != null) ref else curated
+            _verseOfTheDay.value = remoteVerse ?: resolveVerse(curated)
             verseOfTheDayLoadedFor = todayKey to ref
             _startupVerseOfTheDayLoaded.value = true
         }
@@ -881,6 +887,18 @@ class BibleViewModel(
         setBook(first.bookId, first.chapter, first.verse)
         _selectedVerses.value = highlight.verses.toSet()
         activeSelectionHighlightId = highlight.localId
+        // Scroll even when that chapter is already open, where reloading it alone doesn't move.
+        _scrollRequest.update { it + 1 }
+    }
+
+    /** Reached from Home's Verse of the Day card (#181): opens the reader at that verse in the
+     *  selected translation, with it — or every verse of a range like John 3:20-21 — selected so
+     *  it stands out, ready to highlight or note. */
+    fun openVerseOfTheDay() {
+        val ref = verseOfTheDayRef ?: return
+        val shown = _verseOfTheDay.value ?: return
+        setBook(ref.bookId, ref.chapter, ref.startVerse)
+        _selectedVerses.value = shown.verses.mapTo(mutableSetOf()) { VerseLocationDto(ref.bookId, ref.chapter, it.number) }
         // Scroll even when that chapter is already open, where reloading it alone doesn't move.
         _scrollRequest.update { it + 1 }
     }

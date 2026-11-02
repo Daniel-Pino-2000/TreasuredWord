@@ -54,6 +54,7 @@
     <string name="account_delete_confirm_with_google">Konfirmasi dengan Akun Google yang Anda gunakan untuk masuk.</string>
     <string name="account_delete_google_wrong_account">Itu bukan Akun Google yang digunakan akun ini.</string>
     <string name="verse_of_the_day">Ayat Hari Ini</string>
+    <string name="verse_of_the_day_open">Buka di Alkitab</string>
 
     <string name="bookmark_this_place">Tandai tempat ini</string>
     <string name="bookmark_content_description">Penanda: %1$s</string>
