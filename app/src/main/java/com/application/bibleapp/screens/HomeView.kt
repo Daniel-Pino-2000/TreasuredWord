@@ -37,9 +37,11 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -51,6 +53,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.buildAnnotatedString
@@ -59,6 +62,8 @@ import androidx.compose.ui.text.style.BaselineShift
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import com.application.bibleapp.R
 import com.application.bibleapp.components.MissingVersionBanners
 import com.application.bibleapp.data.model.BookResources
@@ -231,19 +236,36 @@ fun HomeView(
     }
 }
 
+/** Home's greeting for an hour of the day (0–23): morning 5–11, afternoon 12–17, else evening. */
+internal fun homeGreetingRes(hour: Int): Int = when (hour) {
+    in 5..11 -> R.string.home_greeting_morning
+    in 12..17 -> R.string.home_greeting_afternoon
+    else -> R.string.home_greeting_evening
+}
+
 /** "Good morning" (afternoon / evening by the clock) over today's date in the app's language. */
 @Composable
 private fun HomeGreeting() {
     val locale = LocalConfiguration.current.locales[0]
-    val hour = remember { Calendar.getInstance().get(Calendar.HOUR_OF_DAY) }
-    val greetingRes = when (hour) {
-        in 5..11 -> R.string.home_greeting_morning
-        in 12..17 -> R.string.home_greeting_afternoon
-        else -> R.string.home_greeting_evening
+    // Both lines come from one "now" that's taken again whenever the app comes back to the
+    // foreground: Home stays composed while the app is in the background, so a plain remember
+    // kept yesterday's date and the morning's greeting overnight (#188). No ticking while it's
+    // on screen; a greeting a few minutes late is fine.
+    var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_START) now = System.currentTimeMillis()
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
-    val date = remember(locale) {
+    val greetingRes = remember(now) {
+        homeGreetingRes(Calendar.getInstance().apply { timeInMillis = now }.get(Calendar.HOUR_OF_DAY))
+    }
+    val date = remember(locale, now) {
         val pattern = android.text.format.DateFormat.getBestDateTimePattern(locale, "EEEEMMMMd")
-        SimpleDateFormat(pattern, locale).format(Date())
+        SimpleDateFormat(pattern, locale).format(Date(now))
     }
     Column(modifier = Modifier.padding(top = Spacing.xs, bottom = Spacing.xs)) {
         Text(
