@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.InlineTextContent
@@ -32,6 +33,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -338,8 +340,12 @@ fun BibleText(
     /** Shown under the last paragraph, e.g. the translation's credit (#98). */
     chapterFooter: @Composable () -> Unit = {}
 ) {
-    // Create a new LazyListState each time the verses list changes
-    val listState = remember(verses) { androidx.compose.foundation.lazy.LazyListState() }
+    // A new LazyListState each time the verses list changes (a new chapter or translation), saved
+    // so a rotation, which recreates the screen, keeps the reader's place (#179).
+    val listState = rememberSaveable(verses, saver = LazyListState.Saver) { LazyListState() }
+    // The scroll target below already applied to this list. Saved with it, so a rotation doesn't
+    // apply the same target again and jump back to the verse the chapter was opened at (#179).
+    var appliedScrollTarget by rememberSaveable(verses) { mutableStateOf<String?>(null) }
     val paragraphs = remember(verses) { groupIntoParagraphs(verses) }
     val haptics = LocalHapticFeedback.current
     // Read inside long-lived pointerInput handlers, which don't restart when the selection changes.
@@ -361,8 +367,11 @@ fun BibleText(
     // every other paragraph, which does scroll flush to the top of the viewport.
     LaunchedEffect(paragraphs, scrollToIndex, scrollRequest) {
         if (paragraphs.isEmpty()) return@LaunchedEffect
+        val targetKey = "$scrollToIndex/$scrollRequest"
+        if (targetKey == appliedScrollTarget) return@LaunchedEffect
         val target = verseScrollTarget(paragraphs.map { paragraph -> paragraph.verses.map { it.verse } }, scrollToIndex)
         listState.scrollToItem(target.listItemIndex)
+        appliedScrollTarget = targetKey
         if (!target.insideParagraph) return@LaunchedEffect
 
         // The verse is partway down its paragraph (John 4:6 where a translation runs 4:1-6 together),
