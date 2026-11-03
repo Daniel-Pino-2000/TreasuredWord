@@ -63,7 +63,13 @@ private const val LEGACY_PARAGRAPH_MARKER = "¶ "
 // some languages' convention), a range a hyphen or dash.
 private val REFERENCE = Regex("""^(.*\p{L}.*?)\s*(\d+)(?:\s*[:.,]\s*(\d+)(?:\s*[-–—]\s*(\d+))?)?$""")
 
-private fun findBook(bookText: String, bookNames: Map<Int, String>): Int? {
+/**
+ * The book [bookText] names: one of [bookNames] (a version's own names, by book id), the English
+ * name, a common English abbreviation, or the start of one of those that points at only one book.
+ * Search uses it (#59), and so do the Bible Helper's verse markers when the model writes a name
+ * instead of a USFM code (#190).
+ */
+internal fun findBook(bookText: String, bookNames: Map<Int, String> = emptyMap()): Int? {
     val key = bookKey(bookText)
     if (key.isEmpty()) return null
 
@@ -91,7 +97,7 @@ private fun bookKey(text: String): String =
 
 /**
  * Common English abbreviations that aren't just the start of the book's name (those already
- * match as a prefix), plus "Phil", which as a prefix would also match Philemon.
+ * match as a prefix), plus "Phil" and "Phi", which as prefixes would also match Philemon.
  */
 private val ENGLISH_ABBREVIATIONS: List<Pair<String, Int>> = listOf(
     "Gn" to 1, "Lv" to 3, "Nm" to 4, "Nb" to 4, "Dt" to 5, "Jdg" to 7, "Jg" to 7, "Jdgs" to 7,
@@ -100,7 +106,7 @@ private val ENGLISH_ABBREVIATIONS: List<Pair<String, Int>> = listOf(
     "Song of Songs" to 22, "Jr" to 24, "Ezk" to 26, "Dn" to 27, "Jl" to 29,
     "Hb" to 35, "Zp" to 36, "Hg" to 37, "Zc" to 38,
     "Mt" to 40, "Mk" to 41, "Mrk" to 41, "Lk" to 42, "Jn" to 43, "Jhn" to 43, "Rm" to 45,
-    "1 Co" to 46, "2 Co" to 47, "Phil" to 50, "Php" to 50, "Pp" to 50, "1 Th" to 52, "2 Th" to 53,
+    "1 Co" to 46, "2 Co" to 47, "Phil" to 50, "Phi" to 50, "Php" to 50, "Pp" to 50, "1 Th" to 52, "2 Th" to 53,
     "1 Tm" to 54, "2 Tm" to 55, "Tt" to 56, "Phlm" to 57, "Phm" to 57, "Jas" to 59, "Jm" to 59,
     "1 Pt" to 60, "2 Pt" to 61, "1 Jn" to 62, "1 Jhn" to 62, "2 Jn" to 63, "2 Jhn" to 63,
     "3 Jn" to 64, "3 Jhn" to 64, "Jd" to 65, "Rv" to 66, "Revelations" to 66
