@@ -30,6 +30,22 @@ tasks.named<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJ
     mergeServiceFiles()
 }
 
+// The Bible Helper's evaluation (#126): every question in docs/ai_helper_eval.md through the live
+// instructions and AI, into build/ai-eval/. Spends real free-plan neurons, so it's never part of
+// `test`, `check` or CI. Needs AI_BASE_URL, AI_API_TOKEN and AI_MODEL; -Pquestions=CORE-01,LANG-02
+// runs only those.
+tasks.register<JavaExec>("aiEval") {
+    group = "verification"
+    description = "Asks the Bible Helper every evaluation question and writes a report to build/ai-eval."
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("com.application.bibleapp.server.ai.eval.AiEvalKt")
+    args(
+        rootProject.file("docs/ai_helper_eval.md").path,
+        layout.buildDirectory.dir("ai-eval").get().asFile.path,
+        providers.gradleProperty("questions").getOrElse("")
+    )
+}
+
 dependencies {
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.server.netty)
