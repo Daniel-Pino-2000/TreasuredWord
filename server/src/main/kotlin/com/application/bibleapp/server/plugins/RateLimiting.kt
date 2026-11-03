@@ -25,6 +25,9 @@ val EMAIL_RATE_LIMIT = RateLimitName("email")
  *  loop sending questions would otherwise use a whole day's free neurons in seconds. */
 val AI_RATE_LIMIT = RateLimitName("ai")
 
+/** Rate-limit zone for reporting Bible Helper answers (#125): plenty for real reports, not enough to flood the table. */
+val AI_REPORT_RATE_LIMIT = RateLimitName("ai-report")
+
 /**
  * The caller's IP address, as both rate limits' key. Ktor's own default key is the same for
  * every caller, which made a limit server-wide (#162). On Render the server sits behind
@@ -67,6 +70,11 @@ fun Application.configureRateLimiting() {
         // (a church's Wi-Fi) doesn't hold back everyone on it.
         register(AI_RATE_LIMIT) {
             rateLimiter(limit = 5, refillPeriod = 1.minutes)
+            requestKey { call -> call.principal<JWTPrincipal>()?.payload?.subject ?: call.clientIp() }
+        }
+        // 10 reports an hour per account (#125), keyed like the ai zone.
+        register(AI_REPORT_RATE_LIMIT) {
+            rateLimiter(limit = 10, refillPeriod = 1.hours)
             requestKey { call -> call.principal<JWTPrincipal>()?.payload?.subject ?: call.clientIp() }
         }
     }
