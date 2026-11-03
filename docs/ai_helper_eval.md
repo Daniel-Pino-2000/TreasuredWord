@@ -8,6 +8,22 @@ the model, and before release (#131). The runner (#126, `./gradlew :server:aiEva
 through the same instructions as the live route and writes a report; people then grade each
 answer with the rubric below and summarize the result in the PR.
 
+## Running it
+
+In PowerShell, from the repo root. The token is a secret, so it's typed in, never saved:
+
+```powershell
+$env:AI_BASE_URL = "https://api.cloudflare.com/client/v4/accounts/<account id>/ai/v1"
+$env:AI_MODEL = "@cf/google/gemma-4-26b-a4b-it"
+$env:AI_API_TOKEN = Read-Host -MaskInput "Workers AI token"
+./gradlew :server:aiEval --configure-on-demand
+```
+
+The report lands in `server/build/ai-eval/<date>-<model>-v<promptVersion>.md`, with a summary
+table, each answer, and a blank **Grade** line for each. `-Pquestions=CORE-01,LANG-02` runs only
+those (a `-partial` report). The whole set costs about 2,000 of the free 10,000 neurons a day; if
+they run out, the runner stops and the report says where. It never runs in `:server:test` or CI.
+
 ## How a question is written
 
 The runner reads every `###` heading after "## Questions" as one question (the `##` group headings only organize them):
