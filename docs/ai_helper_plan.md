@@ -149,7 +149,7 @@ sequenceDiagram
   only use Workers AI.
 - Render and Neon stay on their free plans; the new tables are tiny.
 
-## 5. API contract (`/ai/ask` is now in `docs/api_contract.md`, which wins if the two differ)
+## 5. API contract (now in `docs/api_contract.md`, which wins if the two differ)
 
 ### `POST /api/v1/ai/ask` (signed in)
 

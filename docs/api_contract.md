@@ -571,6 +571,28 @@ Errors:
 
 The server never logs question or answer text.
 
+### `POST /api/v1/ai/reports`
+Auth: required
+Request:
+
+```kotlin
+@Serializable
+data class AiReportRequest(
+    val question: String,             // the question that was answered, 1–1,000 characters
+    val answer: String,               // the reported answer, 1–4,000 characters
+    val reason: String,               // WRONG_TEACHING, WRONG_VERSE, HARMFUL or OTHER
+    val comment: String? = null,      // optional, at most 500 characters
+    val language: String,             // one of the tags above
+    val promptVersion: String? = null // AiAskResponse.promptVersion, at most 20 characters
+)
+```
+
+Success: `204 No Content`. Stored **without the user's ID** (we need the bad answer, not who
+reported it) and deleted after 90 days. Google Play's AI-Generated Content policy requires a way
+to report answers (#125).
+Errors: `400 VALIDATION_ERROR` (with `fieldErrors`), `401 UNAUTHORIZED`, `429` with no body (the
+`ai-report` zone, 10 reports an hour per account)
+
 ---
 
 ## Deliberately deferred (not in v1)

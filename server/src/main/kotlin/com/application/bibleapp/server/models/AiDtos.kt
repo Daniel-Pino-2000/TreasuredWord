@@ -10,6 +10,20 @@ data class AiMessageDto(val role: String, val content: String)
 @Serializable
 data class AiAskRequest(val messages: List<AiMessageDto>, val language: String)
 
+/**
+ * `POST /api/v1/ai/reports` (#125). `reason` is WRONG_TEACHING, WRONG_VERSE, HARMFUL or OTHER; a
+ * String here so an unknown one is a VALIDATION_ERROR rather than an unreadable body.
+ */
+@Serializable
+data class AiReportRequest(
+    val question: String,
+    val answer: String,
+    val reason: String,
+    val comment: String? = null,
+    val language: String,
+    val promptVersion: String? = null
+)
+
 /** `remainingToday` is how many of the day's questions are left after this one. */
 @Serializable
 data class AiAskResponse(

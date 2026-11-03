@@ -8,10 +8,13 @@ import com.application.bibleapp.server.ai.SystemPrompt
 import com.application.bibleapp.server.ai.Unavailable
 import com.application.bibleapp.server.auth.currentUserId
 import com.application.bibleapp.server.db.tables.AiDailyUsage
+import com.application.bibleapp.server.db.tables.AiReports
 import com.application.bibleapp.server.models.AiAskRequest
 import com.application.bibleapp.server.models.AiAskResponse
+import com.application.bibleapp.server.models.AiReportRequest
 import com.application.bibleapp.server.models.ErrorResponse
 import com.application.bibleapp.server.plugins.AI_RATE_LIMIT
+import com.application.bibleapp.server.plugins.AI_REPORT_RATE_LIMIT
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.auth.authenticate
 import io.ktor.server.plugins.ratelimit.rateLimit
@@ -21,11 +24,15 @@ import io.ktor.server.routing.Route
 import io.ktor.server.routing.post
 import kotlinx.coroutines.CancellationException
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.plus
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.less
 import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.deleteWhere
+import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.upsert
 import java.time.Clock
+import java.time.Duration
 import java.time.LocalDate
 import java.time.ZoneOffset
 import java.util.UUID
@@ -41,6 +48,13 @@ private const val MAX_USER_CHARS = 1_000
 private const val MAX_ASSISTANT_CHARS = 4_000
 private const val MAX_TOTAL_CHARS = 8_000
 private const val CRISIS_MARKER = "[[CRISIS]]"
+
+private val REPORT_REASONS = setOf("WRONG_TEACHING", "WRONG_VERSE", "HARMFUL", "OTHER")
+private const val MAX_REPORT_QUESTION_CHARS = 1_000
+private const val MAX_REPORT_ANSWER_CHARS = 4_000
+private const val MAX_REPORT_COMMENT_CHARS = 500
+private const val MAX_PROMPT_VERSION_CHARS = 20
+private val REPORT_RETENTION: Duration = Duration.ofDays(90)
 
 /**
  * The plan's section 5 rules (docs/api_contract.md): which fields are wrong and why, or an
@@ -71,6 +85,30 @@ internal fun validateAsk(request: AiAskRequest): Map<String, String> {
     return errors
 }
 
+/** #125's rules for a report: which fields are wrong and why, or an empty map. */
+internal fun validateReport(request: AiReportRequest): Map<String, String> {
+    val errors = mutableMapOf<String, String>()
+    if (request.reason !in REPORT_REASONS) errors["reason"] = "reason must be one of ${REPORT_REASONS.joinToString(", ")}"
+    when {
+        request.question.isBlank() -> errors["question"] = "question must not be blank"
+        request.question.length > MAX_REPORT_QUESTION_CHARS -> errors["question"] = "question must be at most $MAX_REPORT_QUESTION_CHARS characters"
+    }
+    when {
+        request.answer.isBlank() -> errors["answer"] = "answer must not be blank"
+        request.answer.length > MAX_REPORT_ANSWER_CHARS -> errors["answer"] = "answer must be at most $MAX_REPORT_ANSWER_CHARS characters"
+    }
+    if ((request.comment?.length ?: 0) > MAX_REPORT_COMMENT_CHARS) {
+        errors["comment"] = "comment must be at most $MAX_REPORT_COMMENT_CHARS characters"
+    }
+    if (request.language !in SystemPrompt.languageNames) {
+        errors["language"] = "language must be one of ${SystemPrompt.languageNames.keys.joinToString(", ")}"
+    }
+    if ((request.promptVersion?.length ?: 0) > MAX_PROMPT_VERSION_CHARS) {
+        errors["promptVersion"] = "promptVersion must be at most $MAX_PROMPT_VERSION_CHARS characters"
+    }
+    return errors
+}
+
 /**
  * The answer without the crisis marker, and whether it had one. The instructions put it first;
  * it's removed wherever it appears, so the app never shows it as raw brackets.
@@ -96,7 +134,8 @@ private fun countAnswer(userId: UUID, day: LocalDate): Int = transaction {
 
 /**
  * The Bible Helper (#124). Signed in only, 5 questions a minute per user (the `ai` rate-limit
- * zone) and [AI_DAILY_LIMIT] answers per UTC day. [aiProvider] is null when the AI_* settings
+ * zone) and [AI_DAILY_LIMIT] answers per UTC day. Reports of bad answers (#125) are stored
+ * without the user's ID, 10 an hour per user, and kept [REPORT_RETENTION]. [aiProvider] is null when the AI_* settings
  * aren't set, and every question then answers AI_UNAVAILABLE. [clock] decides the day; tests
  * move it forward.
  *
@@ -155,6 +194,39 @@ fun Route.aiRoutes(aiProvider: AiProvider?, clock: Clock) {
                         promptVersion = SystemPrompt.PROMPT_VERSION
                     )
                 )
+            }
+        }
+
+        rateLimit(AI_REPORT_RATE_LIMIT) {
+            post("/ai/reports") {
+                val request = try {
+                    call.receive<AiReportRequest>()
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    call.respond(HttpStatusCode.BadRequest, ErrorResponse("VALIDATION_ERROR", "The request body isn't a valid report"))
+                    return@post
+                }
+                val fieldErrors = validateReport(request)
+                if (fieldErrors.isNotEmpty()) {
+                    call.respond(HttpStatusCode.BadRequest, ErrorResponse("VALIDATION_ERROR", "Invalid report", fieldErrors))
+                    return@post
+                }
+                val now = clock.instant()
+                transaction {
+                    AiReports.insert {
+                        it[createdAt] = now
+                        it[reason] = request.reason
+                        it[question] = request.question
+                        it[answer] = request.answer
+                        it[comment] = request.comment?.takeIf { comment -> comment.isNotBlank() }
+                        it[language] = request.language
+                        it[promptVersion] = request.promptVersion
+                    }
+                    // Keeping reports 90 days: a cleanup on each insert needs no scheduler.
+                    AiReports.deleteWhere { createdAt less now.minus(REPORT_RETENTION) }
+                }
+                call.respond(HttpStatusCode.NoContent)
             }
         }
     }

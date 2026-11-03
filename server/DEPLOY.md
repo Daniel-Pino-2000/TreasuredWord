@@ -129,6 +129,31 @@ refresh token stopped working, because the Gmail account's password changed, its
 removed under *Google Account → Security → Third-party connections*, or it sent nothing for six
 months. Repeat step 6 and update `GMAIL_REFRESH_TOKEN`.
 
+## Reading reported Bible Helper answers (#125)
+
+Every answer in the app has a report button. Reports land in the `ai_reports` table without the
+reporter's ID and are deleted after 90 days. Read them in Neon: the project → **SQL Editor**:
+
+```sql
+SELECT created_at, reason, language, prompt_version, comment, question, answer
+FROM ai_reports
+ORDER BY created_at DESC
+LIMIT 50;
+```
+
+A count by reason over the last week shows whether something changed after an instructions or
+model update:
+
+```sql
+SELECT reason, count(*) FROM ai_reports
+WHERE created_at > now() - interval '7 days'
+GROUP BY reason ORDER BY count(*) DESC;
+```
+
+Once a report has been read and acted on (an instructions change, an evaluation question added
+to `docs/ai_helper_eval.md`), it can be deleted early:
+`DELETE FROM ai_reports WHERE id = '<id>';`
+
 ## What was verified locally before writing this doc (Phase 5)
 
 - `docker build .` from the repo root succeeds without the `:app` (Android) module present in the
