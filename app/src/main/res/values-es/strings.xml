@@ -357,4 +357,46 @@
         <item quantity="many">Mostrar %1$d más</item>
         <item quantity="other">Mostrar %1$d más</item>
     </plurals>
+    <!-- Bible Helper: the Ask tab and chat (#128) -->
+    <string name="title_ask">Preguntar</string>
+    <string name="ai_helper_title">Ayudante bíblico</string>
+    <string name="ai_conversations_title">Conversaciones</string>
+    <string name="ai_action_new_conversation">Nueva conversación</string>
+    <string name="ai_signed_out_title">Pregúntale al Ayudante bíblico</string>
+    <string name="ai_signed_out_message">Haz preguntas sobre la Biblia y la fe cristiana, y recibe respuestas desde una perspectiva bautista con los versículos que las respaldan. Inicia sesión para empezar a preguntar.</string>
+    <string name="ai_intro_title">¿Qué te gustaría preguntar?</string>
+    <string name="ai_intro_message">Las respuestas vienen desde una perspectiva bautista, con los versículos en que se basan. Toca una pregunta o escribe la tuya.</string>
+    <string name="ai_starter_saved">¿Cómo puedo ser salvo?</string>
+    <string name="ai_starter_baptism">¿Por qué los bautistas bautizan por inmersión?</string>
+    <string name="ai_starter_trinity">¿Qué es la Trinidad?</string>
+    <string name="ai_starter_prayer">¿Cómo debo orar?</string>
+    <string name="ai_starter_start_reading">¿Por dónde empiezo a leer la Biblia?</string>
+    <string name="ai_starter_death">¿Qué pasa cuando morimos?</string>
+    <string name="ai_question_placeholder">Haz una pregunta sobre la Biblia</string>
+    <string name="ai_action_send">Enviar</string>
+    <string name="ai_answer_label">Respuesta de IA</string>
+    <string name="ai_thinking">Pensando…</string>
+    <string name="ai_offline_banner">Estás sin conexión. Tus conversaciones siguen aquí; para preguntar necesitas internet.</string>
+    <string name="ai_failure_offline">No se pudo enviar tu pregunta porque estás sin conexión.</string>
+    <string name="ai_failure_unavailable">El Ayudante bíblico no pudo responder en este momento.</string>
+    <string name="ai_failure_rate_limited">Son muchas preguntas a la vez. Espera un momento y vuelve a intentarlo.</string>
+    <string name="ai_failure_signed_out">Se cerró tu sesión. Vuelve a iniciar sesión para seguir preguntando.</string>
+    <string name="ai_failure_daily_limit">Ya hiciste todas las preguntas de hoy. Podrás volver a preguntar desde: %1$s.</string>
+    <string name="ai_failure_resting">El Ayudante bíblico está descansando: el servicio gratuito que usa llegó a su límite de hoy. Vuelve desde: %1$s.</string>
+    <plurals name="ai_remaining_today">
+        <item quantity="one">Te queda %1$d pregunta hoy</item>
+        <item quantity="many">Te quedan %1$d preguntas hoy</item>
+        <item quantity="other">Te quedan %1$d preguntas hoy</item>
+    </plurals>
+    <string name="ai_notice_title">Antes de preguntar</string>
+    <string name="ai_notice_ai">El Ayudante bíblico es una IA. Puede equivocarse.</string>
+    <string name="ai_notice_baptist">Responde desde una perspectiva bautista, siguiendo la Fe y Mensaje Bautista 2000.</string>
+    <string name="ai_notice_bfm_link">Leer la Fe y Mensaje Bautista 2000 (en inglés)</string>
+    <string name="ai_notice_scripture">Compara lo que dice con las Escrituras, como hacían los de Berea (Hechos 17:11).</string>
+    <string name="ai_notice_personal">No compartas datos personales, como tu nombre completo, tu dirección o tu salud.</string>
+    <string name="ai_notice_accept">Entendido</string>
+    <string name="ai_conversations_empty">Aún no hay conversaciones. Solo se guardan en este teléfono.</string>
+    <string name="ai_delete_conversation">Eliminar «%1$s»</string>
+    <string name="ai_delete_conversation_title">¿Eliminar esta conversación?</string>
+    <string name="ai_delete_conversation_message">Solo está guardada en este teléfono, así que no se podrá recuperar.</string>
 </resources>

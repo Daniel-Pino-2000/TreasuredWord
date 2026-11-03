@@ -2,7 +2,15 @@ package com.application.bibleapp.utils
 
 import android.content.Context
 import android.net.ConnectivityManager
+import android.net.Network
 import android.net.NetworkCapabilities
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 
 object NetworkUtils {
 
@@ -21,4 +29,29 @@ object NetworkUtils {
         return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
             capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
     }
+}
+
+/**
+ * Whether the phone is online, kept up to date while on screen — for screens that change as the
+ * connection comes and goes, like the Bible Helper's offline banner (#128).
+ */
+@Composable
+fun rememberIsOnline(): Boolean {
+    val context = LocalContext.current
+    var online by remember { mutableStateOf(NetworkUtils.isOnline(context)) }
+    DisposableEffect(context) {
+        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
+        // Callbacks arrive on a background thread; re-checking the whole state there is enough.
+        val callback = object : ConnectivityManager.NetworkCallback() {
+            override fun onAvailable(network: Network) { online = NetworkUtils.isOnline(context) }
+            override fun onLost(network: Network) { online = NetworkUtils.isOnline(context) }
+            override fun onCapabilitiesChanged(network: Network, capabilities: NetworkCapabilities) {
+                online = NetworkUtils.isOnline(context)
+            }
+        }
+        val registered = runCatching { connectivityManager?.registerDefaultNetworkCallback(callback) }.isSuccess
+        online = NetworkUtils.isOnline(context)
+        onDispose { if (registered) runCatching { connectivityManager?.unregisterNetworkCallback(callback) } }
+    }
+    return online
 }

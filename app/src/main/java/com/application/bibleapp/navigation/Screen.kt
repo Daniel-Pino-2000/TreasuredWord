@@ -10,6 +10,10 @@ sealed class Screen(val route: String, @StringRes val titleRes: Int) {
     /** The personal tab: profile, continue reading, and the library. Settings sit one level
      *  below it, behind the top bar's gear. */
     object You : Screen("you", R.string.title_you)
+    /** The Bible Helper's chat (#128), only in builds with BuildConfig.AI_HELPER_ENABLED. */
+    object Ask : Screen("ask", R.string.title_ask)
+    /** The Bible Helper's past conversations, from the Ask tab's top bar. */
+    object AskConversations : Screen("ask/conversations", R.string.ai_conversations_title)
     object BookPicker: Screen("book_picker", R.string.title_select_book)
 
     /**

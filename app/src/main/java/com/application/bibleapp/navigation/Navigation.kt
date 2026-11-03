@@ -1,6 +1,7 @@
 package com.application.bibleapp.navigation
 
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -14,9 +15,12 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.application.bibleapp.BuildConfig
 import com.application.bibleapp.R
 import com.application.bibleapp.components.VerifyEmailSheet
 import com.application.bibleapp.data.repository.BibleRepository
+import com.application.bibleapp.screens.AskConversationsView
+import com.application.bibleapp.screens.AskView
 import com.application.bibleapp.screens.BibleView
 import com.application.bibleapp.screens.BookPickerView
 import com.application.bibleapp.screens.HomeView
@@ -31,6 +35,7 @@ import com.application.bibleapp.screens.YouView
 import com.application.bibleapp.screens.settings.SettingsView
 import com.application.bibleapp.ui.theme.centeredContentWidth
 import com.application.bibleapp.utils.UiText
+import com.application.bibleapp.viewmodel.AskViewModel
 import com.application.bibleapp.viewmodel.AuthViewModel
 import com.application.bibleapp.viewmodel.BibleViewModel
 import com.application.bibleapp.worker.SyncScheduler
@@ -42,7 +47,8 @@ fun Navigation(
     navController: NavHostController,
     padding: PaddingValues,
     bibleViewModel: BibleViewModel,
-    authViewModel: AuthViewModel
+    authViewModel: AuthViewModel,
+    askViewModel: AskViewModel
 ) {
     val context = LocalContext.current
     // Every screen but the reader (which caps its own reading column) is laid out in a centered,
@@ -120,6 +126,30 @@ fun Navigation(
             }
         }
 
+
+        if (BuildConfig.AI_HELPER_ENABLED) {
+            composable(Screen.Ask.route) {
+                val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
+                AskView(
+                    askViewModel = askViewModel,
+                    bibleViewModel = bibleViewModel,
+                    isLoggedIn = isLoggedIn,
+                    // The field rides above the keyboard: what the bars already pad isn't padded twice.
+                    modifier = Modifier.padding(padding).consumeWindowInsets(padding).centeredContentWidth(),
+                    onSignInClick = { navController.navigate(Screen.Login.route) },
+                    onWakeServer = { authViewModel.wakeServer() },
+                    onSessionEnded = { authViewModel.refreshCurrentUser() },
+                    onReadChapter = { bookId, chapter, verse ->
+                        bibleViewModel.setBook(bookId, chapter, verse)
+                        navController.navigate(Screen.Bible.route)
+                    }
+                )
+            }
+
+            composable(Screen.AskConversations.route) {
+                AskConversationsView(askViewModel, modifier = screenModifier) { navController.popBackStack() }
+            }
+        }
 
         composable(Screen.You.route) {
             YouView(

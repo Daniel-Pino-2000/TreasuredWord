@@ -379,4 +379,53 @@
         <item quantity="one">Show %1$d more</item>
         <item quantity="other">Show %1$d more</item>
     </plurals>
+    <!-- Bible Helper: the Ask tab and chat (#128) -->
+    <!-- What has been typed and the most allowed, e.g. "120 / 1,000" -->
+    <string name="ai_question_counter" translatable="false">%1$s / %2$s</string>
+    <string name="source_bfm" translatable="false">bfm.sbc.net</string>
+    <string name="title_ask">Ask</string>
+    <string name="ai_helper_title">Bible Helper</string>
+    <string name="ai_conversations_title">Conversations</string>
+    <string name="ai_action_new_conversation">New conversation</string>
+    <string name="ai_signed_out_title">Ask the Bible Helper</string>
+    <string name="ai_signed_out_message">Ask questions about the Bible and the Christian faith, and get answers from a Baptist perspective with the verses behind them. Sign in to start asking.</string>
+    <string name="ai_intro_title">What would you like to ask?</string>
+    <string name="ai_intro_message">Answers come from a Baptist perspective, with the verses they rest on. Tap a question or write your own.</string>
+    <string name="ai_starter_saved">How can I be saved?</string>
+    <string name="ai_starter_baptism">Why do Baptists baptize by immersion?</string>
+    <string name="ai_starter_trinity">What is the Trinity?</string>
+    <string name="ai_starter_prayer">How should I pray?</string>
+    <string name="ai_starter_start_reading">Where should I start reading the Bible?</string>
+    <string name="ai_starter_death">What happens when we die?</string>
+    <string name="ai_question_placeholder">Ask a question about the Bible</string>
+    <string name="ai_action_send">Send</string>
+    <string name="ai_answer_label">AI answer</string>
+    <string name="ai_thinking">Thinking…</string>
+    <string name="ai_offline_banner">You\'re offline. Your conversations are still here; asking needs the internet.</string>
+    <string name="ai_failure_offline">Couldn\'t send your question because you\'re offline.</string>
+    <string name="ai_failure_unavailable">The Bible Helper couldn\'t answer right now.</string>
+    <string name="ai_failure_rate_limited">That\'s a lot of questions at once. Wait a moment, then try again.</string>
+    <string name="ai_failure_signed_out">You\'ve been signed out. Sign in again to keep asking.</string>
+    <!-- %1$s: when the daily limit resets, a weekday and time such as "Tue 7:00 PM" -->
+    <string name="ai_failure_daily_limit">You\'ve asked all of today\'s questions. You can ask again from %1$s.</string>
+    <!-- %1$s: when the daily limit resets, a weekday and time such as "Tue 7:00 PM" -->
+    <string name="ai_failure_resting">The Bible Helper is resting: the free service it runs on has reached its limit for today. It\'s back from %1$s.</string>
+    <!-- %1$d: how many questions are left today (shown from 3 down) -->
+    <plurals name="ai_remaining_today">
+        <item quantity="one">%1$d question left today</item>
+        <item quantity="other">%1$d questions left today</item>
+    </plurals>
+    <string name="ai_notice_title">Before you ask</string>
+    <string name="ai_notice_ai">The Bible Helper is an AI. It can make mistakes.</string>
+    <string name="ai_notice_baptist">It answers from a Baptist perspective, following the Baptist Faith and Message 2000.</string>
+    <!-- Link to the Baptist Faith and Message 2000, a Baptist confession of faith; the page is in English -->
+    <string name="ai_notice_bfm_link">Read the Baptist Faith and Message 2000</string>
+    <string name="ai_notice_scripture">Check what it says against Scripture, as the Bereans did (Acts 17:11).</string>
+    <string name="ai_notice_personal">Don\'t share personal details, like your full name, address or health.</string>
+    <string name="ai_notice_accept">Got it</string>
+    <string name="ai_conversations_empty">No conversations yet. They\'re kept only on this phone.</string>
+    <!-- Screen reader label of a conversation's delete button. %1$s: the conversation's title -->
+    <string name="ai_delete_conversation">Delete “%1$s”</string>
+    <string name="ai_delete_conversation_title">Delete this conversation?</string>
+    <string name="ai_delete_conversation_message">It\'s kept only on this phone, so it can\'t be brought back.</string>
 </resources>

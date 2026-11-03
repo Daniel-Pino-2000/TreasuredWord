@@ -121,8 +121,8 @@ class AuthViewModel(
         if (_isLoggedIn.value) refreshCurrentUser()
     }
 
-    /** The sign-in and create-account screens call this when they open, so a sleeping server
-     *  starts up while the form is filled in (#87). */
+    /** The sign-in and create-account screens and the Ask tab (#128) call this when they open, so a
+     *  sleeping server starts up while the form or question is typed (#87). */
     fun wakeServer() {
         viewModelScope.launch { serverWakeUp.wakeUp() }
     }

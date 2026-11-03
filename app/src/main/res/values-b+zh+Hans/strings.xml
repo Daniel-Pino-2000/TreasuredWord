@@ -319,4 +319,44 @@
     <plurals name="ai_verse_cards_show_more">
         <item quantity="other">再显示 %1$d 段</item>
     </plurals>
+    <!-- Bible Helper: the Ask tab and chat (#128) -->
+    <string name="title_ask">提问</string>
+    <string name="ai_helper_title">圣经助手</string>
+    <string name="ai_conversations_title">对话</string>
+    <string name="ai_action_new_conversation">新对话</string>
+    <string name="ai_signed_out_title">向圣经助手提问</string>
+    <string name="ai_signed_out_message">就圣经和基督教信仰提问，从浸信会的角度获得回答，并附上相关经文。登录后即可开始提问。</string>
+    <string name="ai_intro_title">你想问什么？</string>
+    <string name="ai_intro_message">回答基于浸信会的观点，并附上所依据的经文。点按一个问题，或写下你自己的问题。</string>
+    <string name="ai_starter_saved">我怎样才能得救？</string>
+    <string name="ai_starter_baptism">浸信会为什么施行浸水礼？</string>
+    <string name="ai_starter_trinity">什么是三位一体？</string>
+    <string name="ai_starter_prayer">我应该怎样祷告？</string>
+    <string name="ai_starter_start_reading">我该从哪里开始读圣经？</string>
+    <string name="ai_starter_death">人死后会怎样？</string>
+    <string name="ai_question_placeholder">问一个关于圣经的问题</string>
+    <string name="ai_action_send">发送</string>
+    <string name="ai_answer_label">AI 回答</string>
+    <string name="ai_thinking">正在思考…</string>
+    <string name="ai_offline_banner">你已离线。对话仍可查看，但提问需要联网。</string>
+    <string name="ai_failure_offline">你已离线，问题未能发送。</string>
+    <string name="ai_failure_unavailable">圣经助手暂时无法回答。</string>
+    <string name="ai_failure_rate_limited">一次提问太多了。请稍等片刻再试。</string>
+    <string name="ai_failure_signed_out">你已退出登录。请重新登录以继续提问。</string>
+    <string name="ai_failure_daily_limit">你今天的提问次数已用完。%1$s起可以再次提问。</string>
+    <string name="ai_failure_resting">圣经助手正在休息：它使用的免费服务今天已达到上限。%1$s起恢复。</string>
+    <plurals name="ai_remaining_today">
+        <item quantity="other">今天还可以提问 %1$d 次</item>
+    </plurals>
+    <string name="ai_notice_title">提问之前</string>
+    <string name="ai_notice_ai">圣经助手是 AI，可能会出错。</string>
+    <string name="ai_notice_baptist">它从浸信会的角度回答，遵循《浸信会信仰与信息 2000》（Baptist Faith and Message 2000）。</string>
+    <string name="ai_notice_bfm_link">阅读 Baptist Faith and Message 2000（英文）</string>
+    <string name="ai_notice_scripture">像庇哩亚人那样，用圣经来查验它的话（使徒行传 17:11）。</string>
+    <string name="ai_notice_personal">不要分享个人信息，例如全名、地址或健康状况。</string>
+    <string name="ai_notice_accept">知道了</string>
+    <string name="ai_conversations_empty">还没有对话。对话只保存在这部手机上。</string>
+    <string name="ai_delete_conversation">删除“%1$s”</string>
+    <string name="ai_delete_conversation_title">删除这个对话？</string>
+    <string name="ai_delete_conversation_message">它只保存在这部手机上，删除后无法恢复。</string>
 </resources>

@@ -330,4 +330,45 @@
         <item quantity="one">Onyesha %1$d zaidi</item>
         <item quantity="other">Onyesha %1$d zaidi</item>
     </plurals>
+    <!-- Bible Helper: the Ask tab and chat (#128) -->
+    <string name="title_ask">Uliza</string>
+    <string name="ai_helper_title">Msaidizi wa Biblia</string>
+    <string name="ai_conversations_title">Mazungumzo</string>
+    <string name="ai_action_new_conversation">Mazungumzo mapya</string>
+    <string name="ai_signed_out_title">Muulize Msaidizi wa Biblia</string>
+    <string name="ai_signed_out_message">Uliza maswali kuhusu Biblia na imani ya Kikristo, na upate majibu kutoka mtazamo wa Kibaptisti pamoja na mistari inayoyaunga mkono. Ingia ili uanze kuuliza.</string>
+    <string name="ai_intro_title">Ungependa kuuliza nini?</string>
+    <string name="ai_intro_message">Majibu yanatoka mtazamo wa Kibaptisti, pamoja na mistari yanayoitegemea. Gusa swali au andika lako mwenyewe.</string>
+    <string name="ai_starter_saved">Ninawezaje kuokolewa?</string>
+    <string name="ai_starter_baptism">Kwa nini Wabaptisti hubatiza kwa kuzamisha?</string>
+    <string name="ai_starter_trinity">Utatu ni nini?</string>
+    <string name="ai_starter_prayer">Ninapaswa kuombaje?</string>
+    <string name="ai_starter_start_reading">Nianzie wapi kusoma Biblia?</string>
+    <string name="ai_starter_death">Nini hutokea tunapokufa?</string>
+    <string name="ai_question_placeholder">Uliza swali kuhusu Biblia</string>
+    <string name="ai_action_send">Tuma</string>
+    <string name="ai_answer_label">Jibu la AI</string>
+    <string name="ai_thinking">Inafikiri…</string>
+    <string name="ai_offline_banner">Uko nje ya mtandao. Mazungumzo yako bado yapo; kuuliza kunahitaji intaneti.</string>
+    <string name="ai_failure_offline">Swali lako halikutumwa kwa sababu uko nje ya mtandao.</string>
+    <string name="ai_failure_unavailable">Msaidizi wa Biblia hakuweza kujibu sasa hivi.</string>
+    <string name="ai_failure_rate_limited">Hayo ni maswali mengi kwa wakati mmoja. Subiri kidogo, kisha ujaribu tena.</string>
+    <string name="ai_failure_signed_out">Umetolewa kwenye akaunti. Ingia tena ili uendelee kuuliza.</string>
+    <string name="ai_failure_daily_limit">Umeuliza maswali yote ya leo. Unaweza kuuliza tena kuanzia %1$s.</string>
+    <string name="ai_failure_resting">Msaidizi wa Biblia anapumzika: huduma ya bure anayotumia imefikia kikomo chake cha leo. Atarudi kuanzia %1$s.</string>
+    <plurals name="ai_remaining_today">
+        <item quantity="one">Limebaki swali %1$d leo</item>
+        <item quantity="other">Yamebaki maswali %1$d leo</item>
+    </plurals>
+    <string name="ai_notice_title">Kabla ya kuuliza</string>
+    <string name="ai_notice_ai">Msaidizi wa Biblia ni AI. Anaweza kukosea.</string>
+    <string name="ai_notice_baptist">Anajibu kutoka mtazamo wa Kibaptisti, akifuata Baptist Faith and Message 2000.</string>
+    <string name="ai_notice_bfm_link">Soma Baptist Faith and Message 2000 (kwa Kiingereza)</string>
+    <string name="ai_notice_scripture">Pima anachosema kwa Maandiko, kama Waberoya walivyofanya (Matendo 17:11).</string>
+    <string name="ai_notice_personal">Usishiriki taarifa binafsi, kama jina lako kamili, anwani au afya yako.</string>
+    <string name="ai_notice_accept">Nimeelewa</string>
+    <string name="ai_conversations_empty">Bado hakuna mazungumzo. Yanahifadhiwa kwenye simu hii pekee.</string>
+    <string name="ai_delete_conversation">Futa “%1$s”</string>
+    <string name="ai_delete_conversation_title">Ungependa kufuta mazungumzo haya?</string>
+    <string name="ai_delete_conversation_message">Yamehifadhiwa kwenye simu hii pekee, kwa hiyo hayawezi kurejeshwa.</string>
 </resources>

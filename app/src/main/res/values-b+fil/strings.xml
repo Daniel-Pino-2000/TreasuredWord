@@ -331,4 +331,45 @@
         <item quantity="one">Ipakita ang %1$d pa</item>
         <item quantity="other">Ipakita ang %1$d pa</item>
     </plurals>
+    <!-- Bible Helper: the Ask tab and chat (#128) -->
+    <string name="title_ask">Magtanong</string>
+    <string name="ai_helper_title">Katulong sa Bibliya</string>
+    <string name="ai_conversations_title">Mga usapan</string>
+    <string name="ai_action_new_conversation">Bagong usapan</string>
+    <string name="ai_signed_out_title">Magtanong sa Katulong sa Bibliya</string>
+    <string name="ai_signed_out_message">Magtanong tungkol sa Bibliya at sa pananampalatayang Kristiyano, at makakuha ng mga sagot mula sa pananaw ng Baptist kasama ang mga talatang pinagbabatayan nito. Mag-sign in para magsimulang magtanong.</string>
+    <string name="ai_intro_title">Ano ang gusto mong itanong?</string>
+    <string name="ai_intro_message">Mula sa pananaw ng Baptist ang mga sagot, kasama ang mga talatang pinagbabatayan nito. Mag-tap ng tanong o isulat ang sarili mong tanong.</string>
+    <string name="ai_starter_saved">Paano ako maliligtas?</string>
+    <string name="ai_starter_baptism">Bakit nagbabautismo ang mga Baptist sa paglulubog?</string>
+    <string name="ai_starter_trinity">Ano ang Trinidad?</string>
+    <string name="ai_starter_prayer">Paano ako dapat manalangin?</string>
+    <string name="ai_starter_start_reading">Saan ako dapat magsimulang magbasa ng Bibliya?</string>
+    <string name="ai_starter_death">Ano ang nangyayari kapag namatay tayo?</string>
+    <string name="ai_question_placeholder">Magtanong tungkol sa Bibliya</string>
+    <string name="ai_action_send">Ipadala</string>
+    <string name="ai_answer_label">Sagot ng AI</string>
+    <string name="ai_thinking">Nag-iisip…</string>
+    <string name="ai_offline_banner">Offline ka. Nandito pa rin ang mga usapan mo; kailangan ng internet para magtanong.</string>
+    <string name="ai_failure_offline">Hindi naipadala ang tanong mo dahil offline ka.</string>
+    <string name="ai_failure_unavailable">Hindi makasagot ang Katulong sa Bibliya ngayon.</string>
+    <string name="ai_failure_rate_limited">Napakaraming tanong nang sabay-sabay. Maghintay sandali, saka subukan ulit.</string>
+    <string name="ai_failure_signed_out">Na-sign out ka. Mag-sign in ulit para patuloy na magtanong.</string>
+    <string name="ai_failure_daily_limit">Naitanong mo na ang lahat ng tanong para ngayong araw. Puwede kang magtanong ulit simula %1$s.</string>
+    <string name="ai_failure_resting">Nagpapahinga ang Katulong sa Bibliya: naabot na ng libreng serbisyong ginagamit nito ang limitasyon para ngayong araw. Babalik ito simula %1$s.</string>
+    <plurals name="ai_remaining_today">
+        <item quantity="one">%1$d tanong na lang ngayong araw</item>
+        <item quantity="other">%1$d tanong na lang ngayong araw</item>
+    </plurals>
+    <string name="ai_notice_title">Bago ka magtanong</string>
+    <string name="ai_notice_ai">AI ang Katulong sa Bibliya. Puwede itong magkamali.</string>
+    <string name="ai_notice_baptist">Sumasagot ito mula sa pananaw ng Baptist, ayon sa Baptist Faith and Message 2000.</string>
+    <string name="ai_notice_bfm_link">Basahin ang Baptist Faith and Message 2000 (sa Ingles)</string>
+    <string name="ai_notice_scripture">Suriin ang sinasabi nito ayon sa Kasulatan, gaya ng ginawa ng mga taga-Berea (Mga Gawa 17:11).</string>
+    <string name="ai_notice_personal">Huwag magbahagi ng personal na detalye, gaya ng buong pangalan, address, o kalusugan mo.</string>
+    <string name="ai_notice_accept">Sige</string>
+    <string name="ai_conversations_empty">Wala pang usapan. Sa phone na ito lang sila naka-save.</string>
+    <string name="ai_delete_conversation">I-delete ang “%1$s”</string>
+    <string name="ai_delete_conversation_title">I-delete ang usapang ito?</string>
+    <string name="ai_delete_conversation_message">Sa phone na ito lang ito naka-save, kaya hindi na ito maibabalik.</string>
 </resources>

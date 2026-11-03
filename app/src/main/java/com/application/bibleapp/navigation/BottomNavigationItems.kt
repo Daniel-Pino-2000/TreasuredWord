@@ -4,14 +4,17 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.QuestionAnswer
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.Book
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.QuestionAnswer
 import androidx.compose.material.icons.outlined.Search
+import com.application.bibleapp.BuildConfig
 import com.application.bibleapp.navigation.BottomNavigationItem
 
-val bottomNavigationItems = listOf(
+val bottomNavigationItems = listOfNotNull(
     BottomNavigationItem(
         Screen.Home.titleRes,
         Screen.Home.route,
@@ -30,6 +33,17 @@ val bottomNavigationItems = listOf(
         selectedIcon = Icons.Filled.Search,
         unselectedIcon = Icons.Outlined.Search,
     ),
+    // The Bible Helper (#128) stays out of release builds until #131.
+    if (BuildConfig.AI_HELPER_ENABLED) {
+        BottomNavigationItem(
+            Screen.Ask.titleRes,
+            Screen.Ask.route,
+            selectedIcon = Icons.Filled.QuestionAnswer,
+            unselectedIcon = Icons.Outlined.QuestionAnswer,
+        )
+    } else {
+        null
+    },
     BottomNavigationItem(
         Screen.You.titleRes,
         Screen.You.route,
