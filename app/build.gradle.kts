@@ -53,9 +53,10 @@ android {
         // Google Play only accepts new apps and updates that target API 36 or higher (#66).
         targetSdk = 36
         // Every bundle uploaded to Play needs a higher versionCode (docs/release.md).
-        // 1.3: verify email and forgot password (#159, #160), autofill (#169), rotation crash (#175).
-        versionCode = 4
-        versionName = "1.3"
+        // 1.4: Verse of the Day fixes (#181, #183), startup fade (#182), reader keeps its place on
+        // rotation (#179), Home's date and greeting after midnight (#188).
+        versionCode = 5
+        versionName = "1.4"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
