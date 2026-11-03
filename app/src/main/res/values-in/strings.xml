@@ -360,4 +360,22 @@
     <string name="ai_delete_conversation">Hapus “%1$s”</string>
     <string name="ai_delete_conversation_title">Hapus percakapan ini?</string>
     <string name="ai_delete_conversation_message">Percakapan ini hanya disimpan di ponsel ini, jadi tidak dapat dipulihkan.</string>
+    <!-- Bible Helper: reporting an answer and the crisis help card (#130) -->
+    <string name="ai_action_report">Laporkan</string>
+    <string name="ai_report_title">Laporkan jawaban ini</string>
+    <string name="ai_report_reason_wrong_teaching">Ajaran yang keliru</string>
+    <string name="ai_report_reason_wrong_verse">Ayat yang keliru</string>
+    <string name="ai_report_reason_harmful">Merugikan atau menyinggung</string>
+    <string name="ai_report_reason_other">Hal lain</string>
+    <string name="ai_report_comment_label">Apa yang salah? (opsional)</string>
+    <string name="ai_report_what_is_sent">Kami akan mengirim pertanyaan Anda dan jawaban ini, tanpa akun Anda.</string>
+    <string name="ai_report_send">Kirim laporan</string>
+    <string name="ai_report_sent">Terima kasih, laporan Anda sudah terkirim.</string>
+    <string name="ai_report_offline">Anda sedang offline. Sambungkan ke internet untuk mengirim laporan.</string>
+    <string name="ai_report_failed">Laporan tidak dapat dikirim. Coba lagi.</string>
+    <string name="ai_report_rate_limited">Anda sudah mengirim banyak laporan. Coba lagi nanti.</string>
+    <string name="ai_crisis_title">Anda tidak harus menghadapi ini sendirian</string>
+    <string name="ai_crisis_message">Jika Anda dalam bahaya atau berpikir untuk menyakiti diri sendiri, segera hubungi seseorang. Layanan bantuan bisa berbicara dengan Anda hari ini.</string>
+    <string name="ai_crisis_find_helpline">Cari layanan bantuan</string>
+    <string name="ai_crisis_emergency">Dalam keadaan darurat, hubungi nomor darurat setempat.</string>
 </resources>

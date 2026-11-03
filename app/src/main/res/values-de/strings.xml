@@ -370,4 +370,22 @@
     <string name="ai_delete_conversation">„%1$s“ löschen</string>
     <string name="ai_delete_conversation_title">Dieses Gespräch löschen?</string>
     <string name="ai_delete_conversation_message">Es ist nur auf diesem Telefon gespeichert und kann nicht wiederhergestellt werden.</string>
+    <!-- Bible Helper: reporting an answer and the crisis help card (#130) -->
+    <string name="ai_action_report">Melden</string>
+    <string name="ai_report_title">Diese Antwort melden</string>
+    <string name="ai_report_reason_wrong_teaching">Falsche Lehre</string>
+    <string name="ai_report_reason_wrong_verse">Falsche Bibelstelle</string>
+    <string name="ai_report_reason_harmful">Verletzend oder anstößig</string>
+    <string name="ai_report_reason_other">Etwas anderes</string>
+    <string name="ai_report_comment_label">Was ist falsch? (optional)</string>
+    <string name="ai_report_what_is_sent">Wir senden deine Frage und diese Antwort, ohne dein Konto.</string>
+    <string name="ai_report_send">Meldung senden</string>
+    <string name="ai_report_sent">Danke, deine Meldung wurde gesendet.</string>
+    <string name="ai_report_offline">Du bist offline. Verbinde dich mit dem Internet, um die Meldung zu senden.</string>
+    <string name="ai_report_failed">Die Meldung konnte nicht gesendet werden. Versuch es noch einmal.</string>
+    <string name="ai_report_rate_limited">Du hast viele Meldungen gesendet. Versuch es später noch einmal.</string>
+    <string name="ai_crisis_title">Du musst das nicht allein durchstehen</string>
+    <string name="ai_crisis_message">Wenn du in Gefahr bist oder daran denkst, dir etwas anzutun, wende dich bitte jetzt an jemanden. Bei einer Hilfe-Hotline kannst du noch heute mit jemandem sprechen.</string>
+    <string name="ai_crisis_find_helpline">Hilfe-Hotline finden</string>
+    <string name="ai_crisis_emergency">Im Notfall ruf die örtliche Notrufnummer an.</string>
 </resources>

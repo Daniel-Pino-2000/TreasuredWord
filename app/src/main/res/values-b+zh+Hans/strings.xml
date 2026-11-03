@@ -359,4 +359,22 @@
     <string name="ai_delete_conversation">删除“%1$s”</string>
     <string name="ai_delete_conversation_title">删除这个对话？</string>
     <string name="ai_delete_conversation_message">它只保存在这部手机上，删除后无法恢复。</string>
+    <!-- Bible Helper: reporting an answer and the crisis help card (#130) -->
+    <string name="ai_action_report">举报</string>
+    <string name="ai_report_title">举报这个回答</string>
+    <string name="ai_report_reason_wrong_teaching">错误的教导</string>
+    <string name="ai_report_reason_wrong_verse">错误的经文</string>
+    <string name="ai_report_reason_harmful">有害或冒犯</string>
+    <string name="ai_report_reason_other">其他</string>
+    <string name="ai_report_comment_label">哪里有问题？（可选）</string>
+    <string name="ai_report_what_is_sent">我们会发送你的问题和这个回答，不包含你的账号信息。</string>
+    <string name="ai_report_send">发送举报</string>
+    <string name="ai_report_sent">谢谢，你的举报已发送。</string>
+    <string name="ai_report_offline">你已离线。请联网后再发送举报。</string>
+    <string name="ai_report_failed">举报未能发送。请重试。</string>
+    <string name="ai_report_rate_limited">你发送的举报太多了。请稍后再试。</string>
+    <string name="ai_crisis_title">你不必独自面对</string>
+    <string name="ai_crisis_message">如果你正处于危险之中，或有伤害自己的念头，请现在就联系身边的人。求助热线今天就可以和你交谈。</string>
+    <string name="ai_crisis_find_helpline">查找求助热线</string>
+    <string name="ai_crisis_emergency">如遇紧急情况，请拨打当地的紧急电话。</string>
 </resources>

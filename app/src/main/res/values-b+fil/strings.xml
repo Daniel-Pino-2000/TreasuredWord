@@ -372,4 +372,22 @@
     <string name="ai_delete_conversation">I-delete ang “%1$s”</string>
     <string name="ai_delete_conversation_title">I-delete ang usapang ito?</string>
     <string name="ai_delete_conversation_message">Sa phone na ito lang ito naka-save, kaya hindi na ito maibabalik.</string>
+    <!-- Bible Helper: reporting an answer and the crisis help card (#130) -->
+    <string name="ai_action_report">I-report</string>
+    <string name="ai_report_title">I-report ang sagot na ito</string>
+    <string name="ai_report_reason_wrong_teaching">Maling turo</string>
+    <string name="ai_report_reason_wrong_verse">Maling talata</string>
+    <string name="ai_report_reason_harmful">Nakakasakit o nakakainsulto</string>
+    <string name="ai_report_reason_other">Iba pa</string>
+    <string name="ai_report_comment_label">Ano ang mali? (opsyonal)</string>
+    <string name="ai_report_what_is_sent">Ipapadala namin ang tanong mo at ang sagot na ito, nang wala ang account mo.</string>
+    <string name="ai_report_send">Ipadala ang report</string>
+    <string name="ai_report_sent">Salamat, naipadala na ang report mo.</string>
+    <string name="ai_report_offline">Offline ka. Kumonekta sa internet para maipadala ang report.</string>
+    <string name="ai_report_failed">Hindi naipadala ang report. Subukan ulit.</string>
+    <string name="ai_report_rate_limited">Marami ka nang naipadalang report. Subukan ulit mamaya.</string>
+    <string name="ai_crisis_title">Hindi mo kailangang harapin ito nang mag-isa</string>
+    <string name="ai_crisis_message">Kung nasa panganib ka o iniisip mong saktan ang sarili mo, pakiusap, lumapit sa isang tao ngayon. Puwedeng makipag-usap sa iyo ang isang helpline ngayong araw.</string>
+    <string name="ai_crisis_find_helpline">Maghanap ng helpline</string>
+    <string name="ai_crisis_emergency">Kapag emergency, tawagan ang lokal na emergency number.</string>
 </resources>

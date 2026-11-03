@@ -371,4 +371,22 @@
     <string name="ai_delete_conversation">Futa “%1$s”</string>
     <string name="ai_delete_conversation_title">Ungependa kufuta mazungumzo haya?</string>
     <string name="ai_delete_conversation_message">Yamehifadhiwa kwenye simu hii pekee, kwa hiyo hayawezi kurejeshwa.</string>
+    <!-- Bible Helper: reporting an answer and the crisis help card (#130) -->
+    <string name="ai_action_report">Ripoti</string>
+    <string name="ai_report_title">Ripoti jibu hili</string>
+    <string name="ai_report_reason_wrong_teaching">Fundisho lisilo sahihi</string>
+    <string name="ai_report_reason_wrong_verse">Mstari usio sahihi</string>
+    <string name="ai_report_reason_harmful">Linadhuru au linaudhi</string>
+    <string name="ai_report_reason_other">Kitu kingine</string>
+    <string name="ai_report_comment_label">Nini kilienda vibaya? (si lazima)</string>
+    <string name="ai_report_what_is_sent">Tutatuma swali lako na jibu hili, bila akaunti yako.</string>
+    <string name="ai_report_send">Tuma ripoti</string>
+    <string name="ai_report_sent">Asante, ripoti yako imetumwa.</string>
+    <string name="ai_report_offline">Uko nje ya mtandao. Unganisha kwenye intaneti ili kutuma ripoti.</string>
+    <string name="ai_report_failed">Ripoti haikutumwa. Jaribu tena.</string>
+    <string name="ai_report_rate_limited">Umetuma ripoti nyingi. Jaribu tena baadaye.</string>
+    <string name="ai_crisis_title">Si lazima ukabiliane na hili peke yako</string>
+    <string name="ai_crisis_message">Ikiwa uko hatarini au unafikiria kujidhuru, tafadhali wasiliana na mtu sasa hivi. Huduma ya msaada inaweza kuzungumza nawe leo.</string>
+    <string name="ai_crisis_find_helpline">Tafuta huduma ya msaada</string>
+    <string name="ai_crisis_emergency">Katika dharura, piga nambari ya dharura ya eneo lako.</string>
 </resources>

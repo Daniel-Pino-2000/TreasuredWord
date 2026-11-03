@@ -399,4 +399,22 @@
     <string name="ai_delete_conversation">Eliminar «%1$s»</string>
     <string name="ai_delete_conversation_title">¿Eliminar esta conversación?</string>
     <string name="ai_delete_conversation_message">Solo está guardada en este teléfono, así que no se podrá recuperar.</string>
+    <!-- Bible Helper: reporting an answer and the crisis help card (#130) -->
+    <string name="ai_action_report">Reportar</string>
+    <string name="ai_report_title">Reportar esta respuesta</string>
+    <string name="ai_report_reason_wrong_teaching">Enseñanza errónea</string>
+    <string name="ai_report_reason_wrong_verse">Versículo equivocado</string>
+    <string name="ai_report_reason_harmful">Dañina u ofensiva</string>
+    <string name="ai_report_reason_other">Otra cosa</string>
+    <string name="ai_report_comment_label">¿Qué estuvo mal? (opcional)</string>
+    <string name="ai_report_what_is_sent">Enviaremos tu pregunta y esta respuesta, sin tu cuenta.</string>
+    <string name="ai_report_send">Enviar reporte</string>
+    <string name="ai_report_sent">Gracias, tu reporte se envió.</string>
+    <string name="ai_report_offline">Estás sin conexión. Conéctate a internet para enviar el reporte.</string>
+    <string name="ai_report_failed">No se pudo enviar el reporte. Vuelve a intentarlo.</string>
+    <string name="ai_report_rate_limited">Enviaste muchos reportes. Vuelve a intentarlo más tarde.</string>
+    <string name="ai_crisis_title">No tienes que enfrentar esto solo</string>
+    <string name="ai_crisis_message">Si estás en peligro o piensas en hacerte daño, por favor busca ayuda ahora. En una línea de ayuda pueden hablar contigo hoy mismo.</string>
+    <string name="ai_crisis_find_helpline">Buscar una línea de ayuda</string>
+    <string name="ai_crisis_emergency">En una emergencia, llama al número de emergencias de tu país.</string>
 </resources>

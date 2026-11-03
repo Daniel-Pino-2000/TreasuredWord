@@ -428,4 +428,24 @@
     <string name="ai_delete_conversation">Delete “%1$s”</string>
     <string name="ai_delete_conversation_title">Delete this conversation?</string>
     <string name="ai_delete_conversation_message">It\'s kept only on this phone, so it can\'t be brought back.</string>
+    <!-- Bible Helper: reporting an answer and the crisis help card (#130) -->
+    <!-- The name of findahelpline.com, shown under its link -->
+    <string name="source_findahelpline" translatable="false">findahelpline.com</string>
+    <string name="ai_action_report">Report</string>
+    <string name="ai_report_title">Report this answer</string>
+    <string name="ai_report_reason_wrong_teaching">Wrong teaching</string>
+    <string name="ai_report_reason_wrong_verse">Wrong verse</string>
+    <string name="ai_report_reason_harmful">Harmful or offensive</string>
+    <string name="ai_report_reason_other">Something else</string>
+    <string name="ai_report_comment_label">What went wrong? (optional)</string>
+    <string name="ai_report_what_is_sent">We\'ll send your question and this answer, without your account.</string>
+    <string name="ai_report_send">Send report</string>
+    <string name="ai_report_sent">Thanks, your report was sent.</string>
+    <string name="ai_report_offline">You\'re offline. Connect to the internet to send the report.</string>
+    <string name="ai_report_failed">Couldn\'t send the report. Try again.</string>
+    <string name="ai_report_rate_limited">You\'ve sent a lot of reports. Try again later.</string>
+    <string name="ai_crisis_title">You don\'t have to face this alone</string>
+    <string name="ai_crisis_message">If you\'re in danger or thinking about hurting yourself, please reach out to someone now. A helpline can talk with you today.</string>
+    <string name="ai_crisis_find_helpline">Find a helpline</string>
+    <string name="ai_crisis_emergency">In an emergency, call your local emergency number.</string>
 </resources>
