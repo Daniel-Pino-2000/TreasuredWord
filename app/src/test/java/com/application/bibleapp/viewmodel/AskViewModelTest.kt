@@ -5,6 +5,9 @@ import com.application.bibleapp.data.model.AiMessage
 import com.application.bibleapp.data.model.AiRole
 import com.application.bibleapp.data.remote.AiAskResult
 import com.application.bibleapp.data.remote.AiHelperApi
+import com.application.bibleapp.data.remote.AiReportReason
+import com.application.bibleapp.data.remote.AiReportRequestDto
+import com.application.bibleapp.data.remote.AiReportResult
 import com.application.bibleapp.data.remote.HttpClientProvider
 import com.application.bibleapp.data.repository.AiConversationStore
 import com.application.bibleapp.data.repository.AiHelperRepository
@@ -14,6 +17,7 @@ import io.ktor.client.engine.mock.respond
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.content.TextContent
 import io.ktor.http.headersOf
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.Dispatchers
@@ -62,6 +66,7 @@ class AskViewModelTest {
     private var status = HttpStatusCode.OK
     private var body = """{"answer":"Grace [[EPH 2:8]]","crisis":false,"remainingToday":3,"promptVersion":"1"}"""
 
+    private val sent = mutableListOf<Pair<String, String>>()
     private lateinit var viewModel: AskViewModel
 
     @Before
@@ -69,7 +74,10 @@ class AskViewModelTest {
         Dispatchers.setMain(UnconfinedTestDispatcher())
         val api = AiHelperApi(
             client = {
-                HttpClient(MockEngine { respond(body, status, headersOf(HttpHeaders.ContentType, "application/json")) }) {
+                HttpClient(MockEngine { request ->
+                    sent += request.url.encodedPath to (request.body as TextContent).text
+                    respond(body, status, headersOf(HttpHeaders.ContentType, "application/json"))
+                }) {
                     install(ContentNegotiation) { json(HttpClientProvider.json) }
                 }
             },
@@ -209,5 +217,31 @@ class AskViewModelTest {
 
         assertTrue(viewModel.noticeAccepted.value)
         assertTrue(settings.noticeAccepted)
+    }
+
+    @Test
+    fun `a report carries the answer and the question it answered`() = runTest {
+        ask("Who was Moses?")
+        body = """{"answer":"A prophet [[EXO 3:10]]","crisis":false,"remainingToday":2,"promptVersion":"2"}"""
+        ask("And Aaron?")
+        val answer = viewModel.state.value.messages.last()
+
+        val result = viewModel.report(answer.id, AiReportReason.WRONG_VERSE, "Not this verse", "es")
+
+        assertEquals(AiReportResult.Sent, result)
+        val (path, json) = sent.last()
+        assertEquals("/api/v1/ai/reports", path)
+        assertEquals(
+            AiReportRequestDto("And Aaron?", "A prophet [[EXO 3:10]]", AiReportReason.WRONG_VERSE, "Not this verse", "es", "2"),
+            HttpClientProvider.json.decodeFromString(AiReportRequestDto.serializer(), json)
+        )
+    }
+
+    @Test
+    fun `a question can't be reported as an answer`() = runTest {
+        ask("Who was Moses?")
+        val question = viewModel.state.value.messages.first()
+
+        assertEquals(AiAskResult.Unavailable, viewModel.report(question.id, AiReportReason.OTHER, null, "en"))
     }
 }

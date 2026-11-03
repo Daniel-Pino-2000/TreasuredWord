@@ -382,4 +382,22 @@
     <string name="ai_delete_conversation">Supprimer « %1$s »</string>
     <string name="ai_delete_conversation_title">Supprimer cette conversation ?</string>
     <string name="ai_delete_conversation_message">Elle n\'est gardée que sur ce téléphone, elle ne pourra donc pas être récupérée.</string>
+    <!-- Bible Helper: reporting an answer and the crisis help card (#130) -->
+    <string name="ai_action_report">Signaler</string>
+    <string name="ai_report_title">Signaler cette réponse</string>
+    <string name="ai_report_reason_wrong_teaching">Enseignement erroné</string>
+    <string name="ai_report_reason_wrong_verse">Mauvais verset</string>
+    <string name="ai_report_reason_harmful">Blessante ou choquante</string>
+    <string name="ai_report_reason_other">Autre chose</string>
+    <string name="ai_report_comment_label">Qu\'est-ce qui ne va pas ? (facultatif)</string>
+    <string name="ai_report_what_is_sent">Nous enverrons ta question et cette réponse, sans ton compte.</string>
+    <string name="ai_report_send">Envoyer le signalement</string>
+    <string name="ai_report_sent">Merci, ton signalement a été envoyé.</string>
+    <string name="ai_report_offline">Tu es hors ligne. Connecte-toi à Internet pour envoyer le signalement.</string>
+    <string name="ai_report_failed">Impossible d\'envoyer le signalement. Réessaie.</string>
+    <string name="ai_report_rate_limited">Tu as envoyé beaucoup de signalements. Réessaie plus tard.</string>
+    <string name="ai_crisis_title">Tu n\'as pas à traverser ça seul</string>
+    <string name="ai_crisis_message">Si tu es en danger ou que tu penses à te faire du mal, contacte quelqu\'un maintenant. Une ligne d\'écoute peut te parler dès aujourd\'hui.</string>
+    <string name="ai_crisis_find_helpline">Trouver une ligne d\'écoute</string>
+    <string name="ai_crisis_emergency">En cas d\'urgence, appelle le numéro d\'urgence de ton pays.</string>
 </resources>

@@ -28,6 +28,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.CloudOff
+import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material.icons.outlined.QuestionAnswer
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -66,7 +67,10 @@ import androidx.compose.ui.text.withLink
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.application.bibleapp.R
+import com.application.bibleapp.components.AiCrisisCard
 import com.application.bibleapp.components.AiNoticeSheet
+import com.application.bibleapp.components.AiReportSheet
+import com.application.bibleapp.components.FIND_A_HELPLINE_URL
 import com.application.bibleapp.components.AiVerseCard
 import com.application.bibleapp.components.AiVerseCardList
 import com.application.bibleapp.components.ServerWakeHint
@@ -85,6 +89,8 @@ import com.application.bibleapp.utils.bookNameInVersion
 import com.application.bibleapp.utils.citedReferences
 import com.application.bibleapp.utils.formatVerseReference
 import com.application.bibleapp.utils.parseAiAnswer
+import com.application.bibleapp.utils.UiText
+import com.application.bibleapp.utils.rememberExternalLinks
 import com.application.bibleapp.utils.rememberIsOnline
 import com.application.bibleapp.viewmodel.AskUiState
 import com.application.bibleapp.viewmodel.AskViewModel
@@ -109,7 +115,8 @@ private const val ASK_SLOW_AFTER_MILLIS = 10_000L
 /**
  * The Ask tab (#128): the Bible Helper's chat. Signed out it explains itself and offers sign-in;
  * signed in it shows the open conversation (or starter questions), every way a question can fail,
- * and the one-time notice before the first question. [onReadChapter] opens the reader at a cited
+ * and the one-time notice before the first question. Every answer can be reported, and one the
+ * server flagged as a crisis shows the help card above it (#130). [onReadChapter] opens the reader at a cited
  * passage, the way a Search result does. [onWakeServer] starts Render's cold start while the person
  * types (#87). [onSessionEnded] runs when the server says the session is gone, so the app re-checks
  * whether it's still signed in (the refresh that failed has already cleared the tokens).
@@ -173,6 +180,19 @@ fun AskView(
     val bookNames by bibleViewModel.bookNames.collectAsState()
     val chapterStructure by bibleViewModel.chapterStructure.collectAsState()
     val bookName = { id: Int -> bookNameInVersion(selectedVersion.id, id, mapOf(selectedVersion.id to bookNames)) }
+    val links = rememberExternalLinks { bibleViewModel.showMessage(it) }
+
+    var reportingId by rememberSaveable { mutableStateOf<Long?>(null) }
+    reportingId?.let { answerId ->
+        AiReportSheet(
+            send = { reason, comment -> askViewModel.report(answerId, reason, comment, language) },
+            onSent = {
+                reportingId = null
+                bibleViewModel.showMessage(UiText.Res(R.string.ai_report_sent))
+            },
+            onDismiss = { reportingId = null }
+        )
+    }
 
     AskChat(
         state = state,
@@ -193,6 +213,8 @@ fun AskView(
                 parts = parseAiAnswer(answerWithBullets(message.content), chapterStructure),
                 bookName = bookName,
                 onReference = { onReadChapter(it.bookId, it.chapter, it.startVerse ?: 1) },
+                onReport = { reportingId = message.id },
+                onFindHelpline = { links.openPage(FIND_A_HELPLINE_URL) },
                 verseCard = { reference -> AiVerseCard(reference, bibleViewModel, onReadChapter) }
             )
         }
@@ -333,8 +355,9 @@ private fun QuestionBubble(text: String) {
 }
 
 /**
- * One answer: the "AI answer" label (plan section 7), the text with each cited passage as a link,
- * and a verse card for each one under it (#129). A whole book shows as its name (#190).
+ * One answer: the crisis help card first when the server flagged it (#130), the "AI answer" label
+ * (plan section 7), the text with each cited passage as a link, a verse card for each one under it
+ * (#129), and the report action (#130). A whole book shows as its name (#190).
  */
 @Composable
 private fun AiAnswer(
@@ -342,15 +365,27 @@ private fun AiAnswer(
     parts: List<AiAnswerPart>,
     bookName: (Int) -> String,
     onReference: (VerseReference) -> Unit,
+    onReport: () -> Unit,
+    onFindHelpline: () -> Unit,
     verseCard: @Composable (VerseReference) -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-        AiAnswerLabel()
-        Text(
-            text = answerText(parts, bookName, MaterialTheme.colorScheme.primary, onReference),
-            style = MaterialTheme.typography.bodyLarge
-        )
-        AiVerseCardList(parts.citedReferences()) { verseCard(it) }
+        if (message.crisis) AiCrisisCard(onFindHelpline = onFindHelpline)
+        // A crisis answer can be the help card alone: the server sends no text when the model
+        // wrote only the crisis marker (docs/api_contract.md).
+        if (message.content.isNotBlank()) {
+            AiAnswerLabel()
+            Text(
+                text = answerText(parts, bookName, MaterialTheme.colorScheme.primary, onReference),
+                style = MaterialTheme.typography.bodyLarge
+            )
+            AiVerseCardList(parts.citedReferences()) { verseCard(it) }
+            // Inside: a report needs an answer to send.
+            TextButton(onClick = onReport, modifier = Modifier.align(Alignment.End)) {
+                Icon(Icons.Outlined.Flag, contentDescription = null, modifier = Modifier.size(18.dp))
+                Text(stringResource(R.string.ai_action_report), modifier = Modifier.padding(start = Spacing.xs))
+            }
+        }
     }
 }
 
@@ -575,6 +610,8 @@ private fun AskChatPreview() {
                         parts = parseAiAnswer(answerWithBullets(message.content)),
                         bookName = { if (it == 40) "Matthew" else "Psalms" },
                         onReference = {},
+                        onReport = {},
+                        onFindHelpline = {},
                         verseCard = {}
                     )
                 }

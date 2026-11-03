@@ -382,4 +382,22 @@
     <string name="ai_delete_conversation">Excluir “%1$s”</string>
     <string name="ai_delete_conversation_title">Excluir esta conversa?</string>
     <string name="ai_delete_conversation_message">Ela fica salva só neste celular, então não poderá ser recuperada.</string>
+    <!-- Bible Helper: reporting an answer and the crisis help card (#130) -->
+    <string name="ai_action_report">Denunciar</string>
+    <string name="ai_report_title">Denunciar esta resposta</string>
+    <string name="ai_report_reason_wrong_teaching">Ensino errado</string>
+    <string name="ai_report_reason_wrong_verse">Versículo errado</string>
+    <string name="ai_report_reason_harmful">Prejudicial ou ofensiva</string>
+    <string name="ai_report_reason_other">Outra coisa</string>
+    <string name="ai_report_comment_label">O que deu errado? (opcional)</string>
+    <string name="ai_report_what_is_sent">Vamos enviar sua pergunta e esta resposta, sem sua conta.</string>
+    <string name="ai_report_send">Enviar denúncia</string>
+    <string name="ai_report_sent">Obrigado, sua denúncia foi enviada.</string>
+    <string name="ai_report_offline">Você está off-line. Conecte-se à internet para enviar a denúncia.</string>
+    <string name="ai_report_failed">Não foi possível enviar a denúncia. Tente de novo.</string>
+    <string name="ai_report_rate_limited">Você enviou muitas denúncias. Tente de novo mais tarde.</string>
+    <string name="ai_crisis_title">Você não precisa enfrentar isso sozinho</string>
+    <string name="ai_crisis_message">Se você está em perigo ou pensando em se machucar, procure alguém agora. Uma linha de apoio pode conversar com você ainda hoje.</string>
+    <string name="ai_crisis_find_helpline">Encontrar uma linha de apoio</string>
+    <string name="ai_crisis_emergency">Em uma emergência, ligue para o número de emergência local.</string>
 </resources>

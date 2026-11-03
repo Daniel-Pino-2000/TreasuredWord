@@ -9,7 +9,11 @@ import com.application.bibleapp.data.model.AiConversation
 import com.application.bibleapp.data.model.AiMessage
 import com.application.bibleapp.data.model.AiRole
 import com.application.bibleapp.data.remote.AiAskResult
+import com.application.bibleapp.data.remote.AiReportReason
+import com.application.bibleapp.data.remote.AiReportRequestDto
+import com.application.bibleapp.data.remote.AiReportResult
 import com.application.bibleapp.data.repository.AiHelperRepository
+import com.application.bibleapp.data.repository.AiHelperRepository.Companion.MAX_ANSWER_CHARS
 import com.application.bibleapp.data.repository.AiHelperRepository.Companion.MAX_QUESTION_CHARS
 import com.application.bibleapp.data.repository.SqliteAiConversationStore
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -120,6 +124,27 @@ class AskViewModel(
                 remainingToday = _state.value.remainingToday
             )
         }
+    }
+
+    /**
+     * Reports the answer [answerId] in the open conversation (#130), with the question it answered
+     * and the instructions' version. The server stores it without the user's ID.
+     */
+    suspend fun report(answerId: Long, reason: AiReportReason, comment: String?, language: String): AiReportResult {
+        val messages = _state.value.messages
+        val index = messages.indexOfFirst { it.id == answerId && it.role == AiRole.ASSISTANT }
+        val answer = messages.getOrNull(index) ?: return AiAskResult.Unavailable
+        val question = messages.take(index).lastOrNull { it.role == AiRole.USER } ?: return AiAskResult.Unavailable
+        return repository.report(
+            AiReportRequestDto(
+                question = question.content.take(MAX_QUESTION_CHARS),
+                answer = answer.content.take(MAX_ANSWER_CHARS),
+                reason = reason,
+                comment = comment,
+                language = language,
+                promptVersion = answer.promptVersion
+            )
+        )
     }
 
     /** Signing out removes the conversations from the phone (#127); forget the open one too. */
