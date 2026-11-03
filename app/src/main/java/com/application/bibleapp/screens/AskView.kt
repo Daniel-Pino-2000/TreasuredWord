@@ -26,6 +26,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.automirrored.outlined.MenuBook
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.material.icons.outlined.Flag
@@ -63,6 +65,7 @@ import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withLink
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -134,7 +137,8 @@ fun AskView(
 ) {
     ResizeForKeyboard()
     LaunchedEffect(isLoggedIn) {
-        if (isLoggedIn) onWakeServer() else askViewModel.onSignedOut()
+        askViewModel.onSignInChanged(isLoggedIn)
+        if (isLoggedIn) onWakeServer()
     }
     if (!isLoggedIn) {
         AskSignedOut(onSignInClick = onSignInClick, modifier = modifier)
@@ -207,6 +211,7 @@ fun AskView(
         },
         onRetry = { askViewModel.retry(language) },
         onSignInClick = onSignInClick,
+        onRemovePassage = askViewModel::removePassage,
         answer = { message ->
             AiAnswer(
                 message = message,
@@ -233,6 +238,7 @@ private fun AskChat(
     onStarter: (String) -> Unit,
     onRetry: () -> Unit,
     onSignInClick: () -> Unit,
+    onRemovePassage: () -> Unit,
     answer: @Composable (AiMessage) -> Unit
 ) {
     val listState = rememberLazyListState()
@@ -257,7 +263,8 @@ private fun AskChat(
             verticalArrangement = Arrangement.spacedBy(Spacing.lg)
         ) {
             if (state.messages.isEmpty() && !state.isSending) {
-                item(key = "intro") { AskIntro(onStarter = onStarter, enabled = online) }
+                // With a passage attached the question is already written; starters would only distract.
+                item(key = "intro") { AskIntro(onStarter = onStarter, enabled = online, showStarters = state.passage == null) }
             }
             items(state.messages, key = { it.id }) { message ->
                 if (message.role == AiRole.USER) QuestionBubble(message.content) else answer(message)
@@ -278,6 +285,7 @@ private fun AskChat(
                 modifier = Modifier.padding(horizontal = Spacing.lg)
             )
         }
+        state.passage?.let { passage -> PassageChip(passage.label, onRemove = onRemovePassage) }
         QuestionField(
             draft = draft,
             canSend = draft.isNotBlank() && !state.isSending && online,
@@ -323,7 +331,7 @@ private fun AskSignedOut(onSignInClick: () -> Unit, modifier: Modifier = Modifie
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun AskIntro(onStarter: (String) -> Unit, enabled: Boolean) {
+private fun AskIntro(onStarter: (String) -> Unit, enabled: Boolean, showStarters: Boolean) {
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
         Text(text = stringResource(R.string.ai_intro_title), style = MaterialTheme.typography.titleLarge)
         Text(
@@ -331,7 +339,7 @@ private fun AskIntro(onStarter: (String) -> Unit, enabled: Boolean) {
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+        if (showStarters) FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
             STARTER_QUESTIONS.forEach { res ->
                 val question = stringResource(res)
                 SuggestionChip(onClick = { onStarter(question) }, label = { Text(question) }, enabled = enabled)
@@ -518,6 +526,35 @@ private fun OfflineBanner() {
     }
 }
 
+/** The verses "Ask about this verse" attached (#132), above the field while they go with each question. */
+@Composable
+private fun PassageChip(label: String, onRemove: () -> Unit) {
+    Surface(
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+        shape = MaterialTheme.shapes.small,
+        modifier = Modifier.padding(start = Spacing.lg, end = Spacing.lg, top = Spacing.xs)
+    ) {
+        Row(
+            modifier = Modifier.padding(start = Spacing.md),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
+        ) {
+            Icon(Icons.AutoMirrored.Outlined.MenuBook, contentDescription = null, modifier = Modifier.size(18.dp))
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelLarge,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f, fill = false)
+            )
+            IconButton(onClick = onRemove) {
+                Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.ai_passage_remove, label), modifier = Modifier.size(18.dp))
+            }
+        }
+    }
+}
+
 @Composable
 private fun QuestionField(draft: String, canSend: Boolean, onDraftChange: (String) -> Unit, onSend: () -> Unit) {
     val numbers = NumberFormat.getIntegerInstance(LocalConfiguration.current.locales[0])
@@ -604,6 +641,7 @@ private fun AskChatPreview() {
                 onStarter = {},
                 onRetry = {},
                 onSignInClick = {},
+                onRemovePassage = {},
                 answer = { message ->
                     AiAnswer(
                         message = message,

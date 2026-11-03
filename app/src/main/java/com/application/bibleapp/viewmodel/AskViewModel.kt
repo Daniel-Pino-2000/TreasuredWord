@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.application.bibleapp.data.model.AiConversation
 import com.application.bibleapp.data.model.AiMessage
+import com.application.bibleapp.data.model.AiQuestionPassage
 import com.application.bibleapp.data.model.AiRole
 import com.application.bibleapp.data.remote.AiAskResult
 import com.application.bibleapp.data.remote.AiReportReason
@@ -26,14 +27,16 @@ import kotlinx.coroutines.launch
  * The open Bible Helper conversation (#128). [conversationId] is null for a new one, which the
  * first question creates. [failure] is why the last question has no answer, shown under it with
  * Retry where trying again can help. [remainingToday] is the day's questions left, from the
- * last answer.
+ * last answer. [passage] is the one "Ask about this verse" attached (#132): it goes with every
+ * question while this conversation is open, so follow-ups keep it, and isn't saved with it.
  */
 data class AskUiState(
     val conversationId: Long? = null,
     val messages: List<AiMessage> = emptyList(),
     val isSending: Boolean = false,
     val failure: AiAskResult.Failure? = null,
-    val remainingToday: Int? = null
+    val remainingToday: Int? = null,
+    val passage: AiQuestionPassage? = null
 )
 
 /** Whether "Got it" was tapped on the one-time notice (#128); [SharedPreferencesAskSettings] in the app. */
@@ -93,10 +96,26 @@ class AskViewModel(
         // Shown straight away; the saved copy replaces it once the repository has stored it.
         val pending = AiMessage(PENDING_ID, conversationId ?: PENDING_ID, AiRole.USER, question, createdAt = "")
         _state.update { it.copy(messages = it.messages + pending, isSending = true, failure = null) }
+        val passage = _state.value.passage?.dto
         viewModelScope.launch {
-            val exchange = repository.ask(conversationId, question, language)
+            val exchange = repository.ask(conversationId, question, language, passage)
             finish(exchange.conversationId, exchange.result)
         }
+    }
+
+    /**
+     * "Ask about this verse" (#132): a new conversation with [passage] attached and [question]
+     * ready to edit in the field. Ignored while a question is waiting for its answer.
+     */
+    fun startWithPassage(passage: AiQuestionPassage, question: String) {
+        if (_state.value.isSending) return
+        _state.value = AskUiState(remainingToday = _state.value.remainingToday, passage = passage)
+        _draft.value = question.take(MAX_QUESTION_CHARS)
+    }
+
+    /** Takes the attached passage off, so the next questions go without it. */
+    fun removePassage() {
+        _state.update { it.copy(passage = null) }
     }
 
     /** Sends the conversation's unanswered last question again. */
@@ -104,7 +123,8 @@ class AskViewModel(
         val id = _state.value.conversationId ?: return
         if (_state.value.isSending) return
         _state.update { it.copy(isSending = true, failure = null) }
-        viewModelScope.launch { finish(id, repository.retry(id, language)) }
+        val passage = _state.value.passage?.dto
+        viewModelScope.launch { finish(id, repository.retry(id, language, passage)) }
     }
 
     fun newConversation() {
@@ -147,11 +167,20 @@ class AskViewModel(
         )
     }
 
-    /** Signing out removes the conversations from the phone (#127); forget the open one too. */
-    fun onSignedOut() {
-        _state.value = AskUiState()
-        _draft.value = ""
-        _conversations.value = emptyList()
+    private var signedIn: Boolean? = null
+
+    /**
+     * The Ask tab tells this whether the person is signed in each time it shows. Signing out
+     * removes the conversations from the phone (#127), so the open one is forgotten too; but a
+     * passage attached while signed out waits for the sign-in.
+     */
+    fun onSignInChanged(isSignedIn: Boolean) {
+        if (signedIn == true && !isSignedIn) {
+            _state.value = AskUiState()
+            _draft.value = ""
+            _conversations.value = emptyList()
+        }
+        signedIn = isSignedIn
     }
 
     fun refreshConversations() {

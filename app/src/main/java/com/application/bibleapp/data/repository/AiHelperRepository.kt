@@ -10,6 +10,7 @@ import com.application.bibleapp.data.remote.AiAskRequestDto
 import com.application.bibleapp.data.remote.AiAskResult
 import com.application.bibleapp.data.remote.AiHelperApi
 import com.application.bibleapp.data.remote.AiMessageDto
+import com.application.bibleapp.data.remote.AiPassageDto
 import com.application.bibleapp.data.remote.AiReportRequestDto
 import com.application.bibleapp.data.remote.AiReportResult
 import kotlinx.coroutines.Dispatchers
@@ -61,17 +62,19 @@ class AiHelperRepository(
     data class Exchange(val conversationId: Long, val result: AiAskResult)
 
     /** Saves [question] (at most [MAX_QUESTION_CHARS]; the screen limits the field), sends it
-     *  with the conversation so far in [language], and saves the answer. */
-    suspend fun ask(conversationId: Long?, question: String, language: String): Exchange {
+     *  with the conversation so far in [language], and saves the answer. [passage] is the one
+     *  "Ask about this verse" attached (#132); it goes with the request but isn't saved. */
+    suspend fun ask(conversationId: Long?, question: String, language: String, passage: AiPassageDto? = null): Exchange {
         val text = question.trim()
         require(text.isNotEmpty() && text.length <= MAX_QUESTION_CHARS) { "Question must be 1–$MAX_QUESTION_CHARS characters" }
         val id = conversationId ?: store.createConversation(conversationTitle(text)).id
         store.addMessage(id, AiRole.USER, text)
-        return Exchange(id, send(id, language))
+        return Exchange(id, send(id, language, passage))
     }
 
     /** Sends a conversation's last question again, after a failure, without saving it twice. */
-    suspend fun retry(conversationId: Long, language: String): AiAskResult = send(conversationId, language)
+    suspend fun retry(conversationId: Long, language: String, passage: AiPassageDto? = null): AiAskResult =
+        send(conversationId, language, passage)
 
     suspend fun conversations(): List<AiConversation> = store.conversations()
 
@@ -82,10 +85,10 @@ class AiHelperRepository(
     /** Reports an answer (#130); stored on the server without the user's ID. */
     suspend fun report(request: AiReportRequestDto): AiReportResult = api.report(request)
 
-    private suspend fun send(conversationId: Long, language: String): AiAskResult {
+    private suspend fun send(conversationId: Long, language: String, passage: AiPassageDto?): AiAskResult {
         val history = historyToSend(store.messages(conversationId))
         require(history.lastOrNull()?.role == AiRole.USER.stored) { "Conversation $conversationId has no question to send" }
-        val result = api.ask(AiAskRequestDto(history, language))
+        val result = api.ask(AiAskRequestDto(history, language, passage))
         if (result is AiAskResult.Answer) {
             store.addMessage(conversationId, AiRole.ASSISTANT, result.answer, result.crisis, result.promptVersion)
         }

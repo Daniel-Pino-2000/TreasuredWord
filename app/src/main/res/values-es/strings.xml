@@ -417,4 +417,8 @@
     <string name="ai_crisis_message">Si estás en peligro o piensas en hacerte daño, por favor busca ayuda ahora. En una línea de ayuda pueden hablar contigo hoy mismo.</string>
     <string name="ai_crisis_find_helpline">Buscar una línea de ayuda</string>
     <string name="ai_crisis_emergency">En una emergencia, llama al número de emergencias de tu país.</string>
+    <!-- Bible Helper: "Ask about this verse" from the reader (#132) -->
+    <!-- The question ready to edit when the reader's selected verses open the Ask tab -->
+    <string name="ai_passage_default_question">¿Qué significa este pasaje?</string>
+    <string name="ai_passage_remove">Quitar %1$s</string>
 </resources>
