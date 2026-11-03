@@ -140,7 +140,7 @@ sequenceDiagram
 | `FakeAiProvider` | `src/test/…` | Canned answers, so tests never touch the network or spend quota |
 | Instructions | `resources/ai/system_prompt.md`, `resources/ai/doctrine.md`, `ai/SystemPrompt.kt` | The fixed Baptist instructions with the answer language filled in, plus a `PROMPT_VERSION` |
 | Routes | `routes/AiRoutes.kt` | `POST /api/v1/ai/ask` and `POST /api/v1/ai/reports`, inside `authenticate("auth-jwt")` and a new rate-limit zone |
-| Tables | `db/tables/AiDailyUsage.kt` (migration `V4__ai_daily_usage.sql`), `db/tables/AiReports.kt` (`V5__ai_reports.sql`) | Each user's count for the day, and reported answers |
+| Tables | `db/tables/AiDailyUsage.kt` (migration `V6__ai_daily_usage.sql`), `db/tables/AiReports.kt` (`V7__ai_reports.sql`) | Each user's count for the day, and reported answers |
 | Settings | `application.conf` → `ai { … }`, read from env vars | `AI_BASE_URL`, `AI_API_TOKEN`, `AI_MODEL`, set on Render; never in the repo |
 
 ### Outside
@@ -149,7 +149,7 @@ sequenceDiagram
   only use Workers AI.
 - Render and Neon stay on their free plans; the new tables are tiny.
 
-## 5. API contract (draft; moves into `docs/api_contract.md` with #124)
+## 5. API contract (`/ai/ask` is now in `docs/api_contract.md`, which wins if the two differ)
 
 ### `POST /api/v1/ai/ask` (signed in)
 

@@ -3,6 +3,8 @@ package com.application.bibleapp.server.plugins
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.install
+import io.ktor.server.auth.jwt.JWTPrincipal
+import io.ktor.server.auth.principal
 import io.ktor.server.plugins.origin
 import io.ktor.server.plugins.ratelimit.RateLimit
 import io.ktor.server.plugins.ratelimit.RateLimitName
@@ -18,6 +20,10 @@ val AUTH_RATE_LIMIT = RateLimitName("auth")
 /** Rate-limit zone for every endpoint that sends an email (#156). Much stricter than [AUTH_RATE_LIMIT]:
  *  each email costs part of the provider's daily allowance and lands in a real person's inbox. */
 val EMAIL_RATE_LIMIT = RateLimitName("email")
+
+/** Rate-limit zone for the Bible Helper's questions (#124), on top of its 15-a-day limit: a
+ *  loop sending questions would otherwise use a whole day's free neurons in seconds. */
+val AI_RATE_LIMIT = RateLimitName("ai")
 
 /**
  * The caller's IP address, as both rate limits' key. Ktor's own default key is the same for
@@ -55,6 +61,13 @@ fun Application.configureRateLimiting() {
         register(EMAIL_RATE_LIMIT) {
             rateLimiter(limit = 10, refillPeriod = 1.hours)
             requestKey { call -> call.clientIp() }
+        }
+        // 5 questions a minute per account (#124). Unlike the zones above, the caller is signed
+        // in (the zone sits inside authenticate), so the key is the account and a shared IP
+        // (a church's Wi-Fi) doesn't hold back everyone on it.
+        register(AI_RATE_LIMIT) {
+            rateLimiter(limit = 5, refillPeriod = 1.minutes)
+            requestKey { call -> call.principal<JWTPrincipal>()?.payload?.subject ?: call.clientIp() }
         }
     }
 }
