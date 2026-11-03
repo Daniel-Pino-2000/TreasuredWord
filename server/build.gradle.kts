@@ -42,6 +42,12 @@ dependencies {
     implementation(libs.ktor.server.rate.limit)
     implementation(libs.kotlinx.serialization.json)
 
+    // The HTTP client the server calls the AI provider with (#123). Content negotiation must be
+    // implementation, not testImplementation: test-only libraries never reach server-all.jar.
+    implementation(libs.ktor.client.core)
+    implementation(libs.ktor.client.cio)
+    implementation(libs.ktor.client.content.negotiation)
+
     implementation(libs.exposed.core)
     implementation(libs.exposed.dao)
     implementation(libs.exposed.jdbc)
@@ -56,6 +62,6 @@ dependencies {
     implementation(libs.flyway.database.postgresql)
 
     testImplementation(libs.ktor.server.test.host)
-    testImplementation(libs.ktor.client.content.negotiation)
+    testImplementation(libs.ktor.client.mock)
     testImplementation(kotlin("test"))
 }
