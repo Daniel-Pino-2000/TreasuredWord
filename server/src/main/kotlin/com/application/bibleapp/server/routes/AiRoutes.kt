@@ -5,6 +5,7 @@ import com.application.bibleapp.server.ai.AiProvider
 import com.application.bibleapp.server.ai.AiRole
 import com.application.bibleapp.server.ai.QuotaExhausted
 import com.application.bibleapp.server.ai.SystemPrompt
+import com.application.bibleapp.server.ai.UsfmBookCodes
 import com.application.bibleapp.server.ai.Unavailable
 import com.application.bibleapp.server.auth.currentUserId
 import com.application.bibleapp.server.db.tables.AiDailyUsage
@@ -50,6 +51,10 @@ private const val MAX_USER_CHARS = 1_000
 private const val MAX_ASSISTANT_CHARS = 4_000
 private const val MAX_TOTAL_CHARS = 8_000
 private const val CRISIS_MARKER = "[[CRISIS]]"
+private const val MAX_PASSAGE_CHARS = 2_000
+
+/** A USFM reference within one chapter: "JHN 3", "JHN 3:16", "JHN 3:16-18" or "JHN 3:16,18-20". */
+private val PASSAGE_REFERENCE = Regex("""([0-9A-Z]{3}) [1-9]\d{0,2}(?::[1-9]\d{0,2}(?:-[1-9]\d{0,2})?(?:,[1-9]\d{0,2}(?:-[1-9]\d{0,2})?)*)?""")
 
 private val REPORT_REASONS = setOf("WRONG_TEACHING", "WRONG_VERSE", "HARMFUL", "OTHER")
 private const val MAX_REPORT_QUESTION_CHARS = 1_000
@@ -81,6 +86,16 @@ internal fun validateAsk(request: AiAskRequest): Map<String, String> {
         else -> null
     }
     if (messagesError != null) errors["messages"] = messagesError
+    request.passage?.let { passage ->
+        val code = PASSAGE_REFERENCE.matchEntire(passage.reference)?.groupValues?.get(1)
+        val passageError = when {
+            code == null || code !in UsfmBookCodes.codes -> "passage reference must be a USFM reference such as JHN 3:16-18"
+            passage.text.isBlank() -> "passage text must not be blank"
+            passage.text.length > MAX_PASSAGE_CHARS -> "passage text must be at most $MAX_PASSAGE_CHARS characters"
+            else -> null
+        }
+        if (passageError != null) errors["passage"] = passageError
+    }
     if (request.language !in SystemPrompt.languageNames) {
         errors["language"] = "language must be one of ${SystemPrompt.languageNames.keys.joinToString(", ")}"
     }
@@ -186,7 +201,8 @@ fun Route.aiRoutes(aiProvider: AiProvider?, clock: Clock) {
                     return@post
                 }
 
-                val conversation = listOf(AiMessage(AiRole.SYSTEM, SystemPrompt.forLanguage(request.language))) +
+                val instructions = SystemPrompt.forLanguage(request.language, request.passage?.reference, request.passage?.text)
+                val conversation = listOf(AiMessage(AiRole.SYSTEM, instructions)) +
                     request.messages.map { AiMessage(if (it.role == "user") AiRole.USER else AiRole.ASSISTANT, it.content) }
                 // No answer, no count: every failure gives the reserved answer back.
                 val completion = try {

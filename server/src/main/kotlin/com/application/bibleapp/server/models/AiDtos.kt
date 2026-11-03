@@ -6,9 +6,17 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class AiMessageDto(val role: String, val content: String)
 
-/** `POST /api/v1/ai/ask` (#124). `language` is one of the app's tags, e.g. "es" or "pt-BR". */
+/**
+ * The passage "Ask about this verse" attaches (#132): a USFM reference such as "JHN 3:16-18" and
+ * its text in the reader's own translation, at most 2,000 characters.
+ */
 @Serializable
-data class AiAskRequest(val messages: List<AiMessageDto>, val language: String)
+data class AiPassage(val reference: String, val text: String)
+
+/** `POST /api/v1/ai/ask` (#124). `language` is one of the app's tags, e.g. "es" or "pt-BR".
+ *  [passage] is only there when the question was asked from the reader (#132). */
+@Serializable
+data class AiAskRequest(val messages: List<AiMessageDto>, val language: String, val passage: AiPassage? = null)
 
 /**
  * `POST /api/v1/ai/reports` (#125). `reason` is WRONG_TEACHING, WRONG_VERSE, HARMFUL or OTHER; a

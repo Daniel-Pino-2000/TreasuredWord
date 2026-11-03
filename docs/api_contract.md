@@ -530,7 +530,17 @@ The server adds its own fixed instructions and asks Cloudflare Workers AI's free
 data class AiMessageDto(val role: String, val content: String)   // "user" or "assistant"
 
 @Serializable
-data class AiAskRequest(val messages: List<AiMessageDto>, val language: String)
+data class AiPassage(
+    val reference: String,       // USFM, within one chapter: "JHN 3", "JHN 3:16-18", "LUK 12:4,6-7"
+    val text: String             // the passage in the reader's own translation, 1–2,000 characters
+)
+
+@Serializable
+data class AiAskRequest(
+    val messages: List<AiMessageDto>,
+    val language: String,
+    val passage: AiPassage? = null // only when asked with "Ask about this verse" (#132)
+)
 
 @Serializable
 data class AiAskResponse(
@@ -542,7 +552,7 @@ data class AiAskResponse(
 ```
 
 Rules for `AiAskRequest` (any broken one is `400 VALIDATION_ERROR`, with `fieldErrors` keyed
-`messages` or `language`):
+`messages`, `language` or `passage`):
 - `messages`: 1–10, oldest first, alternating, the last one from `user`. History may start with
   an `assistant` message (the app drops the oldest to fit). The only roles are `user` and
   `assistant`, so the app can never send instructions of its own.
@@ -550,6 +560,12 @@ Rules for `AiAskRequest` (any broken one is `400 VALIDATION_ERROR`, with `fieldE
   ≤ 8,000. No blank messages.
 - `language`: one of the app's tags: `en`, `de`, `es`, `fr`, `pt-BR`, `id`, `fil`, `sw`, `ko`,
   `zh-Hans`. The answer comes in that language.
+- `passage` (optional, #132): `reference` is a USFM code, a space and a chapter, then optionally
+  `:verse`, `-verse` and `,verse` parts, all in one chapter; `text` is not blank and at most 2,000
+  characters. Its errors are keyed `passage`. The server adds it after its instructions as the
+  passage the question is about, quoted, with `"""` and `[[`/`]]` in the text flattened so it can't
+  close its quotes or write a marker. The app sends it with each question of a conversation that
+  started from the reader, so follow-ups keep it; it isn't part of `messages` or their size limits.
 
 A rate limit that's hit answers `429` with no body: the `ai` zone, 5 questions a minute per
 account.

@@ -11,6 +11,7 @@ import com.application.bibleapp.server.db.tables.Users
 import com.application.bibleapp.server.models.AiAskRequest
 import com.application.bibleapp.server.models.AiAskResponse
 import com.application.bibleapp.server.models.AiMessageDto
+import com.application.bibleapp.server.models.AiPassage
 import com.application.bibleapp.server.models.ErrorResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.request.bearerAuth
@@ -326,5 +327,63 @@ class AiRoutesTest {
         } finally {
             root.detachAppender(logged)
         }
+    }
+
+    @Test
+    fun everyPassageRuleIsCaught() {
+        val messages = listOf(AiMessageDto("user", "What does this mean?"))
+        fun ask(reference: String, text: String = "For God so loved the world") =
+            AiAskRequest(messages, "en", AiPassage(reference, text))
+
+        val invalid = mapOf(
+            "a book name" to ask("John 3:16"),
+            "an unknown code" to ask("XYZ 3:16"),
+            "a lowercase code" to ask("jhn 3:16"),
+            "no chapter" to ask("JHN"),
+            "chapter 0" to ask("JHN 0:1"),
+            "two chapters" to ask("JHN 3:16-4:2"),
+            "a blank reference" to ask(""),
+            "a blank text" to ask("JHN 3:16", "  "),
+            "a long text" to ask("JHN 3:16", "a".repeat(2_001))
+        )
+        for ((case, request) in invalid) {
+            assertEquals(setOf("passage"), validateAsk(request).keys, case)
+        }
+        for (reference in listOf("JHN 3", "JHN 3:16", "1JN 1:9", "PSA 119:105-112", "LUK 12:4,6-7")) {
+            assertEquals(emptyMap(), validateAsk(ask(reference)), reference)
+        }
+        assertEquals(emptyMap(), validateAsk(ask("JHN 3:16", "a".repeat(2_000))))
+    }
+
+    @Test
+    fun aPassageIsAddedToTheInstructionsAndAnInvalidOneAsksNothing() = testApplication {
+        val ai = FakeAiProvider()
+        val client = startWithFakeAi(ai)
+        val user = client.registerTestUser()
+        val messages = listOf(AiMessageDto("user", "What does this passage mean?"))
+
+        val response = client.ask(user, AiAskRequest(messages, "en", AiPassage("JHN 3:16-18", "16 For God so loved the world…")))
+
+        assertEquals(HttpStatusCode.OK, response.status)
+        val instructions = ai.calls.single().messages.first().content
+        assertTrue("[[JHN 3:16-18]]" in instructions)
+        assertTrue("16 For God so loved the world…" in instructions)
+        // Only the instructions carry it: the conversation itself is what the app sent.
+        assertEquals(listOf("What does this passage mean?"), ai.calls.single().messages.drop(1).map { it.content })
+
+        val invalid = client.ask(user, AiAskRequest(messages, "en", AiPassage("John 3:16", "For God so loved")))
+        assertEquals(HttpStatusCode.BadRequest, invalid.status)
+        assertTrue("passage" in invalid.error().fieldErrors.orEmpty())
+        assertEquals(1, ai.calls.size)
+    }
+
+    @Test
+    fun aQuestionWithoutAPassageGetsNoPassageSection() = testApplication {
+        val ai = FakeAiProvider()
+        val client = startWithFakeAi(ai)
+
+        client.ask(client.registerTestUser())
+
+        assertFalse("# 9." in ai.calls.single().messages.first().content)
     }
 }
