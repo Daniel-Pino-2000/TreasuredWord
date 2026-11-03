@@ -380,10 +380,11 @@ private fun AiAnswer(
                 style = MaterialTheme.typography.bodyLarge
             )
             AiVerseCardList(parts.citedReferences()) { verseCard(it) }
-        }
-        TextButton(onClick = onReport, modifier = Modifier.align(Alignment.End)) {
-            Icon(Icons.Outlined.Flag, contentDescription = null, modifier = Modifier.size(18.dp))
-            Text(stringResource(R.string.ai_action_report), modifier = Modifier.padding(start = Spacing.xs))
+            // Inside: a report needs an answer to send.
+            TextButton(onClick = onReport, modifier = Modifier.align(Alignment.End)) {
+                Icon(Icons.Outlined.Flag, contentDescription = null, modifier = Modifier.size(18.dp))
+                Text(stringResource(R.string.ai_action_report), modifier = Modifier.padding(start = Spacing.xs))
+            }
         }
     }
 }
