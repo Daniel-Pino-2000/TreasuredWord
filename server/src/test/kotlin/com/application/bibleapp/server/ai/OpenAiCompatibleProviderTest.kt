@@ -119,6 +119,16 @@ class OpenAiCompatibleProviderTest {
     }
 
     @Test
+    fun unfinishedReasoningIsNeverReturnedAsTheAnswer() {
+        // Gemma 4 with thinking on, out of tokens before it answered (#122).
+        val provider = provider {
+            json("""{"choices":[{"index":0,"message":{"role":"assistant","content":null,"reasoning_content":"The user asks about grace. I should first"},"finish_reason":"length"}],"usage":{"neurons":56.0}}""")
+        }
+
+        assertFailsWith<Unavailable> { runBlocking { provider.complete(conversation, maxTokens = 700) } }
+    }
+
+    @Test
     fun runningOutOfTokensMarksTheAnswerCutOff() = runBlocking {
         val completion = provider { json(answer(content = "The first point is", finishReason = "length")) }
             .complete(conversation, maxTokens = 700)
@@ -136,6 +146,16 @@ class OpenAiCompatibleProviderTest {
         }
 
         assertFailsWith<QuotaExhausted> { runBlocking { provider.complete(conversation, maxTokens = 700) } }
+    }
+
+    @Test
+    fun cloudflaresMomentaryCapacityLimitThrowsUnavailable() {
+        // Also HTTP 429, but code 3040: try again in a moment, not tomorrow.
+        val provider = provider {
+            json("""{"errors":[{"message":"AiError: Capacity temporarily exceeded, please try again.","code":3040}],"success":false}""", HttpStatusCode.TooManyRequests)
+        }
+
+        assertFailsWith<Unavailable> { runBlocking { provider.complete(conversation, maxTokens = 700) } }
     }
 
     @Test
