@@ -371,12 +371,16 @@ private fun AiAnswer(
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
         if (message.crisis) AiCrisisCard(onFindHelpline = onFindHelpline)
-        AiAnswerLabel()
-        Text(
-            text = answerText(parts, bookName, MaterialTheme.colorScheme.primary, onReference),
-            style = MaterialTheme.typography.bodyLarge
-        )
-        AiVerseCardList(parts.citedReferences()) { verseCard(it) }
+        // A crisis answer can be the help card alone: the server sends no text when the model
+        // wrote only the crisis marker (docs/api_contract.md).
+        if (message.content.isNotBlank()) {
+            AiAnswerLabel()
+            Text(
+                text = answerText(parts, bookName, MaterialTheme.colorScheme.primary, onReference),
+                style = MaterialTheme.typography.bodyLarge
+            )
+            AiVerseCardList(parts.citedReferences()) { verseCard(it) }
+        }
         TextButton(onClick = onReport, modifier = Modifier.align(Alignment.End)) {
             Icon(Icons.Outlined.Flag, contentDescription = null, modifier = Modifier.size(18.dp))
             Text(stringResource(R.string.ai_action_report), modifier = Modifier.padding(start = Spacing.xs))
