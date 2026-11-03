@@ -569,6 +569,11 @@ Errors:
 | 503 | `AI_RESTING` | Cloudflare's free daily allowance is used up (its error `3036`); back at 00:00 UTC | No |
 | 503 | `AI_UNAVAILABLE` | The AI failed, took longer than 30 s, or isn't set up on this server | No |
 
+An answer that ran out of room ends with " …" so it doesn't look finished. If the AI returned
+only the crisis marker, `answer` is empty, `crisis` is `true`, and the question isn't counted.
+The daily count is taken atomically before the AI is asked and given back if no answer comes,
+so questions sent at the same moment can't go past 15.
+
 The server never logs question or answer text.
 
 ---

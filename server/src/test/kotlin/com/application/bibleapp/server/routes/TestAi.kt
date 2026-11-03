@@ -12,6 +12,7 @@ import io.ktor.server.config.ApplicationConfig
 import io.ktor.server.config.MapApplicationConfig
 import io.ktor.server.config.mergeWith
 import io.ktor.server.testing.ApplicationTestBuilder
+import kotlinx.coroutines.delay
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneId
@@ -28,11 +29,15 @@ class FakeAiProvider : AiProvider {
     val calls = CopyOnWriteArrayList<Call>()
     @Volatile var answer = "Grace is God's favor we don't deserve. [[EPH 2:8-9]]"
     @Volatile var failure: AiProviderException? = null
+    @Volatile var cutOff = false
+    /** How long each answer takes, to have questions overlap. */
+    @Volatile var delayMillis = 0L
 
     override suspend fun complete(messages: List<AiMessage>, maxTokens: Int): AiCompletion {
         calls += Call(messages, maxTokens)
+        if (delayMillis > 0) delay(delayMillis)
         failure?.let { throw it }
-        return AiCompletion(text = answer, cutOff = false, neurons = 31.0)
+        return AiCompletion(text = answer, cutOff = cutOff, neurons = 31.0)
     }
 }
 
