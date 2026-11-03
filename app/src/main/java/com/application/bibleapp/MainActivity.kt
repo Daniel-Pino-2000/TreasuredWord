@@ -64,6 +64,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.application.bibleapp.components.AboutBookSheet
+import com.application.bibleapp.components.AskTopBar
 import com.application.bibleapp.components.BibleChapterNav
 import com.application.bibleapp.components.BibleTopBar
 import com.application.bibleapp.components.BookPickerTopBar
@@ -91,6 +92,8 @@ import com.application.bibleapp.ui.theme.ThemeMode
 import com.application.bibleapp.ui.theme.isCompactHeight
 import com.application.bibleapp.viewmodel.AuthViewModel
 import com.application.bibleapp.viewmodel.AuthViewModelFactory
+import com.application.bibleapp.viewmodel.AskViewModel
+import com.application.bibleapp.viewmodel.AskViewModelFactory
 import com.application.bibleapp.viewmodel.BibleViewModel
 import com.application.bibleapp.viewmodel.BibleViewModelFactory
 import androidx.compose.ui.res.stringResource
@@ -163,6 +166,10 @@ class MainActivity : AppCompatActivity() {
             )
             val authViewModel: AuthViewModel = viewModel(
                 factory = AuthViewModelFactory(context = this)
+            )
+            // Activity-scoped, so a question keeps waiting for its answer on another tab (#128).
+            val askViewModel: AskViewModel = viewModel(
+                factory = AskViewModelFactory(context = this)
             )
 
             val navController = rememberNavController()
@@ -337,7 +344,8 @@ class MainActivity : AppCompatActivity() {
                     Screen.LibraryItemDetail.route,
                     Screen.Settings.route,
                     Screen.LanguagePicker.route,
-                    Screen.Licenses.route
+                    Screen.Licenses.route,
+                    Screen.AskConversations.route
                 )
                 val useRail = compactHeight && showNavigation
 
@@ -413,6 +421,15 @@ class MainActivity : AppCompatActivity() {
                                 Screen.VersePicker.route -> VersePickerTopBar { navController.popBackStack() }
                                 Screen.VersionPicker.route -> VersionPickerTopBar { navController.popBackStack() }
                                 Screen.You.route -> YouTopBar { navController.navigate(Screen.Settings.route) }
+                                Screen.Ask.route -> {
+                                    val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
+                                    AskTopBar(
+                                        showActions = isLoggedIn,
+                                        onNewConversation = { askViewModel.newConversation() },
+                                        onConversations = { navController.navigate(Screen.AskConversations.route) }
+                                    )
+                                }
+                                Screen.AskConversations.route -> SettingsTopBar(stringResource(Screen.AskConversations.titleRes)) { navController.popBackStack() }
                                 Screen.Settings.route -> SettingsTopBar(stringResource(Screen.Settings.titleRes)) { navController.popBackStack() }
                                 Screen.LanguagePicker.route -> SettingsTopBar(stringResource(Screen.LanguagePicker.titleRes)) { navController.popBackStack() }
                                 Screen.Licenses.route -> SettingsTopBar(stringResource(Screen.Licenses.titleRes)) { navController.popBackStack() }
@@ -450,7 +467,7 @@ class MainActivity : AppCompatActivity() {
                             }
                         }
                         ) { paddingValues ->
-                            Navigation(navController, paddingValues, bibleViewModel, authViewModel)
+                            Navigation(navController, paddingValues, bibleViewModel, authViewModel, askViewModel)
                         }
 
                         val selectedVerses by bibleViewModel.selectedVerses.collectAsState()

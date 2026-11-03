@@ -320,4 +320,44 @@
     <plurals name="ai_verse_cards_show_more">
         <item quantity="other">%1$d개 더 보기</item>
     </plurals>
+    <!-- Bible Helper: the Ask tab and chat (#128) -->
+    <string name="title_ask">질문</string>
+    <string name="ai_helper_title">성경 도우미</string>
+    <string name="ai_conversations_title">대화</string>
+    <string name="ai_action_new_conversation">새 대화</string>
+    <string name="ai_signed_out_title">성경 도우미에게 물어보세요</string>
+    <string name="ai_signed_out_message">성경과 기독교 신앙에 대해 질문하고, 침례교 관점에서 근거 구절과 함께 답을 받아 보세요. 질문하려면 로그인하세요.</string>
+    <string name="ai_intro_title">무엇이 궁금한가요?</string>
+    <string name="ai_intro_message">답변은 침례교 관점에서, 근거가 되는 구절과 함께 제공돼요. 질문을 탭하거나 직접 써 보세요.</string>
+    <string name="ai_starter_saved">어떻게 구원받을 수 있나요?</string>
+    <string name="ai_starter_baptism">침례교인은 왜 물에 잠기는 침례를 하나요?</string>
+    <string name="ai_starter_trinity">삼위일체란 무엇인가요?</string>
+    <string name="ai_starter_prayer">어떻게 기도해야 하나요?</string>
+    <string name="ai_starter_start_reading">성경은 어디서부터 읽으면 좋을까요?</string>
+    <string name="ai_starter_death">우리가 죽으면 어떻게 되나요?</string>
+    <string name="ai_question_placeholder">성경에 대해 질문해 보세요</string>
+    <string name="ai_action_send">보내기</string>
+    <string name="ai_answer_label">AI 답변</string>
+    <string name="ai_thinking">생각하는 중…</string>
+    <string name="ai_offline_banner">오프라인 상태예요. 대화는 그대로 볼 수 있지만, 질문하려면 인터넷이 필요해요.</string>
+    <string name="ai_failure_offline">오프라인 상태라 질문을 보내지 못했어요.</string>
+    <string name="ai_failure_unavailable">성경 도우미가 지금은 답할 수 없어요.</string>
+    <string name="ai_failure_rate_limited">한꺼번에 질문이 너무 많아요. 잠시 기다린 뒤 다시 시도해 주세요.</string>
+    <string name="ai_failure_signed_out">로그아웃되었어요. 계속 질문하려면 다시 로그인하세요.</string>
+    <string name="ai_failure_daily_limit">오늘 질문을 모두 사용했어요. %1$s부터 다시 질문할 수 있어요.</string>
+    <string name="ai_failure_resting">성경 도우미가 쉬는 중이에요. 사용하는 무료 서비스가 오늘 한도에 도달했어요. %1$s부터 다시 이용할 수 있어요.</string>
+    <plurals name="ai_remaining_today">
+        <item quantity="other">오늘 남은 질문 %1$d개</item>
+    </plurals>
+    <string name="ai_notice_title">질문하기 전에</string>
+    <string name="ai_notice_ai">성경 도우미는 AI예요. 실수할 수 있어요.</string>
+    <string name="ai_notice_baptist">침례교 관점에서, Baptist Faith and Message 2000을 따라 답해요.</string>
+    <string name="ai_notice_bfm_link">Baptist Faith and Message 2000 읽기(영어)</string>
+    <string name="ai_notice_scripture">베뢰아 사람들처럼 성경에 비추어 확인해 보세요(사도행전 17:11).</string>
+    <string name="ai_notice_personal">실명, 주소, 건강 정보 같은 개인 정보는 공유하지 마세요.</string>
+    <string name="ai_notice_accept">확인</string>
+    <string name="ai_conversations_empty">아직 대화가 없어요. 대화는 이 휴대전화에만 저장돼요.</string>
+    <string name="ai_delete_conversation">“%1$s” 삭제</string>
+    <string name="ai_delete_conversation_title">이 대화를 삭제할까요?</string>
+    <string name="ai_delete_conversation_message">이 휴대전화에만 저장되어 있어서 되돌릴 수 없어요.</string>
 </resources>

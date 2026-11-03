@@ -320,4 +320,44 @@
     <plurals name="ai_verse_cards_show_more">
         <item quantity="other">Tampilkan %1$d lagi</item>
     </plurals>
+    <!-- Bible Helper: the Ask tab and chat (#128) -->
+    <string name="title_ask">Tanya</string>
+    <string name="ai_helper_title">Asisten Alkitab</string>
+    <string name="ai_conversations_title">Percakapan</string>
+    <string name="ai_action_new_conversation">Percakapan baru</string>
+    <string name="ai_signed_out_title">Tanya Asisten Alkitab</string>
+    <string name="ai_signed_out_message">Ajukan pertanyaan tentang Alkitab dan iman Kristen, dan dapatkan jawaban dari sudut pandang Baptis beserta ayat-ayat yang mendasarinya. Masuk untuk mulai bertanya.</string>
+    <string name="ai_intro_title">Apa yang ingin Anda tanyakan?</string>
+    <string name="ai_intro_message">Jawaban diberikan dari sudut pandang Baptis, beserta ayat-ayat yang mendasarinya. Ketuk sebuah pertanyaan atau tulis pertanyaan Anda sendiri.</string>
+    <string name="ai_starter_saved">Bagaimana saya bisa diselamatkan?</string>
+    <string name="ai_starter_baptism">Mengapa orang Baptis membaptis dengan selam?</string>
+    <string name="ai_starter_trinity">Apa itu Tritunggal?</string>
+    <string name="ai_starter_prayer">Bagaimana seharusnya saya berdoa?</string>
+    <string name="ai_starter_start_reading">Dari mana sebaiknya saya mulai membaca Alkitab?</string>
+    <string name="ai_starter_death">Apa yang terjadi saat kita meninggal?</string>
+    <string name="ai_question_placeholder">Ajukan pertanyaan tentang Alkitab</string>
+    <string name="ai_action_send">Kirim</string>
+    <string name="ai_answer_label">Jawaban AI</string>
+    <string name="ai_thinking">Sedang berpikir…</string>
+    <string name="ai_offline_banner">Anda sedang offline. Percakapan Anda masih ada; untuk bertanya perlu internet.</string>
+    <string name="ai_failure_offline">Pertanyaan Anda tidak dapat dikirim karena Anda sedang offline.</string>
+    <string name="ai_failure_unavailable">Asisten Alkitab tidak dapat menjawab saat ini.</string>
+    <string name="ai_failure_rate_limited">Terlalu banyak pertanyaan sekaligus. Tunggu sebentar, lalu coba lagi.</string>
+    <string name="ai_failure_signed_out">Anda telah keluar. Masuk lagi untuk terus bertanya.</string>
+    <string name="ai_failure_daily_limit">Anda sudah mengajukan semua pertanyaan hari ini. Anda bisa bertanya lagi mulai %1$s.</string>
+    <string name="ai_failure_resting">Asisten Alkitab sedang beristirahat: layanan gratis yang digunakannya sudah mencapai batas hari ini. Asisten kembali mulai %1$s.</string>
+    <plurals name="ai_remaining_today">
+        <item quantity="other">Sisa %1$d pertanyaan hari ini</item>
+    </plurals>
+    <string name="ai_notice_title">Sebelum bertanya</string>
+    <string name="ai_notice_ai">Asisten Alkitab adalah AI. Asisten ini bisa keliru.</string>
+    <string name="ai_notice_baptist">Asisten ini menjawab dari sudut pandang Baptis, mengikuti Baptist Faith and Message 2000.</string>
+    <string name="ai_notice_bfm_link">Baca Baptist Faith and Message 2000 (dalam bahasa Inggris)</string>
+    <string name="ai_notice_scripture">Periksa apa yang dikatakannya dengan Kitab Suci, seperti orang-orang Berea (Kisah Para Rasul 17:11).</string>
+    <string name="ai_notice_personal">Jangan bagikan data pribadi, seperti nama lengkap, alamat, atau kondisi kesehatan Anda.</string>
+    <string name="ai_notice_accept">Mengerti</string>
+    <string name="ai_conversations_empty">Belum ada percakapan. Percakapan hanya disimpan di ponsel ini.</string>
+    <string name="ai_delete_conversation">Hapus “%1$s”</string>
+    <string name="ai_delete_conversation_title">Hapus percakapan ini?</string>
+    <string name="ai_delete_conversation_message">Percakapan ini hanya disimpan di ponsel ini, jadi tidak dapat dipulihkan.</string>
 </resources>

@@ -340,4 +340,46 @@
         <item quantity="many">Afficher %1$d autres</item>
         <item quantity="other">Afficher %1$d autres</item>
     </plurals>
+    <!-- Bible Helper: the Ask tab and chat (#128) -->
+    <string name="title_ask">Demander</string>
+    <string name="ai_helper_title">Assistant biblique</string>
+    <string name="ai_conversations_title">Conversations</string>
+    <string name="ai_action_new_conversation">Nouvelle conversation</string>
+    <string name="ai_signed_out_title">Pose ta question à l\'Assistant biblique</string>
+    <string name="ai_signed_out_message">Pose des questions sur la Bible et la foi chrétienne, et reçois des réponses d\'un point de vue baptiste, avec les versets sur lesquels elles s\'appuient. Connecte-toi pour commencer.</string>
+    <string name="ai_intro_title">Que veux-tu demander ?</string>
+    <string name="ai_intro_message">Les réponses viennent d\'un point de vue baptiste, avec les versets sur lesquels elles reposent. Touche une question ou écris la tienne.</string>
+    <string name="ai_starter_saved">Comment puis-je être sauvé ?</string>
+    <string name="ai_starter_baptism">Pourquoi les baptistes baptisent-ils par immersion ?</string>
+    <string name="ai_starter_trinity">Qu\'est-ce que la Trinité ?</string>
+    <string name="ai_starter_prayer">Comment devrais-je prier ?</string>
+    <string name="ai_starter_start_reading">Par où commencer la lecture de la Bible ?</string>
+    <string name="ai_starter_death">Que se passe-t-il quand nous mourons ?</string>
+    <string name="ai_question_placeholder">Pose une question sur la Bible</string>
+    <string name="ai_action_send">Envoyer</string>
+    <string name="ai_answer_label">Réponse d\'IA</string>
+    <string name="ai_thinking">Réflexion…</string>
+    <string name="ai_offline_banner">Tu es hors ligne. Tes conversations sont toujours là ; pour poser une question, il faut Internet.</string>
+    <string name="ai_failure_offline">Impossible d\'envoyer ta question : tu es hors ligne.</string>
+    <string name="ai_failure_unavailable">L\'Assistant biblique n\'a pas pu répondre pour le moment.</string>
+    <string name="ai_failure_rate_limited">Ça fait beaucoup de questions à la fois. Attends un instant, puis réessaie.</string>
+    <string name="ai_failure_signed_out">Tu as été déconnecté. Reconnecte-toi pour continuer à poser des questions.</string>
+    <string name="ai_failure_daily_limit">Tu as posé toutes tes questions pour aujourd\'hui. Tu pourras en poser d\'autres à partir de : %1$s.</string>
+    <string name="ai_failure_resting">L\'Assistant biblique se repose : le service gratuit qu\'il utilise a atteint sa limite pour aujourd\'hui. Il revient à partir de : %1$s.</string>
+    <plurals name="ai_remaining_today">
+        <item quantity="one">Encore %1$d question aujourd\'hui</item>
+        <item quantity="many">Encore %1$d questions aujourd\'hui</item>
+        <item quantity="other">Encore %1$d questions aujourd\'hui</item>
+    </plurals>
+    <string name="ai_notice_title">Avant de demander</string>
+    <string name="ai_notice_ai">L\'Assistant biblique est une IA. Il peut se tromper.</string>
+    <string name="ai_notice_baptist">Il répond d\'un point de vue baptiste, selon la confession Baptist Faith and Message 2000.</string>
+    <string name="ai_notice_bfm_link">Lire le Baptist Faith and Message 2000 (en anglais)</string>
+    <string name="ai_notice_scripture">Vérifie ce qu\'il dit à la lumière des Écritures, comme les Béréens (Actes 17:11).</string>
+    <string name="ai_notice_personal">Ne partage pas d\'informations personnelles, comme ton nom complet, ton adresse ou ta santé.</string>
+    <string name="ai_notice_accept">Compris</string>
+    <string name="ai_conversations_empty">Aucune conversation pour l\'instant. Elles sont gardées uniquement sur ce téléphone.</string>
+    <string name="ai_delete_conversation">Supprimer « %1$s »</string>
+    <string name="ai_delete_conversation_title">Supprimer cette conversation ?</string>
+    <string name="ai_delete_conversation_message">Elle n\'est gardée que sur ce téléphone, elle ne pourra donc pas être récupérée.</string>
 </resources>

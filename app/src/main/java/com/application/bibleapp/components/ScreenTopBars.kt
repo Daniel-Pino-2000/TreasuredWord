@@ -8,6 +8,8 @@ import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.outlined.BookmarkAdd
 import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.BookmarkRemove
+import androidx.compose.material.icons.outlined.AddComment
+import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Button
@@ -161,6 +163,26 @@ fun VersionPickerTopBar(onBackClick: () -> Unit) {
         navigationIcon = {
             IconButton(onClick = onBackClick) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
+            }
+        }
+    )
+}
+
+/** The Ask tab (#128). The actions start a new conversation and open the list of past ones; they're
+ *  hidden while signed out ([showActions] false), when there's nothing to start or list. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AskTopBar(showActions: Boolean, onNewConversation: () -> Unit, onConversations: () -> Unit) {
+    TopBar(
+        title = { Text(stringResource(R.string.ai_helper_title)) },
+        actions = {
+            if (showActions) {
+                IconButton(onClick = onNewConversation) {
+                    Icon(Icons.Outlined.AddComment, contentDescription = stringResource(R.string.ai_action_new_conversation))
+                }
+                IconButton(onClick = onConversations) {
+                    Icon(Icons.Outlined.History, contentDescription = stringResource(R.string.ai_conversations_title))
+                }
             }
         }
     )
