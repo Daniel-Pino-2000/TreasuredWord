@@ -11,7 +11,6 @@ import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
-import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import io.ktor.serialization.kotlinx.json.json
@@ -126,7 +125,9 @@ class OpenAiCompatibleProvider(
             // The error body is never logged: an "invalid input" error could repeat part of the question.
             val codes = errorCodes(body)
             log.warn("AI provider: HTTP {} in {} ms, error codes {}", status.value, millis, codes)
-            if (status == HttpStatusCode.TooManyRequests || QUOTA_EXHAUSTED_CODE in codes) {
+            // Only 3036 is the daily allowance. Cloudflare also answers 429 with 3040 ("capacity
+            // temporarily exceeded, please try again"), which is over in moments, not at midnight.
+            if (QUOTA_EXHAUSTED_CODE in codes) {
                 throw QuotaExhausted("The AI's free daily allowance is used up")
             }
             throw Unavailable("The AI provider answered HTTP ${status.value}")
@@ -138,10 +139,12 @@ class OpenAiCompatibleProvider(
             throw Unavailable("The AI provider's answer wasn't in the expected shape", e)
         }
         val choice = parsed.choices.firstOrNull()
-        val text = choice?.message?.content?.takeIf { it.isNotBlank() }
-            ?: choice?.message?.reasoningContent?.takeIf { it.isNotBlank() }
-        val neurons = parsed.usage?.neurons
         val finishReason = choice?.finishReason
+        val text = choice?.message?.content?.takeIf { it.isNotBlank() }
+            // Only a finished reply: a model that thought until it ran out of tokens has its
+            // unfinished reasoning there, never meant for the person asking.
+            ?: choice?.message?.reasoningContent?.takeIf { it.isNotBlank() && finishReason != "length" }
+        val neurons = parsed.usage?.neurons
         log.info("AI provider: HTTP {} in {} ms, {} neurons, finish {}", status.value, millis, neurons, finishReason)
         if (text == null) throw Unavailable("The AI provider returned no answer")
         return AiCompletion(text = text.trim(), cutOff = finishReason == "length", neurons = neurons)

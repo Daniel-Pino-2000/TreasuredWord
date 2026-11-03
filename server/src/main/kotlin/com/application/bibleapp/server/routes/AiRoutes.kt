@@ -23,14 +23,16 @@ import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.post
 import kotlinx.coroutines.CancellationException
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.plus
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.greater
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.less
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.minus
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.plus
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
-import org.jetbrains.exposed.sql.upsert
+import org.jetbrains.exposed.sql.update
+import org.jetbrains.exposed.sql.upsertReturning
 import java.time.Clock
 import java.time.Duration
 import java.time.LocalDate
@@ -116,20 +118,29 @@ internal fun validateReport(request: AiReportRequest): Map<String, String> {
 internal fun splitCrisis(text: String): Pair<String, Boolean> =
     if (CRISIS_MARKER in text) text.replace(CRISIS_MARKER, "").trim() to true else text to false
 
-private fun usedOn(userId: UUID, day: LocalDate): Int = transaction {
-    AiDailyUsage.selectAll()
-        .where { (AiDailyUsage.userId eq userId) and (AiDailyUsage.day eq day) }
-        .singleOrNull()?.get(AiDailyUsage.count) ?: 0
-}
-
-/** Adds one to the user's count for [day] and returns the new count. */
-private fun countAnswer(userId: UUID, day: LocalDate): Int = transaction {
-    AiDailyUsage.upsert(onUpdate = { it[AiDailyUsage.count] = AiDailyUsage.count + 1 }) {
+/**
+ * Takes one of the user's answers for [day] before asking, and returns the new count, or null
+ * when all [AI_DAILY_LIMIT] are used. One statement (`INSERT ... ON CONFLICT DO UPDATE ... WHERE
+ * count < 15 RETURNING count`), so questions sent at the same moment can't all slip past the
+ * limit the way a read followed by a later write would let them.
+ */
+private fun reserveAnswer(userId: UUID, day: LocalDate): Int? = transaction {
+    AiDailyUsage.upsertReturning(
+        returning = listOf(AiDailyUsage.count),
+        onUpdate = { it[AiDailyUsage.count] = AiDailyUsage.count + 1 },
+        where = { AiDailyUsage.count less AI_DAILY_LIMIT }
+    ) {
         it[AiDailyUsage.userId] = userId
         it[AiDailyUsage.day] = day
         it[AiDailyUsage.count] = 1
+    }.singleOrNull()?.get(AiDailyUsage.count)
+}
+
+/** Gives back an answer taken by [reserveAnswer] when none came: only answers count. */
+private fun releaseAnswer(userId: UUID, day: LocalDate) = transaction {
+    AiDailyUsage.update({ (AiDailyUsage.userId eq userId) and (AiDailyUsage.day eq day) and (AiDailyUsage.count greater 0) }) {
+        it[AiDailyUsage.count] = AiDailyUsage.count - 1
     }
-    usedOn(userId, day)
 }
 
 /**
@@ -142,6 +153,10 @@ private fun countAnswer(userId: UUID, day: LocalDate): Int = transaction {
  * Question and answer text is never logged, here or in the provider (#124).
  */
 fun Route.aiRoutes(aiProvider: AiProvider?, clock: Clock) {
+    // Reads the instruction files now, so a missing one stops the server from starting instead
+    // of failing every question after a deploy that looked healthy.
+    SystemPrompt.forLanguage("en")
+
     authenticate("auth-jwt") {
         rateLimit(AI_RATE_LIMIT) {
             post("/ai/ask") {
@@ -160,37 +175,47 @@ fun Route.aiRoutes(aiProvider: AiProvider?, clock: Clock) {
                     return@post
                 }
 
-                val today = LocalDate.ofInstant(clock.instant(), ZoneOffset.UTC)
-                if (usedOn(userId, today) >= AI_DAILY_LIMIT) {
-                    call.respond(HttpStatusCode.TooManyRequests, ErrorResponse("AI_DAILY_LIMIT", "Today's $AI_DAILY_LIMIT questions are used up"))
-                    return@post
-                }
                 if (aiProvider == null) {
                     call.respond(HttpStatusCode.ServiceUnavailable, ErrorResponse("AI_UNAVAILABLE", "The Bible Helper isn't set up on this server"))
+                    return@post
+                }
+                val today = LocalDate.ofInstant(clock.instant(), ZoneOffset.UTC)
+                var used = reserveAnswer(userId, today)
+                if (used == null) {
+                    call.respond(HttpStatusCode.TooManyRequests, ErrorResponse("AI_DAILY_LIMIT", "Today's $AI_DAILY_LIMIT questions are used up"))
                     return@post
                 }
 
                 val conversation = listOf(AiMessage(AiRole.SYSTEM, SystemPrompt.forLanguage(request.language))) +
                     request.messages.map { AiMessage(if (it.role == "user") AiRole.USER else AiRole.ASSISTANT, it.content) }
-                // Neither failure counts toward the day's questions.
+                // No answer, no count: every failure gives the reserved answer back.
                 val completion = try {
                     aiProvider.complete(conversation, AI_MAX_TOKENS)
-                } catch (e: QuotaExhausted) {
-                    call.respond(HttpStatusCode.ServiceUnavailable, ErrorResponse("AI_RESTING", "The Bible Helper is resting until 00:00 UTC"))
-                    return@post
-                } catch (e: Unavailable) {
-                    call.respond(HttpStatusCode.ServiceUnavailable, ErrorResponse("AI_UNAVAILABLE", "Couldn't get an answer"))
+                } catch (e: Throwable) {
+                    releaseAnswer(userId, today)
+                    when (e) {
+                        is QuotaExhausted -> call.respond(HttpStatusCode.ServiceUnavailable, ErrorResponse("AI_RESTING", "The Bible Helper is resting until 00:00 UTC"))
+                        is Unavailable -> call.respond(HttpStatusCode.ServiceUnavailable, ErrorResponse("AI_UNAVAILABLE", "Couldn't get an answer"))
+                        else -> throw e
+                    }
                     return@post
                 }
 
-                val (answer, crisis) = splitCrisis(completion.text)
-                val used = countAnswer(userId, today)
+                var (answer, crisis) = splitCrisis(completion.text)
+                if (answer.isBlank()) {
+                    // Only the crisis marker came back: the help card still shows, and it isn't counted.
+                    releaseAnswer(userId, today)
+                    used -= 1
+                } else if (completion.cutOff) {
+                    // It ran out of tokens mid-sentence; the ellipsis shows the person it's unfinished.
+                    answer = "$answer …"
+                }
                 call.respond(
                     HttpStatusCode.OK,
                     AiAskResponse(
                         answer = answer,
                         crisis = crisis,
-                        remainingToday = (AI_DAILY_LIMIT - used).coerceAtLeast(0),
+                        remainingToday = AI_DAILY_LIMIT - used,
                         promptVersion = SystemPrompt.PROMPT_VERSION
                     )
                 )
