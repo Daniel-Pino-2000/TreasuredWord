@@ -53,6 +53,15 @@ only needed when a secret changes.
    - `EMAIL_FROM` — that Gmail account with a name, `TreasuredWord <name@gmail.com>`. Not a
      secret. Without it or any of the three above, the server still runs and the endpoints that
      send email answer `EMAIL_UNAVAILABLE`.
+   - `AI_BASE_URL`, `AI_API_TOKEN`, `AI_MODEL` — the Bible Helper's AI (#124), Cloudflare Workers
+     AI on the free plan. `AI_BASE_URL` is
+     `https://api.cloudflare.com/client/v4/accounts/<account id>/ai/v1`, with the account ID
+     from the Cloudflare dashboard; `AI_API_TOKEN` is the Workers AI token made in #122, a
+     secret; `AI_MODEL` is `@cf/google/gemma-4-26b-a4b-it`. Without any of them the server still
+     runs and `/ai/ask` answers `AI_UNAVAILABLE`. The free plan's 10,000 neurons a day (about
+     320 answers) can't bill: past them Cloudflare refuses with error 3036 and `/ai/ask` answers
+     `AI_RESTING` until 00:00 UTC. Each answer's neurons are in the log (`AI provider: HTTP 200
+     in … ms, … neurons`), never the question or answer.
 
    Saving env var changes triggers a redeploy automatically.
 

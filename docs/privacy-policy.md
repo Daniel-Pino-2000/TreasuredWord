@@ -5,7 +5,7 @@ permalink: /privacy/
 
 # TreasuredWord privacy policy
 
-**Effective date:** November 1, 2026
+**Effective date:** November 2, 2026
 
 TreasuredWord is a free Bible reading app made by Daniel Pino, an independent developer. In this policy, "we" and "us" mean Daniel Pino, the developer of TreasuredWord. It explains what information the app uses, where it goes, and the choices you have. If you have questions, email [pinoponedaniel@gmail.com](mailto:pinoponedaniel@gmail.com).
 
@@ -15,6 +15,7 @@ TreasuredWord is a free Bible reading app made by Daniel Pino, an independent de
 - There are no ads, no analytics and no tracking in the app. We don't sell or share your information.
 - If you create an account, we store your email address, a scrambled form of your password (or, if you sign in with Google, your Google account ID instead), and your highlights, notes and reading position so they sync between your devices. You can delete the account and all of it from inside the app, or by emailing us.
 - We email you only when you ask for it: to check that your email address is yours, or to reset a forgotten password. Those emails are sent through Gmail, from TreasuredWord's own Gmail account.
+- If you ask the Bible Helper a question, it's sent with the recent conversation to our server and to Cloudflare, whose AI writes the answer. Cloudflare doesn't keep it or train on it.
 - Some content comes from other websites, and some links open other services. Those services see that visit.
 
 ## Using the app without an account
@@ -57,6 +58,21 @@ When you delete a highlight or note, the server keeps it marked as deleted, so y
 
 When you sign out, the app removes your account's highlights and notes from that phone, so the next person to sign in on it doesn't see them. They stay in your account and come back when you sign in again. If some haven't been uploaded yet, the app tells you before removing them.
 
+## The Bible Helper (AI answers)
+
+The Bible Helper is an optional feature, for signed-in accounts, that answers questions about the Bible with AI. It's being tested and may not be in your version of the app yet; if you don't see an **Ask** tab, nothing in this section applies to you.
+
+When you ask a question:
+
+- **The app sends** your question, up to the last few messages of that conversation (so the answer can follow it), and the app's language to our server.
+- **Our server adds** its own fixed instructions and sends the conversation to [Cloudflare Workers AI](https://developers.cloudflare.com/workers-ai/platform/data-usage/), which runs the AI model and sends the answer back. Cloudflare acts as our service provider: it doesn't use what we send to train AI models and doesn't keep it after answering. Your account, email address and IP address aren't sent to Cloudflare.
+- **Our server doesn't store** your questions or the answers, and never writes them to its logs. It keeps only a count of how many questions your account asked each day, to apply the daily limit; the count is deleted with your account.
+- **Your conversations are saved on your phone**, so you can read them again. You can delete them in the app, and they're removed when you remove the app.
+
+If you **report an answer**, the app sends us the question, the answer, the reason you chose, an optional comment and the app's language. We store the report **without your account or any other way to tell who sent it**, read it to improve the Bible Helper's instructions, and delete it after 90 days.
+
+Answers are written by AI and can be wrong; check them against Scripture. Please don't include personal details, such as names, addresses or health information, in your questions.
+
 ## Deleting your account
 
 You can delete your account at any time:
@@ -64,7 +80,7 @@ You can delete your account at any time:
 - **In the app:** open **Settings** (the gear on the You tab), and under **Account** tap **Delete account**.
 - **By email:** if you no longer have the app, email [pinoponedaniel@gmail.com](mailto:pinoponedaniel@gmail.com) from your account's email address and ask us to delete it. We'll delete it within 30 days.
 
-Deleting your account permanently erases it from our server, together with everything synced to it: highlights, notes (including ones marked as deleted), reading position, sign-in tokens, emailed codes and the Google account ID if you used Google sign-in. If you signed up with Google, the app asks you to confirm with Google instead of a password. Copies can remain in our database provider's backups for a short time until they're replaced. Highlights and notes already on your phone stay there until you remove the app.
+Deleting your account permanently erases it from our server, together with everything synced to it: highlights, notes (including ones marked as deleted), reading position, sign-in tokens, emailed codes, the Bible Helper's daily question count and the Google account ID if you used Google sign-in. If you signed up with Google, the app asks you to confirm with Google instead of a password. Copies can remain in our database provider's backups for a short time until they're replaced. Highlights and notes already on your phone stay there until you remove the app.
 
 ## How long we keep information
 

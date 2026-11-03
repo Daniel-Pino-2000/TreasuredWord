@@ -519,6 +519,65 @@ Errors: `401 UNAUTHORIZED`, `404 NOT_FOUND`
 
 ---
 
+## Bible Helper
+
+AI answers to Bible questions from a Baptist position (#120; plan: `docs/ai_helper_plan.md`).
+The server adds its own fixed instructions and asks Cloudflare Workers AI's free plan. Until
+#131 only debug builds of the app call these endpoints.
+
+```kotlin
+@Serializable
+data class AiMessageDto(val role: String, val content: String)   // "user" or "assistant"
+
+@Serializable
+data class AiAskRequest(val messages: List<AiMessageDto>, val language: String)
+
+@Serializable
+data class AiAskResponse(
+    val answer: String,          // verses marked as [[JHN 3:16]] or [[ROM 8:28-30]], USFM book codes
+    val crisis: Boolean,         // the person may be in danger: show the help card
+    val remainingToday: Int,     // questions left today (UTC) after this one
+    val promptVersion: String    // which instructions answered; send it back with a report
+)
+```
+
+Rules for `AiAskRequest` (any broken one is `400 VALIDATION_ERROR`, with `fieldErrors` keyed
+`messages` or `language`):
+- `messages`: 1–10, oldest first, alternating, the last one from `user`. History may start with
+  an `assistant` message (the app drops the oldest to fit). The only roles are `user` and
+  `assistant`, so the app can never send instructions of its own.
+- Sizes: each user message ≤ 1,000 characters, each assistant message ≤ 4,000, all together
+  ≤ 8,000. No blank messages.
+- `language`: one of the app's tags: `en`, `de`, `es`, `fr`, `pt-BR`, `id`, `fil`, `sw`, `ko`,
+  `zh-Hans`. The answer comes in that language.
+
+A rate limit that's hit answers `429` with no body: the `ai` zone, 5 questions a minute per
+account.
+
+### `POST /api/v1/ai/ask`
+Auth: required
+Request: `AiAskRequest`
+Success: `200 OK` with `AiAskResponse`. Counts as one of the day's 15 questions.
+Errors:
+
+| Status | `code` | When | Counted |
+|---|---|---|---|
+| 400 | `VALIDATION_ERROR` | The rules above | No |
+| 401 | `UNAUTHORIZED` | Not signed in or the token expired | No |
+| 429 | `AI_DAILY_LIMIT` | This account already got 15 answers today (UTC); more at 00:00 UTC | No |
+| 429 | (no body) | More than 5 questions in a minute (`ai` zone) | No |
+| 503 | `AI_RESTING` | Cloudflare's free daily allowance is used up (its error `3036`); back at 00:00 UTC | No |
+| 503 | `AI_UNAVAILABLE` | The AI failed, took longer than 30 s, or isn't set up on this server | No |
+
+An answer that ran out of room ends with " …" so it doesn't look finished. If the AI returned
+only the crisis marker, `answer` is empty, `crisis` is `true`, and the question isn't counted.
+The daily count is taken atomically before the AI is asked and given back if no answer comes,
+so questions sent at the same moment can't go past 15.
+
+The server never logs question or answer text.
+
+---
+
 ## Deliberately deferred (not in v1)
 
 - **Change password / change email** — straightforward additions once the account exists, but no
