@@ -257,9 +257,9 @@ lines (link only, source named), through `utils/ExternalLinks.kt`.
 - **No question text in logs:** the server never logs questions or answers, including inside
   provider error messages.
 - **Privacy policy:** a "Bible Helper" section (what's sent, to whom, that Cloudflare doesn't
-  train on it or keep it, the daily counter, reports) with a new effective date, **in the PR that
-  turns the switch on for release builds** (#131). That's when the app starts sending users'
-  questions; until then only the developer's debug builds call the Bible Helper.
+  train on it or keep it, the daily counter, reports) with a new effective date, added in #124's
+  PR (CLAUDE.md: the policy changes in the PR that starts sending data somewhere new, and the
+  deployed server can send questions to Cloudflare from then on). #131 checks it's still accurate.
 - **Play Console Data safety:** update before release (#131). Questions are user-generated
   content sent to us and processed by Cloudflare as our service provider.
 - **Credits:** the model and its license in Settings → Open-source licenses.

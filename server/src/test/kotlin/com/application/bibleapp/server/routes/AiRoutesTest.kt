@@ -22,6 +22,9 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.server.testing.testApplication
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.and
@@ -196,7 +199,7 @@ class AiRoutesTest {
 
         assertEquals(HttpStatusCode.ServiceUnavailable, response.status)
         assertEquals("AI_RESTING", response.error().code)
-        assertEquals(null, usedToday(user, clock))
+        assertEquals(0, usedToday(user, clock))
     }
 
     @Test
@@ -210,7 +213,7 @@ class AiRoutesTest {
 
         assertEquals(HttpStatusCode.ServiceUnavailable, response.status)
         assertEquals("AI_UNAVAILABLE", response.error().code)
-        assertEquals(null, usedToday(user, clock))
+        assertEquals(0, usedToday(user, clock))
     }
 
     @Test
@@ -234,6 +237,53 @@ class AiRoutesTest {
 
         assertTrue(body.crisis)
         assertEquals("You matter to God. Please call your local emergency number now. [[PSA 34:18]]", body.answer)
+    }
+
+    @Test
+    fun questionsSentAtOnceCantGoPastTheDailyLimit() = testApplication {
+        val ai = FakeAiProvider().apply { delayMillis = 300 }
+        val clock = MutableClock()
+        val client = startWithFakeAi(ai, clock)
+        val user = client.registerTestUser()
+        transaction {
+            AiDailyUsage.insert {
+                it[userId] = UUID.fromString(user.auth.userId)
+                it[day] = clock.today()
+                it[count] = 13
+            }
+        }
+
+        // Four at once with two left: two answers, two refusals, and never more than 15.
+        val statuses = coroutineScope { List(4) { async { client.ask(user).status } }.awaitAll() }
+
+        assertEquals(2, statuses.count { it == HttpStatusCode.OK }, statuses.toString())
+        assertEquals(2, statuses.count { it == HttpStatusCode.TooManyRequests }, statuses.toString())
+        assertEquals(2, ai.calls.size)
+        assertEquals(15, usedToday(user, clock))
+    }
+
+    @Test
+    fun aCutOffAnswerEndsWithAnEllipsis() = testApplication {
+        val ai = FakeAiProvider().apply { answer = "The first reason is"; cutOff = true }
+        val client = startWithFakeAi(ai)
+        val user = client.registerTestUser()
+
+        assertEquals("The first reason is \u2026", client.ask(user).answer().answer)
+    }
+
+    @Test
+    fun anAnswerThatIsOnlyTheCrisisMarkerStillFlagsItAndIsNotCounted() = testApplication {
+        val ai = FakeAiProvider().apply { answer = "[[CRISIS]]" }
+        val clock = MutableClock()
+        val client = startWithFakeAi(ai, clock)
+        val user = client.registerTestUser()
+
+        val body = client.ask(user).answer()
+
+        assertTrue(body.crisis)
+        assertEquals("", body.answer)
+        assertEquals(15, body.remainingToday)
+        assertEquals(0, usedToday(user, clock))
     }
 
     @Test
