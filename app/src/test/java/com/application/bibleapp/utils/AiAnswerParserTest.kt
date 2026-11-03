@@ -2,15 +2,18 @@ package com.application.bibleapp.utils
 
 import com.application.bibleapp.data.model.BibleBooks
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Test
 
-/** Verse markers in a Bible Helper answer (#129). */
+/** Verse markers in a Bible Helper answer (#129, #190). */
 class AiAnswerParserTest {
 
     private fun ref(bookId: Int, chapter: Int, start: Int? = null, end: Int? = null) =
         AiAnswerPart.Reference(VerseReference(bookId, chapter, start, end))
 
     private fun text(text: String) = AiAnswerPart.Text(text)
+
+    private fun book(bookId: Int) = AiAnswerPart.Book(bookId)
 
     @Test
     fun `a single verse`() {
@@ -79,10 +82,84 @@ class AiAnswerParserTest {
     }
 
     @Test
-    fun `broken brackets stay as they are`() {
-        val answer = "Look at [[JHN 3:16 and [ROM 8:28] or [[JHN]] or [[ROM 8:28]"
+    fun `broken brackets never show on screen`() {
+        // The [[JHN]] in the middle is a whole book; the rest loses only its double brackets (#190).
+        assertEquals(
+            listOf(text("Look at JHN 3:16 and [ROM 8:28] or "), book(43), text(" or ROM 8:28]")),
+            parseAiAnswer("Look at [[JHN 3:16 and [ROM 8:28] or [[JHN]] or [[ROM 8:28]")
+        )
+        assertEquals(listOf(text("Empty  here")), parseAiAnswer("Empty [[]] here"))
+    }
 
-        assertEquals(listOf(text(answer)), parseAiAnswer(answer))
+    // The markers Gemma 4 and Qwen3 wrote in #122's test run (#190).
+
+    @Test
+    fun `a space after the number and JHN instead of 1JN`() {
+        assertEquals(listOf(text("Confess "), ref(62, 1, 9)), parseAiAnswer("Confess [[1 JHN 1:9]]"))
+    }
+
+    @Test
+    fun `a four-letter code`() {
+        assertEquals(listOf(ref(26, 36, 26)), parseAiAnswer("[[EZEK 36:26]]"))
+    }
+
+    @Test
+    fun `PHI for Philippians`() {
+        assertEquals(listOf(ref(50, 4, 6, 7)), parseAiAnswer("[[PHI 4:6-7]]"))
+    }
+
+    @Test
+    fun `full English names`() {
+        assertEquals(listOf(ref(43, 5, 39)), parseAiAnswer("[[JOHN 5:39]]"))
+        assertEquals(listOf(ref(19, 119, 105)), parseAiAnswer("[[PSALM 119:105]]"))
+        assertEquals(listOf(ref(22, 2, 4)), parseAiAnswer("[[Song of Solomon 2:4]]"))
+        assertEquals(listOf(ref(52, 4, 16, 17)), parseAiAnswer("[[1 Thess. 4:16-17]]"))
+    }
+
+    @Test
+    fun `a whole book is its name, without a card`() {
+        val parts = parseAiAnswer("The [[PSA]] are prayers.")
+
+        assertEquals(listOf(text("The "), book(19), text(" are prayers.")), parts)
+        assertEquals(emptyList<VerseReference>(), parts.citedReferences())
+    }
+
+    @Test
+    fun `two markers in one`() {
+        val parts = parseAiAnswer("See [[PSA 103:8], [1JN 1:9]].")
+
+        assertEquals(listOf(text("See "), ref(19, 103, 8), text(", "), ref(62, 1, 9), text(".")), parts)
+        assertEquals(listOf(VerseReference(19, 103, 8), VerseReference(62, 1, 9)), parts.citedReferences())
+        assertEquals(
+            listOf(ref(45, 3, 23), text("; "), ref(45, 6, 23)),
+            parseAiAnswer("[[ROM 3:23; ROM 6:23]]")
+        )
+    }
+
+    @Test
+    fun `a marker of several with one unreadable part keeps the rest`() {
+        assertEquals(
+            listOf(ref(43, 3, 16), text(", XYZ 1:1")),
+            parseAiAnswer("[[JHN 3:16], [XYZ 1:1]]")
+        )
+    }
+
+    @Test
+    fun `a one-chapter book cited by verse alone`() {
+        assertEquals(listOf(ref(65, 1, 24)), parseAiAnswer("[[JUD 24]]"))
+        assertEquals(listOf(ref(65, 1)), parseAiAnswer("[[JUD 1]]"))
+    }
+
+    @Test
+    fun `no answer shows raw double brackets`() {
+        val markers = listOf(
+            "[[1 JHN 1:9]]", "[[EZEK 36:26]]", "[[PSA]]", "[[PSA 103:8], [1JN 1:9]]", "[[PHI 4:6-7]]",
+            "[[JOHN 5:39]]", "[[PSALM 119:105]]", "[[XYZ 1:1]]", "[[JHN 99:1]]", "[[not a verse]]", "[[JHN 3:16"
+        )
+        markers.forEach { marker ->
+            val shown = parseAiAnswer("Before $marker after").filterIsInstance<AiAnswerPart.Text>().joinToString { it.text }
+            assertFalse(marker, "[[" in shown || "]]" in shown)
+        }
     }
 
     @Test
@@ -117,5 +194,16 @@ class AiAnswerParserTest {
         assertEquals("Juan 3:16", formatVerseReference(VerseReference(43, 3, 16), name))
         assertEquals("Juan 3:16-18", formatVerseReference(VerseReference(43, 3, 16, 18), name))
         assertEquals("Salmos 23", formatVerseReference(VerseReference(19, 23), name))
+    }
+
+    @Test
+    fun `plain text names books and references in the version's names`() {
+        val spanish = mapOf(43 to "Juan", 19 to "Salmos")
+        val name = { id: Int -> spanish[id] ?: BibleBooks.getBookById(id)!!.name }
+
+        assertEquals(
+            "Los Salmos y Juan 3:16-18, Juan 5:39.",
+            parseAiAnswer("Los [[PSA]] y [[JHN 3:16-18], [JOHN 5:39]].").plainText(name)
+        )
     }
 }
