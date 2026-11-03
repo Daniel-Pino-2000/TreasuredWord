@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.ContentCopy
+import androidx.compose.material.icons.outlined.QuestionAnswer
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -33,6 +34,10 @@ import androidx.compose.ui.res.pluralStringResource
 /** Keeps the card from stretching edge to edge in landscape. */
 private val MAX_TOOLBAR_WIDTH = 480.dp
 
+/** Landscape's one row with Ask too (#132): four actions at 480dp left the five 36dp color swatches
+ *  about 140dp, and the last one was cut off; 560dp leaves them about 220dp. */
+private val MAX_TOOLBAR_WIDTH_WITH_ASK = 560.dp
+
 /**
  * A genuinely floating card — margin on every side, all four corners rounded, a real cast
  * shadow — positioned by MainActivity a fixed gap above [MainBottomBar]'s current top edge,
@@ -45,7 +50,8 @@ private val MAX_TOOLBAR_WIDTH = 480.dp
  * [MAX_TOOLBAR_WIDTH], so it no longer covers half the screen.
  *
  * Picking a color applies it and leaves the selection (and this toolbar) open, so a note can
- * still be added to the same verses; Copy, Share, Note and Cancel each end it.
+ * still be added to the same verses; Copy, Share, Ask, Note and Cancel each end it. [onAsk] null
+ * hides Ask ("Ask about this verse", #132), as in release builds until the Bible Helper ships.
  */
 @Composable
 fun VerseSelectionToolbar(
@@ -55,12 +61,14 @@ fun VerseSelectionToolbar(
     onShare: () -> Unit,
     onAddNote: () -> Unit,
     onCancel: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onAsk: (() -> Unit)? = null
 ) {
     val compactHeight = isCompactHeight()
+    val maxWidth = if (compactHeight && onAsk != null) MAX_TOOLBAR_WIDTH_WITH_ASK else MAX_TOOLBAR_WIDTH
     Surface(
         // Capped so it doesn't stretch across a landscape screen (portrait phones never hit the cap).
-        modifier = modifier.widthIn(max = MAX_TOOLBAR_WIDTH).fillMaxWidth(),
+        modifier = modifier.widthIn(max = maxWidth).fillMaxWidth(),
         color = MaterialTheme.colorScheme.surface,
         tonalElevation = 6.dp,
         shadowElevation = 8.dp,
@@ -83,6 +91,7 @@ fun VerseSelectionToolbar(
                 val actionModifier = Modifier.widthIn(min = 64.dp)
                 SelectionAction(stringResource(R.string.action_copy), rememberVectorPainter(Icons.Outlined.ContentCopy), onCopy, actionModifier)
                 SelectionAction(stringResource(R.string.action_share), rememberVectorPainter(Icons.Outlined.Share), onShare, actionModifier)
+                onAsk?.let { SelectionAction(stringResource(R.string.title_ask), rememberVectorPainter(Icons.Outlined.QuestionAnswer), it, actionModifier) }
                 SelectionAction(stringResource(R.string.title_note), painterResource(R.drawable.ic_stylus_note), onAddNote, actionModifier, emphasized = true)
                 IconButton(onClick = onCancel) {
                     Icon(Icons.Default.Close, contentDescription = stringResource(R.string.selection_cancel))
@@ -122,6 +131,7 @@ fun VerseSelectionToolbar(
                     val actionModifier = Modifier.weight(1f)
                     SelectionAction(stringResource(R.string.action_copy), rememberVectorPainter(Icons.Outlined.ContentCopy), onCopy, actionModifier)
                     SelectionAction(stringResource(R.string.action_share), rememberVectorPainter(Icons.Outlined.Share), onShare, actionModifier)
+                    onAsk?.let { SelectionAction(stringResource(R.string.title_ask), rememberVectorPainter(Icons.Outlined.QuestionAnswer), it, actionModifier) }
                     SelectionAction(stringResource(R.string.title_note), painterResource(R.drawable.ic_stylus_note), onAddNote, actionModifier, emphasized = true)
                 }
             }

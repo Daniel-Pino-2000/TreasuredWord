@@ -378,4 +378,8 @@
     <string name="ai_crisis_message">Jika Anda dalam bahaya atau berpikir untuk menyakiti diri sendiri, segera hubungi seseorang. Layanan bantuan bisa berbicara dengan Anda hari ini.</string>
     <string name="ai_crisis_find_helpline">Cari layanan bantuan</string>
     <string name="ai_crisis_emergency">Dalam keadaan darurat, hubungi nomor darurat setempat.</string>
+    <!-- Bible Helper: "Ask about this verse" from the reader (#132) -->
+    <!-- The question ready to edit when the reader's selected verses open the Ask tab -->
+    <string name="ai_passage_default_question">Apa arti perikop ini?</string>
+    <string name="ai_passage_remove">Hapus %1$s</string>
 </resources>

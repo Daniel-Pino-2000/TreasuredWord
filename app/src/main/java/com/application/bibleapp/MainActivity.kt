@@ -501,6 +501,18 @@ class MainActivity : AppCompatActivity() {
                                 },
                                 onAddNote = { bibleViewModel.openNoteEditorForSelection() },
                                 onCancel = { bibleViewModel.clearSelection() },
+                                // "Ask about this verse" (#132): a new Bible Helper conversation with
+                                // the verses attached and a question ready to edit.
+                                onAsk = if (BuildConfig.AI_HELPER_ENABLED) {
+                                    {
+                                        bibleViewModel.takeSelectionAiPassage()?.let { passage ->
+                                            askViewModel.startWithPassage(passage, resources.getString(R.string.ai_passage_default_question))
+                                            navController.navigate(Screen.Ask.route)
+                                        }
+                                    }
+                                } else {
+                                    null
+                                },
                                 modifier = Modifier
                                     .align(Alignment.BottomCenter)
                                     .then(if (compactHeight) Modifier.navigationBarsPadding() else Modifier)

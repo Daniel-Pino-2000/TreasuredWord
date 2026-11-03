@@ -4,7 +4,10 @@ import com.application.bibleapp.data.model.AiConversation
 import com.application.bibleapp.data.model.AiMessage
 import com.application.bibleapp.data.model.AiRole
 import com.application.bibleapp.data.remote.AiAskResult
+import com.application.bibleapp.data.model.AiQuestionPassage
+import com.application.bibleapp.data.remote.AiAskRequestDto
 import com.application.bibleapp.data.remote.AiHelperApi
+import com.application.bibleapp.data.remote.AiPassageDto
 import com.application.bibleapp.data.remote.AiReportReason
 import com.application.bibleapp.data.remote.AiReportRequestDto
 import com.application.bibleapp.data.remote.AiReportResult
@@ -200,10 +203,11 @@ class AskViewModelTest {
 
     @Test
     fun `signing out forgets the open conversation and the draft`() = runTest {
+        viewModel.onSignInChanged(true)
         ask("Who was David?")
         viewModel.onDraftChange("Half a question")
 
-        viewModel.onSignedOut()
+        viewModel.onSignInChanged(false)
 
         assertEquals(AskUiState(), viewModel.state.value)
         assertEquals("", viewModel.draft.value)
@@ -243,5 +247,51 @@ class AskViewModelTest {
         val question = viewModel.state.value.messages.first()
 
         assertEquals(AiAskResult.Unavailable, viewModel.report(question.id, AiReportReason.OTHER, null, "en"))
+    }
+
+    private val passage = AiQuestionPassage("John 3:16 (KJV)", AiPassageDto("JHN 3:16", "For God so loved the world"))
+
+    @Test
+    fun `ask about this verse opens a new conversation with the passage and an editable question`() = runTest {
+        ask("Who was Moses?")
+
+        viewModel.startWithPassage(passage, "What does this passage mean?")
+
+        assertNull(viewModel.state.value.conversationId)
+        assertEquals(passage, viewModel.state.value.passage)
+        assertEquals("What does this passage mean?", viewModel.draft.value)
+    }
+
+    @Test
+    fun `the passage goes with the question and its follow-ups, until it's removed`() = runTest {
+        viewModel.startWithPassage(passage, "What does this passage mean?")
+        viewModel.send("en")
+        viewModel.state.first { !it.isSending }
+        ask("And verse 17?")
+        viewModel.removePassage()
+        ask("Who wrote John?")
+
+        val passages = sent.filter { it.first.endsWith("/ai/ask") }
+            .map { HttpClientProvider.json.decodeFromString(AiAskRequestDto.serializer(), it.second).passage }
+        assertEquals(listOf(passage.dto, passage.dto, null), passages)
+    }
+
+    @Test
+    fun `a new conversation leaves the passage behind`() = runTest {
+        viewModel.startWithPassage(passage, "What does this passage mean?")
+
+        viewModel.newConversation()
+
+        assertNull(viewModel.state.value.passage)
+    }
+
+    @Test
+    fun `a passage attached while signed out waits for the sign-in`() = runTest {
+        viewModel.startWithPassage(passage, "What does this passage mean?")
+
+        viewModel.onSignInChanged(false)
+        viewModel.onSignInChanged(true)
+
+        assertEquals(passage, viewModel.state.value.passage)
     }
 }

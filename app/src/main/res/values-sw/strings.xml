@@ -389,4 +389,8 @@
     <string name="ai_crisis_message">Ikiwa uko hatarini au unafikiria kujidhuru, tafadhali wasiliana na mtu sasa hivi. Huduma ya msaada inaweza kuzungumza nawe leo.</string>
     <string name="ai_crisis_find_helpline">Tafuta huduma ya msaada</string>
     <string name="ai_crisis_emergency">Katika dharura, piga nambari ya dharura ya eneo lako.</string>
+    <!-- Bible Helper: "Ask about this verse" from the reader (#132) -->
+    <!-- The question ready to edit when the reader's selected verses open the Ask tab -->
+    <string name="ai_passage_default_question">Kifungu hiki kinamaanisha nini?</string>
+    <string name="ai_passage_remove">Ondoa %1$s</string>
 </resources>

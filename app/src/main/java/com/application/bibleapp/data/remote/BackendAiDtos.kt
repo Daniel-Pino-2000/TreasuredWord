@@ -12,10 +12,16 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class AiMessageDto(val role: String, val content: String)
 
-/** `messages`: 1–10, oldest first, alternating, the last one from the user. `language` is one of
- *  [com.application.bibleapp.utils.AppLanguage.supportedTags]. */
+/** The passage "Ask about this verse" attaches (#132): a USFM `reference` within one chapter, such
+ *  as "JHN 3:16-18", and its `text` in the reader's translation, at most 2,000 characters. */
 @Serializable
-data class AiAskRequestDto(val messages: List<AiMessageDto>, val language: String)
+data class AiPassageDto(val reference: String, val text: String)
+
+/** `messages`: 1–10, oldest first, alternating, the last one from the user. `language` is one of
+ *  [com.application.bibleapp.utils.AppLanguage.supportedTags]. [passage] is left out of the JSON
+ *  when null, so a server without it still reads the request. */
+@Serializable
+data class AiAskRequestDto(val messages: List<AiMessageDto>, val language: String, val passage: AiPassageDto? = null)
 
 /** The answer marks the verses it cites as `[[JHN 3:16]]` (#129). `remainingToday` is how many of
  *  the day's questions are left after this one. */

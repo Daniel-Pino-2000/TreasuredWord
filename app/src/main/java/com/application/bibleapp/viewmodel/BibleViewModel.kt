@@ -8,6 +8,8 @@ import com.application.bibleapp.data.model.BibleTranslation
 import com.application.bibleapp.data.model.ChapterStructure
 import com.application.bibleapp.data.model.DEFAULT_VERSION
 import com.application.bibleapp.data.model.AiVersePassage
+import com.application.bibleapp.data.model.AiQuestionPassage
+import com.application.bibleapp.data.model.buildAiQuestionPassage
 import com.application.bibleapp.data.model.loadAiVersePassage
 import com.application.bibleapp.data.model.DailyVerseRef
 import com.application.bibleapp.data.model.DailyVerseUI
@@ -740,6 +742,27 @@ class BibleViewModel(
         )
         clearSelection()
         return text
+    }
+
+    /** The selection as a passage for "Ask about this verse" (#132), or null when nothing with
+     *  text is selected. Ends selection mode, like Copy and Share. A verse stored as several rows
+     *  is joined back together. */
+    fun takeSelectionAiPassage(): AiQuestionPassage? {
+        val selection = _selectedVerses.value
+        if (selection.isEmpty()) return null
+        val textByLocation = _verses.value
+            .filter { it.bookId != null && it.chapter != null && it.verse != null }
+            .groupBy { VerseLocationDto(it.bookId!!, it.chapter!!, it.verse!!) }
+            .mapValues { (_, rows) -> rows.joinToString(" ") { it.text.removePrefix(LEGACY_PARAGRAPH_MARKER).trim() } }
+        val names = _bookNames.value
+        val passage = buildAiQuestionPassage(
+            selection = selection,
+            textOf = textByLocation::get,
+            bookName = { id -> names[id] ?: BibleBooks.getBookById(id)?.name ?: "" },
+            versionLabel = currentVersionLabel.value
+        )
+        clearSelection()
+        return passage
     }
 
     /** The Home verse card's Copy/Share text, in the same `"…" — Ref (VER)` shape as a reader
