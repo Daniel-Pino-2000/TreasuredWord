@@ -1,10 +1,13 @@
 package com.application.bibleapp.components
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -184,21 +187,27 @@ fun MainNavigationRail(
         modifier = modifier,
         containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(NavigationBarDefaults.Elevation)
     ) {
-        Spacer(modifier = Modifier.weight(1f))
-        bottomNavigationItems.forEach { item ->
-            NavigationRailItem(
-                selected = currentRoute == item.route,
-                onClick = { onItemSelected(item.route) },
-                icon = {
-                    Icon(
-                        imageVector = if (currentRoute == item.route) item.selectedIcon else item.unselectedIcon,
-                        contentDescription = stringResource(item.titleRes)
-                    )
-                },
-                label = { Text(stringResource(item.titleRes), maxLines = 1, overflow = TextOverflow.Ellipsis) }
-            )
+        // Five tabs (with the Bible Helper) at the rail's own 4 dp spacing don't fit a landscape
+        // phone with a tall status bar, and the rail squeezed the last one (#209): no gaps here,
+        // and scrolling as a last resort, so no tab is ever cut off.
+        Column(
+            modifier = Modifier.fillMaxHeight().verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.Center
+        ) {
+            bottomNavigationItems.forEach { item ->
+                NavigationRailItem(
+                    selected = currentRoute == item.route,
+                    onClick = { onItemSelected(item.route) },
+                    icon = {
+                        Icon(
+                            imageVector = if (currentRoute == item.route) item.selectedIcon else item.unselectedIcon,
+                            contentDescription = stringResource(item.titleRes)
+                        )
+                    },
+                    label = { Text(stringResource(item.titleRes), maxLines = 1, overflow = TextOverflow.Ellipsis) }
+                )
+            }
         }
-        Spacer(modifier = Modifier.weight(1f))
     }
 }
 
