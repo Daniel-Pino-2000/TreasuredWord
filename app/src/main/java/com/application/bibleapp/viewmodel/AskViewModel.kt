@@ -71,6 +71,9 @@ class AskViewModel(
     private val _draft = MutableStateFlow("")
     val draft: StateFlow<String> = _draft.asStateFlow()
 
+    /** The question [startWithPassage] wrote in the field, to clear if it goes unsent with its passage (#212). */
+    private var passageQuestion: String? = null
+
     private val _conversations = MutableStateFlow<List<AiConversation>>(emptyList())
     val conversations: StateFlow<List<AiConversation>> = _conversations.asStateFlow()
 
@@ -92,6 +95,7 @@ class AskViewModel(
         val question = _draft.value.trim()
         if (question.isEmpty() || _state.value.isSending) return
         _draft.value = ""
+        passageQuestion = null
         val conversationId = _state.value.conversationId
         // Shown straight away; the saved copy replaces it once the repository has stored it.
         val pending = AiMessage(PENDING_ID, conversationId ?: PENDING_ID, AiRole.USER, question, createdAt = "")
@@ -111,6 +115,16 @@ class AskViewModel(
         if (_state.value.isSending) return
         _state.value = AskUiState(remainingToday = _state.value.remainingToday, passage = passage)
         _draft.value = question.take(MAX_QUESTION_CHARS)
+        passageQuestion = _draft.value
+    }
+
+    /**
+     * Leaving a conversation leaves its passage behind, so "What does this passage mean?" would
+     * no longer say which one (#212): cleared if still untouched. A draft the person wrote stays.
+     */
+    private fun dropPassageQuestion() {
+        if (_draft.value == passageQuestion) _draft.value = ""
+        passageQuestion = null
     }
 
     /** Takes the attached passage off, so the next questions go without it. */
@@ -130,10 +144,12 @@ class AskViewModel(
     fun newConversation() {
         if (_state.value.isSending) return
         _state.value = AskUiState(remainingToday = _state.value.remainingToday)
+        dropPassageQuestion()
     }
 
     fun openConversation(id: Long) {
         if (_state.value.isSending) return
+        dropPassageQuestion()
         viewModelScope.launch {
             val messages = repository.messages(id)
             _state.value = AskUiState(
