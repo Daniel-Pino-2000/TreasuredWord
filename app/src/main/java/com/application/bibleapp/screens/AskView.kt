@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -285,18 +286,42 @@ private fun AskChat(
                 modifier = Modifier.padding(horizontal = Spacing.lg)
             )
         }
-        state.passage?.let { passage -> PassageChip(passage.label, onRemove = onRemovePassage) }
+        // In landscape the chip sits beside the field instead of on a row of its own, which left
+        // the conversation a line or two of the little height there is (#210).
+        val compact = isCompactHeight()
+        val passage = state.passage
+        if (passage != null && !compact) {
+            PassageChip(
+                passage.label,
+                onRemove = onRemovePassage,
+                modifier = Modifier.padding(start = Spacing.lg, end = Spacing.lg, top = Spacing.xs)
+            )
+        }
         QuestionField(
             draft = draft,
             canSend = draft.isNotBlank() && !state.isSending && online,
             onDraftChange = onDraftChange,
-            onSend = onSend
+            onSend = onSend,
+            leading = if (passage != null && compact) {
+                {
+                    PassageChip(
+                        passage.label,
+                        onRemove = onRemovePassage,
+                        modifier = Modifier.padding(end = Spacing.sm).widthIn(max = PASSAGE_CHIP_MAX_WIDTH)
+                    )
+                }
+            } else {
+                null
+            }
         )
     }
 }
 
 /** "Questions left today" shows once this few remain (#128). */
 private const val REMAINING_SHOWN_FROM = 3
+
+/** In landscape the passage chip shares the field's row; past this a long reference ellipsizes (#210). */
+private val PASSAGE_CHIP_MAX_WIDTH = 280.dp
 
 @Composable
 private fun AskSignedOut(onSignInClick: () -> Unit, modifier: Modifier = Modifier) {
@@ -526,14 +551,14 @@ private fun OfflineBanner() {
     }
 }
 
-/** The verses "Ask about this verse" attached (#132), above the field while they go with each question. */
+/** The verses "Ask about this verse" attached (#132), above the field (beside it in landscape, #210) while they go with each question. */
 @Composable
-private fun PassageChip(label: String, onRemove: () -> Unit) {
+private fun PassageChip(label: String, onRemove: () -> Unit, modifier: Modifier = Modifier) {
     Surface(
         color = MaterialTheme.colorScheme.secondaryContainer,
         contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
         shape = MaterialTheme.shapes.small,
-        modifier = Modifier.padding(start = Spacing.lg, end = Spacing.lg, top = Spacing.xs)
+        modifier = modifier
     ) {
         Row(
             modifier = Modifier.padding(start = Spacing.md),
@@ -556,7 +581,13 @@ private fun PassageChip(label: String, onRemove: () -> Unit) {
 }
 
 @Composable
-private fun QuestionField(draft: String, canSend: Boolean, onDraftChange: (String) -> Unit, onSend: () -> Unit) {
+private fun QuestionField(
+    draft: String,
+    canSend: Boolean,
+    onDraftChange: (String) -> Unit,
+    onSend: () -> Unit,
+    leading: (@Composable () -> Unit)? = null
+) {
     val numbers = NumberFormat.getIntegerInstance(LocalConfiguration.current.locales[0])
     val counter = stringResource(R.string.ai_question_counter, numbers.format(draft.length), numbers.format(MAX_QUESTION_CHARS))
     // In landscape the counter goes inside the field, and the field grows less, so the
@@ -566,6 +597,7 @@ private fun QuestionField(draft: String, canSend: Boolean, onDraftChange: (Strin
         modifier = Modifier.fillMaxWidth().padding(start = Spacing.lg, end = Spacing.sm, top = Spacing.xs, bottom = Spacing.xs),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        leading?.invoke()
         OutlinedTextField(
             value = draft,
             onValueChange = onDraftChange,

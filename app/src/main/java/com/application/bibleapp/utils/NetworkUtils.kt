@@ -41,12 +41,15 @@ fun rememberIsOnline(): Boolean {
     var online by remember { mutableStateOf(NetworkUtils.isOnline(context)) }
     DisposableEffect(context) {
         val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
-        // Callbacks arrive on a background thread; re-checking the whole state there is enough.
+        // Trust what each callback says rather than re-reading the system: in onLost,
+        // activeNetwork can still return the network just lost, still "validated", and with no
+        // network left no later callback would correct it (#208). onAvailable is followed by
+        // onCapabilitiesChanged, which says whether the new network really reaches the internet.
         val callback = object : ConnectivityManager.NetworkCallback() {
-            override fun onAvailable(network: Network) { online = NetworkUtils.isOnline(context) }
-            override fun onLost(network: Network) { online = NetworkUtils.isOnline(context) }
+            override fun onLost(network: Network) { online = false }
             override fun onCapabilitiesChanged(network: Network, capabilities: NetworkCapabilities) {
-                online = NetworkUtils.isOnline(context)
+                online = capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
+                    capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
             }
         }
         val registered = runCatching { connectivityManager?.registerDefaultNetworkCallback(callback) }.isSuccess

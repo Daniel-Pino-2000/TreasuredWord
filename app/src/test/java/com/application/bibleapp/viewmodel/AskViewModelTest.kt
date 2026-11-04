@@ -286,6 +286,29 @@ class AskViewModelTest {
     }
 
     @Test
+    fun `leaving the passage behind clears its untouched question`() = runTest {
+        viewModel.startWithPassage(passage, "What does this passage mean?")
+        viewModel.newConversation()
+        assertEquals("", viewModel.draft.value)
+
+        ask("Who was Moses?")
+        val id = viewModel.state.value.conversationId!!
+        viewModel.startWithPassage(passage, "What does this passage mean?")
+        viewModel.openConversation(id)
+        assertEquals("", viewModel.draft.value)
+    }
+
+    @Test
+    fun `leaving the passage behind keeps a question the person wrote`() = runTest {
+        viewModel.startWithPassage(passage, "What does this passage mean?")
+        viewModel.onDraftChange("Who is speaking here?")
+
+        viewModel.newConversation()
+
+        assertEquals("Who is speaking here?", viewModel.draft.value)
+    }
+
+    @Test
     fun `a passage attached while signed out waits for the sign-in`() = runTest {
         viewModel.startWithPassage(passage, "What does this passage mean?")
 
