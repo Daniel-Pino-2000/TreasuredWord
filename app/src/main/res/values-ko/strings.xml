@@ -14,6 +14,9 @@
     <string name="action_remove">제거</string>
     <string name="action_save">저장</string>
     <string name="action_undo">실행 취소</string>
+    <string name="action_restart">다시 시작</string>
+    <!-- Snackbar once a new version from Google Play has downloaded in the background (#202) -->
+    <string name="message_update_ready">새 버전이 준비되었습니다</string>
     <string name="action_retry">다시 시도</string>
     <string name="action_dismiss">닫기</string>
     <string name="action_sign_in">로그인</string>

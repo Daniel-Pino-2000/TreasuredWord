@@ -14,6 +14,9 @@
     <string name="action_remove">Remover</string>
     <string name="action_save">Salvar</string>
     <string name="action_undo">Desfazer</string>
+    <string name="action_restart">Reiniciar</string>
+    <!-- Snackbar once a new version from Google Play has downloaded in the background (#202) -->
+    <string name="message_update_ready">Uma nova versão está pronta</string>
     <string name="action_retry">Tentar de novo</string>
     <string name="action_dismiss">Fechar</string>
     <string name="action_sign_in">Entrar</string>

@@ -14,6 +14,9 @@
     <string name="action_remove">Ondoa</string>
     <string name="action_save">Hifadhi</string>
     <string name="action_undo">Tendua</string>
+    <string name="action_restart">Anzisha upya</string>
+    <!-- Snackbar once a new version from Google Play has downloaded in the background (#202) -->
+    <string name="message_update_ready">Toleo jipya liko tayari</string>
     <string name="action_retry">Jaribu tena</string>
     <string name="action_dismiss">Funga</string>
     <string name="action_sign_in">Ingia</string>

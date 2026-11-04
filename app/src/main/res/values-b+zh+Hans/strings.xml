@@ -13,6 +13,9 @@
     <string name="action_remove">移除</string>
     <string name="action_save">保存</string>
     <string name="action_undo">撤销</string>
+    <string name="action_restart">重新启动</string>
+    <!-- Snackbar once a new version from Google Play has downloaded in the background (#202) -->
+    <string name="message_update_ready">新版本已准备就绪</string>
     <string name="action_retry">重试</string>
     <string name="action_dismiss">关闭</string>
     <string name="action_sign_in">登录</string>

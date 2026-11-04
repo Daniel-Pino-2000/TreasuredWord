@@ -13,6 +13,9 @@
     <string name="action_remove">Entfernen</string>
     <string name="action_save">Speichern</string>
     <string name="action_undo">Rückgängig</string>
+    <string name="action_restart">Neu starten</string>
+    <!-- Snackbar once a new version from Google Play has downloaded in the background (#202) -->
+    <string name="message_update_ready">Eine neue Version ist bereit</string>
     <string name="action_retry">Wiederholen</string>
     <string name="action_dismiss">Schließen</string>
     <string name="action_sign_in">Anmelden</string>
