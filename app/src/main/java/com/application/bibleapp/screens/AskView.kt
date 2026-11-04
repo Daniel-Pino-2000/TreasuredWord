@@ -243,10 +243,12 @@ private fun AskChat(
     answer: @Composable (AiMessage) -> Unit
 ) {
     val listState = rememberLazyListState()
+    val waitingLong = rememberWaitingLong(waiting = state.isSending, afterMillis = ASK_SLOW_AFTER_MILLIS)
     // A new question scrolls down to the "Thinking…" row; its answer then shows from its first line.
     // Indexes from the state, not the list's layout, which hasn't caught up yet when this runs.
     // With messages there's no intro item, so the "Thinking…" row or failure card is right after them.
-    LaunchedEffect(state.messages.size, state.isSending, state.failure) {
+    // The server-waking hint makes that row taller later, so it scrolls again then (#213).
+    LaunchedEffect(state.messages.size, state.isSending, state.failure, waitingLong) {
         val lastQuestion = state.messages.indexOfLast { it.role == AiRole.USER }
         when {
             state.messages.isEmpty() -> Unit
@@ -270,7 +272,7 @@ private fun AskChat(
             items(state.messages, key = { it.id }) { message ->
                 if (message.role == AiRole.USER) QuestionBubble(message.content) else answer(message)
             }
-            if (state.isSending) item(key = "thinking") { Thinking() }
+            if (state.isSending) item(key = "thinking") { Thinking(waitingLong) }
             state.failure?.let { failure ->
                 item(key = "failure") {
                     FailureCard(failure = failure, online = online, onRetry = onRetry, onSignInClick = onSignInClick)
@@ -463,8 +465,7 @@ private fun answerText(
 }
 
 @Composable
-private fun Thinking() {
-    val waitingLong = rememberWaitingLong(waiting = true, afterMillis = ASK_SLOW_AFTER_MILLIS)
+private fun Thinking(waitingLong: Boolean) {
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
         AiAnswerLabel()
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
