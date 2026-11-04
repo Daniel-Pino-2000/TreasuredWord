@@ -14,12 +14,14 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.safeDrawing
@@ -138,7 +140,7 @@ private fun animateStartupScreenExit(provider: SplashScreenViewProvider) {
 /** An AppCompatActivity (not a plain ComponentActivity) so the in-app language applies below
  *  Android 13 too — see [com.application.bibleapp.utils.AppLanguage]. */
 class MainActivity : AppCompatActivity() {
-    @OptIn(ExperimentalMaterial3Api::class)
+    @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         // Before super.onCreate: swaps the startup theme (#135) for the app's own.
         val startupScreen = installSplashScreen()
@@ -370,6 +372,10 @@ class MainActivity : AppCompatActivity() {
                     Screen.AskConversations.route
                 )
                 val useRail = compactHeight && showNavigation
+                // In landscape the on-screen keyboard leaves only ~100 dp above it, less than a top
+                // bar plus a text field: the bar steps aside while typing so the field stays in
+                // view (#215). Back still closes the keyboard first.
+                val hideTopBarForKeyboard = compactHeight && WindowInsets.isImeVisible
 
                 Row(modifier = Modifier.fillMaxSize()) {
                     if (useRail) {
@@ -396,6 +402,7 @@ class MainActivity : AppCompatActivity() {
                                     else Modifier
                                 ),
                             topBar = {
+                            if (hideTopBarForKeyboard) return@Scaffold
                             when (currentRoute) {
                                 Screen.Bible.route -> {
                                     val versionLabel by bibleViewModel.currentVersionLabel.collectAsState()
