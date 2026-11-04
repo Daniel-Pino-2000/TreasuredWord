@@ -97,6 +97,7 @@ import com.application.bibleapp.viewmodel.AskViewModelFactory
 import com.application.bibleapp.viewmodel.BibleViewModel
 import com.application.bibleapp.viewmodel.BibleViewModelFactory
 import androidx.compose.ui.res.stringResource
+import com.application.bibleapp.utils.InAppUpdates
 import com.application.bibleapp.utils.UiText
 import com.application.bibleapp.utils.isSpanishUi
 
@@ -156,6 +157,8 @@ class MainActivity : AppCompatActivity() {
         lifecycle.addObserver(LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_START) startupViewModel.refreshVerseOfTheDayIfStale()
         })
+        // Asks to update when Play has a newer version (#202); registers a result launcher, so here.
+        val inAppUpdates = InAppUpdates(this)
         enableEdgeToEdge()
         // Names the channel (shown in the system's notification settings) in the app language.
         createDailyVerseNotificationChannel(this)
@@ -316,6 +319,9 @@ class MainActivity : AppCompatActivity() {
                 // Resolved when shown, not when emitted, so a message follows the current language.
                 LaunchedEffect(Unit) {
                     bibleViewModel.userMessages.collectLatest { message ->
+                        // Don't let an Undo wait behind the update-ready snackbar (#202); that
+                        // one comes back the next time the app opens.
+                        snackbarHostState.currentSnackbarData?.dismiss()
                         val result = snackbarHostState.showSnackbar(
                             message = message.text.resolve(resources),
                             actionLabel = if (message.undo != null) resources.getString(R.string.action_undo) else null,
@@ -324,6 +330,22 @@ class MainActivity : AppCompatActivity() {
                         )
                         if (result == SnackbarResult.ActionPerformed) {
                             message.undo?.let { bibleViewModel.undoDeletion(it) }
+                        }
+                    }
+                }
+                // A new version finished downloading in the background (#202): Restart installs it.
+                LaunchedEffect(Unit) {
+                    inAppUpdates.updateReady.collect { ready ->
+                        if (!ready) return@collect
+                        val result = snackbarHostState.showSnackbar(
+                            message = resources.getString(R.string.message_update_ready),
+                            actionLabel = resources.getString(R.string.action_restart),
+                            duration = SnackbarDuration.Long
+                        )
+                        if (result == SnackbarResult.ActionPerformed) {
+                            inAppUpdates.completeUpdate()
+                        } else {
+                            inAppUpdates.postponeRestart()
                         }
                     }
                 }

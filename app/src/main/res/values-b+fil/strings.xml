@@ -15,6 +15,9 @@
     <string name="action_remove">Alisin</string>
     <string name="action_save">I-save</string>
     <string name="action_undo">I-undo</string>
+    <string name="action_restart">I-restart</string>
+    <!-- Snackbar once a new version from Google Play has downloaded in the background (#202) -->
+    <string name="message_update_ready">Handa na ang bagong bersyon</string>
     <string name="action_retry">Subukan ulit</string>
     <string name="action_dismiss">Isara</string>
     <string name="action_sign_in">Mag-sign in</string>
