@@ -585,8 +585,8 @@ Errors:
 | 503 | `AI_RESTING` | Cloudflare's free daily allowance is used up (its error `3036`); back at 00:00 UTC | No |
 | 503 | `AI_UNAVAILABLE` | The AI failed, took longer than 30 s, or isn't set up on this server | No |
 
-The instructions ask for `[[BOOK C:V]]` or `[[BOOK C:V-V]]` with the USFM code. The app also
-reads a whole chapter `[[PSA 23]]` (a card), a whole book `[[JHN]]` (its name, no card), a space
+The instructions ask for `[[BOOK C:V]]`, `[[BOOK C:V-V]]` or a whole chapter `[[PSA 23]]` (a card,
+allowed since instructions v2, #206) with the USFM code. The app also reads a whole book `[[JHN]]` (its name, no card), a space
 after the number (`[[1 JHN 2:3]]`), an English name or abbreviation (`[[PHIL 4:6]]`) and a list
 (`[[JHN 1:1, 14]]`) (#190). Any other marker, such as a chapter range `[[REV 13-19]]` or an
 unknown book, shows as plain text; the evaluation's automatic checks flag exactly those (#207).
