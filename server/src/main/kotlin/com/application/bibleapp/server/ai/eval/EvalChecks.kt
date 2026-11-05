@@ -1,7 +1,5 @@
 package com.application.bibleapp.server.ai.eval
 
-import com.application.bibleapp.server.ai.UsfmBookCodes
-
 /**
  * The evaluation's automatic checks (#126). People grade everything else with the rubric in
  * `docs/ai_helper_eval.md`; these only catch what a machine can be sure about.
@@ -12,8 +10,16 @@ object EvalChecks {
     const val MAX_WORDS = 350
 
     private const val CRISIS = "[[CRISIS]]"
-    private val marker = Regex("""\[\[([^\[\]]*)]]""")
-    private val reference = Regex("""^([1-3A-Z][A-Z0-9]{2}) (\d+):(\d+)(?:-(\d+))?$""")
+
+    // The app's own rules from `AiAnswerParser.kt` (#190): a marker passes when the app shows it
+    // as a link or a book name, and is flagged when it becomes plain text (#207). Keep in step.
+    private val marker = Regex("""\[\[((?:(?!\[\[|]]).){1,120})]]""")
+    private val separator = Regex("""[\s\]\[]*[,;][\s\]\[]*""")
+    private val piece = Regex(
+        """([1-3]?\s*\p{L}[\p{L} .]*?)\.?\s*(?:(\d{1,3})(?:\s*[:.]\s*(\d{1,3})(?:\s*[-–]\s*(\d{1,3}))?)?)?"""
+    )
+    // The "14" of [[JHN 1:1, 14]]: the app shows it as text after the link, "John 1:1, 14".
+    private val verseOnly = Regex("""\d{1,3}(?:\s*[:.]\s*\d{1,3})?(?:\s*[-–]\s*\d{1,3})?""")
     // Han, Hiragana and Katakana are written without spaces between words.
     private val cjk = Regex("""[\p{IsHan}\p{IsHiragana}\p{IsKatakana}]""")
 
@@ -42,13 +48,30 @@ object EvalChecks {
         return problems
     }
 
-    /** Why `[[inside]]` isn't a valid `[[BOOK C:V]]` or `[[BOOK C:V-V]]`, or null if it is. */
+    /**
+     * Why part of `[[inside]]` would show as plain text in the app, or null when all of it shows
+     * as links or book names. The app reads more than the instructions ask for (#190): a whole
+     * chapter `[[PSA 23]]` or book `[[JHN]]`, `1 JHN`, a name such as `PHIL`, and a list
+     * `[[JHN 1:1, 14]]`. It doesn't read a chapter range such as `[[REV 13-19]]`, so the reader
+     * would see the raw code. The server has no verse counts, so a verse past a chapter's end is
+     * left to the people grading.
+     */
     internal fun referenceProblem(inside: String): String? {
-        val match = reference.find(inside) ?: return "not BOOK C:V or BOOK C:V-V"
-        val (code, chapter, from, to) = match.destructured
+        val pieces = inside.split(separator).map { it.replace("[", "").replace("]", "").trim() }
+        pieces.forEachIndexed { index, text ->
+            if (text.isEmpty() || (index > 0 && verseOnly.matches(text))) return@forEachIndexed
+            pieceProblem(text)?.let { return it }
+        }
+        return null
+    }
+
+    private fun pieceProblem(text: String): String? {
+        val match = piece.matchEntire(text) ?: return "\"$text\" shows as plain text"
+        val (book, chapter, from, to) = match.destructured
+        if (EvalBookNames.find(book) == null) return "${book.trim()} isn't a book the app knows"
         return when {
-            code !in UsfmBookCodes.codes -> "$code isn't a USFM book code"
-            chapter.toInt() < 1 || from.toInt() < 1 -> "chapter and verse start at 1"
+            chapter.isEmpty() -> null // a whole book: the app shows its name
+            chapter.toInt() < 1 || (from.isNotEmpty() && from.toInt() < 1) -> "chapter and verse start at 1"
             to.isNotEmpty() && to.toInt() < from.toInt() -> "the range runs backwards"
             else -> null
         }

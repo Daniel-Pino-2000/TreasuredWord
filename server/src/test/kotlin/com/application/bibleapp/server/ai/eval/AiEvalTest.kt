@@ -45,11 +45,41 @@ class AiEvalTest {
     }
 
     @Test
-    fun aBadBookCodeOrMalformedMarkerIsFlagged() {
-        // The ones #190 saw from real answers, and an invented book (TRICK-03).
-        for (bad in listOf("[[1 JHN 1:9]]", "[[EZEK 36:26]]", "[[PHI 4:6-7]]", "[[PSA]]", "[[HEZ 3:16]]", "[[JHN 3:16-14]]", "[[JHN 3:16")) {
-            assertTrue(EvalChecks.check(plain, "See $bad for more.").isNotEmpty(), bad)
+    fun aMarkerTheAppShowsPasses() {
+        // Every marker the first run flagged (2026-11-04), which the app shows as a link or a
+        // book name since #190, plus the forms #190 saw before (#207).
+        val shown = listOf(
+            "[[PSA 23]]", "[[ROM 9]]", "[[1CO 12]]", // a whole chapter: a card
+            "[[JHN]]", "[[REV]]", "[[1 JHN]]", "[[ACTS]]", "[[PSA]]", // a whole book: its name
+            "[[1 JHN 2:3-4]]", "[[1 JHN 1:9]]", // a space after the number
+            "[[JHN 1:1, 14]]", "[[JHN 1:1, JHN 1:14]]", "[[PSA 103:8], [1JN 1:9]]", // a list
+            "[[PHIL 4:6-7]]", "[[PHI 4:6-7]]", "[[EZEK 36:26]]", "[[John 3:16]]", // a name, not the code
+            "[[JHN 3:16–18]]", "[[jhn 3:16]]"
+        )
+        for (marker in shown) {
+            assertEquals(emptyList(), EvalChecks.check(plain, "See $marker for more."), marker)
         }
+    }
+
+    @Test
+    fun aMarkerThatShowsAsPlainTextIsFlagged() {
+        // An invented book (TRICK-03), an unknown one, chapter or verse 0, a backwards range, and
+        // a chapter range, which the app can't read and shows as "REV 13-19", raw code and all.
+        val plainText = mapOf(
+            "[[HEZ 3:16]]" to "HEZ isn't a book the app knows",
+            "[[XYZ 1:1]]" to "XYZ isn't a book the app knows",
+            "[[JHN 0:1]]" to "chapter and verse start at 1",
+            "[[JHN 3:0]]" to "chapter and verse start at 1",
+            "[[JHN 3:16-14]]" to "the range runs backwards",
+            "[[REV 13-19]]" to "\"REV 13-19\" shows as plain text",
+            "[[14]]" to "\"14\" shows as plain text",
+            "[[JHN 1:1, XYZ 2:2]]" to "XYZ isn't a book the app knows"
+        )
+        for ((marker, problem) in plainText) {
+            val inside = marker.removePrefix("[[").removeSuffix("]]")
+            assertEquals(listOf("[[$inside]]: $problem"), EvalChecks.check(plain, "See $marker for more."), marker)
+        }
+        assertEquals(listOf("a [[ marker isn't closed"), EvalChecks.check(plain, "See [[JHN 3:16 for more."))
     }
 
     @Test
@@ -69,7 +99,7 @@ class AiEvalTest {
 
     @Test
     fun theRunnerSendsTheLiveInstructionsAndChecksEachAnswer() = runBlocking {
-        val ai = FakeAiProvider().apply { answer = "See [[1 JHN 1:9]]." }
+        val ai = FakeAiProvider().apply { answer = "See [[HEZ 1:9]]." }
         val spanish = plain.copy(id = "T-03", language = "es")
 
         val results = evaluate(listOf(spanish, crisis), ai)
@@ -84,8 +114,8 @@ class AiEvalTest {
         assertEquals("What is grace?", sent.messages.last().content)
 
         val report = report(results, "@cf/test/model", LocalDate.of(2026, 11, 2), total = 2)
-        assertTrue("| T-03 | es | [[1 JHN 1:9]]: not BOOK C:V or BOOK C:V-V |" in report)
-        assertTrue("> See [[1 JHN 1:9]]." in report)
+        assertTrue("| T-03 | es | [[HEZ 1:9]]: HEZ isn't a book the app knows |" in report)
+        assertTrue("> See [[HEZ 1:9]]." in report)
     }
 
     @Test
