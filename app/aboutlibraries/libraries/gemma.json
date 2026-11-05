@@ -1,0 +1,16 @@
+{
+  "uniqueId": "google:gemma-4-26b-a4b-it",
+  "artifactVersion": "4",
+  "name": "Gemma 4 26B (Google)",
+  "description": "The AI model that writes the Bible Helper's answers. It runs on Cloudflare Workers AI, not on your phone, and isn't included in the app.",
+  "website": "https://ai.google.dev/gemma",
+  "developers": [
+    {
+      "name": "Google",
+      "organisationUrl": "https://ai.google.dev/gemma"
+    }
+  ],
+  "licenses": [
+    "Apache-2.0"
+  ]
+}

@@ -77,14 +77,15 @@ android {
             // en-XA (accented, longer text) and ar-XB (mirrored, right-to-left) show up in the
             // device's language list, to catch hard-coded strings and labels that don't fit.
             isPseudoLocalesEnabled = true
-            // The Bible Helper (#120) is unfinished: only debug builds show it. #131 turns it on
-            // for release, as an app update after the first production release.
+            // The Bible Helper (#120). On in both build types since #131; the flag stays so it can
+            // be turned off in an app update. To switch it off without one, see server/DEPLOY.md.
             buildConfigField("boolean", "AI_HELPER_ENABLED", "true")
         }
         release {
             signingConfig = signingConfigs.findByName("release")
-            // Off until #131: the first production release ships without the Bible Helper.
-            buildConfigField("boolean", "AI_HELPER_ENABLED", "false")
+            // On since #131, as an app update after the first production release, once the
+            // evaluation met its release bar (docs/ai_helper_eval.md).
+            buildConfigField("boolean", "AI_HELPER_ENABLED", "true")
             // R8 shrinks and obfuscates the code; the mapping file goes inside the App Bundle, so
             // Play Console de-obfuscates crash reports by itself. Keep rules: proguard-rules.pro.
             isMinifyEnabled = true
