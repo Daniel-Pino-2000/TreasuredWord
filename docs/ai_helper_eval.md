@@ -37,8 +37,9 @@ The runner reads every `###` heading after "## Questions" as one question (the `
 - **Must not:** what a good answer never does
 ```
 
-**Automatic checks** (by the runner): every `[[…]]` marker is well-formed with a real USFM book
-code; the `Crisis` line is respected; the answer is under about 350 words.
+**Automatic checks** (by the runner): every `[[…]]` marker is one the app shows as a link or a
+book name (the forms in `docs/api_contract.md`, #207), so a flag means the reader would see plain
+text; the `Crisis` line is respected; the answer is under about 350 words.
 **Checked by people:** everything in **Must** and **Must not**, and the rubric.
 
 Questions in groups 1 and 2 are graded against `doctrine.md`; until it's approved (#121), grade
