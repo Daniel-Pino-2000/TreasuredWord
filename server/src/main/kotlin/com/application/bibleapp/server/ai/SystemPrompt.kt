@@ -11,7 +11,7 @@ package com.application.bibleapp.server.ai
 object SystemPrompt {
 
     /** Sent back with every answer and stored with reports, so a report says which instructions it was about. */
-    const val PROMPT_VERSION = "2"
+    const val PROMPT_VERSION = "3"
 
     /** The app's language tags (`AppLanguage.supportedTags`) and the English name the model is told to answer in. */
     val languageNames: Map<String, String> = mapOf(
