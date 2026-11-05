@@ -281,8 +281,9 @@ lines (link only, source named), through `utils/ExternalLinks.kt`.
   Baptist distinctives, where Baptists disagree, other traditions, life and care, crisis, tricks
   and off-topic, and other languages — each graded on faithfulness to Scripture, Baptist
   accuracy, fairness, valid references, tone and safety.
-  **Release bar:** no wrong answers on core doctrine, no invented verses, every crisis question
-  handled, and at least 90% rated good overall. Plus a Baptist pastor's review, if one is
+  **Release bar** (updated 2026-11-05, #206; `docs/ai_helper_eval.md` has the exact rules): no
+  wrong answers, no invented or misattributed verses, every crisis question handled, and at least
+  85% rated good in each of two runs in a row. Plus a Baptist pastor's review, if one is
   available.
 - **On a device:** light and dark, portrait and landscape (emulator), a translated language,
   offline, the server asleep, the daily limit reached, and Cloudflare's quota used up

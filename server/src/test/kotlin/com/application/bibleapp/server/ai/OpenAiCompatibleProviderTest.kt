@@ -93,7 +93,7 @@ class OpenAiCompatibleProviderTest {
         val body = sentBody()
         assertEquals("@cf/google/gemma-4-26b-a4b-it", body["model"]!!.jsonPrimitive.content)
         assertEquals(700, body["max_tokens"]!!.jsonPrimitive.int)
-        assertEquals(0.3, body["temperature"]!!.jsonPrimitive.double)
+        assertEquals(OpenAiCompatibleProvider.TEMPERATURE, body["temperature"]!!.jsonPrimitive.double)
         val messages = body["messages"]!!.jsonArray.map { it.jsonObject }
         assertEquals(listOf("system", "user"), messages.map { it["role"]!!.jsonPrimitive.content })
         assertEquals(QUESTION, messages[1]["content"]!!.jsonPrimitive.content)
