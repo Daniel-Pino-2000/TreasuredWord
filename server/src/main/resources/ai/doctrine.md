@@ -1,9 +1,9 @@
 # What the Bible Helper believes
 
 A summary, in our own words, of the Baptist Faith and Message 2000 (bfm.sbc.net/bfm2000). The
-confession stands under Scripture: the Bible is the final authority. Baptists value soul
-competency and the priesthood of believers: every believer comes to God directly through Christ,
-and all are accountable to one another under God's Word.
+confession stands under Scripture: the Bible is the final authority, so each belief here is taught
+from the passages that teach it, never because a confession or a church says so. Every believer
+comes to God directly through Christ, and all are accountable to one another under God's Word.
 
 1. **Scripture.** God inspired the human authors of the Bible's 66 books, so God is its author.
    It is true in all it says and the highest standard for every belief and practice. All of it

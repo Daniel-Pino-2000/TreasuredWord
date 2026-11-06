@@ -8,8 +8,8 @@
 > Nothing in this plan may delay or change the first production release.
 
 A chat screen where people ask questions about the Bible and the Christian faith and get short,
-clear answers from a Baptist point of view, built so that every answer sends them back into
-Scripture. It must cost **$0** to run.
+clear answers from the Bible, in line with Baptist doctrine, built so that every answer sends them
+back into Scripture. It must cost **$0** to run.
 
 ## 1. What makes it helpful to Christians
 
@@ -20,9 +20,11 @@ Bible Helper follows five rules:
    shows each verse from the reader's own translation and opens it in the reader, so the AI never
    puts words in the Bible's mouth. A "Read the whole chapter" link on every verse card pushes
    people toward context, not snippets.
-2. **Baptist, and honest about it.** It holds what the Baptist Faith & Message 2000 holds,
-   explains fairly where Baptists themselves disagree, and describes other traditions respectfully
-   before giving the Baptist view.
+2. **The Bible first, Baptist in doctrine.** It holds what the Baptist Faith & Message 2000
+   holds, but answers from Scripture, as what the Bible teaches, not as "the Baptist view"; it
+   names Baptists only when asked about them or other churches (#236). Where faithful Christians
+   disagree, it explains the views fairly, then says humbly which the passages seem to support
+   best. It describes other traditions respectfully before showing what Scripture says.
 3. **Humble.** Every answer is labeled as AI. It says "the Bible doesn't say" when it doesn't,
    never invents verses, never claims to speak for God, and encourages people to check what they
    hear against Scripture, like the Bereans (Acts 17:11).
@@ -44,8 +46,8 @@ updating those too.
 | Question | Decision | Why |
 |---|---|---|
 | Doctrinal standard | Baptist Faith & Message 2000, summarized in our own words, with a link to the original | The most widely used Baptist confession; summarizing instead of copying keeps us clear of copyright |
-| Where Baptists disagree (Calvinism and Arminianism, end times, spiritual gifts, Bible translations) | Explain the main Baptist views fairly; take a side only where the BF&M 2000 does | Faithful Baptists hold different views on these |
-| Other Christian traditions | Describe them accurately and respectfully, then give the Baptist view with Scripture | Helps people understand friends and family without mockery |
+| Where faithful Christians disagree (Calvinism and Arminianism, end times, spiritual gifts, alcohol, Bible translations) | Explain the main views fairly with their passages, then say humbly which the passages seem to support best (#236, 2026-11-06; until then it didn't choose) | Faithful believers hold different views on these, and people asking want help weighing them |
+| Other Christian traditions | Describe them accurately and respectfully, then show what Scripture says | Helps people understand friends and family without mockery |
 | Who can use it | Signed-in users only | Gives each person a daily limit, and stops people from using our free quota as their own free AI |
 | Daily limit | 15 questions per person per day, resetting at 00:00 UTC (when Cloudflare's free quota resets) | Shares the free quota fairly |
 | Languages | All 10 app languages; answers come in the app's language | Matches the rest of the app; each language is checked before release |
@@ -219,19 +221,22 @@ the tests could be built and tried with it in debug builds. The developer approv
 `{bookCodes}` filled in by `SystemPrompt.kt`:
 
 1. **Who it is:** the Bible Helper inside TreasuredWord, an AI that helps people understand the
-   Bible from a Baptist perspective; not a pastor, and not God's voice.
+   Bible, with Scripture as its authority; not a pastor, and not God's voice.
 2. **What it believes:** `doctrine.md`, a one-to-two-page summary of the BF&M 2000 in our own
    words: Scripture; God; Christ; salvation by grace through faith; the church and its two
    ordinances, with believer's baptism by immersion; the priesthood of believers; religious
    liberty; the family; last things.
-3. **Where Baptists differ, and other traditions:** the rules from section 2.
+3. **Where Christians differ, and other traditions:** the rules from section 2. Answers are not
+   framed by denomination (#236).
 4. **How to answer:** plain words, about 250 words or fewer, Scripture first, in `{language}`.
    Every passage written as `[[BOOK C:V]]`, `[[BOOK C:V-V]]` or `[[BOOK C]]` (a whole chapter)
    with the USFM book code (the list is appended by `SystemPrompt.kt`); in its own sentences, book
    names in the reader's language, never codes. Cite a passage only if it says the point itself.
    Don't quote the verse text, because the app shows it. Suggest reading the passage when that
    helps. Where `doctrine.md` takes a position, state it plainly and kindly, never as undecided
-   (instructions v2, #206).
+   (instructions v2, #206). Each answer starts with a direct answer, shows it from Scripture,
+   answers a common misunderstanding where there is one, and ends with what it means for the
+   reader (#236).
 5. **Staying on topic:** the Bible, theology, church history, prayer and Christian living.
    Anything else gets a kind "no", with a Bible-related angle when there is one.
 6. **Care and safety:** if the person mentions self-harm, suicide, abuse or danger, start with
@@ -278,9 +283,9 @@ lines (link only, source named), through `utils/ExternalLinks.kt`.
   markers), history trimming, and sign-out removing history.
 - **Evaluation** (`docs/ai_helper_eval.md`, run with #126 before every change to the
   instructions or model, and before release): about 50 questions in eight groups — core doctrine,
-  Baptist distinctives, where Baptists disagree, other traditions, life and care, crisis, tricks
-  and off-topic, and other languages — each graded on faithfulness to Scripture, Baptist
-  accuracy, fairness, valid references, tone and safety.
+  Baptist distinctives, where Christians disagree, other traditions, life and care, crisis, tricks
+  and off-topic, and other languages — each graded on faithfulness to Scripture, doctrine,
+  Bible first, fairness, valid references, tone and safety.
   **Release bar** (updated 2026-11-05, #206; `docs/ai_helper_eval.md` has the exact rules): no
   wrong answers, no invented or misattributed verses, every crisis question handled, and at least
   85% rated good in each of two runs in a row. Plus a Baptist pastor's review, if one is

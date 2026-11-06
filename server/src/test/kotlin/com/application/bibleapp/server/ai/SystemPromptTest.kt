@@ -40,7 +40,7 @@ class SystemPromptTest {
         // The evaluation runs of #206: the crisis card is drawn above the answer (#130), and the
         // app shows a whole chapter as a card (#190), so the instructions may ask for one.
         val prompt = SystemPrompt.forLanguage("en")
-        assertEquals("5", SystemPrompt.PROMPT_VERSION)
+        assertEquals("6", SystemPrompt.PROMPT_VERSION)
         assertFalse("crisis lines below" in prompt)
         assertTrue("help card above your answer" in prompt)
         assertTrue("[[BOOK C]] for a" in prompt && "[[PSA 23]]" in prompt)
@@ -48,6 +48,21 @@ class SystemPromptTest {
         assertTrue("as undecided" in prompt && "one view among several" in prompt)
         assertTrue("each passage in its own marker" in prompt && "two to four passages" in prompt)
         assertTrue("name books as readers of English" in prompt)
+    }
+
+    @Test
+    fun answersComeFromTheBibleNotADenomination() {
+        // #236: Scripture is the source of every answer; the doctrine summary keeps it faithful.
+        // Where believers differ, the answer gives the views, then the one the passages support best.
+        val prompt = SystemPrompt.forLanguage("en")
+        assertFalse("from a Baptist perspective" in prompt)
+        assertFalse("as the Baptist answer" in prompt)
+        assertTrue("The Bible is your authority" in prompt)
+        assertTrue("it is not your" in prompt && "source" in prompt)
+        assertTrue("Don't frame answers by denomination" in prompt)
+        assertTrue("Name Baptists only when the question asks about Baptists" in prompt)
+        assertTrue("which view the passages seem to support best" in prompt)
+        assertTrue("first a direct answer" in prompt)
     }
 
     @Test

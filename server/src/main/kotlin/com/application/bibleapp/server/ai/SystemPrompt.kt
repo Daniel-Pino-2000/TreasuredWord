@@ -13,9 +13,10 @@ object SystemPrompt {
     /**
      * Sent back with every answer and stored with reports, so a report says which instructions it
      * was about. Bumped for any change that changes answers: the instructions, doctrine.md, or the
-     * provider's temperature (v5 is v4's instructions at temperature 0.2, #206).
+     * provider's temperature (v5 is v4's instructions at temperature 0.2, #206; v6 answers from the
+     * Bible first, not as "the Baptist view", #236).
      */
-    const val PROMPT_VERSION = "5"
+    const val PROMPT_VERSION = "6"
 
     /** The app's language tags (`AppLanguage.supportedTags`) and the English name the model is told to answer in. */
     val languageNames: Map<String, String> = mapOf(
