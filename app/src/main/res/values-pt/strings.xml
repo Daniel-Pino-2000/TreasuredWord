@@ -349,11 +349,11 @@
     <string name="ai_conversations_title">Conversas</string>
     <string name="ai_action_new_conversation">Nova conversa</string>
     <string name="ai_signed_out_title">Pergunte ao Ajudante bíblico</string>
-    <string name="ai_signed_out_message">Faça perguntas sobre a Bíblia e a fé cristã e receba respostas de uma perspectiva batista, com os versículos que as sustentam. Entre para começar a perguntar.</string>
+    <string name="ai_signed_out_message">Faça perguntas sobre a Bíblia e a fé cristã e receba respostas das Escrituras, com os versículos que as sustentam. Entre para começar a perguntar.</string>
     <string name="ai_intro_title">O que você gostaria de perguntar?</string>
-    <string name="ai_intro_message">As respostas vêm de uma perspectiva batista, com os versículos em que se baseiam. Toque em uma pergunta ou escreva a sua.</string>
+    <string name="ai_intro_message">As respostas vêm da Bíblia, com os versículos em que se baseiam. Toque em uma pergunta ou escreva a sua.</string>
     <string name="ai_starter_saved">Como posso ser salvo?</string>
-    <string name="ai_starter_baptism">Por que os batistas batizam por imersão?</string>
+    <string name="ai_starter_baptism">O que a Bíblia diz sobre o batismo?</string>
     <string name="ai_starter_trinity">O que é a Trindade?</string>
     <string name="ai_starter_prayer">Como devo orar?</string>
     <string name="ai_starter_start_reading">Por onde começo a ler a Bíblia?</string>
@@ -376,7 +376,7 @@
     </plurals>
     <string name="ai_notice_title">Antes de perguntar</string>
     <string name="ai_notice_ai">O Ajudante bíblico é uma IA. Ele pode errar.</string>
-    <string name="ai_notice_baptist">Ele responde de uma perspectiva batista, seguindo a Baptist Faith and Message 2000.</string>
+    <string name="ai_notice_baptist">Ele responde a partir da Bíblia, de acordo com a Baptist Faith and Message 2000.</string>
     <string name="ai_notice_bfm_link">Ler a Baptist Faith and Message 2000 (em inglês)</string>
     <string name="ai_notice_scripture">Confira o que ele diz com as Escrituras, como faziam os bereanos (Atos 17:11).</string>
     <string name="ai_notice_personal">Não compartilhe dados pessoais, como seu nome completo, endereço ou saúde.</string>

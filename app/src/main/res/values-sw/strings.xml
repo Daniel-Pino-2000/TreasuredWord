@@ -339,11 +339,11 @@
     <string name="ai_conversations_title">Mazungumzo</string>
     <string name="ai_action_new_conversation">Mazungumzo mapya</string>
     <string name="ai_signed_out_title">Muulize Msaidizi wa Biblia</string>
-    <string name="ai_signed_out_message">Uliza maswali kuhusu Biblia na imani ya Kikristo, na upate majibu kutoka mtazamo wa Kibaptisti pamoja na mistari inayoyaunga mkono. Ingia ili uanze kuuliza.</string>
+    <string name="ai_signed_out_message">Uliza maswali kuhusu Biblia na imani ya Kikristo, na upate majibu kutoka kwa Maandiko pamoja na mistari inayoyaunga mkono. Ingia ili uanze kuuliza.</string>
     <string name="ai_intro_title">Ungependa kuuliza nini?</string>
-    <string name="ai_intro_message">Majibu yanatoka mtazamo wa Kibaptisti, pamoja na mistari yanayoitegemea. Gusa swali au andika lako mwenyewe.</string>
+    <string name="ai_intro_message">Majibu yanatoka kwenye Biblia, pamoja na mistari yanayoitegemea. Gusa swali au andika lako mwenyewe.</string>
     <string name="ai_starter_saved">Ninawezaje kuokolewa?</string>
-    <string name="ai_starter_baptism">Kwa nini Wabaptisti hubatiza kwa kuzamisha?</string>
+    <string name="ai_starter_baptism">Biblia inasema nini kuhusu ubatizo?</string>
     <string name="ai_starter_trinity">Utatu ni nini?</string>
     <string name="ai_starter_prayer">Ninapaswa kuombaje?</string>
     <string name="ai_starter_start_reading">Nianzie wapi kusoma Biblia?</string>
@@ -365,7 +365,7 @@
     </plurals>
     <string name="ai_notice_title">Kabla ya kuuliza</string>
     <string name="ai_notice_ai">Msaidizi wa Biblia ni AI. Anaweza kukosea.</string>
-    <string name="ai_notice_baptist">Anajibu kutoka mtazamo wa Kibaptisti, akifuata Baptist Faith and Message 2000.</string>
+    <string name="ai_notice_baptist">Anajibu kutoka kwenye Biblia, kwa kupatana na Baptist Faith and Message 2000.</string>
     <string name="ai_notice_bfm_link">Soma Baptist Faith and Message 2000 (kwa Kiingereza)</string>
     <string name="ai_notice_scripture">Pima anachosema kwa Maandiko, kama Waberoya walivyofanya (Matendo 17:11).</string>
     <string name="ai_notice_personal">Usishiriki taarifa binafsi, kama jina lako kamili, anwani au afya yako.</string>
