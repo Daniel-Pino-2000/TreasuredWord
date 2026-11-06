@@ -5,7 +5,7 @@ permalink: /privacy/
 
 # TreasuredWord privacy policy
 
-**Effective date:** November 2, 2026
+**Effective date:** November 5, 2026
 
 TreasuredWord is a free Bible reading app made by Daniel Pino, an independent developer. In this policy, "we" and "us" mean Daniel Pino, the developer of TreasuredWord. It explains what information the app uses, where it goes, and the choices you have. If you have questions, email [pinoponedaniel@gmail.com](mailto:pinoponedaniel@gmail.com).
 
@@ -60,7 +60,7 @@ When you sign out, the app removes your account's highlights and notes from that
 
 ## The Bible Helper (AI answers)
 
-The Bible Helper is an optional feature, for signed-in accounts, that answers questions about the Bible with AI. It's being tested and may not be in your version of the app yet; if you don't see an **Ask** tab, nothing in this section applies to you.
+The Bible Helper is an optional feature, for signed-in accounts, that answers questions about the Bible with AI. It's in the app's **Ask** tab. If you don't use it, or your version of the app has no **Ask** tab, nothing in this section applies to you.
 
 When you ask a question:
 
