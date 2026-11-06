@@ -61,7 +61,8 @@ private const val MAX_REPORT_QUESTION_CHARS = 1_000
 private const val MAX_REPORT_ANSWER_CHARS = 4_000
 private const val MAX_REPORT_COMMENT_CHARS = 500
 private const val MAX_PROMPT_VERSION_CHARS = 20
-private val REPORT_RETENTION: Duration = Duration.ofDays(90)
+/** The privacy policy's 90 days. Also used by db/RetentionCleanup.kt, for when no new report comes in (#223). */
+internal val REPORT_RETENTION: Duration = Duration.ofDays(90)
 
 /**
  * The plan's section 5 rules (docs/api_contract.md): which fields are wrong and why, or an
