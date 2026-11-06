@@ -94,6 +94,8 @@ class EmailCodeStore(private val secret: String) {
         const val MAX_ATTEMPTS = 5
         /** Codes one account can be sent in an hour, verification and reset together. */
         const val MAX_CODES_PER_HOUR = 5
-        private val KEEP_FOR: Duration = Duration.ofDays(1)
+        /** How long a code's row is kept. The privacy policy promises "deleted within a day", and
+         *  db/RetentionCleanup.kt holds to it for accounts that never ask for another code (#223). */
+        internal val KEEP_FOR: Duration = Duration.ofDays(1)
     }
 }
