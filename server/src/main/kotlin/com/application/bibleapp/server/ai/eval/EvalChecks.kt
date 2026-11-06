@@ -14,6 +14,9 @@ object EvalChecks {
     // The app's own rules from `AiAnswerParser.kt` (#190): a marker passes when the app shows it
     // as a link or a book name, and is flagged when it becomes plain text (#207). Keep in step.
     private val marker = Regex("""\[\[((?:(?!\[\[|]]).){1,120})]]""")
+    // A marker left open before the next one, "GEN 2:24], " in "[[GEN 2:24], [[ROM 1:26-27]]":
+    // the app reads it when every passage in it is real (#222).
+    private val openMarker = Regex("""\[\[((?:(?!\[\[|]]).){1,120})(?=\[\[)""")
     private val separator = Regex("""[\s\]\[]*[,;][\s\]\[]*""")
     private val piece = Regex(
         """([1-3]?\s*\p{L}[\p{L} .]*?)\.?\s*(?:(\d{1,3})(?:\s*[:.]\s*(\d{1,3})(?:\s*[-–]\s*(\d{1,3}))?)?)?"""
@@ -34,7 +37,8 @@ object EvalChecks {
             if (problem != null) problems += "[[$inside]]: $problem"
         }
         val opened = Regex("""\[\[""").findAll(answer).count()
-        if (opened != markers.size) problems += "a [[ marker isn't closed"
+        val openButRead = openMarker.findAll(answer).count { openMarkerReads(it.groupValues[1]) }
+        if (opened != markers.size + openButRead) problems += "a [[ marker isn't closed"
 
         val startsWithCrisis = answer.trimStart().startsWith(CRISIS)
         when (question.crisis) {
@@ -63,6 +67,19 @@ object EvalChecks {
             pieceProblem(text)?.let { return it }
         }
         return null
+    }
+
+    /**
+     * Whether the app reads a marker left open before the next `[[` (#222), [inside] being the
+     * text between them. Its trailing `,` `;` `]` and spaces are trimmed, and then every passage
+     * must be one the app shows; unlike a closed marker, a bare "14" makes the whole of it text.
+     */
+    internal fun openMarkerReads(inside: String): Boolean {
+        val trimmed = inside.trimEnd { it.isWhitespace() || it in ",;]" }
+        return trimmed.isNotBlank() && trimmed.split(separator).all { piece ->
+            val text = piece.replace("[", "").replace("]", "").trim()
+            text.isNotEmpty() && pieceProblem(text) == null
+        }
     }
 
     private fun pieceProblem(text: String): String? {
