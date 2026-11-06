@@ -349,11 +349,11 @@
     <string name="ai_conversations_title">Conversations</string>
     <string name="ai_action_new_conversation">Nouvelle conversation</string>
     <string name="ai_signed_out_title">Pose ta question à l\'Assistant biblique</string>
-    <string name="ai_signed_out_message">Pose des questions sur la Bible et la foi chrétienne, et reçois des réponses d\'un point de vue baptiste, avec les versets sur lesquels elles s\'appuient. Connecte-toi pour commencer.</string>
+    <string name="ai_signed_out_message">Pose des questions sur la Bible et la foi chrétienne, et reçois des réponses tirées des Écritures, avec les versets sur lesquels elles s\'appuient. Connecte-toi pour commencer.</string>
     <string name="ai_intro_title">Que veux-tu demander ?</string>
-    <string name="ai_intro_message">Les réponses viennent d\'un point de vue baptiste, avec les versets sur lesquels elles reposent. Touche une question ou écris la tienne.</string>
+    <string name="ai_intro_message">Les réponses viennent de la Bible, avec les versets sur lesquels elles reposent. Touche une question ou écris la tienne.</string>
     <string name="ai_starter_saved">Comment puis-je être sauvé ?</string>
-    <string name="ai_starter_baptism">Pourquoi les baptistes baptisent-ils par immersion ?</string>
+    <string name="ai_starter_baptism">Que dit la Bible sur le baptême ?</string>
     <string name="ai_starter_trinity">Qu\'est-ce que la Trinité ?</string>
     <string name="ai_starter_prayer">Comment devrais-je prier ?</string>
     <string name="ai_starter_start_reading">Par où commencer la lecture de la Bible ?</string>
@@ -376,7 +376,7 @@
     </plurals>
     <string name="ai_notice_title">Avant de demander</string>
     <string name="ai_notice_ai">L\'Assistant biblique est une IA. Il peut se tromper.</string>
-    <string name="ai_notice_baptist">Il répond d\'un point de vue baptiste, selon la confession Baptist Faith and Message 2000.</string>
+    <string name="ai_notice_baptist">Il répond à partir de la Bible, en accord avec la confession Baptist Faith and Message 2000.</string>
     <string name="ai_notice_bfm_link">Lire le Baptist Faith and Message 2000 (en anglais)</string>
     <string name="ai_notice_scripture">Vérifie ce qu\'il dit à la lumière des Écritures, comme les Béréens (Actes 17:11).</string>
     <string name="ai_notice_personal">Ne partage pas d\'informations personnelles, comme ton nom complet, ton adresse ou ta santé.</string>

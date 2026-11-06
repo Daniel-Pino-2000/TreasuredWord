@@ -329,11 +329,11 @@
     <string name="ai_conversations_title">Percakapan</string>
     <string name="ai_action_new_conversation">Percakapan baru</string>
     <string name="ai_signed_out_title">Tanya Asisten Alkitab</string>
-    <string name="ai_signed_out_message">Ajukan pertanyaan tentang Alkitab dan iman Kristen, dan dapatkan jawaban dari sudut pandang Baptis beserta ayat-ayat yang mendasarinya. Masuk untuk mulai bertanya.</string>
+    <string name="ai_signed_out_message">Ajukan pertanyaan tentang Alkitab dan iman Kristen, dan dapatkan jawaban dari Alkitab beserta ayat-ayat yang mendasarinya. Masuk untuk mulai bertanya.</string>
     <string name="ai_intro_title">Apa yang ingin Anda tanyakan?</string>
-    <string name="ai_intro_message">Jawaban diberikan dari sudut pandang Baptis, beserta ayat-ayat yang mendasarinya. Ketuk sebuah pertanyaan atau tulis pertanyaan Anda sendiri.</string>
+    <string name="ai_intro_message">Jawaban diberikan dari Alkitab, beserta ayat-ayat yang mendasarinya. Ketuk sebuah pertanyaan atau tulis pertanyaan Anda sendiri.</string>
     <string name="ai_starter_saved">Bagaimana saya bisa diselamatkan?</string>
-    <string name="ai_starter_baptism">Mengapa orang Baptis membaptis dengan selam?</string>
+    <string name="ai_starter_baptism">Apa kata Alkitab tentang baptisan?</string>
     <string name="ai_starter_trinity">Apa itu Tritunggal?</string>
     <string name="ai_starter_prayer">Bagaimana seharusnya saya berdoa?</string>
     <string name="ai_starter_start_reading">Dari mana sebaiknya saya mulai membaca Alkitab?</string>
@@ -354,7 +354,7 @@
     </plurals>
     <string name="ai_notice_title">Sebelum bertanya</string>
     <string name="ai_notice_ai">Asisten Alkitab adalah AI. Asisten ini bisa keliru.</string>
-    <string name="ai_notice_baptist">Asisten ini menjawab dari sudut pandang Baptis, mengikuti Baptist Faith and Message 2000.</string>
+    <string name="ai_notice_baptist">Asisten ini menjawab dari Alkitab, sejalan dengan Baptist Faith and Message 2000.</string>
     <string name="ai_notice_bfm_link">Baca Baptist Faith and Message 2000 (dalam bahasa Inggris)</string>
     <string name="ai_notice_scripture">Periksa apa yang dikatakannya dengan Kitab Suci, seperti orang-orang Berea (Kisah Para Rasul 17:11).</string>
     <string name="ai_notice_personal">Jangan bagikan data pribadi, seperti nama lengkap, alamat, atau kondisi kesehatan Anda.</string>
