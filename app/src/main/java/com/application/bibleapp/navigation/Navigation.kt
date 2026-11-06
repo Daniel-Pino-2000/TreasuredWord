@@ -54,6 +54,9 @@ fun Navigation(
     // Every screen but the reader (which caps its own reading column) is laid out in a centered,
     // max-width column, so nothing stretches edge to edge in landscape.
     val screenModifier = Modifier.padding(padding).centeredContentWidth()
+    // For screens that ride above the keyboard (imePadding): what the bars already pad isn't
+    // padded twice.
+    val keyboardScreenModifier = Modifier.padding(padding).consumeWindowInsets(padding).centeredContentWidth()
 
     // The after-sign-in work runs here, not in the sign-in screen, so it happens wherever the
     // person is when a slow (waking) server finally answers (#134).
@@ -134,8 +137,7 @@ fun Navigation(
                     askViewModel = askViewModel,
                     bibleViewModel = bibleViewModel,
                     isLoggedIn = isLoggedIn,
-                    // The field rides above the keyboard: what the bars already pad isn't padded twice.
-                    modifier = Modifier.padding(padding).consumeWindowInsets(padding).centeredContentWidth(),
+                    modifier = keyboardScreenModifier,
                     onSignInClick = { navController.navigate(Screen.Login.route) },
                     onWakeServer = { authViewModel.wakeServer() },
                     onSessionEnded = { authViewModel.refreshCurrentUser() },
@@ -230,7 +232,7 @@ fun Navigation(
             CloseWhenSignedIn(authViewModel, navController, entry) { navController.popBackStack() }
             LoginView(
                 authViewModel = authViewModel,
-                modifier = screenModifier,
+                modifier = keyboardScreenModifier,
                 onNavigateToRegister = { navController.navigate(Screen.Register.route) }
             )
         }
@@ -245,7 +247,7 @@ fun Navigation(
             }
             RegisterView(
                 authViewModel = authViewModel,
-                modifier = screenModifier,
+                modifier = keyboardScreenModifier,
                 onNavigateToLogin = { navController.popBackStack() }
             )
         }
