@@ -80,7 +80,6 @@ import com.application.bibleapp.data.remote.AiAskResult
 import com.application.bibleapp.data.repository.AiHelperRepository.Companion.MAX_QUESTION_CHARS
 import com.application.bibleapp.ui.theme.BibleAppTheme
 import com.application.bibleapp.ui.theme.Spacing
-import com.application.bibleapp.utils.ResizeForKeyboard
 import com.application.bibleapp.ui.theme.isCompactHeight
 import com.application.bibleapp.utils.AiAnswerPart
 import com.application.bibleapp.utils.AppLanguage
@@ -132,7 +131,6 @@ fun AskView(
     onSessionEnded: () -> Unit,
     onReadChapter: (bookId: Int, chapter: Int, verse: Int) -> Unit
 ) {
-    ResizeForKeyboard()
     LaunchedEffect(isLoggedIn) {
         askViewModel.onSignInChanged(isLoggedIn)
         if (isLoggedIn) onWakeServer()

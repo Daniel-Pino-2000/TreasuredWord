@@ -3,6 +3,7 @@ package com.application.bibleapp.screens
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.height
@@ -61,9 +62,11 @@ fun SearchView(
     val bookNames by bibleViewModel.bookNames.collectAsState()
     val suggestions by bibleViewModel.searchSuggestions.collectAsState()
 
+    // The window resizes for the keyboard (manifest): only the results get shorter (#228).
     Column(
         modifier = modifier
             .fillMaxSize()
+            .imePadding()
     ) {
         SearchBar(
             searchText = searchText,

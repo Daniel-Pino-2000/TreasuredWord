@@ -54,8 +54,9 @@ fun Navigation(
     // Every screen but the reader (which caps its own reading column) is laid out in a centered,
     // max-width column, so nothing stretches edge to edge in landscape.
     val screenModifier = Modifier.padding(padding).centeredContentWidth()
-    // For screens that ride above the keyboard (imePadding): what the bars already pad isn't
-    // padded twice.
+    // For every screen with a text field: it pads for the keyboard (imePadding) since the window
+    // resizes rather than pans (manifest, #225, #228), and what the bars already pad isn't padded
+    // twice.
     val keyboardScreenModifier = Modifier.padding(padding).consumeWindowInsets(padding).centeredContentWidth()
 
     // The after-sign-in work runs here, not in the sign-in screen, so it happens wherever the
@@ -123,7 +124,7 @@ fun Navigation(
 
         composable(Screen.Search.route) {
             // The search is kept (it lives in the ViewModel), so Back returns to the same results.
-            SearchView(bibleViewModel, modifier = screenModifier) { bookId, chapter, verse ->
+            SearchView(bibleViewModel, modifier = keyboardScreenModifier) { bookId, chapter, verse ->
                 bibleViewModel.setBook(bookId, chapter, verse)
                 navController.navigate(Screen.Bible.route)
             }
@@ -193,7 +194,7 @@ fun Navigation(
         ) { backStackEntry ->
             LibraryView(
                 bibleViewModel = bibleViewModel,
-                modifier = screenModifier,
+                modifier = keyboardScreenModifier,
                 initialTab = backStackEntry.arguments?.getString("tab"),
                 onOpenDetail = { type, localId ->
                     navController.navigate(Screen.LibraryItemDetail.createRoute(type, localId))
@@ -255,7 +256,7 @@ fun Navigation(
         composable(Screen.BookPicker.route) {
             BookPickerView(
                 bibleViewModel,
-                modifier = screenModifier,
+                modifier = keyboardScreenModifier,
                 onBackClick = {
                     navController.popBackStack()
                 },
@@ -297,7 +298,7 @@ fun Navigation(
         composable(Screen.VersionPicker.route) {
             VersionPickerView(
                 bibleViewModel,
-                modifier = screenModifier,
+                modifier = keyboardScreenModifier,
                 onVersionClicked = {
                     navController.navigate(Screen.Bible.route)
                 }
