@@ -67,6 +67,11 @@ scale, with no credit card needed to keep it running.
   `isSystemInDarkTheme()` returns the app's choice, not the phone's (#24). Use
   `MaterialTheme.colorScheme`, `MaterialTheme.shapes` and the `Spacing` tokens, never raw colors
   or dp values for spacing.
+- **Keyboard:** the activity is `adjustResize` (manifest), so the keyboard never pans the window.
+  Every screen with a text field gets `keyboardScreenModifier` in `Navigation.kt` and
+  `imePadding()` on its root column, or its field ends up behind the keyboard (#225, #228). In
+  landscape only ~110 dp is left above the keyboard: hide what sits above the field while typing
+  (`isCompactHeight() && WindowInsets.isImeVisible`), as the top bar and Library's tabs do.
 - **Landscape:** phones in landscape are "compact height" (`isCompactHeight()`): tabs move to a
   side rail and the reader's chapter controls move into the top bar. Every UI change must work
   there too.

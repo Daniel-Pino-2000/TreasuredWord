@@ -3,6 +3,7 @@ package com.application.bibleapp.screens
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -94,7 +95,8 @@ fun VersionPickerView(
         )
     }
 
-    Column(modifier = modifier.fillMaxSize()) {
+    // The window resizes for the keyboard (manifest): only the list gets shorter (#228).
+    Column(modifier = modifier.fillMaxSize().imePadding()) {
 
         if (isLoading) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

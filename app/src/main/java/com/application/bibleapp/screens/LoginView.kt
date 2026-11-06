@@ -39,7 +39,6 @@ import com.application.bibleapp.components.PasswordResetSheet
 import com.application.bibleapp.components.ServerWakeHint
 import com.application.bibleapp.components.rememberWaitingLong
 import com.application.bibleapp.ui.theme.Spacing
-import com.application.bibleapp.utils.ResizeForKeyboard
 import com.application.bibleapp.utils.isValidEmailFormat
 import com.application.bibleapp.viewmodel.AuthViewModel
 import com.application.bibleapp.R
@@ -80,12 +79,11 @@ fun LoginView(
         }
     }
     if (passwordReset.isOpen) PasswordResetSheet(authViewModel)
-    // Landscape keyboard: only the form scrolls, the top bar stays on screen (#225).
-    ResizeForKeyboard()
 
     Column(
         modifier = modifier
             .fillMaxSize()
+            // The window resizes for the keyboard (manifest): only the form scrolls (#225).
             .imePadding()
             .verticalScroll(rememberScrollState())
             .padding(Spacing.lg),
