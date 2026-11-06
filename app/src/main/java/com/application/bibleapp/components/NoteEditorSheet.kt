@@ -38,6 +38,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
@@ -87,7 +88,8 @@ fun NoteEditorSheet(
     onDismiss: () -> Unit
 ) {
     val latestHasUnsavedChanges by rememberUpdatedState(hasUnsavedChanges)
-    var showDiscardDialog by remember { mutableStateOf(false) }
+    // Saveable so turning the phone doesn't close it, leaving the sheet behind (#231).
+    var showDiscardDialog by rememberSaveable { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(
         skipPartiallyExpanded = true,
         // Blocks swipe-to-dismiss while there's something to lose; the dialog takes over.
