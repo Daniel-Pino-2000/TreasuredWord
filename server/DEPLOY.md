@@ -154,6 +154,33 @@ Once a report has been read and acted on (an instructions change, an evaluation 
 to `docs/ai_helper_eval.md`), it can be deleted early:
 `DELETE FROM ai_reports WHERE id = '<id>';`
 
+## Switching the Bible Helper off in an emergency (#131)
+
+If the Bible Helper starts giving harmful or badly wrong answers, or Cloudflare changes its free
+plan or terms, it can be switched off for everyone without an app update:
+
+1. Render dashboard → the service → **Environment** → delete `AI_MODEL` (leave the token where
+   it is, so switching back on doesn't need a new one) → **Save and deploy**. If Render only
+   saves, run **Server CI** by hand (Actions → Server CI → **Run workflow**), which tests `main`
+   and redeploys it.
+2. Once the deploy is live, `OpenAiCompatibleProvider.fromConfig` returns null and every
+   `/ai/ask` answers `503 AI_UNAVAILABLE` (`AiRoutes.kt`), without counting the question
+   against the user's 15. The app shows "The Bible Helper couldn't answer right now." Reports
+   still work, and nothing else in the app changes.
+3. Note on #131 (or a new issue) why it was switched off and what has to change first.
+
+To switch it back on, add `AI_MODEL` again (`@cf/google/gemma-4-26b-a4b-it`, or whichever model
+passed the last evaluation) and deploy the same way.
+
+The same path is covered by tests: `AiRoutesTest` (no provider → `AI_UNAVAILABLE`) and the app's
+`AiHelperApiTest` (`AI_UNAVAILABLE` → `AiAskResult.Unavailable`).
+
+**Rule for every later change:** a change to `system_prompt.md`, `doctrine.md` or `AI_MODEL`
+reaches users as soon as the server deploys, with no Play review in between. Run the full
+evaluation (`docs/ai_helper_eval.md`) on the change and meet the release bar before merging or
+changing the variable. Run it soon after 00:00 UTC: it uses about 1,700 of the same 10,000 free
+neurons a day that users share.
+
 ## What was verified locally before writing this doc (Phase 5)
 
 - `docker build .` from the repo root succeeds without the `:app` (Android) module present in the
