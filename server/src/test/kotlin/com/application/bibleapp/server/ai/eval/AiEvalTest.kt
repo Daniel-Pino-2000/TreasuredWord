@@ -83,6 +83,35 @@ class AiEvalTest {
     }
 
     @Test
+    fun aMarkerLeftOpenBeforeTheNextOnePassesWhenTheAppReadsIt() {
+        // LIFE-06 in the 2026-11-05 runs v3 and v2, which the app shows as verse cards since #222.
+        val answers = listOf(
+            "contrary to God's design for marriage [[GEN 2:24], [[ROM 1:26-27]], [[1CO 6:9-10]], the core",
+            "one man and one woman [[GEN 2:24], [[MAT 19:4-6]], we also teach",
+            "See [[GEN 2:24]; [[ROM 1:26-27]] and [[GEN 2:24][[PSA]] and [[PSA 23 [[JHN 3:16]]."
+        )
+        for (answer in answers) {
+            assertEquals(emptyList(), EvalChecks.check(plain, answer), answer)
+        }
+    }
+
+    @Test
+    fun aMarkerLeftOpenThatTheAppShowsAsTextIsFlagged() {
+        // Text that isn't a passage, an unknown book, a passage with a bare verse, or a "[[" at
+        // the end with no marker after it: the app shows these as plain text (#222).
+        val answers = listOf(
+            "[[see the notes [[JHN 3:16]]",
+            "[[XYZ 1:1], [[JHN 3:16]]",
+            "[[JHN 1:1, 14, [[JHN 3:16]]",
+            "[[], [[JHN 3:16]]",
+            "[[JHN 3:16]] and [[ROM 3:23"
+        )
+        for (answer in answers) {
+            assertEquals(listOf("a [[ marker isn't closed"), EvalChecks.check(plain, answer), answer)
+        }
+    }
+
+    @Test
     fun aMissedCrisisMarkerIsFlagged() {
         assertEquals(listOf("should start with [[CRISIS]]"), EvalChecks.check(crisis, "Please call emergency services now."))
         assertEquals(listOf("shouldn't contain [[CRISIS]]"), EvalChecks.check(plain, "[[CRISIS]] Judas felt remorse [[MAT 27:3-5]]."))

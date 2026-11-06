@@ -38,6 +38,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
@@ -87,7 +88,8 @@ fun NoteEditorSheet(
     onDismiss: () -> Unit
 ) {
     val latestHasUnsavedChanges by rememberUpdatedState(hasUnsavedChanges)
-    var showDiscardDialog by remember { mutableStateOf(false) }
+    // Saveable so turning the phone doesn't close it, leaving the sheet behind (#231).
+    var showDiscardDialog by rememberSaveable { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(
         skipPartiallyExpanded = true,
         // Blocks swipe-to-dismiss while there's something to lose; the dialog takes over.
@@ -102,8 +104,9 @@ fun NoteEditorSheet(
     )
     val scope = rememberCoroutineScope()
     val compactHeight = isCompactHeight()
-    // A landscape phone with the soft keyboard up leaves the sheet ~130dp: room for the title
-    // row and a one-line field, nothing else (#23).
+    // A landscape phone with the soft keyboard up leaves the sheet as little as ~98dp (a Pixel's
+    // tall landscape status bar): a 48dp title row stacked on a 56dp field doesn't fit, so while
+    // typing the title row goes and Delete/Save sit beside the one-line field (#23, #216).
     val typingInCompactHeight = compactHeight && WindowInsets.isImeVisible
 
     if (showDiscardDialog) {
@@ -189,16 +192,20 @@ fun NoteEditorSheet(
                 .imePadding()
         ) {
             // In compact height Delete/Save share the title row too — a separate button row took
-            // all the room the keyboard leaves, squeezing the note field out entirely.
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = stringResource(R.string.title_note),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                if (compactHeight) {
-                    verseChips(Modifier.weight(1f).padding(start = Spacing.lg, end = Spacing.sm))
-                    actions()
+            // all the room the keyboard leaves, squeezing the note field out entirely. While
+            // typing there, even this row doesn't fit: it's hidden (the field's own "Note" label
+            // still names it) and the buttons move beside the field below (#216).
+            if (!typingInCompactHeight) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = stringResource(R.string.title_note),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    if (compactHeight) {
+                        verseChips(Modifier.weight(1f).padding(start = Spacing.lg, end = Spacing.sm))
+                        actions()
+                    }
                 }
             }
             // Everything below the title (and above the portrait button row) scrolls, and only
@@ -235,19 +242,31 @@ fun NoteEditorSheet(
                             )
                     )
                 }
-                OutlinedTextField(
-                    value = text,
-                    onValueChange = onTextChange,
-                    label = { Text(stringResource(R.string.title_note)) },
-                    placeholder = { Text(stringResource(R.string.note_placeholder)) },
-                    minLines = when {
-                        !compactHeight -> 4
-                        typingInCompactHeight -> 1
-                        else -> 2
-                    },
-                    shape = MaterialTheme.shapes.medium,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                // The field always sits in this Row, and the buttons are added after it, so
+                // showing them doesn't recreate the field (it keeps focus and the keyboard).
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    OutlinedTextField(
+                        value = text,
+                        onValueChange = onTextChange,
+                        label = { Text(stringResource(R.string.title_note)) },
+                        placeholder = { Text(stringResource(R.string.note_placeholder)) },
+                        minLines = when {
+                            !compactHeight -> 4
+                            typingInCompactHeight -> 1
+                            else -> 2
+                        },
+                        shape = MaterialTheme.shapes.medium,
+                        modifier = Modifier.weight(1f)
+                    )
+                    if (typingInCompactHeight) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(start = Spacing.sm)
+                        ) {
+                            actions()
+                        }
+                    }
+                }
             }
             if (!compactHeight) {
                 HorizontalDivider(

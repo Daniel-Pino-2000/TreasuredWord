@@ -144,6 +144,54 @@ class AiAnswerParserTest {
         )
     }
 
+    // A marker the model left open before the next one (#222).
+
+    @Test
+    fun `a marker left open before the next one is still a reference`() {
+        val parts = parseAiAnswer("[[GEN 2:24], [[ROM 1:26-27]]")
+
+        assertEquals(listOf(ref(1, 2, 24), text(", "), ref(45, 1, 26, 27)), parts)
+        assertEquals(listOf(VerseReference(1, 2, 24), VerseReference(45, 1, 26, 27)), parts.citedReferences())
+        assertEquals(listOf(ref(1, 2, 24), text("; "), ref(45, 1, 26, 27)), parseAiAnswer("[[GEN 2:24]; [[ROM 1:26-27]]"))
+        assertEquals(listOf(ref(1, 2, 24), ref(45, 1, 26, 27)), parseAiAnswer("[[GEN 2:24][[ROM 1:26-27]]"))
+        assertEquals(listOf(ref(19, 23), text(" "), book(43)), parseAiAnswer("[[PSA 23 [[JHN]]"))
+    }
+
+    @Test
+    fun `the open markers Gemma 4 wrote in the eval`() {
+        // LIFE-06 in the 2026-11-05 runs v3 and v2.
+        val v3 = parseAiAnswer(
+            "contrary to God's design for marriage [[GEN 2:24], [[ROM 1:26-27]], [[1CO 6:9-10]], the core"
+        )
+        assertEquals(
+            listOf(
+                text("contrary to God's design for marriage "), ref(1, 2, 24), text(", "),
+                ref(45, 1, 26, 27), text(", "), ref(46, 6, 9, 10), text(", the core")
+            ),
+            v3
+        )
+        val v2 = parseAiAnswer("one man and one woman [[GEN 2:24], [[MAT 19:4-6]], we also teach")
+        assertEquals(
+            listOf(text("one man and one woman "), ref(1, 2, 24), text(", "), ref(40, 19, 4, 6), text(", we also teach")),
+            v2
+        )
+        (v2 + v3).filterIsInstance<AiAnswerPart.Text>().forEach { part ->
+            assertFalse(part.text, "[" in part.text || "]" in part.text || "GEN" in part.text)
+        }
+    }
+
+    @Test
+    fun `an open marker that isn't a real reference stays plain text`() {
+        // As before #222: only the double brackets go.
+        assertEquals(listOf(text("JHN 22:1], "), ref(43, 3, 16)), parseAiAnswer("[[JHN 22:1], [[JHN 3:16]]"))
+        assertEquals(listOf(text("see the notes "), ref(43, 3, 16)), parseAiAnswer("[[see the notes [[JHN 3:16]]"))
+        // Every passage must be real, or the whole open marker stays text.
+        assertEquals(
+            listOf(text("JHN 3:16, XYZ 1:1, "), ref(45, 3, 23)),
+            parseAiAnswer("[[JHN 3:16, XYZ 1:1, [[ROM 3:23]]")
+        )
+    }
+
     @Test
     fun `a one-chapter book cited by verse alone`() {
         assertEquals(listOf(ref(65, 1, 24)), parseAiAnswer("[[JUD 24]]"))

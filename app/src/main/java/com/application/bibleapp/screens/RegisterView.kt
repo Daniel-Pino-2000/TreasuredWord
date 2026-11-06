@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -26,6 +27,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
@@ -53,10 +55,12 @@ fun RegisterView(
     modifier: Modifier = Modifier,
     onNavigateToLogin: () -> Unit
 ) {
-    var email by remember { mutableStateOf("") }
+    // The email and the eye toggle survive turning the phone; passwords don't on purpose, since
+    // saved state can be written to disk (#231).
+    var email by rememberSaveable { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
-    var passwordVisible by remember { mutableStateOf(false) }
+    var passwordVisible by rememberSaveable { mutableStateOf(false) }
     val isLoading by authViewModel.isLoading.collectAsState()
     val isGoogleLoading by authViewModel.isGoogleLoading.collectAsState()
     val remoteError by authViewModel.errorMessage.collectAsState()
@@ -77,6 +81,8 @@ fun RegisterView(
     Column(
         modifier = modifier
             .fillMaxSize()
+            // The window resizes for the keyboard (manifest): only the form scrolls (#225).
+            .imePadding()
             .verticalScroll(rememberScrollState())
             .padding(Spacing.lg),
         verticalArrangement = Arrangement.spacedBy(Spacing.md)

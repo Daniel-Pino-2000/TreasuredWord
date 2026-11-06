@@ -2,6 +2,7 @@ package com.application.bibleapp.server
 
 import com.application.bibleapp.server.ai.AiProvider
 import com.application.bibleapp.server.ai.OpenAiCompatibleProvider
+import com.application.bibleapp.server.db.startRetentionCleanup
 import com.application.bibleapp.server.email.EmailSender
 import com.application.bibleapp.server.email.GmailEmailSender
 import com.application.bibleapp.server.plugins.configureDatabases
@@ -41,5 +42,6 @@ fun Application.serverModule(emailSender: EmailSender?, aiProvider: AiProvider? 
     configureSecurity()
     configureRateLimiting()
     configureDatabases()
+    startRetentionCleanup(clock)
     configureRouting(emailSender, aiProvider, clock)
 }

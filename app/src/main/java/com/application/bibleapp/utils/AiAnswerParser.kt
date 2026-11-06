@@ -27,8 +27,8 @@ sealed interface AiAnswerPart {
  *
  * The model gets the codes right most of the time but not always, so the parser forgives (#190):
  * a full name or common abbreviation instead of the code (`JOHN`, `PSALM`, `EZEK`, `PHI`), a space
- * after the number (`1 JHN`), two markers in one (`[[PSA 103:8], [1JN 1:9]]`) and a whole book
- * (`[[PSA]]`). Whatever can't be read shows its inner text: `[[` and `]]` never reach the screen.
+ * after the number (`1 JHN`), two markers in one (`[[PSA 103:8], [1JN 1:9]]`), a whole book
+ * (`[[PSA]]`) and a marker left open before the next one (`[[GEN 2:24], [[ROM 1:26-27]]`, #222). Whatever can't be read shows its inner text: `[[` and `]]` never reach the screen.
  */
 fun parseAiAnswer(answer: String, structure: ChapterStructure = emptyMap()): List<AiAnswerPart> {
     val parts = mutableListOf<AiAnswerPart>()
@@ -42,16 +42,12 @@ fun parseAiAnswer(answer: String, structure: ChapterStructure = emptyMap()): Lis
         parts += part
     }
 
-    var last = 0
-    for (match in MARKER.findAll(answer)) {
-        addText(answer.substring(last, match.range.first))
-        last = match.range.last + 1
+    fun addMarker(inner: String) {
         // "PSA 103:8], [1JN 1:9" → "PSA 103:8", ", ", "1JN 1:9"
-        val inner = match.groupValues[1]
         var pieceStart = 0
         for (separator in SEPARATOR.findAll(inner) + sequenceOf(null)) {
             val end = separator?.range?.first ?: inner.length
-            val piece = inner.substring(pieceStart, end).replace("[", "").replace("]", "").trim()
+            val piece = inner.substring(pieceStart, end).cleanPiece()
             when (val part = piece.toPart(structure)) {
                 null -> addText(piece) // e.g. "XYZ 1:1": readable, but not a link
                 else -> add(part)
@@ -60,6 +56,30 @@ fun parseAiAnswer(answer: String, structure: ChapterStructure = emptyMap()): Lis
                 addText(separator.groupValues[1] + " ")
                 pieceStart = separator.range.last + 1
             }
+        }
+    }
+
+    var last = 0
+    for (match in MARKER.findAll(answer)) {
+        addText(answer.substring(last, match.range.first))
+        last = match.range.last + 1
+        val closed = match.groups[1]
+        if (closed != null) {
+            addMarker(closed.value)
+            continue
+        }
+        // A marker the model didn't close before the next one (#222): "GEN 2:24], " in
+        // "[[GEN 2:24], [[ROM 1:26-27]]". It's read only when every passage in it is real, so
+        // stray text after a "[[" stays text, as before; the "]" it ends with never shows.
+        val unclosed = match.groupValues[2]
+        val inner = unclosed.trimEnd { it.isWhitespace() || it in ",;]" }
+        val readable = inner.isNotBlank() &&
+            inner.split(SEPARATOR).all { it.cleanPiece().toPart(structure) != null }
+        if (readable) {
+            addMarker(inner)
+            addText(unclosed.substring(inner.length).replace("]", ""))
+        } else {
+            addText(unclosed)
         }
     }
     addText(answer.substring(last))
@@ -117,8 +137,14 @@ private fun reference(
     return VerseReference(bookId, chapter, start, end.takeIf { it != start })
 }
 
-/** `[[`, up to 120 characters on one line without another `[[` or `]]`, then `]]`. */
-private val MARKER = Regex("""\[\[((?:(?!\[\[|]]).){1,120})]]""")
+/** One passage of a marker without its single brackets: "[1JN 1:9" → "1JN 1:9". */
+private fun String.cleanPiece(): String = replace("[", "").replace("]", "").trim()
+
+/**
+ * `[[`, up to 120 characters on one line without another `[[` or `]]`, then `]]` (group 1) — or,
+ * when the model forgot the `]]`, the same text running straight into the next `[[` (group 2, #222).
+ */
+private val MARKER = Regex("""\[\[((?:(?!\[\[|]]).){1,120})]]|\[\[((?:(?!\[\[|]]).){1,120})(?=\[\[)""")
 
 /** Between two markers written as one: a comma or semicolon, with any brackets around it. */
 private val SEPARATOR = Regex("""[\s\]\[]*([,;])[\s\]\[]*""")

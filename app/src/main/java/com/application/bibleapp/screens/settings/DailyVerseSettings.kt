@@ -21,6 +21,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimeInput
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
@@ -29,6 +30,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
@@ -39,6 +41,7 @@ import com.application.bibleapp.components.GroupedDivider
 import com.application.bibleapp.components.GroupedRow
 import com.application.bibleapp.components.GroupedSection
 import com.application.bibleapp.components.GroupedSwitchRow
+import com.application.bibleapp.ui.theme.isCompactHeight
 import com.application.bibleapp.viewmodel.BibleViewModel
 import com.application.bibleapp.R
 import androidx.compose.ui.res.stringResource
@@ -50,7 +53,8 @@ internal fun DailyVerseSettings(bibleViewModel: BibleViewModel) {
     val context = LocalContext.current
     val notificationEnabled by bibleViewModel.notificationEnabled.collectAsState()
     val notificationTime by bibleViewModel.notificationTime.collectAsState()
-    var showTimePicker by remember { mutableStateOf(false) }
+    // Saveable so turning the phone doesn't close the picker (#231).
+    var showTimePicker by rememberSaveable { mutableStateOf(false) }
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted -> if (granted) bibleViewModel.setNotificationEnabled(true) }
@@ -145,7 +149,11 @@ internal fun DailyVerseSettings(bibleViewModel: BibleViewModel) {
             dismissButton = {
                 TextButton(onClick = { showTimePicker = false }) { Text(stringResource(R.string.action_cancel)) }
             },
-            text = { TimePicker(state = pickerState) }
+            text = {
+                // A landscape phone leaves the dialog ~200 dp: the 256 dp clock dial overflowed it
+                // and drew over the time (#232). Typing the time fits; portrait keeps the dial.
+                if (isCompactHeight()) TimeInput(state = pickerState) else TimePicker(state = pickerState)
+            }
         )
     }
 }
