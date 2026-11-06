@@ -17,10 +17,12 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -59,7 +61,10 @@ internal fun AccountSettings(
     val signOutState by authViewModel.signOutState.collectAsState()
     val signInMethods by authViewModel.signInMethods.collectAsState()
     val emailVerified by authViewModel.emailVerified.collectAsState()
-    var showDeleteDialog by remember { mutableStateOf(false) }
+    // Saveable: turning the phone recreates the screen, and the dialog closed with it (#231).
+    var showDeleteDialog by rememberSaveable { mutableStateOf(false) }
+    // Signed out or deleted while it was open (a rotation mid-request loses the old callback).
+    LaunchedEffect(isLoggedIn) { if (!isLoggedIn) showDeleteDialog = false }
     // Sign-out removes the account's highlights and notes from this device (#81); the reader
     // and Library drop them straight away.
     val signOut = { discardUnsynced: Boolean ->
@@ -173,6 +178,8 @@ private fun DeleteAccountDialog(
     onDismiss: () -> Unit,
     onConfirm: (password: String?, googleIdToken: String?, onError: (UiText) -> Unit) -> Unit
 ) {
+    // Not saveable on purpose: saved state can be written to disk, so a password is retyped
+    // after turning the phone rather than kept there (#231).
     var password by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<UiText?>(null) }
     var isSubmitting by remember { mutableStateOf(false) }

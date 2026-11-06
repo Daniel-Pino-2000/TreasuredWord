@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -72,23 +73,29 @@ fun VersionPickerView(
 
     // Deleting is destructive (it wipes local content, not just this screen's state),
     // so it's confirmed here rather than firing straight off the row's icon tap.
-    var versionPendingDelete by remember { mutableStateOf<BibleTranslation?>(null) }
+    // Its id is kept (saveable, so turning the phone doesn't close the dialog, #231) and the
+    // version looked up again; one that's gone meanwhile just closes it.
+    var pendingDeleteId by rememberSaveable { mutableStateOf<String?>(null) }
+    val versionPendingDelete = pendingDeleteId?.let { id ->
+        versions.firstOrNull { it.id == id }
+            ?: downloadedSection(emptyList(), downloadedVersions).firstOrNull { it.id == id }
+    }
 
     versionPendingDelete?.let { version ->
         AlertDialog(
-            onDismissRequest = { versionPendingDelete = null },
+            onDismissRequest = { pendingDeleteId = null },
             title = { Text(stringResource(R.string.version_remove_title, version.displayName)) },
             text = { Text(stringResource(R.string.version_remove_message)) },
             confirmButton = {
                 TextButton(onClick = {
                     bibleViewModel.deleteVersion(version.id)
-                    versionPendingDelete = null
+                    pendingDeleteId = null
                 }) {
                     Text(stringResource(R.string.action_remove), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { versionPendingDelete = null }) {
+                TextButton(onClick = { pendingDeleteId = null }) {
                     Text(stringResource(R.string.action_cancel))
                 }
             }
@@ -213,7 +220,7 @@ fun VersionPickerView(
                         isInCatalog = version.id in catalogIds,
                         bibleViewModel = bibleViewModel,
                         onVersionClicked = onVersionClicked,
-                        onDeleteClicked = { versionPendingDelete = it }
+                        onDeleteClicked = { pendingDeleteId = it.id }
                     )
                 }
             }
@@ -241,7 +248,7 @@ fun VersionPickerView(
                         isInCatalog = version.id in catalogIds,
                         bibleViewModel = bibleViewModel,
                         onVersionClicked = onVersionClicked,
-                        onDeleteClicked = { versionPendingDelete = it }
+                        onDeleteClicked = { pendingDeleteId = it.id }
                     )
                 }
             }

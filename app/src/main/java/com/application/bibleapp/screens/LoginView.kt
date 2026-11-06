@@ -27,6 +27,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -54,9 +55,11 @@ fun LoginView(
     modifier: Modifier = Modifier,
     onNavigateToRegister: () -> Unit
 ) {
-    var email by remember { mutableStateOf("") }
+    // The email and the eye toggle survive turning the phone; passwords don't on purpose, since
+    // saved state can be written to disk (#231).
+    var email by rememberSaveable { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var passwordVisible by remember { mutableStateOf(false) }
+    var passwordVisible by rememberSaveable { mutableStateOf(false) }
     val isLoading by authViewModel.isLoading.collectAsState()
     val isGoogleLoading by authViewModel.isGoogleLoading.collectAsState()
     val errorMessage by authViewModel.errorMessage.collectAsState()
