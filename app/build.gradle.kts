@@ -54,8 +54,8 @@ android {
         targetSdk = 36
         // Every bundle uploaded to Play needs a higher versionCode (docs/release.md).
         // 1.5: asks to update when a newer version is on Google Play (#202).
-        versionCode = 6
-        versionName = "1.5"
+        versionCode = 7
+        versionName = "1.6"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
