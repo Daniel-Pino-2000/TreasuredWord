@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -36,6 +37,7 @@ import com.application.bibleapp.components.GoogleSignInSection
 import com.application.bibleapp.components.ServerWakeHint
 import com.application.bibleapp.components.rememberWaitingLong
 import com.application.bibleapp.ui.theme.Spacing
+import com.application.bibleapp.utils.ResizeForKeyboard
 import com.application.bibleapp.utils.MIN_PASSWORD_LENGTH
 import com.application.bibleapp.utils.isValidEmailFormat
 import com.application.bibleapp.viewmodel.AuthViewModel
@@ -73,10 +75,13 @@ fun RegisterView(
 
     // A sleeping server starts up while the form is filled in, not after submitting (#87).
     LaunchedEffect(Unit) { authViewModel.wakeServer() }
+    // Landscape keyboard: only the form scrolls, the top bar stays on screen (#225).
+    ResizeForKeyboard()
 
     Column(
         modifier = modifier
             .fillMaxSize()
+            .imePadding()
             .verticalScroll(rememberScrollState())
             .padding(Spacing.lg),
         verticalArrangement = Arrangement.spacedBy(Spacing.md)

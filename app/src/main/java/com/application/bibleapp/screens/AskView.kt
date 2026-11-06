@@ -1,11 +1,7 @@
 package com.application.bibleapp.screens
 
-import android.app.Activity
-import android.content.Context
-import android.content.ContextWrapper
 import android.content.res.Configuration
 import android.text.format.DateFormat
-import android.view.WindowManager
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -44,7 +40,6 @@ import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -85,6 +80,7 @@ import com.application.bibleapp.data.remote.AiAskResult
 import com.application.bibleapp.data.repository.AiHelperRepository.Companion.MAX_QUESTION_CHARS
 import com.application.bibleapp.ui.theme.BibleAppTheme
 import com.application.bibleapp.ui.theme.Spacing
+import com.application.bibleapp.utils.ResizeForKeyboard
 import com.application.bibleapp.ui.theme.isCompactHeight
 import com.application.bibleapp.utils.AiAnswerPart
 import com.application.bibleapp.utils.AppLanguage
@@ -626,30 +622,6 @@ private fun QuestionField(
             Icon(Icons.AutoMirrored.Filled.Send, contentDescription = stringResource(R.string.ai_action_send))
         }
     }
-}
-
-/**
- * The window makes room for the keyboard while Ask is open, so the question field stays above it
- * (with [imePadding]); the rest of the app keeps its default, unchanged. Restored on leaving.
- */
-@Composable
-private fun ResizeForKeyboard() {
-    val window = LocalContext.current.findActivity()?.window ?: return
-    DisposableEffect(window) {
-        val previous = window.attributes.softInputMode
-        @Suppress("DEPRECATION") // still how a window opts into resizing for the keyboard
-        window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
-        onDispose { window.setSoftInputMode(previous) }
-    }
-}
-
-private fun Context.findActivity(): Activity? {
-    var context: Context? = this
-    while (context is ContextWrapper) {
-        if (context is Activity) return context
-        context = context.baseContext
-    }
-    return null
 }
 
 @Preview(name = "Light", widthDp = 360, heightDp = 720)
