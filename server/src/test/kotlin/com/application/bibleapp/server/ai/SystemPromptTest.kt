@@ -40,7 +40,7 @@ class SystemPromptTest {
         // The evaluation runs of #206: the crisis card is drawn above the answer (#130), and the
         // app shows a whole chapter as a card (#190), so the instructions may ask for one.
         val prompt = SystemPrompt.forLanguage("en")
-        assertEquals("9", SystemPrompt.PROMPT_VERSION)
+        assertEquals("10", SystemPrompt.PROMPT_VERSION)
         assertFalse("crisis lines below" in prompt)
         assertTrue("help card above your answer" in prompt)
         assertTrue("[[BOOK C]] for a" in prompt && "[[PSA 23]]" in prompt)
@@ -52,39 +52,24 @@ class SystemPromptTest {
 
     @Test
     fun answersComeFromTheBibleNotADenomination() {
-        // #236: Scripture is the source of every answer; the doctrine summary keeps it faithful.
-        // Where believers differ and doctrine.md takes no position, the answer gives the views with
-        // their passages and never leans toward one.
+        // #236, v10: v5's instructions with only the framing changed. Answers say what the Bible
+        // teaches, name Baptists only when asked, and may run longer when a question needs it.
         val prompt = SystemPrompt.forLanguage("en")
         assertFalse("from a Baptist perspective" in prompt)
-        assertFalse("as the Baptist answer" in prompt)
-        assertTrue("The Bible is your authority" in prompt)
-        assertTrue("it is not your" in prompt && "source" in prompt)
-        assertTrue("Don't frame answers by denomination" in prompt)
-        assertTrue("Name Baptists only when the question asks about Baptists" in prompt)
-        assertTrue("don't choose between them or lean" in prompt)
-        assertFalse("support best" in prompt)
-        assertTrue("Start from what the Bible says" in prompt)
-        // v8 dropped v6's four-part answer shape, which crowded out the points answers need.
+        assertFalse("Baptist answer" in prompt)
+        assertTrue("The Bible is your final authority" in prompt)
+        assertTrue("Say what the Bible teaches, not what Baptists believe" in prompt)
+        assertTrue("Name Baptists only when the question" in prompt)
+        assertTrue("the points a faithful pastor would make" in prompt)
+        assertTrue("up to about 350 words" in prompt)
+        // v6-v9's answer shape and extra rules are gone (#236): they crowded out the points answers need.
         assertFalse("start with a direct answer" in prompt)
-        assertTrue("Don't open with a sentence" in prompt)
-    }
-
-    @Test
-    fun theInstructionsFixWhatVersion6sRunsFound() {
-        // v6's two runs (#236): extra references brought wrong verses, the answer shape crowded out
-        // care, a crisis answer debated forgiveness, and other languages wrote book codes like EFE.
-        val prompt = SystemPrompt.forLanguage("es")
-        assertTrue("two to four passages in the whole answer, never more" in prompt)
-        assertTrue("care comes first" in prompt)
-        assertTrue("never discuss whether an act is forgiven" in prompt)
-        assertTrue("whatever language you answer in: [[EPH 2:8]]" in prompt)
-        assertTrue("name them in words instead of a marker" in prompt)
+        assertFalse("care comes first" in prompt)
     }
 
     @Test
     fun theDoctrineTakesTheDevelopersFirmPositions() {
-        // v8 (#236): positions from the BF&M 2000 and its LifeWay commentary, and the developer's
+        // #236: positions from the BF&M 2000 and its LifeWay commentary, and the developer's
         // decision on alcohol, which is no longer among the questions answered without a side.
         val prompt = SystemPrompt.forLanguage("en")
         assertTrue("make abstaining the wise and loving" in prompt)
@@ -92,24 +77,7 @@ class SystemPromptTest {
         assertTrue("no later, second baptism of the Spirit" in prompt)
         assertTrue("homosexual behavior is sin" in prompt)
         assertTrue("not a choice each church makes" in prompt)
-        assertTrue("Never declare all the members of a church or religion saved or lost" in prompt)
-        assertTrue("right away if they ever feel unsafe" in prompt)
-        assertTrue("never suggest their pain is God's punishment" in prompt)
-    }
-
-    @Test
-    fun theInstructionsFixWhatVersion8sRunFound() {
-        // v8's first run (#236): the Jesus sentence became a formula in unrelated answers, the
-        // alcohol recommendation was put in others' mouths, a non-crisis answer pointed to a help
-        // card that wasn't there, and infant baptism was left to the reader.
-        val prompt = SystemPrompt.forLanguage("en")
-        assertTrue("the points a faithful pastor would make" in prompt)
-        assertFalse("careful Bible teacher" in prompt)
-        assertTrue("Don't repeat that as a" in prompt)
-        assertTrue("recommend it yourself, in your own voice" in prompt)
-        assertTrue("Mention the help card only in an answer that begins with [[CRISIS]]" in prompt)
-        assertTrue("name each of the main views, not just" in prompt)
-        assertTrue("invited," in prompt && "to be baptized as a believer" in prompt)
+        assertTrue("to be baptized as a believer" in prompt)
     }
 
     @Test

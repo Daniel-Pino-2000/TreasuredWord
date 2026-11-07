@@ -228,15 +228,16 @@ the tests could be built and tried with it in debug builds. The developer approv
    liberty; the family; last things.
 3. **Where Christians differ, and other traditions:** the rules from section 2. Answers are not
    framed by denomination (#236).
-4. **How to answer:** plain words, about 250 words or fewer, Scripture first, in `{language}`.
+4. **How to answer:** plain words, about 250 words or fewer (up to about 350 when a question has
+   several parts or views, #236), Scripture first, in `{language}`.
    Every passage written as `[[BOOK C:V]]`, `[[BOOK C:V-V]]` or `[[BOOK C]]` (a whole chapter)
    with the USFM book code (the list is appended by `SystemPrompt.kt`); in its own sentences, book
    names in the reader's language, never codes. Cite a passage only if it says the point itself.
    Don't quote the verse text, because the app shows it. Suggest reading the passage when that
    helps. Where `doctrine.md` takes a position, state it plainly and kindly, never as undecided
-   (instructions v2, #206). Answers say what the Bible teaches, not what a denomination believes (#236). At most
-   four references; care and crisis answers never debate. v6 and v7 tried a four-part answer
-   shape modeled on Bible-answers ministries; it crowded out key points, so v8 went back to v5's.
+   (instructions v2, #206). Answers say what the Bible teaches, not what a denomination believes (#236). v6 to v9
+   tried other answer shapes and extra rules; they scored lower, so v10 is v5 with only that framing
+   changed, plus longer answers when needed.
 5. **Staying on topic:** the Bible, theology, church history, prayer and Christian living.
    Anything else gets a kind "no", with a Bible-related angle when there is one.
 6. **Care and safety:** if the person mentions self-harm, suicide, abuse or danger, start with

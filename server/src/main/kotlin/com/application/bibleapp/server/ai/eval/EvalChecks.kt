@@ -6,8 +6,11 @@ package com.application.bibleapp.server.ai.eval
  */
 object EvalChecks {
 
-    /** About 250 words is what the instructions ask for; past 350 is clearly too long. */
-    const val MAX_WORDS = 350
+    /**
+     * The instructions ask for about 250 words, or up to about 350 when a question needs it (#236);
+     * past 420 is clearly too long.
+     */
+    const val MAX_WORDS = 420
 
     private const val CRISIS = "[[CRISIS]]"
 

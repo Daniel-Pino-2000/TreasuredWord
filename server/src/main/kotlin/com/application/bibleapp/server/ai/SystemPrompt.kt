@@ -13,12 +13,11 @@ object SystemPrompt {
     /**
      * Sent back with every answer and stored with reports, so a report says which instructions it
      * was about. Bumped for any change that changes answers: the instructions, doctrine.md, or the
-     * provider's temperature (v5 is v4's instructions at temperature 0.2, #206; v6 answers from the
-     * Bible first, not as "the Baptist view", #236; v7 caps references and keeps care and crisis
-     * answers out of debate, after v6's evaluation runs; v8 goes back to v5's way of answering,
-     * with firmer positions in doctrine.md, #236; v9 fixes what v8's first run found).
+     * provider's temperature. v5 (v4's instructions at temperature 0.2, #206) passed one run; v6-v9
+     * tried other answer shapes and scored lower; v10 is v5 with only the framing changed (the Bible
+     * first, Baptists named only when asked, longer answers when needed) and firmer doctrine.md (#236).
      */
-    const val PROMPT_VERSION = "9"
+    const val PROMPT_VERSION = "10"
 
     /** The app's language tags (`AppLanguage.supportedTags`) and the English name the model is told to answer in. */
     val languageNames: Map<String, String> = mapOf(
