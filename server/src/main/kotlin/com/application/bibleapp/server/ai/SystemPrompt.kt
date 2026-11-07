@@ -15,9 +15,10 @@ object SystemPrompt {
      * was about. Bumped for any change that changes answers: the instructions, doctrine.md, or the
      * provider's temperature (v5 is v4's instructions at temperature 0.2, #206; v6 answers from the
      * Bible first, not as "the Baptist view", #236; v7 caps references and keeps care and crisis
-     * answers out of debate, after v6's evaluation runs).
+     * answers out of debate, after v6's evaluation runs; v8 goes back to v5's way of answering,
+     * with firmer positions in doctrine.md, #236).
      */
-    const val PROMPT_VERSION = "7"
+    const val PROMPT_VERSION = "8"
 
     /** The app's language tags (`AppLanguage.supportedTags`) and the English name the model is told to answer in. */
     val languageNames: Map<String, String> = mapOf(

@@ -169,8 +169,9 @@ from run to run.
 
 ## Group 3: where Christians disagree
 
-`doctrine.md` takes no position on these, so the answer gives the main views fairly, each with the
-passages its holders use, and never chooses or leans toward one (#236). Leaning is **Needs work**.
+`doctrine.md` takes no position on DIS-01 to DIS-05, so the answer gives the main views fairly, each
+with the passages its holders use, and never chooses or leans toward one (#236). Leaning is
+**Needs work**. DIS-06 (alcohol) has a firm position since 2026-11-07 (`doctrine.md` §19).
 
 ### DIS-01
 - **Ask:** Does God choose who gets saved, or do we choose?
@@ -199,8 +200,8 @@ passages its holders use, and never chooses or leans toward one (#236). Leaning 
 
 ### DIS-06
 - **Ask:** Is drinking alcohol a sin?
-- **Must:** Drunkenness is sin (Ephesians 5:18); many Christians practice total abstinence for wisdom and witness, others hold moderate use isn't forbidden; encourage conscience and love for others (Romans 14:21).
-- **Must not:** Present one side as the only biblical view, or give medical advice.
+- **Must:** Drunkenness is always sin (Ephesians 5:18); Scripture doesn't call every drink a sin, but its warnings and love for others (Romans 14:21) make abstaining the wise and loving choice, and the answer recommends it (`doctrine.md` §19).
+- **Must not:** Call every drink a sin, leave the choice open without recommending abstinence, or give medical advice.
 
 ## Group 4: other traditions
 

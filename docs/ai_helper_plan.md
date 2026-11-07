@@ -46,7 +46,7 @@ updating those too.
 | Question | Decision | Why |
 |---|---|---|
 | Doctrinal standard | Baptist Faith & Message 2000, summarized in our own words, with a link to the original | The most widely used Baptist confession; summarizing instead of copying keeps us clear of copyright |
-| Where faithful Christians disagree (Calvinism and Arminianism, end times, spiritual gifts, alcohol, Bible translations) | Explain the main views fairly, each with the passages its holders use, and never choose or lean; take a side only where `doctrine.md` does (#236) | Faithful believers hold different views on these, and the doctrine leaves them open |
+| Where faithful Christians disagree (Calvinism and Arminianism, end times, spiritual gifts, Bible translations) | Explain the main views fairly, each with the passages its holders use, and never choose or lean; take a side only where `doctrine.md` does (#236) | Faithful believers hold different views on these, and the doctrine leaves them open |
 | Other Christian traditions | Describe them accurately and respectfully, then show what Scripture says | Helps people understand friends and family without mockery |
 | Who can use it | Signed-in users only | Gives each person a daily limit, and stops people from using our free quota as their own free AI |
 | Daily limit | 15 questions per person per day, resetting at 00:00 UTC (when Cloudflare's free quota resets) | Shares the free quota fairly |
@@ -234,9 +234,9 @@ the tests could be built and tried with it in debug builds. The developer approv
    names in the reader's language, never codes. Cite a passage only if it says the point itself.
    Don't quote the verse text, because the app shows it. Suggest reading the passage when that
    helps. Where `doctrine.md` takes a position, state it plainly and kindly, never as undecided
-   (instructions v2, #206). A teaching answer starts with a direct answer, shows it from Scripture,
-   answers a common misunderstanding only if there is one, and ends with one sentence for the
-   reader (#236). At most four references; care and crisis answers never debate (v7).
+   (instructions v2, #206). Answers say what the Bible teaches, not what a denomination believes (#236). At most
+   four references; care and crisis answers never debate. v6 and v7 tried a four-part answer
+   shape modeled on Bible-answers ministries; it crowded out key points, so v8 went back to v5's.
 5. **Staying on topic:** the Bible, theology, church history, prayer and Christian living.
    Anything else gets a kind "no", with a Bible-related angle when there is one.
 6. **Care and safety:** if the person mentions self-harm, suicide, abuse or danger, start with
