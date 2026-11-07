@@ -5,9 +5,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -73,7 +70,9 @@ import com.application.bibleapp.data.model.Note
 import com.application.bibleapp.data.remote.VerseLocationDto
 import com.application.bibleapp.navigation.Screen
 import com.application.bibleapp.ui.theme.Spacing
+import com.application.bibleapp.ui.theme.collapseUpward
 import com.application.bibleapp.ui.theme.isCompactHeight
+import com.application.bibleapp.ui.theme.rememberKeyboardOpenFraction
 import com.application.bibleapp.utils.bookNameInVersion
 import com.application.bibleapp.utils.displayDate
 import com.application.bibleapp.utils.verseRefsText
@@ -99,7 +98,7 @@ private enum class LibraryTab(@StringRes val labelRes: Int, val routeArg: String
  * the highlighting/notes UI it's listing. [initialTab] lets Settings' two "My Library" rows
  * (Phase G) deep-link straight to either tab instead of always opening on Highlights.
  */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LibraryView(
     bibleViewModel: BibleViewModel,
@@ -126,24 +125,25 @@ fun LibraryView(
 
     // A landscape phone with the keyboard up leaves ~110 dp: the tab row stacked on the search
     // field doesn't fit, so the tabs step aside while typing, like the top bar (#215, #228).
-    val typingInCompactHeight = isCompactHeight() && WindowInsets.isImeVisible
+    // They collapse with the keyboard's own animation rather than popping out and back (#239).
+    val compactHeight = isCompactHeight()
+    val keyboardOpen = rememberKeyboardOpenFraction()
 
     // The window resizes for the keyboard (manifest): only the list gets shorter (#228).
     Column(modifier = modifier.fillMaxSize().imePadding()) {
-        if (!typingInCompactHeight) {
-            SingleChoiceSegmentedButtonRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = Spacing.lg, vertical = Spacing.md)
-            ) {
-                LibraryTab.entries.forEachIndexed { index, tab ->
-                    SegmentedButton(
-                        selected = selectedTab == tab,
-                        onClick = { selectedTab = tab },
-                        shape = SegmentedButtonDefaults.itemShape(index = index, count = LibraryTab.entries.size)
-                    ) {
-                        Text(stringResource(tab.labelRes))
-                    }
+        SingleChoiceSegmentedButtonRow(
+            modifier = Modifier
+                .collapseUpward { if (compactHeight) keyboardOpen.value else 0f }
+                .fillMaxWidth()
+                .padding(horizontal = Spacing.lg, vertical = Spacing.md)
+        ) {
+            LibraryTab.entries.forEachIndexed { index, tab ->
+                SegmentedButton(
+                    selected = selectedTab == tab,
+                    onClick = { selectedTab = tab },
+                    shape = SegmentedButtonDefaults.itemShape(index = index, count = LibraryTab.entries.size)
+                ) {
+                    Text(stringResource(tab.labelRes))
                 }
             }
         }

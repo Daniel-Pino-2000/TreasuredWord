@@ -37,6 +37,12 @@
              field, which the first switch away from "System default" changes along with the
              language (when the system creates the app's own configuration), so without it that
              switch still recreated the activity and flashed black (#89).
+             Turning the phone (orientation, screenSize, smallestScreenSize) and plugging in a
+             keyboard (keyboard, keyboardHidden, navigation) are handled in place too, as Android
+             recommends for Compose-only apps: recreating blinked, closed the keyboard mid-word and
+             dropped what was waiting on the old screen, like Google's sign-in sheet (#238). The
+             app has no Android views or -land resources to rebuild by hand. The rememberSaveable
+             state stays, since process death still recreates the activity (#231).
              windowSoftInputMode: the keyboard resizes the app's content instead of panning the
              whole window up, which in landscape pushed screens under the status bar (#225, #228).
              Every screen with a text field pads itself with imePadding (keyboardScreenModifier
@@ -45,7 +51,7 @@
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_short_name"
-            android:configChanges="locale|layoutDirection|screenLayout"
+            android:configChanges="locale|layoutDirection|screenLayout|orientation|screenSize|smallestScreenSize|keyboard|keyboardHidden|navigation"
             android:windowSoftInputMode="adjustResize"
             android:theme="@style/Theme.BibleApp.Splash">
             <intent-filter>

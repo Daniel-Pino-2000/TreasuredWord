@@ -341,7 +341,8 @@ fun BibleText(
     chapterFooter: @Composable () -> Unit = {}
 ) {
     // A new LazyListState each time the verses list changes (a new chapter or translation), saved
-    // so a rotation, which recreates the screen, keeps the reader's place (#179).
+    // so the reader keeps its place when the activity is recreated (#179). Turning the phone no
+    // longer recreates it (#238); the system theme changing and process death still do.
     val listState = rememberSaveable(verses, saver = LazyListState.Saver) { LazyListState() }
     // The scroll target below already applied to this list. Saved with it, so a rotation doesn't
     // apply the same target again and jump back to the verse the chapter was opened at (#179).
