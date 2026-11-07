@@ -31,10 +31,19 @@ fun rememberKeyboardOpenFraction(): State<Float> {
     val target = WindowInsets.imeAnimationTarget
     return remember(density, ime, source, target) {
         derivedStateOf {
-            // The keyboard's full height: where it's heading while it opens, where it started
-            // while it closes, and simply its height when it isn't moving (source == target then).
-            val full = maxOf(source.getBottom(density), target.getBottom(density))
-            if (full <= 0) 0f else (ime.getBottom(density).toFloat() / full).coerceIn(0f, 1f)
+            val from = source.getBottom(density)
+            val to = target.getBottom(density)
+            when {
+                // Open before and after: the keyboard is only changing height (its suggestion
+                // strip, another layout). Stay fully open rather than wobble.
+                from > 0 && to > 0 -> 1f
+                // Opening or closing (or still): measured against its full height, which is
+                // where it's heading while it opens and where it started while it closes.
+                else -> {
+                    val full = maxOf(from, to)
+                    if (full <= 0) 0f else (ime.getBottom(density).toFloat() / full).coerceIn(0f, 1f)
+                }
+            }
         }
     }
 }

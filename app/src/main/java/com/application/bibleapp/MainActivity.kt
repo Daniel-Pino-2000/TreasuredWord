@@ -35,7 +35,6 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.only
@@ -67,9 +66,11 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.splashscreen.SplashScreenViewProvider
@@ -401,15 +402,18 @@ class MainActivity : AppCompatActivity() {
                 // one replacing them (the reader's chapter row would otherwise vanish first).
                 val tabsRoute = remember { object { var route: String? = null } }
                 if (showNavigation) tabsRoute.route = currentRoute
+                // The rail sits on the start side: it slides off to the left, or to the right in a
+                // right-to-left layout.
+                val railSlideSign = if (LocalLayoutDirection.current == LayoutDirection.Rtl) 1 else -1
 
                 Row(modifier = Modifier.fillMaxSize()) {
                     key(compactHeight) {
                         AnimatedVisibility(
                             visible = useRail,
                             enter = expandHorizontally(barSlideSpec, expandFrom = Alignment.Start) +
-                                slideInHorizontally(barOffsetSpec) { -it },
+                                slideInHorizontally(barOffsetSpec) { railSlideSign * it },
                             exit = shrinkHorizontally(barSlideSpec, shrinkTowards = Alignment.Start) +
-                                slideOutHorizontally(barOffsetSpec) { -it }
+                                slideOutHorizontally(barOffsetSpec) { railSlideSign * it }
                         ) {
                             MainNavigationRail(
                                 currentRoute = tabsRoute.route,
@@ -435,23 +439,26 @@ class MainActivity : AppCompatActivity() {
                                     else Modifier
                                 ),
                             topBar = {
-                            // Never shorter than the status bar, as when the slot is empty, so a
-                            // screen without a bar (Home) keeps clear of it.
+                            // Never shorter than the status bar, as when the slot is empty (the
+                            // Scaffold then pads by the system bars), so a screen without a bar
+                            // (Home) keeps clear of it.
                             Box(Modifier.heightIn(min = WindowInsets.systemBars.only(WindowInsetsSides.Top).asPaddingValues().calculateTopPadding())) {
                             // The bar changes with the page, on the same timing (#241), instead of
                             // in one frame while the old page is still showing. Its height (and so
                             // the page's top padding) switches the moment the old page has faded
                             // out, before the new one fades in, so neither page visibly jumps
-                            // between a screen with a bar and one without (Home).
+                            // between a screen with a bar and one without (Home). Each bar gets its
+                            // own screen's entry, so the one fading out keeps its own title.
                             AnimatedContent(
-                                targetState = currentRoute,
+                                targetState = currentBackStackEntry,
+                                contentKey = { it?.destination?.route },
                                 transitionSpec = {
                                     (ScreenTransitions.fadeInAfterOut() togetherWith ScreenTransitions.fadeOutFirst())
                                         .using(SizeTransform(clip = false) { _, _ -> snap(delayMillis = ScreenTransitions.FADE_OUT_MILLIS) })
                                 },
                                 label = "topBar"
-                            ) { route ->
-                            when (route) {
+                            ) { entry ->
+                            when (entry?.destination?.route) {
                                 Screen.Bible.route -> {
                                     val versionLabel by bibleViewModel.currentVersionLabel.collectAsState()
                                     val bookmark by bibleViewModel.bookmark.collectAsState()
@@ -514,7 +521,7 @@ class MainActivity : AppCompatActivity() {
                                 Screen.Register.route -> RegisterTopBar { navController.popBackStack() }
                                 Screen.Library.route -> LibraryTopBar { navController.popBackStack() }
                                 Screen.LibraryItemDetail.route -> {
-                                    val title = if (currentBackStackEntry?.arguments?.getString("type") ==
+                                    val title = if (entry?.arguments?.getString("type") ==
                                         Screen.LibraryItemDetail.TYPE_NOTE
                                     ) {
                                         stringResource(R.string.title_note)
@@ -530,9 +537,10 @@ class MainActivity : AppCompatActivity() {
                         },
                         snackbarHost = { SnackbarHost(snackbarHostState) },
                         bottomBar = {
-                            // Never shorter than the navigation bar, as when the slot is empty, so
-                            // the page's bottom edge doesn't jump once the tab bar has slid away.
-                            Box(Modifier.heightIn(min = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding())) {
+                            // Never shorter than the navigation bar, as when the slot is empty (the
+                            // Scaffold then pads by the system bars), so the page's bottom edge
+                            // doesn't jump once the tab bar has slid away.
+                            Box(Modifier.heightIn(min = WindowInsets.systemBars.only(WindowInsetsSides.Bottom).asPaddingValues().calculateBottomPadding())) {
                                 key(compactHeight) {
                                     // Named in full: inside the outer Row, the plain name means
                                     // the Row's own version, which can't be used down here.
@@ -630,15 +638,32 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /** Set while [onConfigurationChanged] re-applies the app language, which calls it again. */
+    private var reapplyingLanguage = false
+
     /** Only called for what the manifest's configChanges lists: a language change, which can
      *  also change screenLayout (#89), and turning the phone or plugging in a keyboard (#238).
      *  Compose picks up the new configuration itself; this redoes what lives outside composition
      *  (only the language matters there, and redoing it after a rotation is harmless). */
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
-        // Below Android 13 the change comes from AppCompat, not the system, and only reaches the
-        // activity: hand it to the views too, or Compose keeps showing the old language.
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            // Below Android 13 the app language is AppCompat's, not the system's: a change the
+            // system sends (turning the phone) arrives in the phone's language and resets the
+            // resources to it, and AppCompat leaves them that way. Re-apply the app's language;
+            // AppCompat updates the resources in place and calls this again with the corrected
+            // configuration, which carries on below, so the phone's isn't handed on (#238).
+            if (!reapplyingLanguage) {
+                reapplyingLanguage = true
+                val reapplied = try {
+                    delegate.applyDayNight()
+                } finally {
+                    reapplyingLanguage = false
+                }
+                if (reapplied) return
+            }
+            // A change from AppCompat (a language switch) only reaches the activity: hand it to
+            // the views too, or Compose keeps showing the old language.
             window.decorView.dispatchConfigurationChanged(newConfig)
         }
         createDailyVerseNotificationChannel(this)

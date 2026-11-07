@@ -53,7 +53,7 @@ internal fun DailyVerseSettings(bibleViewModel: BibleViewModel) {
     val context = LocalContext.current
     val notificationEnabled by bibleViewModel.notificationEnabled.collectAsState()
     val notificationTime by bibleViewModel.notificationTime.collectAsState()
-    // Saveable so turning the phone doesn't close the picker (#231).
+    // Saveable so recreating the activity doesn't close the picker (#231).
     var showTimePicker by rememberSaveable { mutableStateOf(false) }
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()

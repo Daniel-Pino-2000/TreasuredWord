@@ -84,7 +84,7 @@ fun NoteEditorSheet(
     onDismiss: () -> Unit
 ) {
     val latestHasUnsavedChanges by rememberUpdatedState(hasUnsavedChanges)
-    // Saveable so turning the phone doesn't close it, leaving the sheet behind (#231).
+    // Saveable so recreating the activity doesn't close it, leaving the sheet behind (#231).
     var showDiscardDialog by rememberSaveable { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(
         skipPartiallyExpanded = true,

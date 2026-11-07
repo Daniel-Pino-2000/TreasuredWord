@@ -61,7 +61,7 @@ internal fun AccountSettings(
     val signOutState by authViewModel.signOutState.collectAsState()
     val signInMethods by authViewModel.signInMethods.collectAsState()
     val emailVerified by authViewModel.emailVerified.collectAsState()
-    // Saveable: turning the phone recreates the screen, and the dialog closed with it (#231).
+    // Saveable, so the dialog survives the activity being recreated (#231).
     var showDeleteDialog by rememberSaveable { mutableStateOf(false) }
     // Signed out or deleted while it was open (a rotation mid-request loses the old callback).
     LaunchedEffect(isLoggedIn) { if (!isLoggedIn) showDeleteDialog = false }
@@ -179,7 +179,7 @@ private fun DeleteAccountDialog(
     onConfirm: (password: String?, googleIdToken: String?, onError: (UiText) -> Unit) -> Unit
 ) {
     // Not saveable on purpose: saved state can be written to disk, so a password is retyped
-    // after turning the phone rather than kept there (#231).
+    // if the activity is recreated rather than kept there (#231). Turning the phone keeps it (#238).
     var password by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<UiText?>(null) }
     var isSubmitting by remember { mutableStateOf(false) }

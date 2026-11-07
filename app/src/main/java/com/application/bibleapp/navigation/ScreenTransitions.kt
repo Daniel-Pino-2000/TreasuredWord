@@ -49,7 +49,7 @@ object ScreenTransitions {
 
     /**
      * The page coming in. [forward] is false when going back; [slidePx] is [SlideDistance] in
-     * pixels (the transition scopes have no density of their own).
+     * pixels (the transition scopes have no density of their own), negative right to left.
      */
     fun enter(from: String?, to: String?, forward: Boolean, slidePx: Int): EnterTransition =
         if (betweenTabs(from, to)) {

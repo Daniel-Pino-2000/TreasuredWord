@@ -73,7 +73,7 @@ fun VersionPickerView(
 
     // Deleting is destructive (it wipes local content, not just this screen's state),
     // so it's confirmed here rather than firing straight off the row's icon tap.
-    // Its id is kept (saveable, so turning the phone doesn't close the dialog, #231) and the
+    // Its id is kept (saveable, so recreating the activity doesn't close the dialog, #231) and the
     // version looked up again; one that's gone meanwhile just closes it.
     var pendingDeleteId by rememberSaveable { mutableStateOf<String?>(null) }
     val versionPendingDelete = pendingDeleteId?.let { id ->
