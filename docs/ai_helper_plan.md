@@ -234,9 +234,9 @@ the tests could be built and tried with it in debug builds. The developer approv
    names in the reader's language, never codes. Cite a passage only if it says the point itself.
    Don't quote the verse text, because the app shows it. Suggest reading the passage when that
    helps. Where `doctrine.md` takes a position, state it plainly and kindly, never as undecided
-   (instructions v2, #206). Each answer starts with a direct answer, shows it from Scripture,
-   answers a common misunderstanding where there is one, and ends with what it means for the
-   reader (#236).
+   (instructions v2, #206). A teaching answer starts with a direct answer, shows it from Scripture,
+   answers a common misunderstanding only if there is one, and ends with one sentence for the
+   reader (#236). At most four references; care and crisis answers never debate (v7).
 5. **Staying on topic:** the Bible, theology, church history, prayer and Christian living.
    Anything else gets a kind "no", with a Bible-related angle when there is one.
 6. **Care and safety:** if the person mentions self-harm, suicide, abuse or danger, start with

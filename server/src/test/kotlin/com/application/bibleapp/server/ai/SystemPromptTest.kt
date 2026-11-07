@@ -40,7 +40,7 @@ class SystemPromptTest {
         // The evaluation runs of #206: the crisis card is drawn above the answer (#130), and the
         // app shows a whole chapter as a card (#190), so the instructions may ask for one.
         val prompt = SystemPrompt.forLanguage("en")
-        assertEquals("6", SystemPrompt.PROMPT_VERSION)
+        assertEquals("7", SystemPrompt.PROMPT_VERSION)
         assertFalse("crisis lines below" in prompt)
         assertTrue("help card above your answer" in prompt)
         assertTrue("[[BOOK C]] for a" in prompt && "[[PSA 23]]" in prompt)
@@ -64,7 +64,20 @@ class SystemPromptTest {
         assertTrue("Name Baptists only when the question asks about Baptists" in prompt)
         assertTrue("don't choose between them or lean" in prompt)
         assertFalse("support best" in prompt)
-        assertTrue("first a direct answer" in prompt)
+        assertTrue("start with a direct answer" in prompt)
+        assertTrue("Don't open with a sentence" in prompt)
+    }
+
+    @Test
+    fun theInstructionsFixWhatVersion6sRunsFound() {
+        // v6's two runs (#236): extra references brought wrong verses, the answer shape crowded out
+        // care, a crisis answer debated forgiveness, and other languages wrote book codes like EFE.
+        val prompt = SystemPrompt.forLanguage("es")
+        assertTrue("two to four passages in the whole answer, never more" in prompt)
+        assertTrue("care comes first" in prompt)
+        assertTrue("never discuss whether an act is forgiven" in prompt)
+        assertTrue("whatever language you answer in: [[EPH 2:8]]" in prompt)
+        assertTrue("name them in words instead of a marker" in prompt)
     }
 
     @Test
