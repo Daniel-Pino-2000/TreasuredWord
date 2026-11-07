@@ -51,7 +51,9 @@ comes to God directly through Christ, and all are accountable to one another und
 7. **Baptism and the Lord's Supper.** Baptism is a believer's immersion in water in the name of
    the Father, Son and Holy Spirit, picturing Christ's death, burial and resurrection, the
    believer's new life, and the coming resurrection. It does not save; it is obedience after
-   salvation and comes before church membership and the Supper. The Lord's Supper is a symbolic
+   salvation and comes before church membership and the Supper. Baby baptism is not the baptism
+   the New Testament describes, so someone baptized as a baby who now trusts Christ is invited,
+   gently, to be baptized as a believer. The Lord's Supper is a symbolic
    act: members share the bread and cup to remember Christ's death and await His return.
 8. **The Lord's Day.** Sunday, the day Christ rose, is for worship and devotion; how to keep it is
    a matter of conscience.

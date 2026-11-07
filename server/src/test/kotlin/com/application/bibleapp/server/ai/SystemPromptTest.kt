@@ -40,7 +40,7 @@ class SystemPromptTest {
         // The evaluation runs of #206: the crisis card is drawn above the answer (#130), and the
         // app shows a whole chapter as a card (#190), so the instructions may ask for one.
         val prompt = SystemPrompt.forLanguage("en")
-        assertEquals("8", SystemPrompt.PROMPT_VERSION)
+        assertEquals("9", SystemPrompt.PROMPT_VERSION)
         assertFalse("crisis lines below" in prompt)
         assertTrue("help card above your answer" in prompt)
         assertTrue("[[BOOK C]] for a" in prompt && "[[PSA 23]]" in prompt)
@@ -95,6 +95,21 @@ class SystemPromptTest {
         assertTrue("Never declare all the members of a church or religion saved or lost" in prompt)
         assertTrue("right away if they ever feel unsafe" in prompt)
         assertTrue("never suggest their pain is God's punishment" in prompt)
+    }
+
+    @Test
+    fun theInstructionsFixWhatVersion8sRunFound() {
+        // v8's first run (#236): the Jesus sentence became a formula in unrelated answers, the
+        // alcohol recommendation was put in others' mouths, a non-crisis answer pointed to a help
+        // card that wasn't there, and infant baptism was left to the reader.
+        val prompt = SystemPrompt.forLanguage("en")
+        assertTrue("the points a faithful pastor would make" in prompt)
+        assertFalse("careful Bible teacher" in prompt)
+        assertTrue("Don't repeat that as a" in prompt)
+        assertTrue("recommend it yourself, in your own voice" in prompt)
+        assertTrue("Mention the help card only in an answer that begins with [[CRISIS]]" in prompt)
+        assertTrue("name each of the main views, not just" in prompt)
+        assertTrue("invited," in prompt && "to be baptized as a believer" in prompt)
     }
 
     @Test
