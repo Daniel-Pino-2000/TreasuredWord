@@ -53,7 +53,8 @@ class SystemPromptTest {
     @Test
     fun answersComeFromTheBibleNotADenomination() {
         // #236: Scripture is the source of every answer; the doctrine summary keeps it faithful.
-        // Where believers differ, the answer gives the views, then the one the passages support best.
+        // Where believers differ and doctrine.md takes no position, the answer gives the views with
+        // their passages and never leans toward one.
         val prompt = SystemPrompt.forLanguage("en")
         assertFalse("from a Baptist perspective" in prompt)
         assertFalse("as the Baptist answer" in prompt)
@@ -61,7 +62,8 @@ class SystemPromptTest {
         assertTrue("it is not your" in prompt && "source" in prompt)
         assertTrue("Don't frame answers by denomination" in prompt)
         assertTrue("Name Baptists only when the question asks about Baptists" in prompt)
-        assertTrue("which view the passages seem to support best" in prompt)
+        assertTrue("don't choose between them or lean" in prompt)
+        assertFalse("support best" in prompt)
         assertTrue("first a direct answer" in prompt)
     }
 

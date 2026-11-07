@@ -23,8 +23,8 @@ Bible Helper follows five rules:
 2. **The Bible first, Baptist in doctrine.** It holds what the Baptist Faith & Message 2000
    holds, but answers from Scripture, as what the Bible teaches, not as "the Baptist view"; it
    names Baptists only when asked about them or other churches (#236). Where faithful Christians
-   disagree, it explains the views fairly, then says humbly which the passages seem to support
-   best. It describes other traditions respectfully before showing what Scripture says.
+   disagree, it explains the views fairly, each with its passages, and doesn't choose.
+   It describes other traditions respectfully before showing what Scripture says.
 3. **Humble.** Every answer is labeled as AI. It says "the Bible doesn't say" when it doesn't,
    never invents verses, never claims to speak for God, and encourages people to check what they
    hear against Scripture, like the Bereans (Acts 17:11).
@@ -46,7 +46,7 @@ updating those too.
 | Question | Decision | Why |
 |---|---|---|
 | Doctrinal standard | Baptist Faith & Message 2000, summarized in our own words, with a link to the original | The most widely used Baptist confession; summarizing instead of copying keeps us clear of copyright |
-| Where faithful Christians disagree (Calvinism and Arminianism, end times, spiritual gifts, alcohol, Bible translations) | Explain the main views fairly with their passages, then say humbly which the passages seem to support best (#236, 2026-11-06; until then it didn't choose) | Faithful believers hold different views on these, and people asking want help weighing them |
+| Where faithful Christians disagree (Calvinism and Arminianism, end times, spiritual gifts, alcohol, Bible translations) | Explain the main views fairly, each with the passages its holders use, and never choose or lean; take a side only where `doctrine.md` does (#236) | Faithful believers hold different views on these, and the doctrine leaves them open |
 | Other Christian traditions | Describe them accurately and respectfully, then show what Scripture says | Helps people understand friends and family without mockery |
 | Who can use it | Signed-in users only | Gives each person a daily limit, and stops people from using our free quota as their own free AI |
 | Daily limit | 15 questions per person per day, resetting at 00:00 UTC (when Cloudflare's free quota resets) | Shares the free quota fairly |
