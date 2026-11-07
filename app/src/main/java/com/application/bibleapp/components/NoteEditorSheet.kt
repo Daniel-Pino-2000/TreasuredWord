@@ -3,15 +3,11 @@ package com.application.bibleapp.components
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -28,7 +24,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.InputChip
 import androidx.compose.material3.InputChipDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.SheetValue
@@ -52,6 +47,7 @@ import com.application.bibleapp.data.remote.VerseLocationDto
 import kotlinx.coroutines.launch
 import com.application.bibleapp.ui.theme.Spacing
 import com.application.bibleapp.ui.theme.isCompactHeight
+import com.application.bibleapp.ui.theme.isKeyboardOpenOrOpening
 import com.application.bibleapp.R
 import androidx.compose.ui.res.stringResource
 
@@ -70,7 +66,7 @@ import androidx.compose.ui.res.stringResource
  * With [hasUnsavedChanges], any dismiss (swipe down, scrim tap, back) asks "Discard note?" first
  * instead of silently throwing the typed text away.
  */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NoteEditorSheet(
     verses: List<VerseLocationDto>,
@@ -104,10 +100,6 @@ fun NoteEditorSheet(
     )
     val scope = rememberCoroutineScope()
     val compactHeight = isCompactHeight()
-    // A landscape phone with the soft keyboard up leaves the sheet as little as ~98dp (a Pixel's
-    // tall landscape status bar): a 48dp title row stacked on a 56dp field doesn't fit, so while
-    // typing the title row goes and Delete/Save sit beside the one-line field (#23, #216).
-    val typingInCompactHeight = compactHeight && WindowInsets.isImeVisible
 
     if (showDiscardDialog) {
         AlertDialog(
@@ -125,8 +117,8 @@ fun NoteEditorSheet(
             dismissButton = {
                 TextButton(onClick = {
                     showDiscardDialog = false
-                    // Back/scrim dismissals can already have animated the sheet away before
-                    // reaching onDismissRequest — bring it back up for "keep editing".
+                    // Back and the scrim now leave the sheet in place (#240); this only matters
+                    // if a swipe left it partway down.
                     scope.launch { sheetState.show() }
                 }) {
                     Text(stringResource(R.string.note_keep_editing))
@@ -173,18 +165,30 @@ fun NoteEditorSheet(
         }
     }
 
-    ModalBottomSheet(
+    TextEntrySheet(
         onDismissRequest = {
             if (latestHasUnsavedChanges) showDiscardDialog = true else onDismiss()
         },
         sheetState = sheetState,
-        shape = MaterialTheme.shapes.large,
-        // Only matters once the sheet is as tall as the window (landscape): stop below the
-        // status bar instead of running the drag handle up under it.
-        modifier = Modifier.statusBarsPadding(),
         // Every dp counts in landscape; the sheet still drags/swipes without the handle.
-        dragHandle = if (compactHeight) null else ({ BottomSheetDefaults.DragHandle() })
+        dragHandle = if (compactHeight) null else ({ BottomSheetDefaults.DragHandle() }),
+        // Back (once the keyboard is closed) asks first, with the sheet and the note still
+        // showing, instead of sliding the note away and then asking (#240).
+        onBack = {
+            if (latestHasUnsavedChanges) {
+                showDiscardDialog = true
+            } else {
+                scope.launch { sheetState.hide() }.invokeOnCompletion { if (!sheetState.isVisible) onDismiss() }
+            }
+        }
     ) {
+        // A landscape phone with the soft keyboard up leaves the sheet as little as ~98dp (a
+        // Pixel's tall landscape status bar): a 48dp title row stacked on a 56dp field doesn't
+        // fit, so while typing the title row goes and Delete/Save sit beside the one-line field
+        // (#23, #216). It switches as the keyboard starts to move, so the change happens during
+        // the keyboard's own animation rather than as a jump after it (#239). Read here, inside
+        // the sheet's window: only that window sees the keyboard move.
+        val typingInCompactHeight = compactHeight && isKeyboardOpenOrOpening()
         Column(
             modifier = Modifier
                 .padding(horizontal = Spacing.xl, vertical = Spacing.sm)

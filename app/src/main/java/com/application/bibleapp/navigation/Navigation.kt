@@ -9,6 +9,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -85,9 +86,23 @@ fun Navigation(
     val verifyEmail by authViewModel.verifyEmail.collectAsState()
     if (verifyEmail.isOpen) VerifyEmailSheet(authViewModel)
 
+    // Material's motion patterns instead of the default 700 ms crossfade (#241); see ScreenTransitions.
+    val slidePx = with(LocalDensity.current) { ScreenTransitions.SlideDistance.roundToPx() }
     NavHost(
         navController = navController,
-        startDestination = Screen.Home.route
+        startDestination = Screen.Home.route,
+        enterTransition = {
+            ScreenTransitions.enter(initialState.destination.route, targetState.destination.route, forward = true, slidePx)
+        },
+        exitTransition = {
+            ScreenTransitions.exit(initialState.destination.route, targetState.destination.route, forward = true, slidePx)
+        },
+        popEnterTransition = {
+            ScreenTransitions.enter(initialState.destination.route, targetState.destination.route, forward = false, slidePx)
+        },
+        popExitTransition = {
+            ScreenTransitions.exit(initialState.destination.route, targetState.destination.route, forward = false, slidePx)
+        }
     ) {
 
         composable(Screen.Home.route) {

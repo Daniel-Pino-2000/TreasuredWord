@@ -9,20 +9,35 @@ import android.view.animation.PathInterpolator
 import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.isImeVisible
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.offset
@@ -38,6 +53,7 @@ import androidx.compose.material3.TopAppBarState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -52,6 +68,8 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.splashscreen.SplashScreenViewProvider
@@ -88,6 +106,7 @@ import com.application.bibleapp.data.model.BibleBooks
 import com.application.bibleapp.data.model.BookResources
 import com.application.bibleapp.navigation.Navigation
 import com.application.bibleapp.navigation.Screen
+import com.application.bibleapp.navigation.ScreenTransitions
 import com.application.bibleapp.ui.theme.BibleAppTheme
 import com.application.bibleapp.ui.theme.Spacing
 import com.application.bibleapp.ui.theme.ThemeMode
@@ -140,7 +159,7 @@ private fun animateStartupScreenExit(provider: SplashScreenViewProvider) {
 /** An AppCompatActivity (not a plain ComponentActivity) so the in-app language applies below
  *  Android 13 too — see [com.application.bibleapp.utils.AppLanguage]. */
 class MainActivity : AppCompatActivity() {
-    @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+    @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         // Before super.onCreate: swaps the startup theme (#135) for the app's own.
         val startupScreen = installSplashScreen()
@@ -372,17 +391,31 @@ class MainActivity : AppCompatActivity() {
                     Screen.AskConversations.route
                 )
                 val useRail = compactHeight && showNavigation
-                // In landscape the on-screen keyboard leaves only ~100 dp above it, less than a top
-                // bar plus a text field: the bar steps aside while typing so the field stays in
-                // view (#215). Back still closes the keyboard first.
-                val hideTopBarForKeyboard = compactHeight && WindowInsets.isImeVisible
+                // The rail and the tab bar slide in and out with the page instead of popping, which
+                // jumped the page sideways or up while it was still fading (#241). Keyed on the
+                // height class so turning the phone swaps them at once rather than animating
+                // during the rotation (#238).
+                val barSlideSpec = tween<IntSize>(ScreenTransitions.DURATION_MILLIS, easing = FastOutSlowInEasing)
+                val barOffsetSpec = tween<IntOffset>(ScreenTransitions.DURATION_MILLIS, easing = FastOutSlowInEasing)
+                // While the tabs slide away they keep showing the screen they belonged to, not the
+                // one replacing them (the reader's chapter row would otherwise vanish first).
+                val tabsRoute = remember { object { var route: String? = null } }
+                if (showNavigation) tabsRoute.route = currentRoute
 
                 Row(modifier = Modifier.fillMaxSize()) {
-                    if (useRail) {
-                        MainNavigationRail(
-                            currentRoute = currentRoute,
-                            onItemSelected = { route -> navController.navigate(route) }
-                        )
+                    key(compactHeight) {
+                        AnimatedVisibility(
+                            visible = useRail,
+                            enter = expandHorizontally(barSlideSpec, expandFrom = Alignment.Start) +
+                                slideInHorizontally(barOffsetSpec) { -it },
+                            exit = shrinkHorizontally(barSlideSpec, shrinkTowards = Alignment.Start) +
+                                slideOutHorizontally(barOffsetSpec) { -it }
+                        ) {
+                            MainNavigationRail(
+                                currentRoute = tabsRoute.route,
+                                onItemSelected = { route -> navController.navigate(route) }
+                            )
+                        }
                     }
                     Box(
                         modifier = Modifier
@@ -402,8 +435,23 @@ class MainActivity : AppCompatActivity() {
                                     else Modifier
                                 ),
                             topBar = {
-                            if (hideTopBarForKeyboard) return@Scaffold
-                            when (currentRoute) {
+                            // Never shorter than the status bar, as when the slot is empty, so a
+                            // screen without a bar (Home) keeps clear of it.
+                            Box(Modifier.heightIn(min = WindowInsets.systemBars.only(WindowInsetsSides.Top).asPaddingValues().calculateTopPadding())) {
+                            // The bar changes with the page, on the same timing (#241), instead of
+                            // in one frame while the old page is still showing. Its height (and so
+                            // the page's top padding) switches the moment the old page has faded
+                            // out, before the new one fades in, so neither page visibly jumps
+                            // between a screen with a bar and one without (Home).
+                            AnimatedContent(
+                                targetState = currentRoute,
+                                transitionSpec = {
+                                    (ScreenTransitions.fadeInAfterOut() togetherWith ScreenTransitions.fadeOutFirst())
+                                        .using(SizeTransform(clip = false) { _, _ -> snap(delayMillis = ScreenTransitions.FADE_OUT_MILLIS) })
+                                },
+                                label = "topBar"
+                            ) { route ->
+                            when (route) {
                                 Screen.Bible.route -> {
                                     val versionLabel by bibleViewModel.currentVersionLabel.collectAsState()
                                     val bookmark by bibleViewModel.bookmark.collectAsState()
@@ -477,22 +525,38 @@ class MainActivity : AppCompatActivity() {
                                 }
                                 else -> TopBar()
                             }
+                            }
+                            }
                         },
                         snackbarHost = { SnackbarHost(snackbarHostState) },
                         bottomBar = {
-                            if (showNavigation && !compactHeight) {
-                                // Always the ordinary bar, even mid-selection — the selection
-                                // toolbar floats as a separate overlay above it (below), so this
-                                // slot's height never changes just because a selection started or
-                                // ended, which is what caused a reading-list layout jump before.
-                                MainBottomBar(
-                                    currentRoute = currentRoute,
-                                    bibleViewModel = bibleViewModel,
-                                    chromeHiddenFraction = chromeHiddenFraction,
-                                    onItemSelected = { route -> navController.navigate(route) },
-                                    onBookPickerClicked = { navController.navigate(Screen.BookPicker.route) },
-                                    modifier = Modifier.onSizeChanged { bottomBarHeightPx = it.height }
-                                )
+                            // Never shorter than the navigation bar, as when the slot is empty, so
+                            // the page's bottom edge doesn't jump once the tab bar has slid away.
+                            Box(Modifier.heightIn(min = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding())) {
+                                key(compactHeight) {
+                                    // Named in full: inside the outer Row, the plain name means
+                                    // the Row's own version, which can't be used down here.
+                                    androidx.compose.animation.AnimatedVisibility(
+                                        visible = showNavigation && !compactHeight,
+                                        enter = expandVertically(barSlideSpec, expandFrom = Alignment.Top) +
+                                            slideInVertically(barOffsetSpec) { it },
+                                        exit = shrinkVertically(barSlideSpec, shrinkTowards = Alignment.Top) +
+                                            slideOutVertically(barOffsetSpec) { it }
+                                    ) {
+                                        // Always the ordinary bar, even mid-selection — the selection
+                                        // toolbar floats as a separate overlay above it (below), so this
+                                        // slot's height never changes just because a selection started or
+                                        // ended, which is what caused a reading-list layout jump before.
+                                        MainBottomBar(
+                                            currentRoute = tabsRoute.route,
+                                            bibleViewModel = bibleViewModel,
+                                            chromeHiddenFraction = chromeHiddenFraction,
+                                            onItemSelected = { route -> navController.navigate(route) },
+                                            onBookPickerClicked = { navController.navigate(Screen.BookPicker.route) },
+                                            modifier = Modifier.onSizeChanged { bottomBarHeightPx = it.height }
+                                        )
+                                    }
+                                }
                             }
                         }
                         ) { paddingValues ->
@@ -567,8 +631,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     /** Only called for what the manifest's configChanges lists: a language change, which can
-     *  also change screenLayout (#89). Compose picks up the new configuration itself; this redoes
-     *  what lives outside composition. */
+     *  also change screenLayout (#89), and turning the phone or plugging in a keyboard (#238).
+     *  Compose picks up the new configuration itself; this redoes what lives outside composition
+     *  (only the language matters there, and redoing it after a rotation is harmless). */
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
         // Below Android 13 the change comes from AppCompat, not the system, and only reaches the
