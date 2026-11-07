@@ -36,6 +36,51 @@ class SystemPromptTest {
     }
 
     @Test
+    fun theInstructionsFixWhatTheEvaluationRunsFound() {
+        // The evaluation runs of #206: the crisis card is drawn above the answer (#130), and the
+        // app shows a whole chapter as a card (#190), so the instructions may ask for one.
+        val prompt = SystemPrompt.forLanguage("en")
+        assertEquals("7", SystemPrompt.PROMPT_VERSION)
+        assertFalse("crisis lines below" in prompt)
+        assertTrue("help card above your answer" in prompt)
+        assertTrue("[[BOOK C]] for a" in prompt && "[[PSA 23]]" in prompt)
+        assertTrue("says your point itself" in prompt)
+        assertTrue("as undecided" in prompt && "one view among several" in prompt)
+        assertTrue("each passage in its own marker" in prompt && "two to four passages" in prompt)
+        assertTrue("name books as readers of English" in prompt)
+    }
+
+    @Test
+    fun answersComeFromTheBibleNotADenomination() {
+        // #236: Scripture is the source of every answer; the doctrine summary keeps it faithful.
+        // Where believers differ and doctrine.md takes no position, the answer gives the views with
+        // their passages and never leans toward one.
+        val prompt = SystemPrompt.forLanguage("en")
+        assertFalse("from a Baptist perspective" in prompt)
+        assertFalse("as the Baptist answer" in prompt)
+        assertTrue("The Bible is your authority" in prompt)
+        assertTrue("it is not your" in prompt && "source" in prompt)
+        assertTrue("Don't frame answers by denomination" in prompt)
+        assertTrue("Name Baptists only when the question asks about Baptists" in prompt)
+        assertTrue("don't choose between them or lean" in prompt)
+        assertFalse("support best" in prompt)
+        assertTrue("start with a direct answer" in prompt)
+        assertTrue("Don't open with a sentence" in prompt)
+    }
+
+    @Test
+    fun theInstructionsFixWhatVersion6sRunsFound() {
+        // v6's two runs (#236): extra references brought wrong verses, the answer shape crowded out
+        // care, a crisis answer debated forgiveness, and other languages wrote book codes like EFE.
+        val prompt = SystemPrompt.forLanguage("es")
+        assertTrue("two to four passages in the whole answer, never more" in prompt)
+        assertTrue("care comes first" in prompt)
+        assertTrue("never discuss whether an act is forgiven" in prompt)
+        assertTrue("whatever language you answer in: [[EPH 2:8]]" in prompt)
+        assertTrue("name them in words instead of a marker" in prompt)
+    }
+
+    @Test
     fun aPassageFollowsTheInstructionsAsQuotedScripture() {
         val plain = SystemPrompt.forLanguage("es")
         val prompt = SystemPrompt.forLanguage("es", "JHN 3:16-18", "16 Porque de tal manera amó Dios al mundo…")

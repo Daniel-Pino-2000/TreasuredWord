@@ -152,8 +152,12 @@ class OpenAiCompatibleProvider(
 
     companion object {
         private const val TIMEOUT_MILLIS = 30_000L
-        /** Low, for steady answers: the same question shouldn't get a different doctrine each time. */
-        private const val TEMPERATURE = 0.3
+        /**
+         * Low, for steady answers: the same question shouldn't get a different doctrine each time.
+         * 0.2 since #206: at 0.3, each evaluation run had a different verse or two cited loosely.
+         * Changing it changes the answers, so bump SystemPrompt.PROMPT_VERSION and run the evaluation.
+         */
+        internal const val TEMPERATURE = 0.2
         /** Cloudflare: "you have used up your daily free allocation of 10,000 neurons". */
         private const val QUOTA_EXHAUSTED_CODE = 3036
         private val log = LoggerFactory.getLogger(OpenAiCompatibleProvider::class.java)
