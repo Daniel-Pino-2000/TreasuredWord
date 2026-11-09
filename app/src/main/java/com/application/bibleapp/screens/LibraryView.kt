@@ -38,6 +38,18 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.material3.SwipeToDismissBoxState
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.customActions
+import kotlin.math.abs
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -284,40 +296,88 @@ internal fun ShownInKjvLabel(modifier: Modifier = Modifier) {
     )
 }
 
-/** Swipe-left (end-to-start) to delete — [enableDismissFromStartToEnd] off so an accidental
- *  right-swipe (e.g. a back-navigation gesture near the screen edge) can't trigger it. */
+/**
+ * Swipe-left (end-to-start) to delete (#243). It takes a real swipe: the card must be dragged past
+ * [DELETE_SWIPE_FRACTION] of its width, and a short flick springs back instead of counting on its
+ * speed alone. The background turns red with a haptic tick once letting go would delete, and back
+ * when dragged back. The card slides fully off before [onDelete] runs (which shows Undo).
+ * [enableDismissFromStartToEnd] is off so the back gesture at the screen edge never deletes, and
+ * TalkBack users, who can't swipe, get a "Delete" action on the card instead.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun SwipeToDeleteRow(onDelete: () -> Unit, content: @Composable () -> Unit) {
+internal fun SwipeToDeleteRow(onDelete: () -> Unit, content: @Composable () -> Unit) {
+    val haptics = LocalHapticFeedback.current
+    val latestOnDelete by rememberUpdatedState(onDelete)
+    var rowWidth by remember { mutableIntStateOf(0) }
+    // confirmValueChange runs inside the state, so it reads the state back through this holder.
+    val stateHolder = remember { arrayOfNulls<SwipeToDismissBoxState>(1) }
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = { value ->
-            if (value == SwipeToDismissBoxValue.EndToStart) {
-                onDelete()
-                true
-            } else {
-                false
-            }
-        }
+            // Material also settles on "dismissed" for a quick flick of any length; only a drag
+            // that really crossed the threshold counts.
+            val offset = stateHolder[0]?.let { runCatching { it.requireOffset() }.getOrNull() } ?: 0f
+            value != SwipeToDismissBoxValue.EndToStart || abs(offset) >= rowWidth * DELETE_SWIPE_FRACTION
+        },
+        positionalThreshold = { distance -> distance * DELETE_SWIPE_FRACTION }
     )
+    stateHolder[0] = dismissState
+
+    // Deleted once the card has finished sliding off, not the moment the gesture targets it.
+    LaunchedEffect(dismissState.currentValue) {
+        if (dismissState.currentValue == SwipeToDismissBoxValue.EndToStart) latestOnDelete()
+    }
+    val armed = dismissState.targetValue == SwipeToDismissBoxValue.EndToStart
+    var wasArmed by remember { mutableStateOf(false) }
+    LaunchedEffect(armed) {
+        if (armed != wasArmed) haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+        wasArmed = armed
+    }
+
+    val deleteLabel = stringResource(R.string.action_delete)
     SwipeToDismissBox(
         state = dismissState,
         enableDismissFromStartToEnd = false,
+        modifier = Modifier
+            .onSizeChanged { rowWidth = it.width }
+            .semantics {
+                customActions = listOf(CustomAccessibilityAction(deleteLabel) { latestOnDelete(); true })
+            },
         backgroundContent = {
+            // Quiet until letting go would delete, then red with a bigger icon. Both pairs are in
+            // ThemePaletteContrastTest (secondary text on a tinted panel; icon on the red swipe).
+            val background by animateColorAsState(
+                if (armed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.surfaceVariant,
+                label = "swipeBackground"
+            )
+            val iconTint by animateColorAsState(
+                if (armed) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.onSurfaceVariant,
+                label = "swipeIcon"
+            )
+            val iconScale by animateFloatAsState(if (armed) 1.25f else 0.85f, label = "swipeIconScale")
             Row(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.error, MaterialTheme.shapes.medium)
+                    .background(background, MaterialTheme.shapes.medium)
                     .padding(horizontal = Spacing.lg),
                 horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.action_delete), tint = MaterialTheme.colorScheme.onError)
+                Icon(
+                    Icons.Filled.Delete,
+                    contentDescription = null,
+                    tint = iconTint,
+                    modifier = Modifier.scale(iconScale)
+                )
             }
         }
     ) {
         content()
     }
 }
+
+/** How far across its width a card must be dragged before letting go deletes it (#243). */
+private const val DELETE_SWIPE_FRACTION = 0.5f
 
 /** Joins one highlight/note's verse(s) into a single display string from the preloaded
  *  [textByKey] lookup (see [BibleViewModel.libraryVerseText]) — a bare number prefix per verse
