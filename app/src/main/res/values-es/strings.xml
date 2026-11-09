@@ -301,6 +301,14 @@
     <string name="language_system_default">Predeterminado del sistema</string>
     <string name="settings_section_appearance">Apariencia</string>
     <string name="settings_theme">Tema</string>
+    <!-- Settings › Appearance: the color themes (#244). Each name is the theme's look, short enough for a swatch label. -->
+    <string name="settings_colors">Colores</string>
+    <string name="palette_parchment">Pergamino</string>
+    <string name="palette_ink">Tinta</string>
+    <string name="palette_graphite">Grafito</string>
+    <string name="palette_sage">Salvia</string>
+    <string name="palette_slate">Pizarra</string>
+    <string name="palette_rose">Rosa</string>
     <string name="theme_system">Sistema</string>
     <string name="theme_light">Claro</string>
     <string name="theme_dark">Oscuro</string>

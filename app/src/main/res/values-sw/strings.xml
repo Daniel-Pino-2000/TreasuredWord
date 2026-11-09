@@ -276,6 +276,14 @@
     <string name="language_system_default">Chaguomsingi la mfumo</string>
     <string name="settings_section_appearance">Mwonekano</string>
     <string name="settings_theme">Mandhari</string>
+    <!-- Settings › Appearance: the color themes (#244). Each name is the theme's look, short enough for a swatch label. -->
+    <string name="settings_colors">Rangi</string>
+    <string name="palette_parchment">Ngozi</string>
+    <string name="palette_ink">Wino</string>
+    <string name="palette_graphite">Grafiti</string>
+    <string name="palette_sage">Kijani</string>
+    <string name="palette_slate">Samawati</string>
+    <string name="palette_rose">Waridi</string>
     <string name="theme_system">Mfumo</string>
     <string name="theme_light">Mwanga</string>
     <string name="theme_dark">Giza</string>

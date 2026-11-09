@@ -267,6 +267,14 @@
     <string name="language_system_default">시스템 기본값</string>
     <string name="settings_section_appearance">화면</string>
     <string name="settings_theme">테마</string>
+    <!-- Settings › Appearance: the color themes (#244). Each name is the theme's look, short enough for a swatch label. -->
+    <string name="settings_colors">색상</string>
+    <string name="palette_parchment">양피지</string>
+    <string name="palette_ink">잉크</string>
+    <string name="palette_graphite">그래파이트</string>
+    <string name="palette_sage">세이지</string>
+    <string name="palette_slate">슬레이트</string>
+    <string name="palette_rose">로즈</string>
     <string name="theme_system">시스템</string>
     <string name="theme_light">라이트</string>
     <string name="theme_dark">다크</string>

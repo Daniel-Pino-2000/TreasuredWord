@@ -266,6 +266,14 @@
     <string name="language_system_default">跟随系统</string>
     <string name="settings_section_appearance">外观</string>
     <string name="settings_theme">主题</string>
+    <!-- Settings › Appearance: the color themes (#244). Each name is the theme's look, short enough for a swatch label. -->
+    <string name="settings_colors">颜色</string>
+    <string name="palette_parchment">羊皮纸</string>
+    <string name="palette_ink">墨色</string>
+    <string name="palette_graphite">石墨</string>
+    <string name="palette_sage">鼠尾草</string>
+    <string name="palette_slate">石板</string>
+    <string name="palette_rose">玫瑰</string>
     <string name="theme_system">跟随系统</string>
     <string name="theme_light">浅色</string>
     <string name="theme_dark">深色</string>

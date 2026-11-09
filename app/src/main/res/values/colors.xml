@@ -12,4 +12,15 @@
     <color name="splash_background_light">#FFFAF6EF</color>
     <color name="splash_background_dark">#FF1E1B16</color>
     <color name="splash_icon_background">#FF2E251B</color>
+    <!-- The other color themes' backgrounds (#244), for their startup screens on Android 13+. -->
+    <color name="splash_background_ink_light">#FFFFFFFF</color>
+    <color name="splash_background_ink_dark">#FF000000</color>
+    <color name="splash_background_graphite_light">#FFF3F4F6</color>
+    <color name="splash_background_graphite_dark">#FF16181C</color>
+    <color name="splash_background_sage_light">#FFF6F7F2</color>
+    <color name="splash_background_sage_dark">#FF151913</color>
+    <color name="splash_background_slate_light">#FFF5F7FA</color>
+    <color name="splash_background_slate_dark">#FF10151C</color>
+    <color name="splash_background_rose_light">#FFFBF6F5</color>
+    <color name="splash_background_rose_dark">#FF1B1517</color>
 </resources>

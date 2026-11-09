@@ -267,6 +267,14 @@
     <string name="language_system_default">Default sistem</string>
     <string name="settings_section_appearance">Tampilan</string>
     <string name="settings_theme">Tema</string>
+    <!-- Settings › Appearance: the color themes (#244). Each name is the theme's look, short enough for a swatch label. -->
+    <string name="settings_colors">Warna</string>
+    <string name="palette_parchment">Perkamen</string>
+    <string name="palette_ink">Tinta</string>
+    <string name="palette_graphite">Grafit</string>
+    <string name="palette_sage">Salvia</string>
+    <string name="palette_slate">Sabak</string>
+    <string name="palette_rose">Mawar</string>
     <string name="theme_system">Sistem</string>
     <string name="theme_light">Terang</string>
     <string name="theme_dark">Gelap</string>

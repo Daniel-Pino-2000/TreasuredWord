@@ -2,4 +2,9 @@
 <resources>
     <!-- The startup screen follows the phone's dark mode (#135); see values/themes.xml. -->
     <style name="Theme.BibleApp.Splash" parent="Theme.BibleApp.SplashDark" />
+    <style name="Theme.BibleApp.SplashInk" parent="Theme.BibleApp.SplashInkDark" />
+    <style name="Theme.BibleApp.SplashGraphite" parent="Theme.BibleApp.SplashGraphiteDark" />
+    <style name="Theme.BibleApp.SplashSage" parent="Theme.BibleApp.SplashSageDark" />
+    <style name="Theme.BibleApp.SplashSlate" parent="Theme.BibleApp.SplashSlateDark" />
+    <style name="Theme.BibleApp.SplashRose" parent="Theme.BibleApp.SplashRoseDark" />
 </resources>

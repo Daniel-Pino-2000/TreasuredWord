@@ -7,10 +7,8 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
-import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
@@ -22,76 +20,6 @@ import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import androidx.annotation.StringRes
 import com.application.bibleapp.R
-
-private val DarkColorScheme = darkColorScheme(
-    primary = DarkPrimary,
-    onPrimary = DarkOnPrimary,
-    primaryContainer = DarkPrimaryContainer,
-    onPrimaryContainer = DarkOnPrimaryContainer,
-    secondary = DarkSecondary,
-    onSecondary = DarkOnSecondary,
-    secondaryContainer = DarkSecondaryContainer,
-    onSecondaryContainer = DarkOnSecondaryContainer,
-    tertiary = DarkSecondary,
-    onTertiary = DarkOnSecondary,
-    tertiaryContainer = DarkSecondaryContainer,
-    onTertiaryContainer = DarkOnSecondaryContainer,
-    background = DarkBackground,
-    onBackground = DarkOnBackground,
-    surface = DarkSurface,
-    onSurface = DarkOnSurface,
-    surfaceVariant = DarkSurfaceVariant,
-    onSurfaceVariant = DarkOnSurfaceVariant,
-    surfaceContainerLowest = DarkSurfaceContainerLowest,
-    surfaceContainerLow = DarkSurfaceContainerLow,
-    surfaceContainer = DarkSurfaceContainer,
-    surfaceContainerHigh = DarkSurfaceContainerHigh,
-    surfaceContainerHighest = DarkSurfaceContainerHighest,
-    surfaceBright = DarkSurfaceBright,
-    surfaceDim = DarkSurfaceDim,
-    inverseSurface = DarkInverseSurface,
-    inverseOnSurface = DarkInverseOnSurface,
-    inversePrimary = DarkInversePrimary,
-    outline = DarkOutline,
-    outlineVariant = DarkOutlineVariant,
-    error = DarkError,
-    onError = DarkOnError,
-)
-
-private val LightColorScheme = lightColorScheme(
-    primary = LightPrimary,
-    onPrimary = LightOnPrimary,
-    primaryContainer = LightPrimaryContainer,
-    onPrimaryContainer = LightOnPrimaryContainer,
-    secondary = LightSecondary,
-    onSecondary = LightOnSecondary,
-    secondaryContainer = LightSecondaryContainer,
-    onSecondaryContainer = LightOnSecondaryContainer,
-    tertiary = LightSecondary,
-    onTertiary = LightOnSecondary,
-    tertiaryContainer = LightSecondaryContainer,
-    onTertiaryContainer = LightOnSecondaryContainer,
-    background = LightBackground,
-    onBackground = LightOnBackground,
-    surface = LightSurface,
-    onSurface = LightOnSurface,
-    surfaceVariant = LightSurfaceVariant,
-    onSurfaceVariant = LightOnSurfaceVariant,
-    surfaceContainerLowest = LightSurfaceContainerLowest,
-    surfaceContainerLow = LightSurfaceContainerLow,
-    surfaceContainer = LightSurfaceContainer,
-    surfaceContainerHigh = LightSurfaceContainerHigh,
-    surfaceContainerHighest = LightSurfaceContainerHighest,
-    surfaceBright = LightSurfaceBright,
-    surfaceDim = LightSurfaceDim,
-    inverseSurface = LightInverseSurface,
-    inverseOnSurface = LightInverseOnSurface,
-    inversePrimary = LightInversePrimary,
-    outline = LightOutline,
-    outlineVariant = LightOutlineVariant,
-    error = LightError,
-    onError = LightOnError,
-)
 
 // Flat, paper-like shape language — small rounded corners on grid cells/rows,
 // larger ones on sheets/dialogs. No elevation-heavy card style.
@@ -113,8 +41,10 @@ enum class ThemeMode(@StringRes val labelRes: Int) {
 @Composable
 fun BibleAppTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Material You dynamic color is off by default so the deliberate warm/paper
-    // palette above isn't overridden by the device wallpaper.
+    // The color theme picked in Settings (#244); light/dark is [darkTheme], chosen separately.
+    palette: ThemePalette = ThemePalette.PARCHMENT,
+    // Material You dynamic color is off by default so the hand-tuned palettes (see Color.kt)
+    // aren't overridden by the device wallpaper.
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
@@ -124,8 +54,7 @@ fun BibleAppTheme(
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
 
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
+        else -> palette.colorScheme(darkTheme)
     }
 
     // enableEdgeToEdge() only picks status/nav bar icon appearance once, from the
