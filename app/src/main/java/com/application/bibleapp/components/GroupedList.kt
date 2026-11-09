@@ -31,6 +31,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.unit.Constraints
 import com.application.bibleapp.ui.theme.Spacing
 import androidx.compose.ui.text.style.TextOverflow
 
@@ -102,15 +104,9 @@ fun GroupedRow(
         iconTint = iconTint,
         title = title,
         titleColor = titleColor,
-        subtitle = subtitle
+        subtitle = subtitle,
+        value = value
     ) {
-        if (value != null) {
-            Text(
-                text = value,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
         when {
             trailing != null -> trailing()
             onClick != null && showChevron -> Icon(
@@ -208,6 +204,7 @@ private fun GroupedRowLayout(
     title: String,
     titleColor: Color,
     subtitle: String?,
+    value: String? = null,
     trailing: @Composable () -> Unit
 ) {
     Row(
@@ -219,16 +216,79 @@ private fun GroupedRowLayout(
         horizontalArrangement = Arrangement.spacedBy(Spacing.md)
     ) {
         if (icon != null) GroupedIcon(icon, iconTint)
-        Column(modifier = Modifier.weight(1f)) {
-            Text(text = title, style = MaterialTheme.typography.bodyLarge, color = titleColor)
-            if (subtitle != null) {
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+        TitleAndValue(
+            modifier = Modifier.weight(1f),
+            title = {
+                Column {
+                    Text(text = title, style = MaterialTheme.typography.bodyLarge, color = titleColor)
+                    if (subtitle != null) {
+                        Text(
+                            text = subtitle,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            },
+            value = value?.let {
+                {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+        )
+        trailing()
+    }
+}
+
+/**
+ * The title beside its [value] read-out, or the value under the title when the two don't fit side
+ * by side (#249). The value gets at most half the width beside the title; one wider than that
+ * (a large font size, a long language name) moves to its own line, as in Android's own Settings.
+ * Unconstrained, the value used to be measured first and take almost the whole row at 200% font
+ * size, leaving the title one letter per line.
+ */
+@Composable
+private fun TitleAndValue(
+    title: @Composable () -> Unit,
+    value: (@Composable () -> Unit)?,
+    modifier: Modifier = Modifier
+) {
+    if (value == null) {
+        Box(modifier) { title() }
+        return
+    }
+    val gap = Spacing.md
+    Layout(contents = listOf(title, value), modifier = modifier) { (titleMeasurables, valueMeasurables), constraints ->
+        val titleMeasurable = titleMeasurables.single()
+        val valueMeasurable = valueMeasurables.single()
+        val width = constraints.maxWidth
+        val gapPx = gap.roundToPx()
+        val besideMax = ((width - gapPx) / 2).coerceAtLeast(0)
+        val valueWidth = valueMeasurable.maxIntrinsicWidth(Constraints.Infinity)
+        val loose = constraints.copy(minWidth = 0, minHeight = 0)
+        if (valueWidth <= besideMax) {
+            val valuePlaceable = valueMeasurable.measure(loose.copy(maxWidth = besideMax))
+            val titleWidth = (width - valuePlaceable.width - gapPx).coerceAtLeast(0)
+            val titlePlaceable = titleMeasurable.measure(loose.copy(maxWidth = titleWidth))
+            val height = maxOf(titlePlaceable.height, valuePlaceable.height).coerceAtLeast(constraints.minHeight)
+            layout(width, height) {
+                titlePlaceable.placeRelative(0, (height - titlePlaceable.height) / 2)
+                valuePlaceable.placeRelative(width - valuePlaceable.width, (height - valuePlaceable.height) / 2)
+            }
+        } else {
+            val titlePlaceable = titleMeasurable.measure(loose.copy(maxWidth = width))
+            val valuePlaceable = valueMeasurable.measure(loose.copy(maxWidth = width))
+            val height = (titlePlaceable.height + valuePlaceable.height).coerceAtLeast(constraints.minHeight)
+            layout(width, height) {
+                titlePlaceable.placeRelative(0, 0)
+                valuePlaceable.placeRelative(0, titlePlaceable.height)
             }
         }
-        trailing()
     }
 }
