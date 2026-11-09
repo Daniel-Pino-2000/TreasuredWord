@@ -17,8 +17,10 @@ object SystemPrompt {
      * tried other answer shapes and scored lower; v10 is v5 with only the framing changed (the Bible
      * first, Baptists named only when asked, longer answers when needed) and firmer doctrine.md (#236).
      * v11 is v10 back at about 250 words: no answer in v5 or v10 needed more (longest 260 and 281).
+     * Graded strictly, v10 and v11 gave Wrong answers in every run and v5 in none of three, so v12
+     * is v5's instructions with v10's doctrine.md, and alcohol off the list of open questions.
      */
-    const val PROMPT_VERSION = "11"
+    const val PROMPT_VERSION = "12"
 
     /** The app's language tags (`AppLanguage.supportedTags`) and the English name the model is told to answer in. */
     val languageNames: Map<String, String> = mapOf(

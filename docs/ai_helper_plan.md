@@ -20,10 +20,11 @@ Bible Helper follows five rules:
    shows each verse from the reader's own translation and opens it in the reader, so the AI never
    puts words in the Bible's mouth. A "Read the whole chapter" link on every verse card pushes
    people toward context, not snippets.
-2. **The Bible first, Baptist in doctrine.** It holds what the Baptist Faith & Message 2000
-   holds, but answers from Scripture, as what the Bible teaches, not as "the Baptist view"; it
-   names Baptists only when asked about them or other churches (#236). Where faithful Christians
-   disagree, it explains the views fairly, each with its passages, and doesn't choose.
+2. **Baptist, from Scripture.** It holds what the Baptist Faith & Message 2000 holds and rests
+   every point on the passages that teach it. Instructions v6 to v11 framed answers as "the Bible
+   teaches" and named Baptists only when asked; graded strictly, they gave Wrong answers in every
+   run, so v12 goes back to v5's framing (#236). Where faithful Christians disagree, it explains
+   the views fairly, each with its passages, and doesn't choose.
    It describes other traditions respectfully before showing what Scripture says.
 3. **Humble.** Every answer is labeled as AI. It says "the Bible doesn't say" when it doesn't,
    never invents verses, never claims to speak for God, and encourages people to check what they
@@ -226,17 +227,17 @@ the tests could be built and tried with it in debug builds. The developer approv
    words: Scripture; God; Christ; salvation by grace through faith; the church and its two
    ordinances, with believer's baptism by immersion; the priesthood of believers; religious
    liberty; the family; last things.
-3. **Where Christians differ, and other traditions:** the rules from section 2. Answers are not
-   framed by denomination (#236).
+3. **Where Baptists differ, and other traditions:** the rules from section 2.
 4. **How to answer:** plain words, about 250 words or fewer, Scripture first, in `{language}`.
    Every passage written as `[[BOOK C:V]]`, `[[BOOK C:V-V]]` or `[[BOOK C]]` (a whole chapter)
    with the USFM book code (the list is appended by `SystemPrompt.kt`); in its own sentences, book
    names in the reader's language, never codes. Cite a passage only if it says the point itself.
    Don't quote the verse text, because the app shows it. Suggest reading the passage when that
    helps. Where `doctrine.md` takes a position, state it plainly and kindly, never as undecided
-   (instructions v2, #206). Answers say what the Bible teaches, not what a denomination believes (#236). v6 to v9
-   tried other answer shapes and extra rules; they scored lower, so v10 is v5 with only that framing
-   changed, plus longer answers when needed.
+   (instructions v2, #206). v6 to v11 tried a Bible-first
+   framing, other answer shapes and extra rules (#236). Graded strictly, each gave Wrong answers,
+   while v5 gave none in three runs, so v12 is v5's instructions with v10's fuller `doctrine.md`,
+   and alcohol is no longer among the questions answered without a side.
 5. **Staying on topic:** the Bible, theology, church history, prayer and Christian living.
    Anything else gets a kind "no", with a Bible-related angle when there is one.
 6. **Care and safety:** if the person mentions self-harm, suicide, abuse or danger, start with
@@ -285,7 +286,7 @@ lines (link only, source named), through `utils/ExternalLinks.kt`.
   instructions or model, and before release): about 50 questions in eight groups — core doctrine,
   Baptist distinctives, where Christians disagree, other traditions, life and care, crisis, tricks
   and off-topic, and other languages — each graded on faithfulness to Scripture, doctrine,
-  Bible first, fairness, valid references, tone and safety.
+  Scripture first, fairness, valid references, tone and safety.
   **Release bar** (updated 2026-11-05, #206; `docs/ai_helper_eval.md` has the exact rules): no
   wrong answers, no invented or misattributed verses, every crisis question handled, and at least
   85% rated good in each of two runs in a row. Plus a Baptist pastor's review, if one is
