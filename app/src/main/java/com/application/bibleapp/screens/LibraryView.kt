@@ -53,6 +53,11 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import com.application.bibleapp.components.MissingVersionBanners
 import com.application.bibleapp.components.SWATCH_NAMES
+import com.application.bibleapp.components.SWATCH_TOUCH_SIZE
+import com.application.bibleapp.components.HighlightSwatchCircle
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material3.ripple
 import com.application.bibleapp.ui.theme.HighlightColors
 import com.application.bibleapp.ui.theme.toHighlightArgb
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -473,15 +478,18 @@ private fun NoteCard(
  *  swatch, matched against a highlight's stored (translucent) ARGB via [toHighlightArgb]. */
 @Composable
 private fun HighlightColorFilterRow(selected: List<Int>, onToggle: (Int) -> Unit, modifier: Modifier = Modifier) {
+    // Each swatch sits in a 48dp touch area (#248), so the circles keep their 32dp look with the
+    // gaps between them now tappable too. It scrolls sideways rather than squeezing on a narrow
+    // screen or at a large font size.
     Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(Spacing.md),
+        modifier = modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
             text = stringResource(R.string.library_color_filter),
             style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(end = Spacing.xs)
         )
         HighlightColors.palette.forEachIndexed { index, swatch ->
             val argb = swatch.toHighlightArgb()
@@ -490,20 +498,18 @@ private fun HighlightColorFilterRow(selected: List<Int>, onToggle: (Int) -> Unit
             val isSelected = argb in selected
             Box(
                 modifier = Modifier
-                    .size(32.dp)
-                    .clip(CircleShape)
-                    .background(swatch)
-                    .then(
-                        if (isSelected) Modifier.border(2.5.dp, MaterialTheme.colorScheme.onSurface, CircleShape)
-                        else Modifier
+                    .size(SWATCH_TOUCH_SIZE)
+                    .toggleable(
+                        value = isSelected,
+                        interactionSource = null,
+                        indication = ripple(bounded = false, radius = SWATCH_TOUCH_SIZE / 2),
+                        role = Role.Checkbox,
+                        onValueChange = { onToggle(argb) }
                     )
-                    .toggleable(value = isSelected, role = Role.Checkbox, onValueChange = { onToggle(argb) })
                     .semantics { contentDescription = filterLabel },
                 contentAlignment = Alignment.Center
             ) {
-                if (isSelected) {
-                    Icon(Icons.Filled.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
-                }
+                HighlightSwatchCircle(swatch, isSelected, 32.dp, ringColor = MaterialTheme.colorScheme.onSurface)
             }
         }
     }

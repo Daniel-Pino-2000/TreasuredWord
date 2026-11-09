@@ -1,6 +1,7 @@
 package com.application.bibleapp.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -76,6 +77,9 @@ import com.application.bibleapp.ui.theme.ReadingStyle
 import com.application.bibleapp.ui.theme.Spacing
 import com.application.bibleapp.ui.theme.isCompactHeight
 import com.application.bibleapp.ui.theme.scaledBy
+import com.application.bibleapp.ui.theme.selectionScrim
+import com.application.bibleapp.ui.theme.wordsOfJesusOnHighlight
+import com.application.bibleapp.ui.theme.wordsOfJesusOnSelection
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
@@ -406,6 +410,12 @@ fun BibleText(
     // and dark schemes (and under dynamic color), so it doubles as a theme-aware
     // red-letter color without a hardcoded hex that could look wrong in dark mode.
     val wordsOfJesusColor = MaterialTheme.colorScheme.error
+    // On a highlight or the selection shading the theme's red fell to 2.7–4.4:1, so there it's
+    // made lighter or darker, still red, just enough to read (#246).
+    val colorScheme = MaterialTheme.colorScheme
+    val isDark = isSystemInDarkTheme()
+    val wordsOfJesusOnHighlightColor = remember(colorScheme, isDark) { wordsOfJesusOnHighlight(colorScheme, isDark) }
+    val wordsOfJesusOnSelectionColor = remember(colorScheme, isDark) { wordsOfJesusOnSelection(colorScheme, isDark) }
     val footnoteColor = MaterialTheme.colorScheme.primary
     val verseNumberColor = MaterialTheme.colorScheme.onSurfaceVariant
     // On a highlight the muted number fell to 2.5–4.4:1 (worst in dark mode, where a 35% fill is
@@ -414,7 +424,7 @@ fun BibleText(
     // Neutral (achromatic), not any hue from HighlightColors.palette — every saved-highlight
     // color is a distinct chroma, so "currently selecting" only reads unambiguously as its own
     // *kind* of state, not "yet another highlight color," by not being a color at all.
-    val selectionColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.18f)
+    val selectionColor = selectionScrim(MaterialTheme.colorScheme)
     val noteGlyphBadgeColor = MaterialTheme.colorScheme.primary
     val noteGlyphIconColor = MaterialTheme.colorScheme.onPrimary
     // A touch bigger than the old bare icon (which had no background of its own) since it now
@@ -499,11 +509,14 @@ fun BibleText(
             // The colors are keys too, so switching theme or light/dark recolors the text at once.
             val content = remember(
                 paragraph, highlightColorsByVerse, selectedVerses, noteCountsByVerse, textScale,
-                wordsOfJesusColor, footnoteColor, verseNumberColor, highlightedVerseNumberColor, selectionColor
+                wordsOfJesusColor, wordsOfJesusOnHighlightColor, wordsOfJesusOnSelectionColor, footnoteColor, verseNumberColor,
+                highlightedVerseNumberColor, selectionColor
             ) {
                 paragraphAnnotatedString(
                     paragraph.verses,
                     wordsOfJesusColor,
+                    wordsOfJesusOnHighlightColor,
+                    wordsOfJesusOnSelectionColor,
                     footnoteColor,
                     verseNumberColor,
                     highlightedVerseNumberColor,
@@ -683,6 +696,8 @@ private fun HeadingText(heading: StoredHeading, textScale: Float) {
 private fun paragraphAnnotatedString(
     verses: List<VerseUI>,
     wordsOfJesusColor: Color,
+    wordsOfJesusOnHighlightColor: Color,
+    wordsOfJesusOnSelectionColor: Color,
     footnoteColor: Color,
     verseNumberColor: Color,
     highlightedVerseNumberColor: Color,
@@ -716,9 +731,14 @@ private fun paragraphAnnotatedString(
             val location = verse.toLocationOrNull()
             val noteCount = location?.let { noteCountsByVerse[it] } ?: 0
             val runs = verse.richContent?.runs
+            val isHighlighted = location != null && location in highlightColorsByVerse
+            val redLetterColor = when {
+                location != null && location in selectedVerses -> wordsOfJesusOnSelectionColor
+                isHighlighted -> wordsOfJesusOnHighlightColor
+                else -> wordsOfJesusColor
+            }
 
             fun appendVerseOpening() {
-                val isHighlighted = location != null && location in highlightColorsByVerse
                 appendVerseNumber(verse.verse, if (isHighlighted) highlightedVerseNumberStyle else verseNumberStyle)
                 if (noteCount > 0) appendNoteGlyph(location!!, noteCount, noteSpans)
             }
@@ -752,12 +772,12 @@ private fun paragraphAnnotatedString(
                         val style = ParagraphStyle(textIndent = TextIndent(firstLine = firstLineIndent, restLine = indent))
                         withStyle(style) {
                             if (isFirstRunOfVerse) appendVerseOpening()
-                            appendRun(run, wordsOfJesusColor, footnoteMarkerStyle, footnoteSpans)
+                            appendRun(run, redLetterColor, footnoteMarkerStyle, footnoteSpans)
                         }
                     } else {
                         if (!isFirstRunInParagraph) append(" ")
                         if (isFirstRunOfVerse) appendVerseOpening()
-                        appendRun(run, wordsOfJesusColor, footnoteMarkerStyle, footnoteSpans)
+                        appendRun(run, redLetterColor, footnoteMarkerStyle, footnoteSpans)
                     }
                     isFirstRunInParagraph = false
                 }
