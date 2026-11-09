@@ -66,7 +66,11 @@ scale, with no credit card needed to keep it running.
 - **Theme:** the app has its own Light/Dark/System setting. Inside `BibleAppTheme`,
   `isSystemInDarkTheme()` returns the app's choice, not the phone's (#24). Use
   `MaterialTheme.colorScheme`, `MaterialTheme.shapes` and the `Spacing` tokens, never raw colors
-  or dp values for spacing.
+  or dp values for spacing. There are six color themes (`ThemePalette`, #244), so pick roles by
+  purpose: `outline` only for control borders (`outlineVariant` for decorative lines), and
+  `primaryContainer` for banners (`secondaryContainer` means "selected" and is solid black in Ink).
+  `ThemePaletteContrastTest` checks every theme against WCAG AA; add a pair there when a new
+  screen puts text on a new color.
 - **Keyboard:** the activity is `adjustResize` (manifest), so the keyboard never pans the window.
   Every screen with a text field gets `keyboardScreenModifier` in `Navigation.kt` and
   `imePadding()` on its root column, or its field ends up behind the keyboard (#225, #228). In

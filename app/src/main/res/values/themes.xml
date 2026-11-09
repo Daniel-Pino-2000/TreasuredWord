@@ -23,4 +23,51 @@
         <item name="windowSplashScreenAnimatedIcon">@drawable/splash_icon_dark</item>
     </style>
     <style name="Theme.BibleApp.Splash" parent="Theme.BibleApp.SplashLight" />
+
+    <!-- The same three for each other color theme (#244); ThemePalette picks one on Android 13+. -->
+    <style name="Theme.BibleApp.SplashInkLight" parent="Theme.BibleApp.SplashBase">
+        <item name="windowSplashScreenBackground">@color/splash_background_ink_light</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_icon_light</item>
+    </style>
+    <style name="Theme.BibleApp.SplashInkDark" parent="Theme.BibleApp.SplashBase">
+        <item name="windowSplashScreenBackground">@color/splash_background_ink_dark</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_icon_dark</item>
+    </style>
+    <style name="Theme.BibleApp.SplashInk" parent="Theme.BibleApp.SplashInkLight" />
+    <style name="Theme.BibleApp.SplashGraphiteLight" parent="Theme.BibleApp.SplashBase">
+        <item name="windowSplashScreenBackground">@color/splash_background_graphite_light</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_icon_light</item>
+    </style>
+    <style name="Theme.BibleApp.SplashGraphiteDark" parent="Theme.BibleApp.SplashBase">
+        <item name="windowSplashScreenBackground">@color/splash_background_graphite_dark</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_icon_dark</item>
+    </style>
+    <style name="Theme.BibleApp.SplashGraphite" parent="Theme.BibleApp.SplashGraphiteLight" />
+    <style name="Theme.BibleApp.SplashSageLight" parent="Theme.BibleApp.SplashBase">
+        <item name="windowSplashScreenBackground">@color/splash_background_sage_light</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_icon_light</item>
+    </style>
+    <style name="Theme.BibleApp.SplashSageDark" parent="Theme.BibleApp.SplashBase">
+        <item name="windowSplashScreenBackground">@color/splash_background_sage_dark</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_icon_dark</item>
+    </style>
+    <style name="Theme.BibleApp.SplashSage" parent="Theme.BibleApp.SplashSageLight" />
+    <style name="Theme.BibleApp.SplashSlateLight" parent="Theme.BibleApp.SplashBase">
+        <item name="windowSplashScreenBackground">@color/splash_background_slate_light</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_icon_light</item>
+    </style>
+    <style name="Theme.BibleApp.SplashSlateDark" parent="Theme.BibleApp.SplashBase">
+        <item name="windowSplashScreenBackground">@color/splash_background_slate_dark</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_icon_dark</item>
+    </style>
+    <style name="Theme.BibleApp.SplashSlate" parent="Theme.BibleApp.SplashSlateLight" />
+    <style name="Theme.BibleApp.SplashRoseLight" parent="Theme.BibleApp.SplashBase">
+        <item name="windowSplashScreenBackground">@color/splash_background_rose_light</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_icon_light</item>
+    </style>
+    <style name="Theme.BibleApp.SplashRoseDark" parent="Theme.BibleApp.SplashBase">
+        <item name="windowSplashScreenBackground">@color/splash_background_rose_dark</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_icon_dark</item>
+    </style>
+    <style name="Theme.BibleApp.SplashRose" parent="Theme.BibleApp.SplashRoseLight" />
 </resources>

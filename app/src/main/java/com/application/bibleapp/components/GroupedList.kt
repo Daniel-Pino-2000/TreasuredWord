@@ -35,7 +35,7 @@ import com.application.bibleapp.ui.theme.Spacing
 import androidx.compose.ui.text.style.TextOverflow
 
 // Grouped-list building blocks shared by the You tab and the Settings page, so both read as
-// one design: related rows share a single framed panel (same surface + outline as Home's Verse of
+// one design: related rows share a single framed panel (same surface as Home's Verse of
 // the Day card), split by hairlines, each led by a gold icon in a small tinted square.
 
 /** A labelled, framed group of rows. Put [GroupedDivider] between rows. */
@@ -68,7 +68,9 @@ fun GroupedPanel(
         modifier = modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
         color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+        // outlineVariant: the frame is decoration. `outline` is kept for borders of controls,
+        // which need 3:1 (#244).
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Column(content = content)
     }

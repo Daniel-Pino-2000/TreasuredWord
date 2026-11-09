@@ -320,6 +320,14 @@
     <string name="language_system_default">System default</string>
     <string name="settings_section_appearance">Appearance</string>
     <string name="settings_theme">Theme</string>
+    <!-- Settings › Appearance: the color themes (#244). Each name is the theme's look, short enough for a swatch label. -->
+    <string name="settings_colors">Colors</string>
+    <string name="palette_parchment">Parchment</string>
+    <string name="palette_ink">Ink</string>
+    <string name="palette_graphite">Graphite</string>
+    <string name="palette_sage">Sage</string>
+    <string name="palette_slate">Slate</string>
+    <string name="palette_rose">Rose</string>
     <string name="theme_system">System</string>
     <string name="theme_light">Light</string>
     <string name="theme_dark">Dark</string>

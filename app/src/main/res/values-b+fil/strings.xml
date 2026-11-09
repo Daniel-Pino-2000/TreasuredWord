@@ -277,6 +277,14 @@
     <string name="language_system_default">Default ng system</string>
     <string name="settings_section_appearance">Hitsura</string>
     <string name="settings_theme">Tema</string>
+    <!-- Settings › Appearance: the color themes (#244). Each name is the theme's look, short enough for a swatch label. -->
+    <string name="settings_colors">Mga kulay</string>
+    <string name="palette_parchment">Pergamino</string>
+    <string name="palette_ink">Tinta</string>
+    <string name="palette_graphite">Grapito</string>
+    <string name="palette_sage">Sage</string>
+    <string name="palette_slate">Pisara</string>
+    <string name="palette_rose">Rosas</string>
     <string name="theme_system">System</string>
     <string name="theme_light">Light</string>
     <string name="theme_dark">Dark</string>

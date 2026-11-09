@@ -23,6 +23,7 @@ import com.application.bibleapp.data.remote.NoteResponseDto
 import com.application.bibleapp.data.remote.ReadingProgressResponseDto
 import com.application.bibleapp.data.remote.VerseLocationDto
 import com.application.bibleapp.ui.theme.ThemeMode
+import com.application.bibleapp.ui.theme.ThemePalette
 import com.application.bibleapp.ui.theme.VerseTextScale
 import com.application.bibleapp.utils.NetworkUtils
 import com.application.bibleapp.utils.isoTimestampNow
@@ -440,6 +441,13 @@ class BibleRepository(
         return runCatching { ThemeMode.valueOf(stored) }.getOrDefault(ThemeMode.SYSTEM)
     }
 
+    /** The color theme (#244). Kept on this device only, like [ThemeMode]; not synced. */
+    fun saveThemePalette(palette: ThemePalette) {
+        prefs.edit().putString(KEY_THEME_PALETTE, palette.name).apply()
+    }
+
+    fun loadThemePalette(): ThemePalette = ThemePalette.fromStored(prefs.getString(KEY_THEME_PALETTE, null))
+
     fun saveVerseTextScale(scale: VerseTextScale) {
         prefs.edit().putFloat(KEY_VERSE_TEXT_SCALE, scale.multiplier).apply()
     }
@@ -622,6 +630,7 @@ class BibleRepository(
 
         const val KEY_SELECTED_VERSION = "selected_version_id"
         const val KEY_THEME_MODE = "theme_mode"
+        const val KEY_THEME_PALETTE = "theme_palette"
         const val KEY_VERSE_TEXT_SCALE = "verse_text_scale"
         const val KEY_READING_BOOK = "reading_book_id"
         const val KEY_READING_CHAPTER = "reading_chapter"

@@ -410,7 +410,8 @@ private fun ContinueReadingCard(reference: String, chapter: Int, chapterCount: I
                             .weight(1f)
                             .height(6.dp),
                         color = MaterialTheme.colorScheme.primary,
-                        trackColor = MaterialTheme.colorScheme.outline,
+                        // A decorative track, so outlineVariant; `outline` is for control borders (#244).
+                        trackColor = MaterialTheme.colorScheme.outlineVariant,
                         strokeCap = StrokeCap.Round,
                         gapSize = 0.dp,
                         drawStopIndicator = {}

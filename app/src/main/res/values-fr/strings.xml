@@ -285,6 +285,14 @@
     <string name="language_system_default">Langue du système</string>
     <string name="settings_section_appearance">Apparence</string>
     <string name="settings_theme">Thème</string>
+    <!-- Settings › Appearance: the color themes (#244). Each name is the theme's look, short enough for a swatch label. -->
+    <string name="settings_colors">Couleurs</string>
+    <string name="palette_parchment">Parchemin</string>
+    <string name="palette_ink">Encre</string>
+    <string name="palette_graphite">Graphite</string>
+    <string name="palette_sage">Sauge</string>
+    <string name="palette_slate">Ardoise</string>
+    <string name="palette_rose">Rose</string>
     <string name="theme_system">Système</string>
     <string name="theme_light">Clair</string>
     <string name="theme_dark">Sombre</string>

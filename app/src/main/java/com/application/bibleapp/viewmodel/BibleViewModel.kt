@@ -34,6 +34,7 @@ import com.application.bibleapp.data.repository.ReadingPosition
 import com.application.bibleapp.data.repository.ReadingProgressRepository
 import com.application.bibleapp.data.repository.dailyVerseDateKey
 import com.application.bibleapp.ui.theme.ThemeMode
+import com.application.bibleapp.ui.theme.ThemePalette
 import com.application.bibleapp.ui.theme.VerseTextScale
 import com.application.bibleapp.utils.buildVerseShareText
 import com.application.bibleapp.worker.SyncEvents
@@ -410,6 +411,9 @@ class BibleViewModel(
 
     private val _themeMode = MutableStateFlow(repository.loadThemeMode())
     val themeMode: StateFlow<ThemeMode> = _themeMode.asStateFlow()
+
+    private val _themePalette = MutableStateFlow(repository.loadThemePalette())
+    val themePalette: StateFlow<ThemePalette> = _themePalette.asStateFlow()
 
     private val _verseTextScale = MutableStateFlow(repository.loadVerseTextScale())
     val verseTextScale: StateFlow<VerseTextScale> = _verseTextScale.asStateFlow()
@@ -1171,6 +1175,11 @@ class BibleViewModel(
 
     fun onVersionSearchQueryChange(query: String) {
         _versionSearchQuery.value = query
+    }
+
+    fun setThemePalette(palette: ThemePalette) {
+        _themePalette.value = palette
+        repository.saveThemePalette(palette)
     }
 
     fun setThemeMode(mode: ThemeMode) {

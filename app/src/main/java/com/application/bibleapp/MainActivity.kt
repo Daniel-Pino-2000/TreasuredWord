@@ -308,26 +308,22 @@ class MainActivity : AppCompatActivity() {
             }
 
             val themeMode by bibleViewModel.themeMode.collectAsState()
+            val themePalette by bibleViewModel.themePalette.collectAsState()
             val useDarkTheme = when (themeMode) {
                 ThemeMode.SYSTEM -> isSystemInDarkTheme()
                 ThemeMode.LIGHT -> false
                 ThemeMode.DARK -> true
             }
             // Android 13+ lets the app pick the next launch's startup screen, so it matches the
-            // app's own Light/Dark setting rather than the phone's (#135).
-            LaunchedEffect(themeMode) {
+            // app's own Light/Dark setting rather than the phone's (#135), in the chosen color
+            // theme's background (#244). Below 13 it stays Parchment's, following the phone.
+            LaunchedEffect(themeMode, themePalette) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    splashScreen.setSplashScreenTheme(
-                        when (themeMode) {
-                            ThemeMode.SYSTEM -> R.style.Theme_BibleApp_Splash
-                            ThemeMode.LIGHT -> R.style.Theme_BibleApp_SplashLight
-                            ThemeMode.DARK -> R.style.Theme_BibleApp_SplashDark
-                        }
-                    )
+                    splashScreen.setSplashScreenTheme(themePalette.splashTheme(themeMode))
                 }
             }
 
-            BibleAppTheme(darkTheme = useDarkTheme) {
+            BibleAppTheme(darkTheme = useDarkTheme, palette = themePalette) {
                 // The bottom bar's own current height (it animates via chromeHiddenFraction, and
                 // differs by route) — read back here so the floating selection toolbar below can
                 // always sit a fixed gap above wherever its actual top edge currently is, rather

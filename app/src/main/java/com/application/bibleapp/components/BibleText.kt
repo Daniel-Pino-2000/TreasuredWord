@@ -408,6 +408,9 @@ fun BibleText(
     val wordsOfJesusColor = MaterialTheme.colorScheme.error
     val footnoteColor = MaterialTheme.colorScheme.primary
     val verseNumberColor = MaterialTheme.colorScheme.onSurfaceVariant
+    // On a highlight the muted number fell to 2.5–4.4:1 (worst in dark mode, where a 35% fill is
+    // a mid-tone), so a highlighted verse's number takes the full text color (#244).
+    val highlightedVerseNumberColor = MaterialTheme.colorScheme.onSurface
     // Neutral (achromatic), not any hue from HighlightColors.palette — every saved-highlight
     // color is a distinct chroma, so "currently selecting" only reads unambiguously as its own
     // *kind* of state, not "yet another highlight color," by not being a color at all.
@@ -493,12 +496,17 @@ fun BibleText(
         }
         itemsIndexed(paragraphs) { index, paragraph ->
             val headings = paragraph.verses.first().richContent?.headings.orEmpty()
-            val content = remember(paragraph, highlightColorsByVerse, selectedVerses, noteCountsByVerse, textScale) {
+            // The colors are keys too, so switching theme or light/dark recolors the text at once.
+            val content = remember(
+                paragraph, highlightColorsByVerse, selectedVerses, noteCountsByVerse, textScale,
+                wordsOfJesusColor, footnoteColor, verseNumberColor, highlightedVerseNumberColor, selectionColor
+            ) {
                 paragraphAnnotatedString(
                     paragraph.verses,
                     wordsOfJesusColor,
                     footnoteColor,
                     verseNumberColor,
+                    highlightedVerseNumberColor,
                     textScale,
                     highlightColorsByVerse,
                     selectedVerses,
@@ -677,6 +685,7 @@ private fun paragraphAnnotatedString(
     wordsOfJesusColor: Color,
     footnoteColor: Color,
     verseNumberColor: Color,
+    highlightedVerseNumberColor: Color,
     textScale: Float,
     highlightColorsByVerse: Map<VerseLocationDto, Color>,
     selectedVerses: Set<VerseLocationDto>,
@@ -687,6 +696,7 @@ private fun paragraphAnnotatedString(
         color = verseNumberColor,
         baselineShift = BaselineShift.Superscript
     )
+    val highlightedVerseNumberStyle = verseNumberStyle.copy(color = highlightedVerseNumberColor)
     val footnoteMarkerStyle = SpanStyle(
         color = footnoteColor,
         fontSize = 11.sp * textScale,
@@ -708,7 +718,8 @@ private fun paragraphAnnotatedString(
             val runs = verse.richContent?.runs
 
             fun appendVerseOpening() {
-                appendVerseNumber(verse.verse, verseNumberStyle)
+                val isHighlighted = location != null && location in highlightColorsByVerse
+                appendVerseNumber(verse.verse, if (isHighlighted) highlightedVerseNumberStyle else verseNumberStyle)
                 if (noteCount > 0) appendNoteGlyph(location!!, noteCount, noteSpans)
             }
 
