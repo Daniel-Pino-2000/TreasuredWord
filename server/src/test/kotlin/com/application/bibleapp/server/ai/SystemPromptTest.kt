@@ -40,7 +40,7 @@ class SystemPromptTest {
         // The evaluation runs of #206: the crisis card is drawn above the answer (#130), and the
         // app shows a whole chapter as a card (#190), so the instructions may ask for one.
         val prompt = SystemPrompt.forLanguage("en")
-        assertEquals("10", SystemPrompt.PROMPT_VERSION)
+        assertEquals("11", SystemPrompt.PROMPT_VERSION)
         assertFalse("crisis lines below" in prompt)
         assertTrue("help card above your answer" in prompt)
         assertTrue("[[BOOK C]] for a" in prompt && "[[PSA 23]]" in prompt)
@@ -53,7 +53,7 @@ class SystemPromptTest {
     @Test
     fun answersComeFromTheBibleNotADenomination() {
         // #236, v10: v5's instructions with only the framing changed. Answers say what the Bible
-        // teaches, name Baptists only when asked, and may run longer when a question needs it.
+        // teaches, and name Baptists only when asked. v11 keeps v5's length: no answer needed more.
         val prompt = SystemPrompt.forLanguage("en")
         assertFalse("from a Baptist perspective" in prompt)
         assertFalse("Baptist answer" in prompt)
@@ -61,7 +61,8 @@ class SystemPromptTest {
         assertTrue("Say what the Bible teaches, not what Baptists believe" in prompt)
         assertTrue("Name Baptists only when the question" in prompt)
         assertTrue("the points a faithful pastor would make" in prompt)
-        assertTrue("up to about 350 words" in prompt)
+        assertTrue("about 250 words or fewer" in prompt)
+        assertFalse("350 words" in prompt)
         // v6-v9's answer shape and extra rules are gone (#236): they crowded out the points answers need.
         assertFalse("start with a direct answer" in prompt)
         assertFalse("care comes first" in prompt)

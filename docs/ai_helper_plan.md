@@ -228,8 +228,7 @@ the tests could be built and tried with it in debug builds. The developer approv
    liberty; the family; last things.
 3. **Where Christians differ, and other traditions:** the rules from section 2. Answers are not
    framed by denomination (#236).
-4. **How to answer:** plain words, about 250 words or fewer (up to about 350 when a question has
-   several parts or views, #236), Scripture first, in `{language}`.
+4. **How to answer:** plain words, about 250 words or fewer, Scripture first, in `{language}`.
    Every passage written as `[[BOOK C:V]]`, `[[BOOK C:V-V]]` or `[[BOOK C]]` (a whole chapter)
    with the USFM book code (the list is appended by `SystemPrompt.kt`); in its own sentences, book
    names in the reader's language, never codes. Cite a passage only if it says the point itself.

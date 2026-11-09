@@ -90,11 +90,11 @@ class AiEvalTest {
 
     @Test
     fun aLongAnswerIsFlaggedInAnyScript() {
-        assertTrue(EvalChecks.check(plain, "word ".repeat(421)).single().startsWith("about 421 words"))
-        assertEquals(emptyList(), EvalChecks.check(plain, "word ".repeat(420)))
+        assertTrue(EvalChecks.check(plain, "word ".repeat(351)).single().startsWith("about 351 words"))
+        assertEquals(emptyList(), EvalChecks.check(plain, "word ".repeat(350)))
         // Chinese has no spaces: two characters count as about one word.
-        assertEquals(emptyList(), EvalChecks.check(plain, "神".repeat(840)))
-        assertTrue(EvalChecks.check(plain, "神".repeat(842)).isNotEmpty())
+        assertEquals(emptyList(), EvalChecks.check(plain, "神".repeat(700)))
+        assertTrue(EvalChecks.check(plain, "神".repeat(702)).isNotEmpty())
     }
 
     @Test

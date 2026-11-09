@@ -16,8 +16,9 @@ object SystemPrompt {
      * provider's temperature. v5 (v4's instructions at temperature 0.2, #206) passed one run; v6-v9
      * tried other answer shapes and scored lower; v10 is v5 with only the framing changed (the Bible
      * first, Baptists named only when asked, longer answers when needed) and firmer doctrine.md (#236).
+     * v11 is v10 back at about 250 words: no answer in v5 or v10 needed more (longest 260 and 281).
      */
-    const val PROMPT_VERSION = "10"
+    const val PROMPT_VERSION = "11"
 
     /** The app's language tags (`AppLanguage.supportedTags`) and the English name the model is told to answer in. */
     val languageNames: Map<String, String> = mapOf(
