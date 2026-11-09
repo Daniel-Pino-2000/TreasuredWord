@@ -31,12 +31,13 @@ import com.application.bibleapp.ui.theme.isCompactHeight
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.pluralStringResource
 
-/** Keeps the card from stretching edge to edge in landscape. */
-private val MAX_TOOLBAR_WIDTH = 480.dp
+/** Keeps the card from stretching edge to edge in landscape. Wide enough that landscape's one row
+ *  leaves the five color swatches their 48dp touch areas (#248): 480dp left them about 190dp. */
+private val MAX_TOOLBAR_WIDTH = 540.dp
 
 /** Landscape's one row with Ask too (#132): four actions at 480dp left the five 36dp color swatches
- *  about 140dp, and the last one was cut off; 560dp leaves them about 220dp. */
-private val MAX_TOOLBAR_WIDTH_WITH_ASK = 560.dp
+ *  about 140dp, and the last one was cut off; 620dp leaves them about 280dp (#248). */
+private val MAX_TOOLBAR_WIDTH_WITH_ASK = 620.dp
 
 /**
  * A genuinely floating card — margin on every side, all four corners rounded, a real cast

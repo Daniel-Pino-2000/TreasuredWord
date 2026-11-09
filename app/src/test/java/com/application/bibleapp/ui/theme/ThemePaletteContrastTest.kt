@@ -27,7 +27,7 @@ class ThemePaletteContrastTest {
         return (maxOf(la, lb) + 0.05) / (minOf(la, lb) + 0.05)
     }
 
-    private fun pairsFor(c: ColorScheme): List<Pair> {
+    private fun pairsFor(c: ColorScheme, isDark: Boolean): List<Pair> {
         val pairs = mutableListOf<Pair>()
         // Where text sits: the page, cards and grouped panels (surface), bottom sheets
         // (surfaceContainerLow), tinted panels and the chapter buttons (surfaceVariant), and the
@@ -70,11 +70,24 @@ class ThemePaletteContrastTest {
         pairs += Pair("icon on the red swipe-to-delete", c.onError, c.error, NON_TEXT)
         pairs += Pair("progress bar against its track", c.primary, c.outlineVariant, NON_TEXT)
         // Saved highlights are stored at 35% alpha (toHighlightArgb) and drawn over the page in
-        // the reader and over cards in Home and Library. Verse numbers on them use onSurface.
+        // the reader and over cards in Home and Library, weaker in dark mode (highlightFill,
+        // #246). Verse numbers on them use onSurface; red letters on them use
+        // wordsOfJesusOnHighlight, and on a selected verse wordsOfJesusOnSelection.
+        val redOnHighlight = wordsOfJesusOnHighlight(c, isDark)
+        val redOnSelection = wordsOfJesusOnSelection(c, isDark)
+        val scrim = selectionScrim(c)
+        pairs += Pair("text on a selected verse", c.onSurface, scrim.compositeOver(c.background), TEXT)
+        pairs += Pair("red text on a selected verse", redOnSelection, scrim.compositeOver(c.background), TEXT)
         for (swatch in HighlightColors.palette) {
-            val fill = Color(swatch.toHighlightArgb())
-            pairs += Pair("verse on highlight ${swatch.hex()} (page)", c.onSurface, fill.compositeOver(c.background), TEXT)
-            pairs += Pair("verse on highlight ${swatch.hex()} (card)", c.onSurface, fill.compositeOver(c.surface), TEXT)
+            val fill = highlightFill(swatch.toHighlightArgb(), isDark)
+            for ((name, base) in listOf("page" to c.background, "card" to c.surface)) {
+                val highlighted = fill.compositeOver(base)
+                val selected = scrim.compositeOver(highlighted)
+                pairs += Pair("verse on highlight ${swatch.hex()} ($name)", c.onSurface, highlighted, TEXT)
+                pairs += Pair("red text on highlight ${swatch.hex()} ($name)", redOnHighlight, highlighted, TEXT)
+                pairs += Pair("verse on selected highlight ${swatch.hex()} ($name)", c.onSurface, selected, TEXT)
+                pairs += Pair("red text on selected highlight ${swatch.hex()} ($name)", redOnSelection, selected, TEXT)
+            }
         }
         return pairs
     }
@@ -83,7 +96,7 @@ class ThemePaletteContrastTest {
     fun `every theme passes WCAG AA in light and dark`() {
         val failures = ThemePalette.entries.flatMap { palette ->
             listOf(false, true).flatMap { isDark ->
-                pairsFor(palette.colorScheme(isDark))
+                pairsFor(palette.colorScheme(isDark), isDark)
                     .filter { contrast(it.fg, it.bg) < it.min }
                     .map {
                         "${palette.name} ${if (isDark) "dark" else "light"}: ${it.what} is " +
@@ -92,6 +105,34 @@ class ThemePaletteContrastTest {
             }
         }
         assertTrue(failures.joinToString("\n", prefix = "\n"), failures.isEmpty())
+    }
+
+    @Test
+    fun `the check mark on a selected swatch reaches 3 to 1 on every highlight color`() {
+        // The swatches are drawn solid and don't change with the theme (#248).
+        val failures = HighlightColors.palette
+            .map { it to contrast(HighlightColors.CheckMark, it) }
+            .filter { (_, ratio) -> ratio < NON_TEXT }
+            .map { (swatch, ratio) -> "check mark on ${swatch.hex()} is %.2f:1".format(ratio) }
+        assertTrue(failures.joinToString("\n", prefix = "\n"), failures.isEmpty())
+    }
+
+    @Test
+    fun `red letters on a highlight still read as red`() {
+        // Made lighter or darker, never mixed toward the gray-ish text color (#246).
+        for (palette in ThemePalette.entries) for (isDark in listOf(false, true)) {
+            val red = wordsOfJesusOnHighlight(palette.colorScheme(isDark), isDark)
+            assertTrue("${palette.name} dark=$isDark: ${red.hex()}", red.red > red.green + 0.1f && red.red > red.blue + 0.1f)
+        }
+    }
+
+    @Test
+    fun `dark mode draws highlights weaker without changing the stored color`() {
+        val stored = HighlightColors.Yellow.toHighlightArgb()
+        assertEquals(Color(stored), highlightFill(stored, isDark = false))
+        val dark = highlightFill(stored, isDark = true)
+        assertTrue(dark.alpha < Color(stored).alpha)
+        assertEquals(Color(stored).copy(alpha = 1f), dark.copy(alpha = 1f))
     }
 
     @Test

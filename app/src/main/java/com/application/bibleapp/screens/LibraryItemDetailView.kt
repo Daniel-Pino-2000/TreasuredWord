@@ -36,6 +36,7 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import com.application.bibleapp.components.MissingVersionBanners
 import com.application.bibleapp.navigation.Screen
+import com.application.bibleapp.ui.theme.highlightFill
 import com.application.bibleapp.ui.theme.Spacing
 import com.application.bibleapp.utils.bookNameInVersion
 import com.application.bibleapp.utils.displayDate
@@ -116,7 +117,7 @@ fun LibraryItemDetailView(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = Spacing.lg),
-                    color = Color(highlight.color),
+                    color = highlightFill(highlight.color),
                     shape = MaterialTheme.shapes.large
                 ) {
                     Text(

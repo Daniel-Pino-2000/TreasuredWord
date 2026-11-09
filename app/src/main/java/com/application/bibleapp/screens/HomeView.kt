@@ -70,6 +70,7 @@ import com.application.bibleapp.data.model.BookResources
 import com.application.bibleapp.data.model.DailyVerseUI
 import com.application.bibleapp.data.model.Highlight
 import com.application.bibleapp.data.model.chapterCount
+import com.application.bibleapp.ui.theme.highlightFill
 import com.application.bibleapp.ui.theme.MaxContentWidth
 import com.application.bibleapp.ui.theme.ReadingStyle
 import com.application.bibleapp.ui.theme.Spacing
@@ -496,7 +497,7 @@ private fun RecentHighlightsSection(
                     RecentHighlightCard(
                         reference = verseRefsText(highlight.verses) { bookName(highlight.versionId, it) },
                         text = verseText(highlight),
-                        color = Color(highlight.color),
+                        color = highlightFill(highlight.color),
                         onClick = { onHighlightClick(highlight) }
                     )
                 }
@@ -507,8 +508,8 @@ private fun RecentHighlightsSection(
 
 @Composable
 private fun RecentHighlightCard(reference: String, text: String, color: Color, onClick: () -> Unit) {
-    // The stored color is already translucent (see toHighlightArgb), so over `surface` it reads
-    // as the same tint the verse has in the reader, in light and dark alike.
+    // highlightFill is translucent (weaker in dark mode, #246), so over `surface` it reads as the
+    // same tint the verse has in the reader, in light and dark alike.
     Surface(
         modifier = Modifier.width(176.dp),
         shape = MaterialTheme.shapes.medium,
