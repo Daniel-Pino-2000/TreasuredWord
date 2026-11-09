@@ -33,12 +33,15 @@ import androidx.compose.ui.text.style.BaselineShift
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.em
 import com.application.bibleapp.R
 import com.application.bibleapp.data.model.AiVersePassage
 import com.application.bibleapp.data.model.PassageVerse
 import com.application.bibleapp.ui.theme.BibleAppTheme
 import com.application.bibleapp.ui.theme.Spacing
+import com.application.bibleapp.ui.theme.ThemePalette
+import com.application.bibleapp.ui.theme.ThemePalettePreviewProvider
 import com.application.bibleapp.utils.VerseReference
 import com.application.bibleapp.utils.bookNameInVersion
 import com.application.bibleapp.utils.formatVerseReference
@@ -181,8 +184,8 @@ private const val PASSAGE_MAX_LINES = 8
 @Preview(name = "Dark", widthDp = 360, uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Preview(name = "Landscape", widthDp = 780, heightDp = 360)
 @Composable
-private fun AiVerseCardPreview() {
-    BibleAppTheme {
+private fun AiVerseCardPreview(@PreviewParameter(ThemePalettePreviewProvider::class) palette: ThemePalette) {
+    BibleAppTheme(palette = palette) {
         Surface {
             Column(modifier = Modifier.padding(Spacing.lg), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                 AiVerseCardContent(

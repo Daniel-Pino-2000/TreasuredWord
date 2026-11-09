@@ -64,6 +64,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withLink
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import com.application.bibleapp.R
 import com.application.bibleapp.components.AiCrisisCard
@@ -75,12 +76,16 @@ import com.application.bibleapp.components.AiVerseCardList
 import com.application.bibleapp.components.ServerWakeHint
 import com.application.bibleapp.components.rememberWaitingLong
 import com.application.bibleapp.data.model.AiMessage
+import com.application.bibleapp.data.model.AiQuestionPassage
 import com.application.bibleapp.data.model.AiRole
 import com.application.bibleapp.data.remote.AiAskResult
+import com.application.bibleapp.data.remote.AiPassageDto
 import com.application.bibleapp.data.repository.AiHelperRepository.Companion.MAX_QUESTION_CHARS
 import com.application.bibleapp.ui.theme.BibleAppTheme
 import com.application.bibleapp.ui.theme.Spacing
 import com.application.bibleapp.ui.theme.isCompactHeight
+import com.application.bibleapp.ui.theme.ThemePalette
+import com.application.bibleapp.ui.theme.ThemePalettePreviewProvider
 import com.application.bibleapp.utils.AiAnswerPart
 import com.application.bibleapp.utils.AppLanguage
 import com.application.bibleapp.utils.VerseReference
@@ -627,16 +632,19 @@ private fun QuestionField(
 @Preview(name = "Dark", widthDp = 360, heightDp = 720, uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Preview(name = "Landscape", widthDp = 780, heightDp = 360)
 @Composable
-private fun AskChatPreview() {
+private fun AskChatPreview(@PreviewParameter(ThemePalettePreviewProvider::class) palette: ThemePalette) {
     val messages = listOf(
         AiMessage(1, 1, AiRole.USER, "What is the Trinity?", createdAt = ""),
         AiMessage(2, 1, AiRole.ASSISTANT, "One God in three persons: the Father, the Son and the Holy Spirit [[MAT 28:19]].\n- The [[PSA]] praise him.", createdAt = ""),
         AiMessage(3, 1, AiRole.USER, "How should I pray?", createdAt = "")
     )
-    BibleAppTheme {
+    BibleAppTheme(palette = palette) {
         Surface {
             AskChat(
-                state = AskUiState(conversationId = 1, messages = messages, failure = AiAskResult.Unavailable, remainingToday = 2),
+                state = AskUiState(
+                    conversationId = 1, messages = messages, failure = AiAskResult.Unavailable, remainingToday = 2,
+                    passage = AiQuestionPassage("John 3:16", AiPassageDto("John 3:16", "For God so loved the world"))
+                ),
                 draft = "Why",
                 online = false,
                 modifier = Modifier,

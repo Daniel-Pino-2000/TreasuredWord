@@ -47,6 +47,20 @@ class ThemePaletteContrastTest {
             pairs += Pair("red text on $name", c.error, ground, TEXT)
             pairs += Pair("control border on $name", c.outline, ground, NON_TEXT)
         }
+        // Dialogs (AlertDialog) sit on surfaceContainerHigh and menus on surfaceContainer, with
+        // the title, body and text buttons in onSurface, onSurfaceVariant and primary.
+        for ((name, ground) in listOf("dialog" to c.surfaceContainerHigh, "menu" to c.surfaceContainer)) {
+            pairs += Pair("text on $name", c.onSurface, ground, TEXT)
+            pairs += Pair("secondary text on $name", c.onSurfaceVariant, ground, TEXT)
+            pairs += Pair("accent text on $name", c.primary, ground, TEXT)
+        }
+        // Remove/Delete buttons in dialogs (removing a translation, discarding a note) are red.
+        pairs += Pair("red text on dialog", c.error, c.surfaceContainerHigh, TEXT)
+        pairs += Pair("chapter arrow on its button", c.primary, c.surfaceVariant, NON_TEXT)
+        pairs += Pair(
+            "verse of the day reference",
+            c.onPrimaryContainer.copy(alpha = 0.75f).compositeOver(c.primaryContainer), c.primaryContainer, TEXT
+        )
         pairs += Pair("button label", c.onPrimary, c.primary, TEXT)
         pairs += Pair("text on accent tint (banners)", c.onPrimaryContainer, c.primaryContainer, TEXT)
         pairs += Pair("accent button on accent tint (banners)", c.primary, c.primaryContainer, TEXT)
