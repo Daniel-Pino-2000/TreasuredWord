@@ -62,7 +62,7 @@ updating those too.
 | Until release | The Bible Helper shows only in debug builds (`BuildConfig.AI_HELPER_ENABLED`); #131 turns it on for release builds | Work can merge to `main` without reaching closed-test or production users |
 | Who writes the doctrine summary | Claude drafted it from the BF&M 2000 at your request (2026-10-30); you reviewed it and approved it on 2026-11-02. Claude also drafts the rest of #121 (answer rules and test questions) | It's the heart of the feature, so nothing else waits for its approval (section 9) |
 
-## 3. Why Cloudflare Workers AI (free options compared, checked 2026-10-27, Cloudflare re-checked 2026-11-02 and 2026-11-05)
+## 3. Why Cloudflare Workers AI (free options compared, checked 2026-10-27, Cloudflare re-checked 2026-11-02, 2026-11-05 and 2026-11-10)
 
 | Option | Cost | Why or why not |
 |---|---|---|
@@ -78,7 +78,7 @@ Free tiers change often: re-check the numbers in #122 and again before release (
 
 Cloudflare measures free-plan usage in neurons per million tokens (a token is about ¾ of an
 English word). Gemma 4 26B costs 9,091 neurons per million input tokens and 27,273 per million
-output tokens (unchanged when re-checked on 2026-11-02 and 2026-11-05). Every response reports the neurons it
+output tokens (unchanged when re-checked on 2026-11-02, 2026-11-05 and 2026-11-10). Every response reports the neurons it
 used in `usage.neurons`.
 
 Measured in #122 (2026-11-02, 10 test questions, thinking off): our instructions plus one question
@@ -347,6 +347,13 @@ with no beta or deprecation notice, at the prices above; Cloudflare still doesn'
 what we send; its Workers AI terms say nothing about users' ages or regions and ask us to follow
 the model's license; the Gemma 4 license page is still Apache 2.0, which has no use policy or
 display rule.
+
+Re-checked again on 2026-11-10, when the Bible Helper went into release builds (#131): the same.
+10,000 free neurons a day, reset at 00:00 UTC, errors past it; Gemma 4 26B still at 9,091 and
+27,273 neurons per million input and output tokens, with no beta or deprecation note; Cloudflare
+still doesn't train on what we send and doesn't keep it after answering, except where the law
+requires it or for features we don't use (AI Gateway logging, batch); the Gemma 4 license page is
+still Apache 2.0.
 
 - [Gemini API Additional Terms of Service](https://ai.google.dev/gemini-api/terms)
 - Cloudflare Workers AI: [pricing](https://developers.cloudflare.com/workers-ai/platform/pricing/),

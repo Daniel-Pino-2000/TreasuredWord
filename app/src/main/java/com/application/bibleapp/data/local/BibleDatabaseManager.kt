@@ -192,7 +192,8 @@ object BibleDatabaseManager {
         )
         ensureDownloadedVersionsTable(db)
         ensureUserContentTables(db)
-        // Release builds don't get the Bible Helper's tables until #131 turns it on (#127).
+        // The Bible Helper's tables (#127), created on every open: people updating from a version
+        // without the Bible Helper get them here, since #131 turned it on for release builds.
         if (BuildConfig.AI_HELPER_ENABLED) ensureAiHelperTables(db)
         ensureSearchTextColumns(db)
         dbInstance = db
