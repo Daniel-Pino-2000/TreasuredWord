@@ -38,6 +38,20 @@
     <!-- %1$s = the image's reference and translation, e.g. "John 3:16 · KJV" -->
     <string name="verse_image_preview_description">Preview ng larawan para sa %1$s</string>
     <string name="verse_image_failed">Hindi magawa ang larawan. Subukan ulit.</string>
+    <!-- Saving verse images and setting them as wallpaper (#255) -->
+    <string name="verse_image_save">I-save</string>
+    <string name="verse_image_saved">Na-save sa Photos</string>
+    <string name="verse_image_save_failed">Hindi ma-save ang larawan. Subukan ulit.</string>
+    <string name="verse_image_storage_denied">Sa bersyong ito ng Android, kailangan ng access sa storage para mag-save. Maibabahagi mo pa rin ang larawan.</string>
+    <string name="verse_image_set_wallpaper">Gawing wallpaper</string>
+    <string name="wallpaper_dialog_title">Gawing wallpaper?</string>
+    <string name="wallpaper_dialog_text">Papalitan nito ang kasalukuyang wallpaper mo. Mapapalitan mo ito ulit sa settings ng phone mo.</string>
+    <string name="wallpaper_target_home">Home screen</string>
+    <string name="wallpaper_target_lock">Lock screen</string>
+    <string name="wallpaper_target_both">Home at lock screen</string>
+    <string name="wallpaper_set_action">Itakda</string>
+    <string name="wallpaper_set_done">Naitakda ang wallpaper</string>
+    <string name="wallpaper_set_failed">Hindi maitakda ang wallpaper. Subukan ulit.</string>
     <string name="action_download">I-download</string>
     <string name="tap_to_retry">I-tap para subukan ulit</string>
     <string name="error_generic">Nagkaproblema</string>

@@ -1,6 +1,22 @@
 package com.application.bibleapp.components
 
 import android.graphics.Bitmap
+import android.Manifest
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material.icons.outlined.Download
+import androidx.compose.material.icons.outlined.Wallpaper
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import com.application.bibleapp.verseimage.VerseImageSaving
+import com.application.bibleapp.verseimage.WallpaperTarget
+import com.application.bibleapp.verseimage.verseImageFileName
+import java.util.Date
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -80,7 +96,8 @@ private val SWATCH_TOUCH = 48.dp
 private val PREVIEW_MAX_HEIGHT = 340.dp
 
 /**
- * The verse image editor (#254): a live preview and the choices that change it, then Share. The
+ * The verse image editor (#254): a live preview and the choices that change it, then Share, Save
+ * to Photos or Set as wallpaper (#255). The
  * preview is the very bitmap that gets shared, drawn by [VerseImageRenderer] off the main thread
  * each time a choice changes. A passage too long to read as an image offers text instead.
  *
@@ -152,11 +169,82 @@ private fun EditorContent(
         }
     }
 
+    // Save to Photos (#255). Android 9 and older ask for storage access first.
+    val savedMessage = stringResource(R.string.verse_image_saved)
+    val saveFailedMessage = stringResource(R.string.verse_image_save_failed)
+    val storageDeniedMessage = stringResource(R.string.verse_image_storage_denied)
+    val save: () -> Unit = {
+        bitmap?.let { image ->
+            scope.launch {
+                try {
+                    VerseImageSaving.saveToPictures(
+                        context, image, verseImageFileName(request.content.reference, Date())
+                    )
+                    snackbarHostState.showSnackbar(savedMessage)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    snackbarHostState.showSnackbar(saveFailedMessage)
+                }
+            }
+        }
+    }
+    val storagePermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) save() else scope.launch { snackbarHostState.showSnackbar(storageDeniedMessage) }
+    }
+    val onSave: () -> Unit = {
+        if (VerseImageSaving.needsStoragePermission(context)) {
+            storagePermission.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        } else {
+            save()
+        }
+    }
+
+    // Set as wallpaper (#255): asks where, and warns it replaces the current one. Drawn at the
+    // screen's own size rather than the chosen image size, so it's never stretched or cut.
+    val canSetWallpaper = remember { VerseImageSaving.canSetWallpaper(context) }
+    var wallpaperDialogOpen by rememberSaveable { mutableStateOf(false) }
+    val wallpaperSetMessage = stringResource(R.string.wallpaper_set_done)
+    val wallpaperFailedMessage = stringResource(R.string.wallpaper_set_failed)
+    if (wallpaperDialogOpen) {
+        WallpaperDialog(
+            onDismiss = { wallpaperDialogOpen = false },
+            onConfirm = { target ->
+                wallpaperDialogOpen = false
+                scope.launch {
+                    try {
+                        val (width, height) = VerseImageSaving.screenSize(context)
+                        val wallpaper = withContext(Dispatchers.Default) {
+                            VerseImageRenderer.render(request.content, options, width, height, forWallpaper = true)
+                        }
+                        VerseImageSaving.setWallpaper(context, wallpaper, target)
+                        snackbarHostState.showSnackbar(wallpaperSetMessage)
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        snackbarHostState.showSnackbar(wallpaperFailedMessage)
+                    }
+                }
+            }
+        )
+    }
+
     val preview: @Composable (Modifier) -> Unit = { modifier ->
         VerseImagePreview(bitmap, options.format, request.content.creditLine, modifier)
     }
+    val openWallpaperDialog: (() -> Unit)? = if (canSetWallpaper) {
+        { wallpaperDialogOpen = true }
+    } else {
+        null
+    }
     val controls: @Composable () -> Unit = {
-        VerseImageControls(request, options, onOptionsChange, onShare = share, shareEnabled = bitmap != null)
+        VerseImageControls(
+            request, options, onOptionsChange,
+            onShare = share,
+            onSave = onSave,
+            onSetWallpaper = openWallpaperDialog,
+            ready = bitmap != null
+        )
     }
 
     if (isCompactHeight()) {
@@ -234,7 +322,9 @@ private fun VerseImageControls(
     options: VerseImageOptions,
     onOptionsChange: (VerseImageOptions) -> Unit,
     onShare: () -> Unit,
-    shareEnabled: Boolean
+    onSave: () -> Unit,
+    onSetWallpaper: (() -> Unit)?,
+    ready: Boolean
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
         SectionLabel(stringResource(R.string.verse_image_style))
@@ -265,15 +355,26 @@ private fun VerseImageControls(
             onOptionsChange(options.copy(showMark = it))
         }
 
-        Button(
-            onClick = onShare,
-            enabled = shareEnabled,
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = Spacing.sm)
+                .padding(top = Spacing.sm),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
         ) {
-            Icon(Icons.Outlined.Share, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
-            Text(stringResource(R.string.action_share), modifier = Modifier.padding(start = Spacing.sm))
+            OutlinedButton(onClick = onSave, enabled = ready, modifier = Modifier.weight(1f)) {
+                Icon(Icons.Outlined.Download, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
+                Text(stringResource(R.string.verse_image_save), modifier = Modifier.padding(start = Spacing.sm))
+            }
+            Button(onClick = onShare, enabled = ready, modifier = Modifier.weight(1f)) {
+                Icon(Icons.Outlined.Share, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
+                Text(stringResource(R.string.action_share), modifier = Modifier.padding(start = Spacing.sm))
+            }
+        }
+        onSetWallpaper?.let { onClick ->
+            TextButton(onClick = onClick, enabled = ready, modifier = Modifier.fillMaxWidth()) {
+                Icon(Icons.Outlined.Wallpaper, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
+                Text(stringResource(R.string.verse_image_set_wallpaper), modifier = Modifier.padding(start = Spacing.sm))
+            }
         }
     }
 }
@@ -389,4 +490,49 @@ private fun TooLongContent(onShareText: () -> Unit) {
             Text(stringResource(R.string.share_as_text), modifier = Modifier.padding(start = Spacing.sm))
         }
     }
+}
+
+/** Where to put the wallpaper, with a warning that it replaces the current one (#255). */
+@Composable
+private fun WallpaperDialog(onDismiss: () -> Unit, onConfirm: (WallpaperTarget) -> Unit) {
+    var target by rememberSaveable { mutableStateOf(WallpaperTarget.BOTH) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.wallpaper_dialog_title)) },
+        text = {
+            // Scrolls, or a landscape phone cuts the options off.
+            Column(modifier = Modifier.verticalScroll(rememberScrollState()).selectableGroup()) {
+                Text(
+                    text = stringResource(R.string.wallpaper_dialog_text),
+                    modifier = Modifier.padding(bottom = Spacing.sm)
+                )
+                listOf(
+                    WallpaperTarget.HOME to R.string.wallpaper_target_home,
+                    WallpaperTarget.LOCK to R.string.wallpaper_target_lock,
+                    WallpaperTarget.BOTH to R.string.wallpaper_target_both
+                ).forEach { (option, label) ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = SWATCH_TOUCH)
+                            .selectable(selected = target == option, role = Role.RadioButton, onClick = { target = option }),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(selected = target == option, onClick = null)
+                        Text(
+                            text = stringResource(label),
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.padding(start = Spacing.md)
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onConfirm(target) }) { Text(stringResource(R.string.wallpaper_set_action)) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
+        }
+    )
 }

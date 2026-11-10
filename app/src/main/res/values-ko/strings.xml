@@ -37,6 +37,20 @@
     <!-- %1$s = the image's reference and translation, e.g. "John 3:16 · KJV" -->
     <string name="verse_image_preview_description">%1$s 이미지 미리보기</string>
     <string name="verse_image_failed">이미지를 만들지 못했어요. 다시 시도하세요.</string>
+    <!-- Saving verse images and setting them as wallpaper (#255) -->
+    <string name="verse_image_save">저장</string>
+    <string name="verse_image_saved">사진에 저장했어요</string>
+    <string name="verse_image_save_failed">이미지를 저장하지 못했어요. 다시 시도하세요.</string>
+    <string name="verse_image_storage_denied">이 Android 버전에서는 저장하려면 저장소 접근 권한이 필요해요. 이미지는 계속 공유할 수 있어요.</string>
+    <string name="verse_image_set_wallpaper">배경화면으로 설정</string>
+    <string name="wallpaper_dialog_title">배경화면으로 설정할까요?</string>
+    <string name="wallpaper_dialog_text">지금 배경화면이 바뀌어요. 휴대전화 설정에서 다시 바꿀 수 있어요.</string>
+    <string name="wallpaper_target_home">홈 화면</string>
+    <string name="wallpaper_target_lock">잠금 화면</string>
+    <string name="wallpaper_target_both">홈 화면과 잠금 화면</string>
+    <string name="wallpaper_set_action">설정</string>
+    <string name="wallpaper_set_done">배경화면을 설정했어요</string>
+    <string name="wallpaper_set_failed">배경화면을 설정하지 못했어요. 다시 시도하세요.</string>
     <string name="action_download">다운로드</string>
     <string name="tap_to_retry">탭하여 다시 시도</string>
     <string name="error_generic">문제가 발생했어요</string>

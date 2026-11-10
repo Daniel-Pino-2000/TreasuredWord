@@ -36,6 +36,20 @@
     <!-- %1$s = the image's reference and translation, e.g. "John 3:16 · KJV" -->
     <string name="verse_image_preview_description">%1$s 的图片预览</string>
     <string name="verse_image_failed">无法生成图片，请重试。</string>
+    <!-- Saving verse images and setting them as wallpaper (#255) -->
+    <string name="verse_image_save">保存</string>
+    <string name="verse_image_saved">已保存到相册</string>
+    <string name="verse_image_save_failed">无法保存图片，请重试。</string>
+    <string name="verse_image_storage_denied">在此 Android 版本上，保存需要存储权限。你仍然可以分享图片。</string>
+    <string name="verse_image_set_wallpaper">设为壁纸</string>
+    <string name="wallpaper_dialog_title">设为壁纸？</string>
+    <string name="wallpaper_dialog_text">这会替换你当前的壁纸。你可以在手机设置中改回来。</string>
+    <string name="wallpaper_target_home">主屏幕</string>
+    <string name="wallpaper_target_lock">锁定屏幕</string>
+    <string name="wallpaper_target_both">主屏幕和锁定屏幕</string>
+    <string name="wallpaper_set_action">设置</string>
+    <string name="wallpaper_set_done">壁纸已设置</string>
+    <string name="wallpaper_set_failed">无法设置壁纸，请重试。</string>
     <string name="action_download">下载</string>
     <string name="tap_to_retry">点按重试</string>
     <string name="error_generic">出了点问题</string>

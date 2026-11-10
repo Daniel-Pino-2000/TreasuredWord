@@ -37,6 +37,20 @@
     <!-- %1$s = the image's reference and translation, e.g. "John 3:16 · KJV" -->
     <string name="verse_image_preview_description">Prévia da imagem de %1$s</string>
     <string name="verse_image_failed">Não foi possível criar a imagem. Tente de novo.</string>
+    <!-- Saving verse images and setting them as wallpaper (#255) -->
+    <string name="verse_image_save">Salvar</string>
+    <string name="verse_image_saved">Salva em Fotos</string>
+    <string name="verse_image_save_failed">Não foi possível salvar a imagem. Tente de novo.</string>
+    <string name="verse_image_storage_denied">Nesta versão do Android, salvar precisa de acesso ao armazenamento. Você ainda pode compartilhar a imagem.</string>
+    <string name="verse_image_set_wallpaper">Definir como plano de fundo</string>
+    <string name="wallpaper_dialog_title">Definir como plano de fundo?</string>
+    <string name="wallpaper_dialog_text">Isso substitui seu plano de fundo atual. Você pode trocá-lo de novo nas configurações do celular.</string>
+    <string name="wallpaper_target_home">Tela inicial</string>
+    <string name="wallpaper_target_lock">Tela de bloqueio</string>
+    <string name="wallpaper_target_both">Telas inicial e de bloqueio</string>
+    <string name="wallpaper_set_action">Definir</string>
+    <string name="wallpaper_set_done">Plano de fundo definido</string>
+    <string name="wallpaper_set_failed">Não foi possível definir o plano de fundo. Tente de novo.</string>
     <string name="action_download">Baixar</string>
     <string name="tap_to_retry">Toque para tentar de novo</string>
     <string name="error_generic">Algo deu errado</string>
