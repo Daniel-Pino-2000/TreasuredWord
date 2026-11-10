@@ -40,6 +40,7 @@ import kotlinx.serialization.SerializationException
 import java.io.File
 import java.io.IOException
 import java.util.Calendar
+import com.application.bibleapp.widget.DailyVerseWidgetUpdates
 
 /**
  * Year + day-of-year, in local time — stamped on the cached daily-verse row and compared with
@@ -274,6 +275,7 @@ class BibleRepository(
         }
         val fetched = daily.getDailyVerse()
         BibleDatabaseManager.saveCachedDailyVerse(context, dailyVerseDateKey(), fetched)
+        DailyVerseWidgetUpdates.refreshNow(context) // the widget shows the cached verse (#245)
         fetched
     }
 
@@ -428,6 +430,7 @@ class BibleRepository(
     /** Persisted across process restarts so the app reopens on the last version the user picked. */
     fun saveSelectedVersion(versionId: String) {
         prefs.edit().putString(KEY_SELECTED_VERSION, versionId).apply()
+        DailyVerseWidgetUpdates.refreshNow(context) // the widget's verse follows the translation (#245)
     }
 
     fun loadSelectedVersion(): String = prefs.getString(KEY_SELECTED_VERSION, DEFAULT_VERSION.id) ?: DEFAULT_VERSION.id

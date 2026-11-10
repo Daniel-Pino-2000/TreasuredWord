@@ -13,14 +13,11 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.application.bibleapp.MainActivity
 import com.application.bibleapp.R
-import com.application.bibleapp.data.model.BibleBooks
-import com.application.bibleapp.data.model.DailyVerseRef
-import com.application.bibleapp.data.model.DailyVerseUI
 import com.application.bibleapp.data.model.VerseOfTheDay
-import com.application.bibleapp.data.model.resolveDailyVerseUI
 import com.application.bibleapp.data.remote.HelloAoBibleDataSource
 import com.application.bibleapp.data.remote.OurMannaBibleDataSource
 import com.application.bibleapp.data.repository.BibleRepository
+import com.application.bibleapp.data.repository.resolveDailyVerseText
 import com.application.bibleapp.utils.AppLanguage
 
 /**
@@ -73,14 +70,9 @@ class DailyVerseNotificationWorker(
         val versionId = repository.loadSelectedVersion()
         val ref = runCatching { repository.getDailyVerse() }.getOrElse { VerseOfTheDay.forToday() }
 
-        // The cached/fallback ref is resolved against whatever the *chosen* translation
-        // has locally, which can legitimately be missing it (not downloaded, deleted
-        // since, or a partial-canon translation that never covers that book) — in which
-        // case this would otherwise post nothing at all, silently, forever. KJV is
-        // bundled and always has the full canon, so it's a fallback that's guaranteed to
-        // resolve for any ref this app itself produces.
-        val verse = resolveVerse(repository, ref, versionId)
-            ?: resolveVerse(repository, VerseOfTheDay.forToday(), "kjv")
+        // Read from the device only, falling back to bundled KJV when the chosen translation
+        // doesn't have it — the same lookup as the home screen widget (#245).
+        val verse = repository.resolveDailyVerseText(ref, versionId)?.verse
         if (verse == null) {
             Log.w(TAG, "Could not resolve daily verse (ref=$ref, version=$versionId) even with KJV fallback")
             return
@@ -120,14 +112,6 @@ class DailyVerseNotificationWorker(
             .build()
 
         NotificationManagerCompat.from(applicationContext).notify(NOTIFICATION_ID, notification)
-    }
-
-    private suspend fun resolveVerse(repository: BibleRepository, ref: DailyVerseRef, versionId: String): DailyVerseUI? {
-        val bookName = repository.getBookNames(versionId)[ref.bookId]
-            ?: BibleBooks.getBookById(ref.bookId)?.name
-            ?: return null
-        val chapterVerses = repository.getChapter(ref.bookId, ref.chapter, versionId)
-        return resolveDailyVerseUI(bookName, ref, chapterVerses)
     }
 
     private companion object {

@@ -166,6 +166,10 @@ dependencies {
     // Background scheduling for the daily verse fetch + notification
     implementation(libs.androidx.work.runtime.ktx)
 
+    // Home screen widget with the daily verse (#245)
+    implementation(libs.androidx.glance.appwidget)
+    implementation(libs.androidx.glance.material3)
+
     // Chrome Custom Tabs for outside web pages (GotQuestions.org) - see utils/ExternalLinks.kt
     implementation(libs.androidx.browser)
 

@@ -337,6 +337,12 @@
     <string name="notification_channel_daily_verse">Verset quotidien</string>
     <string name="notification_channel_daily_verse_description">Ton rappel quotidien avec un verset de la Bible</string>
 
+    <!-- Home screen widget with the daily verse (#245): its name in the phone's widget picker,
+         the picker's short description, and what it shows if no verse can be read. -->
+    <string name="widget_daily_verse_name">TreasuredWord : verset du jour</string>
+    <string name="widget_daily_verse_description">Le verset du jour sur ton écran d\'accueil, dans la traduction que tu as choisie</string>
+    <string name="widget_daily_verse_unavailable">Ouvre TreasuredWord pour charger le verset du jour</string>
+
     <!-- Translation credit at the end of every chapter (#98) -->
     <!-- Link to the Bible translation's license page -->
     <string name="translation_credit_license">Licence</string>

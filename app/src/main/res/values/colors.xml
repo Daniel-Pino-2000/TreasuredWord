@@ -23,4 +23,9 @@
     <color name="splash_background_slate_dark">#FF10151C</color>
     <color name="splash_background_rose_light">#FFFBF6F5</color>
     <color name="splash_background_rose_dark">#FF1B1517</color>
+    <!-- The daily verse widget's preview in the widget picker (#245): Parchment's accent
+         container, accent and text on it (ui/theme/Color.kt). The widget itself uses GlanceTheme. -->
+    <color name="widget_preview_background">#FFEDDFC4</color>
+    <color name="widget_preview_title">#FF805A2B</color>
+    <color name="widget_preview_text">#FF3D2D12</color>
 </resources>

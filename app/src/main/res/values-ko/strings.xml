@@ -319,6 +319,12 @@
     <string name="notification_channel_daily_verse">매일 말씀</string>
     <string name="notification_channel_daily_verse_description">매일 성경 말씀 알림</string>
 
+    <!-- Home screen widget with the daily verse (#245): its name in the phone's widget picker,
+         the picker's short description, and what it shows if no verse can be read. -->
+    <string name="widget_daily_verse_name">TreasuredWord 오늘의 말씀</string>
+    <string name="widget_daily_verse_description">선택한 번역본으로 홈 화면에서 보는 오늘의 말씀</string>
+    <string name="widget_daily_verse_unavailable">TreasuredWord를 열어 오늘의 말씀을 불러오세요</string>
+
     <!-- Translation credit at the end of every chapter (#98) -->
     <!-- Link to the Bible translation's license page -->
     <string name="translation_credit_license">라이선스</string>
