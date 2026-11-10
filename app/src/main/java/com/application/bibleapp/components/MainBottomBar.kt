@@ -4,7 +4,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -16,6 +19,7 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarDefaults
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailDefaults
 import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -23,12 +27,15 @@ import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.application.bibleapp.data.model.BibleBooks
 import com.application.bibleapp.data.model.chapterCount
@@ -175,7 +182,8 @@ fun BibleChapterNav(
  * [MainBottomBar]'s tabs as a side rail, used instead of it when the window height is compact
  * (a phone in landscape) — a bottom bar there eats a quarter of the height, a rail only some of
  * the far more plentiful width. Items are centered vertically so they're within thumb reach.
- * The rail's own default insets cover the status bar and a start-side display cutout.
+ * The rail's own default insets cover the status bar and a start-side display cutout; the bottom
+ * gesture bar is left to [CenteredAboveBottomInset] (#266).
  */
 @Composable
 fun MainNavigationRail(
@@ -183,16 +191,22 @@ fun MainNavigationRail(
     onItemSelected: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val railInsets = NavigationRailDefaults.windowInsets
+    val bottomInset = railInsets.asPaddingValues().calculateBottomPadding()
     NavigationRail(
         modifier = modifier,
-        containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(NavigationBarDefaults.Elevation)
+        containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(NavigationBarDefaults.Elevation),
+        // Nothing tappable sits under the rail at the gesture bar, so the rail may use that strip
+        // when it needs to: five Korean or Chinese labels are a few dp taller than the space above
+        // it on an S23-sized phone, and the last one showed cut off (#266).
+        windowInsets = railInsets.only(WindowInsetsSides.Top + WindowInsetsSides.Start)
     ) {
         // Five tabs (with the Bible Helper) at the rail's own 4 dp spacing don't fit a landscape
         // phone with a tall status bar, and the rail squeezed the last one (#209): no gaps here,
-        // and scrolling as a last resort, so no tab is ever cut off.
+        // and scrolling as a last resort (large font sizes), so no tab is ever cut off.
         Column(
             modifier = Modifier.fillMaxHeight().verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = remember(bottomInset) { CenteredAboveBottomInset(bottomInset) }
         ) {
             bottomNavigationItems.forEach { item ->
                 NavigationRailItem(
@@ -207,6 +221,22 @@ fun MainNavigationRail(
                     label = { Text(stringResource(item.titleRes), maxLines = 1, overflow = TextOverflow.Ellipsis) }
                 )
             }
+        }
+    }
+}
+
+/**
+ * Centers the rail's tabs in the space above [bottomInset] (the gesture bar) when they fit there,
+ * as the rail did before #266. When they don't, they start at the top and run into that strip only
+ * as far as they need to, and past the whole height the rail scrolls.
+ */
+private class CenteredAboveBottomInset(private val bottomInset: Dp) : Arrangement.Vertical {
+    override fun Density.arrange(totalSize: Int, sizes: IntArray, outPositions: IntArray) {
+        val spare = totalSize - bottomInset.roundToPx() - sizes.sum()
+        var y = (spare / 2).coerceAtLeast(0)
+        sizes.forEachIndexed { index, size ->
+            outPositions[index] = y
+            y += size
         }
     }
 }
