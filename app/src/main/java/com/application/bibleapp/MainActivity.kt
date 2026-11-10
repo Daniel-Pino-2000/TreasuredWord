@@ -72,6 +72,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.splashscreen.SplashScreenViewProvider
 import androidx.core.view.WindowCompat
@@ -102,6 +103,8 @@ import com.application.bibleapp.components.TopBar
 import com.application.bibleapp.components.VersePickerTopBar
 import com.application.bibleapp.components.VersionPickerTopBar
 import com.application.bibleapp.components.VerseImageSheet
+import com.application.bibleapp.verseimage.EXTRA_SHARE_DAILY_VERSE_IMAGE
+import com.application.bibleapp.worker.DAILY_VERSE_NOTIFICATION_ID
 import com.application.bibleapp.components.VerseSelectionToolbar
 import com.application.bibleapp.components.YouTopBar
 import com.application.bibleapp.data.model.BibleBooks
@@ -175,6 +178,12 @@ class MainActivity : AppCompatActivity() {
         val launchedAt = SystemClock.uptimeMillis()
         startupScreen.setKeepOnScreenCondition {
             keepStartupScreen(startupViewModel.isStartupContentReady.value, SystemClock.uptimeMillis() - launchedAt)
+        }
+        // "Share image" from the daily verse notification or widget (#256). Only on a fresh
+        // start, not when the activity is recreated (rotation), so it opens once.
+        if (savedInstanceState == null && intent?.getBooleanExtra(EXTRA_SHARE_DAILY_VERSE_IMAGE, false) == true) {
+            startupViewModel.shareVerseOfTheDayAsImageWhenReady(getString(R.string.verse_of_the_day))
+            NotificationManagerCompat.from(this).cancel(DAILY_VERSE_NOTIFICATION_ID)
         }
         // An app left open overnight shows the new day's verse when it comes back (#183).
         lifecycle.addObserver(LifecycleEventObserver { _, event ->

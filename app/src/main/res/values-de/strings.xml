@@ -50,6 +50,11 @@
     <string name="wallpaper_set_action">Festlegen</string>
     <string name="wallpaper_set_done">Hintergrund festgelegt</string>
     <string name="wallpaper_set_failed">Der Hintergrund konnte nicht festgelegt werden. Versuche es erneut.</string>
+    <!-- Verse images from the daily verse (#256) -->
+    <!-- %1$s = the label on the image, e.g. "Verse of the Day" -->
+    <string name="verse_image_show_label">„%1$s“ zeigen</string>
+    <!-- The daily verse notification's button that opens the verse image editor -->
+    <string name="daily_verse_share_image">Als Bild teilen</string>
     <string name="action_download">Herunterladen</string>
     <string name="tap_to_retry">Tippe, um es erneut zu versuchen</string>
     <string name="error_generic">Etwas ist schiefgelaufen</string>

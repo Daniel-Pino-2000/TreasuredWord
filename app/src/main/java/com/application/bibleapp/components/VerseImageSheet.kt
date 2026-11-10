@@ -348,6 +348,11 @@ private fun VerseImageControls(
                 onOptionsChange(options.copy(showVerseNumbers = it))
             }
         }
+        request.content.label?.let { label ->
+            SwitchRow(stringResource(R.string.verse_image_show_label, label), options.showLabel) {
+                onOptionsChange(options.copy(showLabel = it))
+            }
+        }
         SwitchRow(stringResource(R.string.verse_image_centered), options.centered) {
             onOptionsChange(options.copy(centered = it))
         }

@@ -66,6 +66,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.application.bibleapp.R
 import com.application.bibleapp.components.MissingVersionBanners
+import com.application.bibleapp.components.ShareChoiceMenu
 import com.application.bibleapp.data.model.BookResources
 import com.application.bibleapp.data.model.DailyVerseUI
 import com.application.bibleapp.data.model.Highlight
@@ -126,6 +127,9 @@ fun HomeView(
     val clipboardManager = LocalClipboardManager.current
     val context = LocalContext.current
 
+    // The image's label (#256), in the app language like the card's own heading.
+    val verseOfTheDayLabel = stringResource(R.string.verse_of_the_day)
+
     val greeting: @Composable () -> Unit = { HomeGreeting() }
     val verseCard: @Composable () -> Unit = {
         verseOfTheDay?.let { verse ->
@@ -150,7 +154,8 @@ fun HomeView(
                         }
                         context.startActivity(Intent.createChooser(send, null))
                     }
-                }
+                },
+                onShareImage = { bibleViewModel.shareVerseOfTheDayAsImage(verseOfTheDayLabel) }
             )
         }
     }
@@ -288,7 +293,8 @@ private fun VerseOfTheDayCard(
     textScale: Float,
     onOpen: () -> Unit,
     onCopy: () -> Unit,
-    onShare: () -> Unit
+    onShare: () -> Unit,
+    onShareImage: () -> Unit
 ) {
     val contentColor = MaterialTheme.colorScheme.onPrimaryContainer
     // A range shows each verse's number as a superscript before its text, like the reader does.
@@ -352,11 +358,21 @@ private fun VerseOfTheDayCard(
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }
-                IconButton(onClick = onShare) {
-                    Icon(
-                        Icons.Filled.Share,
-                        contentDescription = stringResource(R.string.action_share),
-                        tint = MaterialTheme.colorScheme.primary
+                // Asks text or image (#256), like the reader's Share; the Box anchors the menu here.
+                Box {
+                    var shareMenuOpen by remember { mutableStateOf(false) }
+                    IconButton(onClick = { shareMenuOpen = true }) {
+                        Icon(
+                            Icons.Filled.Share,
+                            contentDescription = stringResource(R.string.action_share),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    ShareChoiceMenu(
+                        expanded = shareMenuOpen,
+                        onDismiss = { shareMenuOpen = false },
+                        onShareText = onShare,
+                        onShareImage = onShareImage
                     )
                 }
             }

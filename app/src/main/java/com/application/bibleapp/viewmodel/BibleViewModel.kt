@@ -56,11 +56,14 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.transform
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import com.application.bibleapp.R
 import com.application.bibleapp.utils.UiText
 import com.application.bibleapp.utils.VerseReference
@@ -104,6 +107,9 @@ data class VerseTextKey(val versionId: String, val location: VerseLocationDto)
  *  break — same marker BibleText strips for the reading view; the Library screen's verse
  *  previews need the same cleanup. */
 private const val LEGACY_PARAGRAPH_MARKER = "¶ "
+
+/** How long "Share image" from the notification or widget waits for today's verse (#256). */
+private const val DAILY_VERSE_WAIT_MS = 10_000L
 
 /** (bookId, chapter) to take verse 1 from for [BibleViewModel.textSizeSample]: Genesis 1, then John 1. */
 private val TEXT_SIZE_SAMPLE_CHAPTERS = listOf(1 to 1, 43 to 1)
@@ -808,12 +814,45 @@ class BibleViewModel(
             lines = lines,
             reference = formatFullVerseRefs(sorted, bookName),
             versionLabel = versionLabel,
-            notice = currentTranslationCredit.value.license?.notice
+            notice = currentLicenseNotice()
         )
         val shareText = buildVerseShareText(sorted, textByLocation::get, bookName, versionLabel)
         clearSelection()
         _verseImageRequest.value = VerseImageRequest(content, shareText)
     }
+
+    /** Opens the verse image editor for today's verse (#256), with a "Verse of the Day" label on
+     *  the image. Null-safe: does nothing until the daily verse has loaded. */
+    fun shareVerseOfTheDayAsImage(label: String) {
+        val verse = _verseOfTheDay.value ?: return
+        val shareText = verseOfTheDayShareText() ?: return
+        _verseImageRequest.value = VerseImageRequest(
+            content = VerseImageContent(
+                lines = verse.verses.map { VerseImageLine(it.number, it.text) },
+                reference = verse.reference,
+                versionLabel = currentVersionLabel.value,
+                notice = currentLicenseNotice(),
+                label = label
+            ),
+            shareText = shareText
+        )
+    }
+
+    /** From the daily verse notification's or widget's "Share image" (#256): the app has just
+     *  started, so this waits for today's verse to load (it always does, offline included,
+     *  from the curated list), then opens the editor. */
+    fun shareVerseOfTheDayAsImageWhenReady(label: String) {
+        viewModelScope.launch {
+            withTimeoutOrNull(DAILY_VERSE_WAIT_MS) { _verseOfTheDay.filterNotNull().first() } ?: return@launch
+            shareVerseOfTheDayAsImage(label)
+        }
+    }
+
+    /** The selected translation's license notice (#98), for a verse image. Computed here rather
+     *  than read from [currentTranslationCredit], which only updates while the reader shows it. */
+    private fun currentLicenseNotice(): String? =
+        translationCreditFor(_selectedVersion.value.id, _availableVersions.value, _downloadedVersions.value)
+            .license?.notice
 
     fun closeVerseImage() {
         _verseImageRequest.value = null
