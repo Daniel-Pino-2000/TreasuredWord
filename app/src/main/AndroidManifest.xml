@@ -74,6 +74,23 @@
 
         <!-- exported="true": required for the system to be able to deliver these
              protected broadcasts, which only the OS itself is allowed to send. -->
+        <!-- Home screen widget with the daily verse (#245). Exported for the launcher's widget
+             broadcasts; the locale actions redraw it when the phone's or the app's language
+             changes outside the app. -->
+        <receiver
+            android:name=".widget.DailyVerseWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_daily_verse_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.intent.action.LOCALE_CHANGED" />
+                <action android:name="android.intent.action.APPLICATION_LOCALE_CHANGED" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/daily_verse_widget_info" />
+        </receiver>
+
         <receiver
             android:name=".receiver.BootCompletedReceiver"
             android:exported="true">

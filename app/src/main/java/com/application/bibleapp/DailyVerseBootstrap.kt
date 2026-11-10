@@ -6,6 +6,7 @@ import com.application.bibleapp.data.remote.HelloAoBibleDataSource
 import com.application.bibleapp.data.remote.OurMannaBibleDataSource
 import com.application.bibleapp.data.repository.BibleRepository
 import com.application.bibleapp.worker.DailyVerseScheduler
+import com.application.bibleapp.widget.DailyVerseWidgetUpdates
 
 /**
  * Ensures both daily-verse background jobs (fetch + reminder notification) are
@@ -23,6 +24,8 @@ import com.application.bibleapp.worker.DailyVerseScheduler
  */
 fun ensureDailyVerseJobsScheduled(context: Context) {
     DailyVerseScheduler.scheduleDailyFetch(context)
+    // The widget's midnight redraw (#245), if a widget is placed and the job went missing.
+    DailyVerseWidgetUpdates.scheduleMidnight(context, ExistingWorkPolicy.KEEP)
 
     val repository = BibleRepository(
         context = context,
