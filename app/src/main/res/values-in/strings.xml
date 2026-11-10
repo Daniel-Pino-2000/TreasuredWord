@@ -22,6 +22,50 @@
     <string name="action_sign_in">Masuk</string>
     <string name="action_copy">Salin</string>
     <string name="action_share">Bagikan</string>
+    <!-- Verse images (#254) -->
+    <string name="share_as_text">Bagikan sebagai teks</string>
+    <string name="share_as_image">Bagikan sebagai gambar</string>
+    <string name="verse_image_style">Gaya</string>
+    <string name="verse_image_size">Ukuran</string>
+    <string name="verse_image_size_square">Persegi</string>
+    <string name="verse_image_size_portrait">Potret</string>
+    <string name="verse_image_size_story">Story</string>
+    <string name="verse_image_verse_numbers">Nomor ayat</string>
+    <string name="verse_image_centered">Ratakan teks ke tengah</string>
+    <string name="verse_image_show_mark">Tampilkan nama TreasuredWord</string>
+    <string name="verse_image_too_long">Bagian ini terlalu panjang untuk dibaca sebagai gambar. Bagikan sebagai teks, atau pilih lebih sedikit ayat.</string>
+    <!-- %1$s = the image's reference and translation, e.g. "John 3:16 · KJV" -->
+    <string name="verse_image_preview_description">Pratinjau gambar untuk %1$s</string>
+    <string name="verse_image_failed">Tidak dapat membuat gambar. Coba lagi.</string>
+    <!-- Saving verse images and setting them as wallpaper (#255) -->
+    <string name="verse_image_save">Simpan</string>
+    <string name="verse_image_saved">Disimpan ke Foto</string>
+    <string name="verse_image_save_failed">Tidak dapat menyimpan gambar. Coba lagi.</string>
+    <string name="verse_image_storage_denied">Di versi Android ini, menyimpan memerlukan akses penyimpanan. Anda tetap bisa membagikan gambar.</string>
+    <string name="verse_image_set_wallpaper">Jadikan wallpaper</string>
+    <string name="wallpaper_dialog_title">Jadikan wallpaper?</string>
+    <string name="wallpaper_dialog_text">Ini akan mengganti wallpaper Anda saat ini. Anda bisa menggantinya lagi di setelan ponsel.</string>
+    <string name="wallpaper_target_home">Layar utama</string>
+    <string name="wallpaper_target_lock">Layar kunci</string>
+    <string name="wallpaper_target_both">Layar utama dan layar kunci</string>
+    <string name="wallpaper_set_action">Pasang</string>
+    <string name="wallpaper_set_done">Wallpaper dipasang</string>
+    <string name="wallpaper_set_failed">Tidak dapat memasang wallpaper. Coba lagi.</string>
+    <!-- Verse images from the daily verse (#256) -->
+    <!-- %1$s = the label on the image, e.g. "Verse of the Day" -->
+    <string name="verse_image_show_label">Tampilkan “%1$s”</string>
+    <!-- The daily verse notification's button that opens the verse image editor -->
+    <string name="daily_verse_share_image">Bagikan gambar</string>
+    <!-- Photo backgrounds and the daily verse wallpaper (#257) -->
+    <string name="verse_image_photo">Foto Anda</string>
+    <string name="verse_image_photo_failed">Tidak dapat membuka foto itu. Coba foto lain.</string>
+    <string name="settings_daily_wallpaper">Wallpaper ayat harian</string>
+    <string name="settings_daily_wallpaper_subtitle_off">Ayat hari ini sebagai wallpaper, diperbarui setiap hari</string>
+    <string name="settings_daily_wallpaper_subtitle_on">Diperbarui setiap hari. Mematikannya akan mempertahankan wallpaper saat ini.</string>
+    <string name="settings_daily_wallpaper_where">Di mana</string>
+    <string name="daily_wallpaper_confirm_title">Gunakan ayat harian sebagai wallpaper?</string>
+    <string name="daily_wallpaper_confirm_text">Ini mengganti wallpaper Anda sekarang, lalu setiap hari dengan ayat hari itu.</string>
+    <string name="daily_wallpaper_turn_on">Aktifkan</string>
     <string name="action_download">Unduh</string>
     <string name="tap_to_retry">Ketuk untuk mencoba lagi</string>
     <string name="error_generic">Terjadi kesalahan</string>
@@ -267,6 +311,14 @@
     <string name="language_system_default">Default sistem</string>
     <string name="settings_section_appearance">Tampilan</string>
     <string name="settings_theme">Tema</string>
+    <!-- Settings › Appearance: the color themes (#244). Each name is the theme's look, short enough for a swatch label. -->
+    <string name="settings_colors">Warna</string>
+    <string name="palette_parchment">Perkamen</string>
+    <string name="palette_ink">Tinta</string>
+    <string name="palette_graphite">Grafit</string>
+    <string name="palette_sage">Salvia</string>
+    <string name="palette_slate">Sabak</string>
+    <string name="palette_rose">Mawar</string>
     <string name="theme_system">Sistem</string>
     <string name="theme_light">Terang</string>
     <string name="theme_dark">Gelap</string>
@@ -310,6 +362,12 @@
     <string name="daily_verse_notification_title">Ayat Hari Ini</string>
     <string name="notification_channel_daily_verse">Ayat Harian</string>
     <string name="notification_channel_daily_verse_description">Pengingat harian ayat Alkitab Anda</string>
+
+    <!-- Home screen widget with the daily verse (#245): its name in the phone's widget picker,
+         the picker's short description, and what it shows if no verse can be read. -->
+    <string name="widget_daily_verse_name">TreasuredWord: Ayat Hari Ini</string>
+    <string name="widget_daily_verse_description">Ayat hari ini di layar utama Anda, dalam terjemahan pilihan Anda</string>
+    <string name="widget_daily_verse_unavailable">Buka TreasuredWord untuk memuat ayat hari ini</string>
 
     <!-- Translation credit at the end of every chapter (#98) -->
     <!-- Link to the Bible translation's license page -->

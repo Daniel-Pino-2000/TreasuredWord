@@ -5,9 +5,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -41,6 +38,18 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.material3.SwipeToDismissBoxState
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.customActions
+import kotlin.math.abs
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -56,6 +65,11 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import com.application.bibleapp.components.MissingVersionBanners
 import com.application.bibleapp.components.SWATCH_NAMES
+import com.application.bibleapp.components.SWATCH_TOUCH_SIZE
+import com.application.bibleapp.components.HighlightSwatchCircle
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material3.ripple
 import com.application.bibleapp.ui.theme.HighlightColors
 import com.application.bibleapp.ui.theme.toHighlightArgb
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -73,7 +87,9 @@ import com.application.bibleapp.data.model.Note
 import com.application.bibleapp.data.remote.VerseLocationDto
 import com.application.bibleapp.navigation.Screen
 import com.application.bibleapp.ui.theme.Spacing
+import com.application.bibleapp.ui.theme.collapseUpward
 import com.application.bibleapp.ui.theme.isCompactHeight
+import com.application.bibleapp.ui.theme.rememberKeyboardOpenFraction
 import com.application.bibleapp.utils.bookNameInVersion
 import com.application.bibleapp.utils.displayDate
 import com.application.bibleapp.utils.verseRefsText
@@ -99,7 +115,7 @@ private enum class LibraryTab(@StringRes val labelRes: Int, val routeArg: String
  * the highlighting/notes UI it's listing. [initialTab] lets Settings' two "My Library" rows
  * (Phase G) deep-link straight to either tab instead of always opening on Highlights.
  */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LibraryView(
     bibleViewModel: BibleViewModel,
@@ -126,24 +142,25 @@ fun LibraryView(
 
     // A landscape phone with the keyboard up leaves ~110 dp: the tab row stacked on the search
     // field doesn't fit, so the tabs step aside while typing, like the top bar (#215, #228).
-    val typingInCompactHeight = isCompactHeight() && WindowInsets.isImeVisible
+    // They collapse with the keyboard's own animation rather than popping out and back (#239).
+    val compactHeight = isCompactHeight()
+    val keyboardOpen = rememberKeyboardOpenFraction()
 
     // The window resizes for the keyboard (manifest): only the list gets shorter (#228).
     Column(modifier = modifier.fillMaxSize().imePadding()) {
-        if (!typingInCompactHeight) {
-            SingleChoiceSegmentedButtonRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = Spacing.lg, vertical = Spacing.md)
-            ) {
-                LibraryTab.entries.forEachIndexed { index, tab ->
-                    SegmentedButton(
-                        selected = selectedTab == tab,
-                        onClick = { selectedTab = tab },
-                        shape = SegmentedButtonDefaults.itemShape(index = index, count = LibraryTab.entries.size)
-                    ) {
-                        Text(stringResource(tab.labelRes))
-                    }
+        SingleChoiceSegmentedButtonRow(
+            modifier = Modifier
+                .collapseUpward { if (compactHeight) keyboardOpen.value else 0f }
+                .fillMaxWidth()
+                .padding(horizontal = Spacing.lg, vertical = Spacing.md)
+        ) {
+            LibraryTab.entries.forEachIndexed { index, tab ->
+                SegmentedButton(
+                    selected = selectedTab == tab,
+                    onClick = { selectedTab = tab },
+                    shape = SegmentedButtonDefaults.itemShape(index = index, count = LibraryTab.entries.size)
+                ) {
+                    Text(stringResource(tab.labelRes))
                 }
             }
         }
@@ -279,40 +296,88 @@ internal fun ShownInKjvLabel(modifier: Modifier = Modifier) {
     )
 }
 
-/** Swipe-left (end-to-start) to delete — [enableDismissFromStartToEnd] off so an accidental
- *  right-swipe (e.g. a back-navigation gesture near the screen edge) can't trigger it. */
+/**
+ * Swipe-left (end-to-start) to delete (#243). It takes a real swipe: the card must be dragged past
+ * [DELETE_SWIPE_FRACTION] of its width, and a short flick springs back instead of counting on its
+ * speed alone. The background turns red with a haptic tick once letting go would delete, and back
+ * when dragged back. The card slides fully off before [onDelete] runs (which shows Undo).
+ * [enableDismissFromStartToEnd] is off so the back gesture at the screen edge never deletes, and
+ * TalkBack users, who can't swipe, get a "Delete" action on the card instead.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun SwipeToDeleteRow(onDelete: () -> Unit, content: @Composable () -> Unit) {
+internal fun SwipeToDeleteRow(onDelete: () -> Unit, content: @Composable () -> Unit) {
+    val haptics = LocalHapticFeedback.current
+    val latestOnDelete by rememberUpdatedState(onDelete)
+    var rowWidth by remember { mutableIntStateOf(0) }
+    // confirmValueChange runs inside the state, so it reads the state back through this holder.
+    val stateHolder = remember { arrayOfNulls<SwipeToDismissBoxState>(1) }
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = { value ->
-            if (value == SwipeToDismissBoxValue.EndToStart) {
-                onDelete()
-                true
-            } else {
-                false
-            }
-        }
+            // Material also settles on "dismissed" for a quick flick of any length; only a drag
+            // that really crossed the threshold counts.
+            val offset = stateHolder[0]?.let { runCatching { it.requireOffset() }.getOrNull() } ?: 0f
+            value != SwipeToDismissBoxValue.EndToStart || abs(offset) >= rowWidth * DELETE_SWIPE_FRACTION
+        },
+        positionalThreshold = { distance -> distance * DELETE_SWIPE_FRACTION }
     )
+    stateHolder[0] = dismissState
+
+    // Deleted once the card has finished sliding off, not the moment the gesture targets it.
+    LaunchedEffect(dismissState.currentValue) {
+        if (dismissState.currentValue == SwipeToDismissBoxValue.EndToStart) latestOnDelete()
+    }
+    val armed = dismissState.targetValue == SwipeToDismissBoxValue.EndToStart
+    var wasArmed by remember { mutableStateOf(false) }
+    LaunchedEffect(armed) {
+        if (armed != wasArmed) haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+        wasArmed = armed
+    }
+
+    val deleteLabel = stringResource(R.string.action_delete)
     SwipeToDismissBox(
         state = dismissState,
         enableDismissFromStartToEnd = false,
+        modifier = Modifier
+            .onSizeChanged { rowWidth = it.width }
+            .semantics {
+                customActions = listOf(CustomAccessibilityAction(deleteLabel) { latestOnDelete(); true })
+            },
         backgroundContent = {
+            // Quiet until letting go would delete, then red with a bigger icon. Both pairs are in
+            // ThemePaletteContrastTest (secondary text on a tinted panel; icon on the red swipe).
+            val background by animateColorAsState(
+                if (armed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.surfaceVariant,
+                label = "swipeBackground"
+            )
+            val iconTint by animateColorAsState(
+                if (armed) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.onSurfaceVariant,
+                label = "swipeIcon"
+            )
+            val iconScale by animateFloatAsState(if (armed) 1.25f else 0.85f, label = "swipeIconScale")
             Row(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.error, MaterialTheme.shapes.medium)
+                    .background(background, MaterialTheme.shapes.medium)
                     .padding(horizontal = Spacing.lg),
                 horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.action_delete), tint = MaterialTheme.colorScheme.onError)
+                Icon(
+                    Icons.Filled.Delete,
+                    contentDescription = null,
+                    tint = iconTint,
+                    modifier = Modifier.scale(iconScale)
+                )
             }
         }
     ) {
         content()
     }
 }
+
+/** How far across its width a card must be dragged before letting go deletes it (#243). */
+private const val DELETE_SWIPE_FRACTION = 0.5f
 
 /** Joins one highlight/note's verse(s) into a single display string from the preloaded
  *  [textByKey] lookup (see [BibleViewModel.libraryVerseText]) — a bare number prefix per verse
@@ -473,15 +538,18 @@ private fun NoteCard(
  *  swatch, matched against a highlight's stored (translucent) ARGB via [toHighlightArgb]. */
 @Composable
 private fun HighlightColorFilterRow(selected: List<Int>, onToggle: (Int) -> Unit, modifier: Modifier = Modifier) {
+    // Each swatch sits in a 48dp touch area (#248), so the circles keep their 32dp look with the
+    // gaps between them now tappable too. It scrolls sideways rather than squeezing on a narrow
+    // screen or at a large font size.
     Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(Spacing.md),
+        modifier = modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
             text = stringResource(R.string.library_color_filter),
             style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(end = Spacing.xs)
         )
         HighlightColors.palette.forEachIndexed { index, swatch ->
             val argb = swatch.toHighlightArgb()
@@ -490,20 +558,18 @@ private fun HighlightColorFilterRow(selected: List<Int>, onToggle: (Int) -> Unit
             val isSelected = argb in selected
             Box(
                 modifier = Modifier
-                    .size(32.dp)
-                    .clip(CircleShape)
-                    .background(swatch)
-                    .then(
-                        if (isSelected) Modifier.border(2.5.dp, MaterialTheme.colorScheme.onSurface, CircleShape)
-                        else Modifier
+                    .size(SWATCH_TOUCH_SIZE)
+                    .toggleable(
+                        value = isSelected,
+                        interactionSource = null,
+                        indication = ripple(bounded = false, radius = SWATCH_TOUCH_SIZE / 2),
+                        role = Role.Checkbox,
+                        onValueChange = { onToggle(argb) }
                     )
-                    .toggleable(value = isSelected, role = Role.Checkbox, onValueChange = { onToggle(argb) })
                     .semantics { contentDescription = filterLabel },
                 contentAlignment = Alignment.Center
             ) {
-                if (isSelected) {
-                    Icon(Icons.Filled.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
-                }
+                HighlightSwatchCircle(swatch, isSelected, 32.dp, ringColor = MaterialTheme.colorScheme.onSurface)
             }
         }
     }

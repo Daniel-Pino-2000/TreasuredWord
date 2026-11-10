@@ -34,8 +34,15 @@ import com.application.bibleapp.data.repository.ReadingPosition
 import com.application.bibleapp.data.repository.ReadingProgressRepository
 import com.application.bibleapp.data.repository.dailyVerseDateKey
 import com.application.bibleapp.ui.theme.ThemeMode
+import com.application.bibleapp.ui.theme.ThemePalette
 import com.application.bibleapp.ui.theme.VerseTextScale
 import com.application.bibleapp.utils.buildVerseShareText
+import com.application.bibleapp.utils.formatFullVerseRefs
+import com.application.bibleapp.verseimage.DailyWallpaperSettings
+import com.application.bibleapp.verseimage.VerseImageContent
+import com.application.bibleapp.verseimage.VerseImageLine
+import com.application.bibleapp.verseimage.VerseImageOptions
+import com.application.bibleapp.verseimage.VerseImageRequest
 import com.application.bibleapp.worker.SyncEvents
 import com.application.bibleapp.worker.serverPositionWins
 import kotlinx.coroutines.Job
@@ -50,11 +57,14 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.transform
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import com.application.bibleapp.R
 import com.application.bibleapp.utils.UiText
 import com.application.bibleapp.utils.VerseReference
@@ -98,6 +108,9 @@ data class VerseTextKey(val versionId: String, val location: VerseLocationDto)
  *  break — same marker BibleText strips for the reading view; the Library screen's verse
  *  previews need the same cleanup. */
 private const val LEGACY_PARAGRAPH_MARKER = "¶ "
+
+/** How long "Share image" from the notification or widget waits for today's verse (#256). */
+private const val DAILY_VERSE_WAIT_MS = 10_000L
 
 /** (bookId, chapter) to take verse 1 from for [BibleViewModel.textSizeSample]: Genesis 1, then John 1. */
 private val TEXT_SIZE_SAMPLE_CHAPTERS = listOf(1 to 1, 43 to 1)
@@ -224,6 +237,15 @@ class BibleViewModel(
     // so a message is shown once rather than re-shown on every recomposition/config change.
     private val _userMessages = MutableSharedFlow<UserMessage>(extraBufferCapacity = 4)
     val userMessages: SharedFlow<UserMessage> = _userMessages.asSharedFlow()
+
+    // The open verse image editor (#254): what it shows, or null when it's closed. Here rather
+    // than in a screen, so the reader, Home and the daily verse notification can all open it.
+    private val _verseImageRequest = MutableStateFlow<VerseImageRequest?>(null)
+    val verseImageRequest: StateFlow<VerseImageRequest?> = _verseImageRequest.asStateFlow()
+
+    // The editor's choices, remembered for the next image.
+    private val _verseImageOptions = MutableStateFlow(repository.loadVerseImageOptions())
+    val verseImageOptions: StateFlow<VerseImageOptions> = _verseImageOptions.asStateFlow()
 
     // The verse whose notes list sheet is open (a verse with 2+ notes was tapped), or null.
     private val _noteListVerse = MutableStateFlow<VerseLocationDto?>(null)
@@ -411,6 +433,9 @@ class BibleViewModel(
     private val _themeMode = MutableStateFlow(repository.loadThemeMode())
     val themeMode: StateFlow<ThemeMode> = _themeMode.asStateFlow()
 
+    private val _themePalette = MutableStateFlow(repository.loadThemePalette())
+    val themePalette: StateFlow<ThemePalette> = _themePalette.asStateFlow()
+
     private val _verseTextScale = MutableStateFlow(repository.loadVerseTextScale())
     val verseTextScale: StateFlow<VerseTextScale> = _verseTextScale.asStateFlow()
 
@@ -457,6 +482,10 @@ class BibleViewModel(
 
     private val _notificationTime = MutableStateFlow(repository.loadNotificationTime())
     val notificationTime: StateFlow<NotificationTime> = _notificationTime.asStateFlow()
+
+    // The daily verse wallpaper (#257), in Settings › Daily verse.
+    private val _dailyWallpaper = MutableStateFlow(repository.loadDailyWallpaper())
+    val dailyWallpaper: StateFlow<DailyWallpaperSettings> = _dailyWallpaper.asStateFlow()
 
     // ---- Sync preferences & status (Phase G) — actual WorkManager (re)scheduling happens in the
     // composable that has a Context (SettingsView), same split already used for
@@ -763,6 +792,80 @@ class BibleViewModel(
         )
         clearSelection()
         return passage
+    }
+
+    /**
+     * Opens the verse image editor (#254) for the current selection, with the same passage as
+     * text for its "too long" fallback. Ends selection mode, like Copy and Share. A verse stored
+     * as several rows is joined back together, and the translation's license notice (#98) goes
+     * on the image with it.
+     */
+    fun shareSelectionAsImage() {
+        val selection = _selectedVerses.value
+        if (selection.isEmpty()) return
+        val sorted = selection.distinct().sortedWith(compareBy({ it.bookId }, { it.chapter }, { it.verse }))
+        val textByLocation = _verses.value
+            .filter { it.bookId != null && it.chapter != null && it.verse != null }
+            .groupBy { VerseLocationDto(it.bookId!!, it.chapter!!, it.verse!!) }
+            .mapValues { (_, rows) -> rows.joinToString(" ") { it.text.removePrefix(LEGACY_PARAGRAPH_MARKER).trim() } }
+        val names = _bookNames.value
+        val bookName = { id: Int -> names[id] ?: BibleBooks.getBookById(id)?.name ?: "" }
+        val lines = sorted.mapNotNull { location ->
+            textByLocation[location]?.takeIf { it.isNotBlank() }?.let { VerseImageLine(location.verse, it) }
+        }
+        if (lines.isEmpty()) return
+        val versionLabel = currentVersionLabel.value
+        val content = VerseImageContent(
+            lines = lines,
+            reference = formatFullVerseRefs(sorted, bookName),
+            versionLabel = versionLabel,
+            notice = currentLicenseNotice()
+        )
+        val shareText = buildVerseShareText(sorted, textByLocation::get, bookName, versionLabel)
+        clearSelection()
+        _verseImageRequest.value = VerseImageRequest(content, shareText)
+    }
+
+    /** Opens the verse image editor for today's verse (#256), with a "Verse of the Day" label on
+     *  the image. Null-safe: does nothing until the daily verse has loaded. */
+    fun shareVerseOfTheDayAsImage(label: String) {
+        val verse = _verseOfTheDay.value ?: return
+        val shareText = verseOfTheDayShareText() ?: return
+        _verseImageRequest.value = VerseImageRequest(
+            content = VerseImageContent(
+                lines = verse.verses.map { VerseImageLine(it.number, it.text) },
+                reference = verse.reference,
+                versionLabel = currentVersionLabel.value,
+                notice = currentLicenseNotice(),
+                label = label
+            ),
+            shareText = shareText
+        )
+    }
+
+    /** From the daily verse notification's or widget's "Share image" (#256): the app has just
+     *  started, so this waits for today's verse to load (it always does, offline included,
+     *  from the curated list), then opens the editor. */
+    fun shareVerseOfTheDayAsImageWhenReady(label: String) {
+        viewModelScope.launch {
+            withTimeoutOrNull(DAILY_VERSE_WAIT_MS) { _verseOfTheDay.filterNotNull().first() } ?: return@launch
+            shareVerseOfTheDayAsImage(label)
+        }
+    }
+
+    /** The selected translation's license notice (#98), for a verse image. Computed here rather
+     *  than read from [currentTranslationCredit], which only updates while the reader shows it. */
+    private fun currentLicenseNotice(): String? =
+        translationCreditFor(_selectedVersion.value.id, _availableVersions.value, _downloadedVersions.value)
+            .license?.notice
+
+    fun closeVerseImage() {
+        _verseImageRequest.value = null
+    }
+
+    fun updateVerseImageOptions(options: VerseImageOptions) {
+        _verseImageOptions.value = options
+        repository.saveVerseImageOptions(options)
     }
 
     /** The Home verse card's Copy/Share text, in the same `"…" — Ref (VER)` shape as a reader
@@ -1173,6 +1276,11 @@ class BibleViewModel(
         _versionSearchQuery.value = query
     }
 
+    fun setThemePalette(palette: ThemePalette) {
+        _themePalette.value = palette
+        repository.saveThemePalette(palette)
+    }
+
     fun setThemeMode(mode: ThemeMode) {
         _themeMode.value = mode
         repository.saveThemeMode(mode)
@@ -1185,6 +1293,11 @@ class BibleViewModel(
 
     /** Persisting the flag also (de)schedules the reminder worker — see
      *  [BibleRepository.setNotificationEnabled]. */
+    fun updateDailyWallpaper(settings: DailyWallpaperSettings) {
+        _dailyWallpaper.value = settings
+        repository.saveDailyWallpaper(settings)
+    }
+
     fun setNotificationEnabled(enabled: Boolean) {
         _notificationEnabled.value = enabled
         repository.setNotificationEnabled(enabled)

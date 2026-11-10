@@ -55,8 +55,9 @@ fun LoginView(
     modifier: Modifier = Modifier,
     onNavigateToRegister: () -> Unit
 ) {
-    // The email and the eye toggle survive turning the phone; passwords don't on purpose, since
-    // saved state can be written to disk (#231).
+    // The email and the eye toggle survive the activity being recreated; passwords don't on
+    // purpose, since saved state can be written to disk (#231). Turning the phone keeps all of
+    // them, since it no longer recreates anything (#238).
     var email by rememberSaveable { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by rememberSaveable { mutableStateOf(false) }

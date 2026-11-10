@@ -16,6 +16,8 @@
    - shared_prefs/auth_tokens.xml: TokenStore encrypts it with an Android Keystore key that
      can't leave the device, so a copy is unreadable anywhere else (issue #50). The user signs
      in again on the new phone.
+   - shared_prefs/daily_wallpaper.xml (#257): replacing the wallpaper every day is a choice made
+     on one phone, so a restore must never start doing it on another without asking.
    - files/translations_cache.json (re-fetched), and no_backup/ (WorkManager's DB) and cache/,
      which the system never backs up.
 -->

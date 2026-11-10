@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -22,11 +21,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -285,17 +282,13 @@ private fun ColumnScope.PasswordResetCodeStep(
 }
 
 /** The sheet both flows share, following the app's other sheets (AboutBookSheet): full height
- *  straight away, clear of the status and navigation bars, and above the keyboard. Their
- *  messages are shown inside, since a sheet is drawn over the screen's snackbar. */
+ *  straight away, clear of the status and navigation bars, and above the keyboard. Back closes
+ *  the keyboard before the sheet (#240). Their messages are shown inside, since a sheet is drawn
+ *  over the screen's snackbar. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun EmailCodeSheet(onDismiss: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        shape = MaterialTheme.shapes.large,
-        modifier = Modifier.statusBarsPadding()
-    ) {
+    TextEntrySheet(onDismissRequest = onDismiss) {
         Column(
             modifier = Modifier
                 .verticalScroll(rememberScrollState())

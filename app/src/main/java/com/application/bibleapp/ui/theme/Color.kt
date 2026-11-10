@@ -2,73 +2,388 @@ package com.application.bibleapp.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Warm, paper-like palette — reading comfort over tech-dashboard contrast.
-// Every Material3 color role used by the app is defined explicitly for both
-// modes (see Theme.kt) so nothing falls back to the M3 default purple/grey.
+/**
+ * Every Material3 color role the app uses, for one theme in one mode (#244). All of them are set
+ * explicitly so nothing falls back to M3's template purple: ModalBottomSheet, menus and dialogs
+ * default to the surface-container ladder, the nav indicator and segmented buttons to
+ * secondaryContainer, and Snackbars to the inverse roles.
+ *
+ * What each role is for, so a new theme keeps passing ThemePaletteContrastTest:
+ * - [surface]: cards, grouped panels and (tinted by elevation) the tab bar. [surfaceContainerLow]
+ *   is the bottom sheets.
+ * - [outline]: borders of things you interact with (text fields, switches, segmented buttons,
+ *   chips), so it must reach 3:1 against the page, cards and sheets. Purely decorative lines
+ *   (dividers, card frames, the progress track) use [outlineVariant].
+ * - [secondaryContainer]: "selected" (nav indicator, segmented buttons, passage chips). Banners
+ *   use [primaryContainer] instead, because in Ink the selection color is solid black.
+ */
+internal data class ThemeColors(
+    val background: Color,
+    val surface: Color,
+    val surfaceVariant: Color,
+    val onSurface: Color,
+    val onSurfaceVariant: Color,
+    val outline: Color,
+    val outlineVariant: Color,
+    val primary: Color,
+    val onPrimary: Color,
+    val primaryContainer: Color,
+    val onPrimaryContainer: Color,
+    val secondaryContainer: Color,
+    val onSecondaryContainer: Color,
+    val surfaceContainerLowest: Color,
+    val surfaceContainerLow: Color,
+    val surfaceContainer: Color,
+    val surfaceContainerHigh: Color,
+    val surfaceContainerHighest: Color,
+    val surfaceBright: Color,
+    val surfaceDim: Color,
+    val inverseSurface: Color,
+    val inverseOnSurface: Color,
+    val inversePrimary: Color,
+    val error: Color,
+    val onError: Color,
+)
 
-// Light
-val LightBackground = Color(0xFFFAF6EF)
-val LightSurface = Color(0xFFF1EAD9)
-val LightSurfaceVariant = Color(0xFFE8DFC9)
-val LightOnBackground = Color(0xFF2B2620)
-val LightOnSurface = Color(0xFF2B2620)
-val LightOnSurfaceVariant = Color(0xFF7A6F5D)
-val LightOutline = Color(0xFFD9CFBB)
-val LightOutlineVariant = Color(0xFFE3DAC4)
-val LightPrimary = Color(0xFFA6743A)
-val LightOnPrimary = Color(0xFFFFFBF2)
-val LightPrimaryContainer = Color(0xFFEDDFC4)
-val LightOnPrimaryContainer = Color(0xFF3D2D12)
-// Secondary mirrors primary's warm gold family — several M3 components (nav
-// selection indicator, filter chips) default to secondaryContainer for their
-// "selected" state, and leaving it undefined falls back to the M3 template purple.
-val LightSecondary = LightPrimary
-val LightOnSecondary = LightOnPrimary
-val LightSecondaryContainer = LightPrimaryContainer
-val LightOnSecondaryContainer = LightOnPrimaryContainer
-// Surface-container ladder (lowest → highest) — ModalBottomSheet, menus, dialogs, search bars
-// and others default to these roles, not `surface`, so leaving them undefined painted every
-// bottom sheet in M3's template lavender.
-val LightSurfaceContainerLowest = Color(0xFFFFFDF8)
-val LightSurfaceContainerLow = Color(0xFFFBF6EC)
-val LightSurfaceContainer = Color(0xFFF5EFE2)
-val LightSurfaceContainerHigh = Color(0xFFF1EAD9)
-val LightSurfaceContainerHighest = Color(0xFFE8DFC9)
-val LightSurfaceBright = Color(0xFFFFFBF4)
-val LightSurfaceDim = Color(0xFFE3DAC4)
-// Inverse roles — Snackbars are an inverse surface; undefined, their action text was lavender.
-val LightInverseSurface = Color(0xFF3A342B)
-val LightInverseOnSurface = Color(0xFFF5EEE0)
-val LightInversePrimary = Color(0xFFE6BB78)
-val LightError = Color(0xFFB3423B)
-val LightOnError = Color(0xFFFFFBF2)
+// Parchment: the original warm, paper-like palette, reading comfort over tech-dashboard contrast.
+// Light mode's gold, secondary text and borders were deepened to reach WCAG AA (#244): gold was
+// #A6743A (3.5–4.0:1 on cards and buttons), secondary text #7A6F5D (3.7:1 on tinted panels) and
+// the outline #D9CFBB (1.4:1, so empty text fields barely showed).
+internal val ParchmentLight = ThemeColors(
+    background = Color(0xFFFAF6EF),
+    surface = Color(0xFFF1EAD9),
+    surfaceVariant = Color(0xFFE8DFC9),
+    onSurface = Color(0xFF2B2620),
+    onSurfaceVariant = Color(0xFF695F50),
+    outline = Color(0xFF8C8376),
+    outlineVariant = Color(0xFFE3DAC4),
+    primary = Color(0xFF805A2B),
+    onPrimary = Color(0xFFFFFBF2),
+    primaryContainer = Color(0xFFEDDFC4),
+    onPrimaryContainer = Color(0xFF3D2D12),
+    secondaryContainer = Color(0xFFEDDFC4),
+    onSecondaryContainer = Color(0xFF3D2D12),
+    surfaceContainerLowest = Color(0xFFFFFDF8),
+    surfaceContainerLow = Color(0xFFFBF6EC),
+    surfaceContainer = Color(0xFFF5EFE2),
+    surfaceContainerHigh = Color(0xFFF1EAD9),
+    surfaceContainerHighest = Color(0xFFE8DFC9),
+    surfaceBright = Color(0xFFFFFBF4),
+    surfaceDim = Color(0xFFE3DAC4),
+    inverseSurface = Color(0xFF3A342B),
+    inverseOnSurface = Color(0xFFF5EEE0),
+    inversePrimary = Color(0xFFE6BB78),
+    error = Color(0xFFB3423B),
+    onError = Color(0xFFFFFBF2),
+)
 
-// Dark — soft dark greys, not pure black, to reduce halation/eye strain.
-val DarkBackground = Color(0xFF1E1B16)
-val DarkSurface = Color(0xFF26221C)
-val DarkSurfaceVariant = Color(0xFF332D24)
-val DarkOnBackground = Color(0xFFEDE6D6)
-val DarkOnSurface = Color(0xFFEDE6D6)
-val DarkOnSurfaceVariant = Color(0xFFA99C86)
-val DarkOutline = Color(0xFF453D30)
-val DarkOutlineVariant = Color(0xFF3A332A)
-val DarkPrimary = Color(0xFFD9A85C)
-val DarkOnPrimary = Color(0xFF2B2216)
-val DarkPrimaryContainer = Color(0xFF3D3220)
-val DarkOnPrimaryContainer = Color(0xFFF0DDB8)
-val DarkSecondary = DarkPrimary
-val DarkOnSecondary = DarkOnPrimary
-val DarkSecondaryContainer = DarkPrimaryContainer
-val DarkOnSecondaryContainer = DarkOnPrimaryContainer
-val DarkSurfaceContainerLowest = Color(0xFF1A1712)
-val DarkSurfaceContainerLow = Color(0xFF24201A)
-val DarkSurfaceContainer = Color(0xFF29241E)
-val DarkSurfaceContainerHigh = Color(0xFF2F2A22)
-val DarkSurfaceContainerHighest = Color(0xFF383127)
-val DarkSurfaceBright = Color(0xFF3A342A)
-val DarkSurfaceDim = Color(0xFF1A1712)
-val DarkInverseSurface = Color(0xFFEDE6D6)
-val DarkInverseOnSurface = Color(0xFF2B2620)
-val DarkInversePrimary = Color(0xFF8A5E2B)
-val DarkError = Color(0xFFE08585)
-val DarkOnError = Color(0xFF2B1212)
+// Soft dark browns, not pure black, to reduce halation. Only the outline changed (#244): it was
+// #453D30 (1.6:1).
+internal val ParchmentDark = ThemeColors(
+    background = Color(0xFF1E1B16),
+    surface = Color(0xFF26221C),
+    surfaceVariant = Color(0xFF332D24),
+    onSurface = Color(0xFFEDE6D6),
+    onSurfaceVariant = Color(0xFFA99C86),
+    outline = Color(0xFF7F7564),
+    outlineVariant = Color(0xFF3A332A),
+    primary = Color(0xFFD9A85C),
+    onPrimary = Color(0xFF2B2216),
+    primaryContainer = Color(0xFF3D3220),
+    onPrimaryContainer = Color(0xFFF0DDB8),
+    secondaryContainer = Color(0xFF3D3220),
+    onSecondaryContainer = Color(0xFFF0DDB8),
+    surfaceContainerLowest = Color(0xFF1A1712),
+    surfaceContainerLow = Color(0xFF24201A),
+    surfaceContainer = Color(0xFF29241E),
+    surfaceContainerHigh = Color(0xFF2F2A22),
+    surfaceContainerHighest = Color(0xFF383127),
+    surfaceBright = Color(0xFF3A342A),
+    surfaceDim = Color(0xFF1A1712),
+    inverseSurface = Color(0xFFEDE6D6),
+    inverseOnSurface = Color(0xFF2B2620),
+    inversePrimary = Color(0xFF8A5E2B),
+    error = Color(0xFFE08585),
+    onError = Color(0xFF2B1212),
+)
+
+// Ink: Modern black and white. Dark is true black (OLED). The selected tab is a solid pill, the only way a
+// selection stands out when primary and surface are both greys.
+internal val InkLight = ThemeColors(
+    background = Color(0xFFFFFFFF),
+    surface = Color(0xFFF4F4F4),
+    surfaceVariant = Color(0xFFE6E6E6),
+    onSurface = Color(0xFF111111),
+    onSurfaceVariant = Color(0xFF5C5C5C),
+    outline = Color(0xFF868686),
+    outlineVariant = Color(0xFFE4E4E4),
+    primary = Color(0xFF111111),
+    onPrimary = Color(0xFFFFFFFF),
+    primaryContainer = Color(0xFFE8E8E8),
+    onPrimaryContainer = Color(0xFF111111),
+    secondaryContainer = Color(0xFF111111),
+    onSecondaryContainer = Color(0xFFFFFFFF),
+    surfaceContainerLowest = Color(0xFFFFFFFF),
+    surfaceContainerLow = Color(0xFFFAFAFA),
+    surfaceContainer = Color(0xFFF4F4F4),
+    surfaceContainerHigh = Color(0xFFEFEFEF),
+    surfaceContainerHighest = Color(0xFFE6E6E6),
+    surfaceBright = Color(0xFFFFFFFF),
+    surfaceDim = Color(0xFFDBDBDB),
+    inverseSurface = Color(0xFF1C1C1C),
+    inverseOnSurface = Color(0xFFF2F2F2),
+    inversePrimary = Color(0xFFFFFFFF),
+    error = Color(0xFFC62828),
+    onError = Color(0xFFFFFFFF),
+)
+internal val InkDark = ThemeColors(
+    background = Color(0xFF000000),
+    surface = Color(0xFF121212),
+    surfaceVariant = Color(0xFF262626),
+    onSurface = Color(0xFFF2F2F2),
+    onSurfaceVariant = Color(0xFFA3A3A3),
+    outline = Color(0xFF686868),
+    outlineVariant = Color(0xFF262626),
+    primary = Color(0xFFFFFFFF),
+    onPrimary = Color(0xFF000000),
+    primaryContainer = Color(0xFF2A2A2A),
+    onPrimaryContainer = Color(0xFFFFFFFF),
+    secondaryContainer = Color(0xFFFFFFFF),
+    onSecondaryContainer = Color(0xFF000000),
+    surfaceContainerLowest = Color(0xFF000000),
+    surfaceContainerLow = Color(0xFF090909),
+    surfaceContainer = Color(0xFF121212),
+    surfaceContainerHigh = Color(0xFF1A1A1A),
+    surfaceContainerHighest = Color(0xFF262626),
+    surfaceBright = Color(0xFF363636),
+    surfaceDim = Color(0xFF000000),
+    inverseSurface = Color(0xFFEDEDED),
+    inverseOnSurface = Color(0xFF111111),
+    inversePrimary = Color(0xFF111111),
+    error = Color(0xFFFF8A80),
+    onError = Color(0xFF2B0000),
+)
+
+// Graphite: Soft cool greys with a quiet slate accent; cards are white on a grey page.
+internal val GraphiteLight = ThemeColors(
+    background = Color(0xFFF3F4F6),
+    surface = Color(0xFFFFFFFF),
+    surfaceVariant = Color(0xFFE1E4E8),
+    onSurface = Color(0xFF1C1F24),
+    onSurfaceVariant = Color(0xFF575E69),
+    outline = Color(0xFF80858E),
+    outlineVariant = Color(0xFFDDE1E6),
+    primary = Color(0xFF3F4856),
+    onPrimary = Color(0xFFFFFFFF),
+    primaryContainer = Color(0xFFDCE1E8),
+    onPrimaryContainer = Color(0xFF1A1F27),
+    secondaryContainer = Color(0xFFDCE1E8),
+    onSecondaryContainer = Color(0xFF1A1F27),
+    surfaceContainerLowest = Color(0xFFFAFBFB),
+    surfaceContainerLow = Color(0xFFF9FAFB),
+    surfaceContainer = Color(0xFFFFFFFF),
+    surfaceContainerHigh = Color(0xFFE9EBEE),
+    surfaceContainerHighest = Color(0xFFE1E4E8),
+    surfaceBright = Color(0xFFFBFCFC),
+    surfaceDim = Color(0xFFD7DADE),
+    inverseSurface = Color(0xFF2B2F35),
+    inverseOnSurface = Color(0xFFEEF0F2),
+    inversePrimary = Color(0xFFB6C0CF),
+    error = Color(0xFFB3261E),
+    onError = Color(0xFFFFFFFF),
+)
+internal val GraphiteDark = ThemeColors(
+    background = Color(0xFF16181C),
+    surface = Color(0xFF1F2227),
+    surfaceVariant = Color(0xFF2E3239),
+    onSurface = Color(0xFFE6E8EB),
+    onSurfaceVariant = Color(0xFF9CA3AE),
+    outline = Color(0xFF70757E),
+    outlineVariant = Color(0xFF2E3239),
+    primary = Color(0xFFB6C0CF),
+    onPrimary = Color(0xFF1A1F27),
+    primaryContainer = Color(0xFF333A45),
+    onPrimaryContainer = Color(0xFFDCE1E8),
+    secondaryContainer = Color(0xFF333A45),
+    onSecondaryContainer = Color(0xFFDCE1E8),
+    surfaceContainerLowest = Color(0xFF0F1114),
+    surfaceContainerLow = Color(0xFF1B1D22),
+    surfaceContainer = Color(0xFF1F2227),
+    surfaceContainerHigh = Color(0xFF262A30),
+    surfaceContainerHighest = Color(0xFF2E3239),
+    surfaceBright = Color(0xFF3D4147),
+    surfaceDim = Color(0xFF0F1114),
+    inverseSurface = Color(0xFFE6E8EB),
+    inverseOnSurface = Color(0xFF1C1F24),
+    inversePrimary = Color(0xFF3F4856),
+    error = Color(0xFFF2B8B5),
+    onError = Color(0xFF601410),
+)
+
+// Sage: Muted olive green.
+internal val SageLight = ThemeColors(
+    background = Color(0xFFF6F7F2),
+    surface = Color(0xFFEDF0E7),
+    surfaceVariant = Color(0xFFDFE4D7),
+    onSurface = Color(0xFF1E231C),
+    onSurfaceVariant = Color(0xFF5A6555),
+    outline = Color(0xFF7C8578),
+    outlineVariant = Color(0xFFDCE1D4),
+    primary = Color(0xFF4C6842),
+    onPrimary = Color(0xFFFFFFFF),
+    primaryContainer = Color(0xFFD5E3CB),
+    onPrimaryContainer = Color(0xFF132211),
+    secondaryContainer = Color(0xFFD5E3CB),
+    onSecondaryContainer = Color(0xFF132211),
+    surfaceContainerLowest = Color(0xFFFBFCFA),
+    surfaceContainerLow = Color(0xFFF2F4ED),
+    surfaceContainer = Color(0xFFEDF0E7),
+    surfaceContainerHigh = Color(0xFFE7EBE0),
+    surfaceContainerHighest = Color(0xFFDFE4D7),
+    surfaceBright = Color(0xFFFCFDFB),
+    surfaceDim = Color(0xFFD5DACE),
+    inverseSurface = Color(0xFF2E332B),
+    inverseOnSurface = Color(0xFFEEF2E9),
+    inversePrimary = Color(0xFFA9C79A),
+    error = Color(0xFFB3261E),
+    onError = Color(0xFFFFFFFF),
+)
+internal val SageDark = ThemeColors(
+    background = Color(0xFF151913),
+    surface = Color(0xFF1E231B),
+    surfaceVariant = Color(0xFF2E352A),
+    onSurface = Color(0xFFE3E8DE),
+    onSurfaceVariant = Color(0xFF9BA694),
+    outline = Color(0xFF6F7769),
+    outlineVariant = Color(0xFF2E352A),
+    primary = Color(0xFFA9C79A),
+    onPrimary = Color(0xFF16260F),
+    primaryContainer = Color(0xFF2F3D29),
+    onPrimaryContainer = Color(0xFFD5E6C9),
+    secondaryContainer = Color(0xFF2F3D29),
+    onSecondaryContainer = Color(0xFFD5E6C9),
+    surfaceContainerLowest = Color(0xFF0F120D),
+    surfaceContainerLow = Color(0xFF1A1E17),
+    surfaceContainer = Color(0xFF1E231B),
+    surfaceContainerHigh = Color(0xFF252B22),
+    surfaceContainerHighest = Color(0xFF2E352A),
+    surfaceBright = Color(0xFF3C4338),
+    surfaceDim = Color(0xFF0F120D),
+    inverseSurface = Color(0xFFE3E8DE),
+    inverseOnSurface = Color(0xFF1E231C),
+    inversePrimary = Color(0xFF4C6842),
+    error = Color(0xFFF2B8B5),
+    onError = Color(0xFF601410),
+)
+
+// Slate: Clear blue on cool white; dark is deep navy.
+internal val SlateLight = ThemeColors(
+    background = Color(0xFFF5F7FA),
+    surface = Color(0xFFEBF0F6),
+    surfaceVariant = Color(0xFFDCE3EC),
+    onSurface = Color(0xFF1A2029),
+    onSurfaceVariant = Color(0xFF566273),
+    outline = Color(0xFF7B8492),
+    outlineVariant = Color(0xFFDAE1EA),
+    primary = Color(0xFF2D5B88),
+    onPrimary = Color(0xFFFFFFFF),
+    primaryContainer = Color(0xFFD3E3F3),
+    onPrimaryContainer = Color(0xFF0D2640),
+    secondaryContainer = Color(0xFFD3E3F3),
+    onSecondaryContainer = Color(0xFF0D2640),
+    surfaceContainerLowest = Color(0xFFFBFCFD),
+    surfaceContainerLow = Color(0xFFF0F4F8),
+    surfaceContainer = Color(0xFFEBF0F6),
+    surfaceContainerHigh = Color(0xFFE4EAF2),
+    surfaceContainerHighest = Color(0xFFDCE3EC),
+    surfaceBright = Color(0xFFFCFDFE),
+    surfaceDim = Color(0xFFD2D9E2),
+    inverseSurface = Color(0xFF283039),
+    inverseOnSurface = Color(0xFFEDF1F6),
+    inversePrimary = Color(0xFF9CC2EA),
+    error = Color(0xFFB3261E),
+    onError = Color(0xFFFFFFFF),
+)
+internal val SlateDark = ThemeColors(
+    background = Color(0xFF10151C),
+    surface = Color(0xFF18202A),
+    surfaceVariant = Color(0xFF27313D),
+    onSurface = Color(0xFFE2E8F0),
+    onSurfaceVariant = Color(0xFF97A4B5),
+    outline = Color(0xFF697381),
+    outlineVariant = Color(0xFF27313D),
+    primary = Color(0xFF9CC2EA),
+    onPrimary = Color(0xFF0B2238),
+    primaryContainer = Color(0xFF223950),
+    onPrimaryContainer = Color(0xFFD0E4F7),
+    secondaryContainer = Color(0xFF223950),
+    onSecondaryContainer = Color(0xFFD0E4F7),
+    surfaceContainerLowest = Color(0xFF0B0F14),
+    surfaceContainerLow = Color(0xFF141B23),
+    surfaceContainer = Color(0xFF18202A),
+    surfaceContainerHigh = Color(0xFF1F2833),
+    surfaceContainerHighest = Color(0xFF27313D),
+    surfaceBright = Color(0xFF36404B),
+    surfaceDim = Color(0xFF0B0F14),
+    inverseSurface = Color(0xFFE2E8F0),
+    inverseOnSurface = Color(0xFF1A2029),
+    inversePrimary = Color(0xFF2D5B88),
+    error = Color(0xFFF2B8B5),
+    onError = Color(0xFF601410),
+)
+
+// Rose: Dusty rose on blush paper.
+internal val RoseLight = ThemeColors(
+    background = Color(0xFFFBF6F5),
+    surface = Color(0xFFF5EBE9),
+    surfaceVariant = Color(0xFFE9DAD7),
+    onSurface = Color(0xFF2A2022),
+    onSurfaceVariant = Color(0xFF6E5A5E),
+    outline = Color(0xFF8D7C7F),
+    outlineVariant = Color(0xFFE8DADB),
+    primary = Color(0xFF8B4A63),
+    onPrimary = Color(0xFFFFFFFF),
+    primaryContainer = Color(0xFFF3DAE2),
+    onPrimaryContainer = Color(0xFF3A1424),
+    secondaryContainer = Color(0xFFF3DAE2),
+    onSecondaryContainer = Color(0xFF3A1424),
+    surfaceContainerLowest = Color(0xFFFDFBFB),
+    surfaceContainerLow = Color(0xFFF8F1EF),
+    surfaceContainer = Color(0xFFF5EBE9),
+    surfaceContainerHigh = Color(0xFFF0E3E1),
+    surfaceContainerHighest = Color(0xFFE9DAD7),
+    surfaceBright = Color(0xFFFEFCFC),
+    surfaceDim = Color(0xFFDFD1CE),
+    inverseSurface = Color(0xFF3A2F31),
+    inverseOnSurface = Color(0xFFF7ECEC),
+    inversePrimary = Color(0xFFE8AFC2),
+    error = Color(0xFFB3261E),
+    onError = Color(0xFFFFFFFF),
+)
+internal val RoseDark = ThemeColors(
+    background = Color(0xFF1B1517),
+    surface = Color(0xFF251D20),
+    surfaceVariant = Color(0xFF362B2F),
+    onSurface = Color(0xFFEFE3E5),
+    onSurfaceVariant = Color(0xFFAE9AA0),
+    outline = Color(0xFF7C6D71),
+    outlineVariant = Color(0xFF362B2F),
+    primary = Color(0xFFE8AFC2),
+    onPrimary = Color(0xFF3A1424),
+    primaryContainer = Color(0xFF4A2C38),
+    onPrimaryContainer = Color(0xFFF7D9E3),
+    secondaryContainer = Color(0xFF4A2C38),
+    onSecondaryContainer = Color(0xFFF7D9E3),
+    surfaceContainerLowest = Color(0xFF130F10),
+    surfaceContainerLow = Color(0xFF20191C),
+    surfaceContainer = Color(0xFF251D20),
+    surfaceContainerHigh = Color(0xFF2C2327),
+    surfaceContainerHighest = Color(0xFF362B2F),
+    surfaceBright = Color(0xFF453A3E),
+    surfaceDim = Color(0xFF130F10),
+    inverseSurface = Color(0xFFEFE3E5),
+    inverseOnSurface = Color(0xFF2A2022),
+    inversePrimary = Color(0xFF8B4A63),
+    error = Color(0xFFFF9E8A),
+    onError = Color(0xFF3B0A00),
+)

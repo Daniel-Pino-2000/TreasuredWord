@@ -1,6 +1,7 @@
 package com.application.bibleapp.components
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,6 +19,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -31,12 +36,13 @@ import com.application.bibleapp.ui.theme.isCompactHeight
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.pluralStringResource
 
-/** Keeps the card from stretching edge to edge in landscape. */
-private val MAX_TOOLBAR_WIDTH = 480.dp
+/** Keeps the card from stretching edge to edge in landscape. Wide enough that landscape's one row
+ *  leaves the five color swatches their 48dp touch areas (#248): 480dp left them about 190dp. */
+private val MAX_TOOLBAR_WIDTH = 540.dp
 
 /** Landscape's one row with Ask too (#132): four actions at 480dp left the five 36dp color swatches
- *  about 140dp, and the last one was cut off; 560dp leaves them about 220dp. */
-private val MAX_TOOLBAR_WIDTH_WITH_ASK = 560.dp
+ *  about 140dp, and the last one was cut off; 620dp leaves them about 280dp (#248). */
+private val MAX_TOOLBAR_WIDTH_WITH_ASK = 620.dp
 
 /**
  * A genuinely floating card — margin on every side, all four corners rounded, a real cast
@@ -50,7 +56,9 @@ private val MAX_TOOLBAR_WIDTH_WITH_ASK = 560.dp
  * [MAX_TOOLBAR_WIDTH], so it no longer covers half the screen.
  *
  * Picking a color applies it and leaves the selection (and this toolbar) open, so a note can
- * still be added to the same verses; Copy, Share, Ask, Note and Cancel each end it. [onAsk] null
+ * still be added to the same verses; Copy, Share, Ask, Note and Cancel each end it. Share asks
+ * whether to send text or an image (#254), rather than adding a sixth button that landscape's
+ * one row has no room for. [onAsk] null
  * hides Ask ("Ask about this verse", #132), as in release builds until the Bible Helper ships.
  */
 @Composable
@@ -59,6 +67,7 @@ fun VerseSelectionToolbar(
     onColorSelected: (Int) -> Unit,
     onCopy: () -> Unit,
     onShare: () -> Unit,
+    onShareImage: () -> Unit,
     onAddNote: () -> Unit,
     onCancel: () -> Unit,
     modifier: Modifier = Modifier,
@@ -90,7 +99,7 @@ fun VerseSelectionToolbar(
                 )
                 val actionModifier = Modifier.widthIn(min = 64.dp)
                 SelectionAction(stringResource(R.string.action_copy), rememberVectorPainter(Icons.Outlined.ContentCopy), onCopy, actionModifier)
-                SelectionAction(stringResource(R.string.action_share), rememberVectorPainter(Icons.Outlined.Share), onShare, actionModifier)
+                ShareSelectionAction(onShare, onShareImage, actionModifier)
                 onAsk?.let { SelectionAction(stringResource(R.string.title_ask), rememberVectorPainter(Icons.Outlined.QuestionAnswer), it, actionModifier) }
                 SelectionAction(stringResource(R.string.title_note), painterResource(R.drawable.ic_stylus_note), onAddNote, actionModifier, emphasized = true)
                 IconButton(onClick = onCancel) {
@@ -130,7 +139,7 @@ fun VerseSelectionToolbar(
                 ) {
                     val actionModifier = Modifier.weight(1f)
                     SelectionAction(stringResource(R.string.action_copy), rememberVectorPainter(Icons.Outlined.ContentCopy), onCopy, actionModifier)
-                    SelectionAction(stringResource(R.string.action_share), rememberVectorPainter(Icons.Outlined.Share), onShare, actionModifier)
+                    ShareSelectionAction(onShare, onShareImage, actionModifier)
                     onAsk?.let { SelectionAction(stringResource(R.string.title_ask), rememberVectorPainter(Icons.Outlined.QuestionAnswer), it, actionModifier) }
                     SelectionAction(stringResource(R.string.title_note), painterResource(R.drawable.ic_stylus_note), onAddNote, actionModifier, emphasized = true)
                 }
@@ -139,13 +148,34 @@ fun VerseSelectionToolbar(
     }
 }
 
+/** Share, opening the text-or-image choice anchored to the button itself. */
+@Composable
+private fun ShareSelectionAction(onShareText: () -> Unit, onShareImage: () -> Unit, modifier: Modifier) {
+    var menuOpen by remember { mutableStateOf(false) }
+    SelectionAction(
+        label = stringResource(R.string.action_share),
+        icon = rememberVectorPainter(Icons.Outlined.Share),
+        onClick = { menuOpen = true },
+        modifier = modifier,
+        menu = {
+            ShareChoiceMenu(
+                expanded = menuOpen,
+                onDismiss = { menuOpen = false },
+                onShareText = onShareText,
+                onShareImage = onShareImage
+            )
+        }
+    )
+}
+
 @Composable
 private fun SelectionAction(
     label: String,
     icon: Painter,
     onClick: () -> Unit,
     modifier: Modifier,
-    emphasized: Boolean = false
+    emphasized: Boolean = false,
+    menu: (@Composable () -> Unit)? = null
 ) {
     // Solid primary, not primaryContainer — the container tone sits too close to this card's own
     // tonal surface to read as emphasis.
@@ -158,13 +188,17 @@ private fun SelectionAction(
         color = container,
         contentColor = content
     ) {
-        Column(
-            modifier = Modifier.padding(vertical = Spacing.sm),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(Spacing.xs)
-        ) {
-            Icon(painter = icon, contentDescription = null, modifier = Modifier.size(22.dp))
-            Text(text = label, style = MaterialTheme.typography.labelMedium)
+        // The Box anchors [menu]'s popup to this button.
+        Box {
+            Column(
+                modifier = Modifier.padding(vertical = Spacing.sm),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(Spacing.xs)
+            ) {
+                Icon(painter = icon, contentDescription = null, modifier = Modifier.size(22.dp))
+                Text(text = label, style = MaterialTheme.typography.labelMedium)
+            }
+            menu?.invoke()
         }
     }
 }

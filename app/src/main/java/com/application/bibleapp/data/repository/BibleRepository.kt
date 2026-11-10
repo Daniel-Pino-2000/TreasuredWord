@@ -23,6 +23,12 @@ import com.application.bibleapp.data.remote.NoteResponseDto
 import com.application.bibleapp.data.remote.ReadingProgressResponseDto
 import com.application.bibleapp.data.remote.VerseLocationDto
 import com.application.bibleapp.ui.theme.ThemeMode
+import com.application.bibleapp.ui.theme.ThemePalette
+import com.application.bibleapp.ui.theme.VerseImageStyle
+import com.application.bibleapp.verseimage.DailyWallpaper
+import com.application.bibleapp.verseimage.DailyWallpaperSettings
+import com.application.bibleapp.verseimage.VerseImageFormat
+import com.application.bibleapp.verseimage.VerseImageOptions
 import com.application.bibleapp.ui.theme.VerseTextScale
 import com.application.bibleapp.utils.NetworkUtils
 import com.application.bibleapp.utils.isoTimestampNow
@@ -39,6 +45,7 @@ import kotlinx.serialization.SerializationException
 import java.io.File
 import java.io.IOException
 import java.util.Calendar
+import com.application.bibleapp.widget.DailyVerseWidgetUpdates
 
 /**
  * Year + day-of-year, in local time — stamped on the cached daily-verse row and compared with
@@ -273,6 +280,7 @@ class BibleRepository(
         }
         val fetched = daily.getDailyVerse()
         BibleDatabaseManager.saveCachedDailyVerse(context, dailyVerseDateKey(), fetched)
+        DailyVerseWidgetUpdates.refreshNow(context) // the widget shows the cached verse (#245)
         fetched
     }
 
@@ -427,6 +435,7 @@ class BibleRepository(
     /** Persisted across process restarts so the app reopens on the last version the user picked. */
     fun saveSelectedVersion(versionId: String) {
         prefs.edit().putString(KEY_SELECTED_VERSION, versionId).apply()
+        DailyVerseWidgetUpdates.refreshNow(context) // the widget's verse follows the translation (#245)
     }
 
     fun loadSelectedVersion(): String = prefs.getString(KEY_SELECTED_VERSION, DEFAULT_VERSION.id) ?: DEFAULT_VERSION.id
@@ -438,6 +447,43 @@ class BibleRepository(
     fun loadThemeMode(): ThemeMode {
         val stored = prefs.getString(KEY_THEME_MODE, null) ?: return ThemeMode.SYSTEM
         return runCatching { ThemeMode.valueOf(stored) }.getOrDefault(ThemeMode.SYSTEM)
+    }
+
+    /** The color theme (#244). Kept on this device only, like [ThemeMode]; not synced. */
+    fun saveThemePalette(palette: ThemePalette) {
+        prefs.edit().putString(KEY_THEME_PALETTE, palette.name).apply()
+    }
+
+    fun loadThemePalette(): ThemePalette = ThemePalette.fromStored(prefs.getString(KEY_THEME_PALETTE, null))
+
+    /** The verse image editor's last choices (#254), so the next image starts from them. Before
+     *  the first image, the style is the one named after the app's color theme. */
+    fun loadVerseImageOptions(): VerseImageOptions = VerseImageOptions(
+        style = VerseImageStyle.fromStored(prefs.getString(KEY_VERSE_IMAGE_STYLE, null), loadThemePalette()),
+        format = VerseImageFormat.fromStored(prefs.getString(KEY_VERSE_IMAGE_FORMAT, null)),
+        showVerseNumbers = prefs.getBoolean(KEY_VERSE_IMAGE_NUMBERS, true),
+        centered = prefs.getBoolean(KEY_VERSE_IMAGE_CENTERED, true),
+        showMark = prefs.getBoolean(KEY_VERSE_IMAGE_MARK, true),
+        showLabel = prefs.getBoolean(KEY_VERSE_IMAGE_LABEL, true)
+    )
+
+    /** The daily verse wallpaper (#257). Kept by [DailyWallpaper] in its own file, which backups
+     *  don't copy; its style defaults to the one named after the app's color theme. */
+    fun loadDailyWallpaper(): DailyWallpaperSettings =
+        DailyWallpaper.load(context, VerseImageStyle.forPalette(loadThemePalette()))
+
+    /** Saves it and starts or stops the daily updates; turning it on sets today's wallpaper. */
+    fun saveDailyWallpaper(settings: DailyWallpaperSettings) = DailyWallpaper.save(context, settings)
+
+    fun saveVerseImageOptions(options: VerseImageOptions) {
+        prefs.edit()
+            .putString(KEY_VERSE_IMAGE_STYLE, options.style.name)
+            .putString(KEY_VERSE_IMAGE_FORMAT, options.format.name)
+            .putBoolean(KEY_VERSE_IMAGE_NUMBERS, options.showVerseNumbers)
+            .putBoolean(KEY_VERSE_IMAGE_CENTERED, options.centered)
+            .putBoolean(KEY_VERSE_IMAGE_MARK, options.showMark)
+            .putBoolean(KEY_VERSE_IMAGE_LABEL, options.showLabel)
+            .apply()
     }
 
     fun saveVerseTextScale(scale: VerseTextScale) {
@@ -622,7 +668,14 @@ class BibleRepository(
 
         const val KEY_SELECTED_VERSION = "selected_version_id"
         const val KEY_THEME_MODE = "theme_mode"
+        const val KEY_THEME_PALETTE = "theme_palette"
         const val KEY_VERSE_TEXT_SCALE = "verse_text_scale"
+        const val KEY_VERSE_IMAGE_STYLE = "verse_image_style"
+        const val KEY_VERSE_IMAGE_FORMAT = "verse_image_format"
+        const val KEY_VERSE_IMAGE_NUMBERS = "verse_image_numbers"
+        const val KEY_VERSE_IMAGE_CENTERED = "verse_image_centered"
+        const val KEY_VERSE_IMAGE_MARK = "verse_image_mark"
+        const val KEY_VERSE_IMAGE_LABEL = "verse_image_label"
         const val KEY_READING_BOOK = "reading_book_id"
         const val KEY_READING_CHAPTER = "reading_chapter"
         const val KEY_READING_VERSE = "reading_verse"

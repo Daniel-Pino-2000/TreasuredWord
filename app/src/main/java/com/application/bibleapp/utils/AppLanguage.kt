@@ -7,6 +7,7 @@ import android.os.LocaleList
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.edit
 import androidx.core.os.LocaleListCompat
+import com.application.bibleapp.widget.DailyVerseWidgetUpdates
 import java.util.Locale
 
 /**
@@ -63,6 +64,7 @@ object AppLanguage {
         AppCompatDelegate.setApplicationLocales(
             if (tag == null) LocaleListCompat.getEmptyLocaleList() else LocaleListCompat.forLanguageTags(tag)
         )
+        DailyVerseWidgetUpdates.refreshNow(context) // the widget's title follows the app language (#245)
     }
 
     /** A language's name written in that language — "English", "Español". A tag that names a

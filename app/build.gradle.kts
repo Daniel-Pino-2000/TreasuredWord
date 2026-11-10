@@ -167,6 +167,10 @@ dependencies {
     // Background scheduling for the daily verse fetch + notification
     implementation(libs.androidx.work.runtime.ktx)
 
+    // Home screen widget with the daily verse (#245)
+    implementation(libs.androidx.glance.appwidget)
+    implementation(libs.androidx.glance.material3)
+
     // Chrome Custom Tabs for outside web pages (GotQuestions.org) - see utils/ExternalLinks.kt
     implementation(libs.androidx.browser)
 
@@ -192,6 +196,9 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     // Per-app language below Android 13 (AppCompatDelegate.setApplicationLocales) - see utils/AppLanguage.kt
     implementation("androidx.appcompat:appcompat:1.7.0")
+    // Turns photos upright on Android 7-8 for verse image backgrounds (#257); the framework
+    // ExifInterface has bugs there. Apache 2.0, free.
+    implementation("androidx.exifinterface:exifinterface:1.3.7")
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
