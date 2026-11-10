@@ -37,6 +37,20 @@
     <!-- %1$s = the image's reference and translation, e.g. "John 3:16 · KJV" -->
     <string name="verse_image_preview_description">Onyesho la picha ya %1$s</string>
     <string name="verse_image_failed">Imeshindwa kutengeneza picha. Jaribu tena.</string>
+    <!-- Saving verse images and setting them as wallpaper (#255) -->
+    <string name="verse_image_save">Hifadhi</string>
+    <string name="verse_image_saved">Imehifadhiwa kwenye Picha</string>
+    <string name="verse_image_save_failed">Imeshindwa kuhifadhi picha. Jaribu tena.</string>
+    <string name="verse_image_storage_denied">Kwenye toleo hili la Android, kuhifadhi kunahitaji ruhusa ya hifadhi. Bado unaweza kushiriki picha.</string>
+    <string name="verse_image_set_wallpaper">Weka kama mandhari</string>
+    <string name="wallpaper_dialog_title">Weka kama mandhari?</string>
+    <string name="wallpaper_dialog_text">Hii itachukua nafasi ya mandhari yako ya sasa. Unaweza kuibadilisha tena kwenye mipangilio ya simu.</string>
+    <string name="wallpaper_target_home">Skrini ya kwanza</string>
+    <string name="wallpaper_target_lock">Skrini iliyofungwa</string>
+    <string name="wallpaper_target_both">Skrini ya kwanza na iliyofungwa</string>
+    <string name="wallpaper_set_action">Weka</string>
+    <string name="wallpaper_set_done">Mandhari imewekwa</string>
+    <string name="wallpaper_set_failed">Imeshindwa kuweka mandhari. Jaribu tena.</string>
     <string name="action_download">Pakua</string>
     <string name="tap_to_retry">Gusa ili ujaribu tena</string>
     <string name="error_generic">Hitilafu fulani imetokea</string>

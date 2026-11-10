@@ -37,6 +37,20 @@
     <!-- %1$s = the image's reference and translation, e.g. "John 3:16 · KJV" -->
     <string name="verse_image_preview_description">Aperçu de l\'image pour %1$s</string>
     <string name="verse_image_failed">Impossible de créer l\'image. Réessaie.</string>
+    <!-- Saving verse images and setting them as wallpaper (#255) -->
+    <string name="verse_image_save">Enregistrer</string>
+    <string name="verse_image_saved">Enregistrée dans Photos</string>
+    <string name="verse_image_save_failed">Impossible d\'enregistrer l\'image. Réessaie.</string>
+    <string name="verse_image_storage_denied">Sur cette version d\'Android, l\'enregistrement nécessite l\'accès au stockage. Tu peux toujours partager l\'image.</string>
+    <string name="verse_image_set_wallpaper">Définir comme fond d\'écran</string>
+    <string name="wallpaper_dialog_title">Définir comme fond d\'écran ?</string>
+    <string name="wallpaper_dialog_text">Cela remplace ton fond d\'écran actuel. Tu peux le changer à nouveau dans les paramètres du téléphone.</string>
+    <string name="wallpaper_target_home">Écran d\'accueil</string>
+    <string name="wallpaper_target_lock">Écran de verrouillage</string>
+    <string name="wallpaper_target_both">Écrans d\'accueil et de verrouillage</string>
+    <string name="wallpaper_set_action">Définir</string>
+    <string name="wallpaper_set_done">Fond d\'écran défini</string>
+    <string name="wallpaper_set_failed">Impossible de définir le fond d\'écran. Réessaie.</string>
     <string name="action_download">Télécharger</string>
     <string name="tap_to_retry">Touche pour réessayer</string>
     <string name="error_generic">Une erreur s’est produite</string>

@@ -39,6 +39,20 @@
     <!-- %1$s = the image's reference and translation, e.g. "John 3:16 · KJV" -->
     <string name="verse_image_preview_description">Preview of the image for %1$s</string>
     <string name="verse_image_failed">Couldn\'t create the image. Try again.</string>
+    <!-- Saving verse images and setting them as wallpaper (#255) -->
+    <string name="verse_image_save">Save</string>
+    <string name="verse_image_saved">Saved to Photos</string>
+    <string name="verse_image_save_failed">Couldn\'t save the image. Try again.</string>
+    <string name="verse_image_storage_denied">Saving needs storage access on this version of Android. You can still share the image.</string>
+    <string name="verse_image_set_wallpaper">Set as wallpaper</string>
+    <string name="wallpaper_dialog_title">Set as wallpaper?</string>
+    <string name="wallpaper_dialog_text">This replaces your current wallpaper. You can change it back in your phone\'s settings.</string>
+    <string name="wallpaper_target_home">Home screen</string>
+    <string name="wallpaper_target_lock">Lock screen</string>
+    <string name="wallpaper_target_both">Home and lock screens</string>
+    <string name="wallpaper_set_action">Set</string>
+    <string name="wallpaper_set_done">Wallpaper set</string>
+    <string name="wallpaper_set_failed">Couldn\'t set the wallpaper. Try again.</string>
     <string name="action_download">Download</string>
     <string name="tap_to_retry">Tap to retry</string>
     <string name="error_generic">Something went wrong</string>

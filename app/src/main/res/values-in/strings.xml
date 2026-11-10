@@ -37,6 +37,20 @@
     <!-- %1$s = the image's reference and translation, e.g. "John 3:16 · KJV" -->
     <string name="verse_image_preview_description">Pratinjau gambar untuk %1$s</string>
     <string name="verse_image_failed">Tidak dapat membuat gambar. Coba lagi.</string>
+    <!-- Saving verse images and setting them as wallpaper (#255) -->
+    <string name="verse_image_save">Simpan</string>
+    <string name="verse_image_saved">Disimpan ke Foto</string>
+    <string name="verse_image_save_failed">Tidak dapat menyimpan gambar. Coba lagi.</string>
+    <string name="verse_image_storage_denied">Di versi Android ini, menyimpan memerlukan akses penyimpanan. Anda tetap bisa membagikan gambar.</string>
+    <string name="verse_image_set_wallpaper">Jadikan wallpaper</string>
+    <string name="wallpaper_dialog_title">Jadikan wallpaper?</string>
+    <string name="wallpaper_dialog_text">Ini akan mengganti wallpaper Anda saat ini. Anda bisa menggantinya lagi di setelan ponsel.</string>
+    <string name="wallpaper_target_home">Layar utama</string>
+    <string name="wallpaper_target_lock">Layar kunci</string>
+    <string name="wallpaper_target_both">Layar utama dan layar kunci</string>
+    <string name="wallpaper_set_action">Pasang</string>
+    <string name="wallpaper_set_done">Wallpaper dipasang</string>
+    <string name="wallpaper_set_failed">Tidak dapat memasang wallpaper. Coba lagi.</string>
     <string name="action_download">Unduh</string>
     <string name="tap_to_retry">Ketuk untuk mencoba lagi</string>
     <string name="error_generic">Terjadi kesalahan</string>

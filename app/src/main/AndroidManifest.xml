@@ -10,6 +10,13 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <!-- Lets BootCompletedReceiver re-arm the daily verse jobs after a reboot -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <!-- Saving a verse image into Pictures (#255) needs this only on Android 9 and older;
+         Android 10+ saves through MediaStore without any permission. -->
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28"/>
+    <!-- "Set as wallpaper" for a verse image (#255). Granted on install, never asked for. -->
+    <uses-permission android:name="android.permission.SET_WALLPAPER"/>
 
     <!-- Android 11+ hides other apps unless asked for: lets utils/ExternalLinks.kt find a browser
          that supports Custom Tabs before falling back to a plain link. -->

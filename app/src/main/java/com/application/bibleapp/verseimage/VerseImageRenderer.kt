@@ -42,18 +42,31 @@ const val VERSE_IMAGE_GLOW_ALPHA = 0x1F
  */
 object VerseImageRenderer {
 
+    /**
+     * [forWallpaper] (#255) keeps the verse smaller and in the upper part of the screen, below the
+     * clock and above where the home screen's icons and dock sit, and leaves out the mark, which
+     * would end up behind the dock.
+     */
     fun render(
         content: VerseImageContent,
         options: VerseImageOptions,
         width: Int = options.format.width,
-        height: Int = options.format.height
+        height: Int = options.format.height,
+        forWallpaper: Boolean = false
     ): Bitmap {
         val bitmap = createBitmap(width, height)
-        draw(Canvas(bitmap), content, options, width, height)
+        draw(Canvas(bitmap), content, options, width, height, forWallpaper)
         return bitmap
     }
 
-    private fun draw(canvas: Canvas, content: VerseImageContent, options: VerseImageOptions, width: Int, height: Int) {
+    private fun draw(
+        canvas: Canvas,
+        content: VerseImageContent,
+        options: VerseImageOptions,
+        width: Int,
+        height: Int,
+        forWallpaper: Boolean
+    ) {
         val style = options.style
         val scale = width / 1080f
         val w = width.toFloat()
@@ -88,8 +101,11 @@ object VerseImageRenderer {
             dividerSpace * 2 +
             gapCredit + credit.height +
             (notice?.height?.plus(gapNotice) ?: 0f).toFloat()
-        // The mark sits in the bottom margin, so the block can't use that margin when it's shown.
-        val availableHeight = h - 2 * margin - fixedHeight
+        // The band the block is centered in: the whole image inside the margins (the mark sits in
+        // the bottom one), or a wallpaper's upper part.
+        val bandTop = if (forWallpaper) h * WALLPAPER_BAND_TOP else margin
+        val bandBottom = if (forWallpaper) h * WALLPAPER_BAND_BOTTOM else h - margin
+        val availableHeight = bandBottom - bandTop - fixedHeight
 
         val verseText = verseText(content, options, style)
         val versePaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -97,7 +113,11 @@ object VerseImageRenderer {
             typeface = Typeface.SERIF
         }
         // A tall image (story, wallpaper) has room for a larger verse than a square one.
-        val maxSize = 76f * scale * (if (h / w >= 1.6f) 1.25f else 1f)
+        val maxSize = when {
+            forWallpaper -> 64f * scale
+            h / w >= 1.6f -> 95f * scale
+            else -> 76f * scale
+        }
         val size = fitTextSize(max = maxSize, min = 30f * scale, step = 2f * scale) { candidate ->
             versePaint.textSize = candidate
             layout(verseText, versePaint, contentWidth, alignment).height <= availableHeight
@@ -110,7 +130,7 @@ object VerseImageRenderer {
         val verse = layout(verseText, versePaint, contentWidth, alignment, maxLines = maxLines)
 
         val blockHeight = fixedHeight + verse.height
-        var y = (h - blockHeight) / 2f
+        var y = bandTop + (bandBottom - bandTop - blockHeight) / 2f
         val centerX = w / 2f
 
         label?.let {
@@ -146,7 +166,7 @@ object VerseImageRenderer {
             drawLayout(canvas, it, margin, y)
         }
 
-        if (options.showMark) {
+        if (options.showMark && !forWallpaper) {
             val markPaint = sansPaint(style.secondary, 28f * scale, medium = true, letterSpacing = 0.04f).apply {
                 textAlign = Paint.Align.CENTER
             }
@@ -266,4 +286,8 @@ object VerseImageRenderer {
     }
 
     private const val LINE_SPACING = 1.32f
+
+    /** A wallpaper's verse sits between these fractions of the screen height (#255). */
+    private const val WALLPAPER_BAND_TOP = 0.2f
+    private const val WALLPAPER_BAND_BOTTOM = 0.58f
 }
