@@ -51,6 +51,11 @@
     <string name="wallpaper_set_action">Usar</string>
     <string name="wallpaper_set_done">Fondo de pantalla cambiado</string>
     <string name="wallpaper_set_failed">No se pudo cambiar el fondo de pantalla. Vuelve a intentarlo.</string>
+    <!-- Verse images from the daily verse (#256) -->
+    <!-- %1$s = the label on the image, e.g. "Verse of the Day" -->
+    <string name="verse_image_show_label">Mostrar «%1$s»</string>
+    <!-- The daily verse notification's button that opens the verse image editor -->
+    <string name="daily_verse_share_image">Compartir imagen</string>
     <string name="action_download">Descargar</string>
     <string name="tap_to_retry">Toca para reintentar</string>
     <string name="error_generic">Algo salió mal</string>

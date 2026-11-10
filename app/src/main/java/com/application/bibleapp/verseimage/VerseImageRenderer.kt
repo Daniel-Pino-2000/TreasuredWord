@@ -80,7 +80,7 @@ object VerseImageRenderer {
         val alignment = if (options.centered) Layout.Alignment.ALIGN_CENTER else Layout.Alignment.ALIGN_NORMAL
 
         // Everything around the verse, measured first so the verse gets the rest of the height.
-        val label = content.label?.let { text ->
+        val label = content.label?.takeIf { options.showLabel }?.let { text ->
             layout(text, sansPaint(style.accent, 32f * scale, medium = true, letterSpacing = 0.06f), contentWidth, alignment)
         }
         val credit = layout(
@@ -104,7 +104,13 @@ object VerseImageRenderer {
         // The band the block is centered in: the whole image inside the margins (the mark sits in
         // the bottom one), or a wallpaper's upper part.
         val bandTop = if (forWallpaper) h * WALLPAPER_BAND_TOP else margin
-        val bandBottom = if (forWallpaper) h * WALLPAPER_BAND_BOTTOM else h - margin
+        // A little more room at the bottom when the mark is shown, so a full image's reference
+        // never runs into it.
+        val bandBottom = when {
+            forWallpaper -> h * WALLPAPER_BAND_BOTTOM
+            options.showMark -> h - margin - 28f * scale
+            else -> h - margin
+        }
         val availableHeight = bandBottom - bandTop - fixedHeight
 
         val verseText = verseText(content, options, style)

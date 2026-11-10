@@ -461,7 +461,8 @@ class BibleRepository(
         format = VerseImageFormat.fromStored(prefs.getString(KEY_VERSE_IMAGE_FORMAT, null)),
         showVerseNumbers = prefs.getBoolean(KEY_VERSE_IMAGE_NUMBERS, true),
         centered = prefs.getBoolean(KEY_VERSE_IMAGE_CENTERED, true),
-        showMark = prefs.getBoolean(KEY_VERSE_IMAGE_MARK, true)
+        showMark = prefs.getBoolean(KEY_VERSE_IMAGE_MARK, true),
+        showLabel = prefs.getBoolean(KEY_VERSE_IMAGE_LABEL, true)
     )
 
     fun saveVerseImageOptions(options: VerseImageOptions) {
@@ -471,6 +472,7 @@ class BibleRepository(
             .putBoolean(KEY_VERSE_IMAGE_NUMBERS, options.showVerseNumbers)
             .putBoolean(KEY_VERSE_IMAGE_CENTERED, options.centered)
             .putBoolean(KEY_VERSE_IMAGE_MARK, options.showMark)
+            .putBoolean(KEY_VERSE_IMAGE_LABEL, options.showLabel)
             .apply()
     }
 
@@ -663,6 +665,7 @@ class BibleRepository(
         const val KEY_VERSE_IMAGE_NUMBERS = "verse_image_numbers"
         const val KEY_VERSE_IMAGE_CENTERED = "verse_image_centered"
         const val KEY_VERSE_IMAGE_MARK = "verse_image_mark"
+        const val KEY_VERSE_IMAGE_LABEL = "verse_image_label"
         const val KEY_READING_BOOK = "reading_book_id"
         const val KEY_READING_CHAPTER = "reading_chapter"
         const val KEY_READING_VERSE = "reading_verse"

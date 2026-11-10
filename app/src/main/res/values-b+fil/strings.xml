@@ -52,6 +52,11 @@
     <string name="wallpaper_set_action">Itakda</string>
     <string name="wallpaper_set_done">Naitakda ang wallpaper</string>
     <string name="wallpaper_set_failed">Hindi maitakda ang wallpaper. Subukan ulit.</string>
+    <!-- Verse images from the daily verse (#256) -->
+    <!-- %1$s = the label on the image, e.g. "Verse of the Day" -->
+    <string name="verse_image_show_label">Ipakita ang “%1$s”</string>
+    <!-- The daily verse notification's button that opens the verse image editor -->
+    <string name="daily_verse_share_image">Ibahagi ang larawan</string>
     <string name="action_download">I-download</string>
     <string name="tap_to_retry">I-tap para subukan ulit</string>
     <string name="error_generic">Nagkaproblema</string>

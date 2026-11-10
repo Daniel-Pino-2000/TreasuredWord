@@ -58,7 +58,9 @@ data class VerseImageOptions(
     val format: VerseImageFormat = VerseImageFormat.SQUARE,
     val showVerseNumbers: Boolean = true,
     val centered: Boolean = true,
-    val showMark: Boolean = true
+    val showMark: Boolean = true,
+    /** The content's label, e.g. "Verse of the Day" (#256), when it has one. */
+    val showLabel: Boolean = true
 )
 
 /**

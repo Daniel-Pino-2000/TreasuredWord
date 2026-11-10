@@ -11,6 +11,14 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.glance.GlanceId
+import com.application.bibleapp.verseimage.dailyVerseImageIntent
+import androidx.glance.layout.size
+import androidx.glance.layout.Row
+import androidx.glance.layout.Box
+import androidx.glance.layout.Alignment
+import androidx.glance.ImageProvider
+import androidx.glance.Image
+import androidx.glance.ColorFilter
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
 import androidx.glance.LocalContext
@@ -106,16 +114,41 @@ class DailyVerseWidget : GlanceAppWidget() {
                     }
                 )
                 .background(GlanceTheme.colors.primaryContainer)
-                .padding(horizontal = PADDING_HORIZONTAL, vertical = PADDING_VERTICAL)
+                // Less at the top with the title row, whose share button (#256) is taller than the
+                // title: the title still sits where it did, and the verse loses less room.
+                .padding(
+                    start = PADDING_HORIZONTAL,
+                    end = PADDING_HORIZONTAL,
+                    top = if (layout.showTitle) PADDING_TOP_WITH_TITLE else PADDING_VERTICAL,
+                    bottom = PADDING_VERTICAL
+                )
                 .clickable(actionStartActivity(openHome))
         ) {
             if (layout.showTitle) {
-                Text(
-                    text = title,
-                    style = TextStyle(color = GlanceTheme.colors.primary, fontSize = 12.sp, fontWeight = FontWeight.Medium),
-                    maxLines = 1
-                )
-                Spacer(GlanceModifier.height(4.dp))
+                // The title row carries "Share image" (#256), so it's hidden with the title at the
+                // smallest sizes, where there's no room.
+                Row(modifier = GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = title,
+                        style = TextStyle(color = GlanceTheme.colors.primary, fontSize = 12.sp, fontWeight = FontWeight.Medium),
+                        maxLines = 1,
+                        modifier = GlanceModifier.defaultWeight()
+                    )
+                    Box(
+                        modifier = GlanceModifier
+                            .size(TITLE_ROW_HEIGHT.dp)
+                            .cornerRadius((TITLE_ROW_HEIGHT / 2).dp)
+                            .clickable(actionStartActivity(dailyVerseImageIntent(context))),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Image(
+                            provider = ImageProvider(R.drawable.ic_share_image),
+                            contentDescription = context.getString(R.string.share_as_image),
+                            colorFilter = ColorFilter.tint(GlanceTheme.colors.primary),
+                            modifier = GlanceModifier.size(20.dp)
+                        )
+                    }
+                }
             }
             Text(
                 text = fitVerse(text, layout.maxChars),
@@ -144,6 +177,7 @@ class DailyVerseWidget : GlanceAppWidget() {
 
         private val PADDING_HORIZONTAL = 16.dp
         private val PADDING_VERTICAL = 12.dp
+        private val PADDING_TOP_WITH_TITLE = 4.dp
 
         /** Reloads today's verse into every placed widget and redraws them. */
         suspend fun refreshAll(context: Context) {
@@ -212,8 +246,10 @@ internal fun widgetTextLayout(size: DpSize, fontScale: Float): WidgetTextLayout 
     val showTitle = size.height >= TITLE_MIN_HEIGHT
     val fontSize = if (size.height >= 150.dp && size.width >= 200.dp) 16 else 14
     val lineHeight = fontSize * LINE_HEIGHT_FACTOR * fontScale
-    // Vertical padding, the reference line and its gap, and the title and its gap when shown.
-    val reserved = 24f + 4f + 18f * fontScale + if (showTitle) 4f + 16f * fontScale else 0f
+    // Vertical padding, the reference line and its gap, and the title row and its gap when shown
+    // (its share button, #256, makes it at least TITLE_ROW_HEIGHT, and the top padding smaller).
+    val reserved = 4f + 18f * fontScale +
+        if (showTitle) 4f + 12f + 4f + maxOf(16f * fontScale, TITLE_ROW_HEIGHT) else 24f
     val maxLines = floor((size.height.value - reserved) / lineHeight).toInt().coerceAtLeast(1)
     val charsPerLine = ((size.width.value - 32f) / (fontSize * fontScale * AVERAGE_CHAR_WIDTH)).toInt().coerceAtLeast(8)
     return WidgetTextLayout(showTitle, fontSize, maxLines, maxLines * charsPerLine)
@@ -228,5 +264,8 @@ internal fun fitVerse(text: String, maxChars: Int): String {
 }
 
 private val TITLE_MIN_HEIGHT = 100.dp
+
+/** The title row's height in dp: "Share image"'s tap target (#256), centered on its 20dp icon. */
+private const val TITLE_ROW_HEIGHT = 36f
 private const val LINE_HEIGHT_FACTOR = 1.25f
 private const val AVERAGE_CHAR_WIDTH = 0.5f
