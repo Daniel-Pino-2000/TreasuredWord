@@ -396,11 +396,11 @@
     <string name="ai_conversations_title">Gespräche</string>
     <string name="ai_action_new_conversation">Neues Gespräch</string>
     <string name="ai_signed_out_title">Frag den Bibelhelfer</string>
-    <string name="ai_signed_out_message">Stell Fragen zur Bibel und zum christlichen Glauben und erhalte Antworten aus baptistischer Sicht, mit den Bibelstellen dazu. Melde dich an, um zu fragen.</string>
+    <string name="ai_signed_out_message">Stell Fragen zur Bibel und zum christlichen Glauben und erhalte Antworten aus der Schrift, mit den Bibelstellen dazu. Melde dich an, um zu fragen.</string>
     <string name="ai_intro_title">Was möchtest du fragen?</string>
-    <string name="ai_intro_message">Die Antworten kommen aus baptistischer Sicht, mit den Bibelstellen, auf denen sie beruhen. Tippe auf eine Frage oder schreib deine eigene.</string>
+    <string name="ai_intro_message">Die Antworten kommen aus der Bibel, mit den Bibelstellen, auf denen sie beruhen. Tippe auf eine Frage oder schreib deine eigene.</string>
     <string name="ai_starter_saved">Wie kann ich gerettet werden?</string>
-    <string name="ai_starter_baptism">Warum taufen Baptisten durch Untertauchen?</string>
+    <string name="ai_starter_baptism">Was sagt die Bibel über die Taufe?</string>
     <string name="ai_starter_trinity">Was ist die Dreieinigkeit?</string>
     <string name="ai_starter_prayer">Wie soll ich beten?</string>
     <string name="ai_starter_start_reading">Wo fange ich am besten mit dem Bibellesen an?</string>
@@ -422,7 +422,7 @@
     </plurals>
     <string name="ai_notice_title">Bevor du fragst</string>
     <string name="ai_notice_ai">Der Bibelhelfer ist eine KI. Er kann Fehler machen.</string>
-    <string name="ai_notice_baptist">Er antwortet aus baptistischer Sicht und folgt dem Baptist Faith and Message 2000.</string>
+    <string name="ai_notice_baptist">Er antwortet aus der Bibel, im Einklang mit dem Baptist Faith and Message 2000.</string>
     <string name="ai_notice_bfm_link">Baptist Faith and Message 2000 lesen (auf Englisch)</string>
     <string name="ai_notice_scripture">Prüfe, was er sagt, anhand der Schrift, wie es die Beröer taten (Apostelgeschichte 17,11).</string>
     <string name="ai_notice_personal">Teile keine persönlichen Daten wie deinen vollen Namen, deine Adresse oder deine Gesundheit.</string>
