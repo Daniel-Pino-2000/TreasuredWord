@@ -21,6 +21,7 @@ import android.text.style.SuperscriptSpan
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.withTranslation
 import com.application.bibleapp.ui.theme.VerseImageDecoration
+import com.application.bibleapp.ui.theme.VerseImagePhotoLook
 import com.application.bibleapp.ui.theme.VerseImageStyle
 
 /** The app's name in the corner of a verse image. A name, so never translated. */
@@ -46,18 +47,25 @@ object VerseImageRenderer {
      * [forWallpaper] (#255) keeps the verse smaller and in the upper part of the screen, below the
      * clock and above where the home screen's icons and dock sit, and leaves out the mark, which
      * would end up behind the dock.
+     *
+     * [photo] (#257) replaces the style's background: cropped to fill the image, under a dark
+     * layer, with white text and no decoration, so the verse reads on any photo.
      */
     fun render(
         content: VerseImageContent,
         options: VerseImageOptions,
         width: Int = options.format.width,
         height: Int = options.format.height,
-        forWallpaper: Boolean = false
+        forWallpaper: Boolean = false,
+        photo: Bitmap? = null
     ): Bitmap {
         val bitmap = createBitmap(width, height)
-        draw(Canvas(bitmap), content, options, width, height, forWallpaper)
+        draw(Canvas(bitmap), content, options, width, height, forWallpaper, photo)
         return bitmap
     }
+
+    /** The colors and decoration an image is drawn with: its style's, or white on a photo. */
+    private class Look(val text: Int, val accent: Int, val secondary: Int, val decoration: VerseImageDecoration?)
 
     private fun draw(
         canvas: Canvas,
@@ -65,15 +73,25 @@ object VerseImageRenderer {
         options: VerseImageOptions,
         width: Int,
         height: Int,
-        forWallpaper: Boolean
+        forWallpaper: Boolean,
+        photo: Bitmap?
     ) {
         val style = options.style
+        val look = if (photo != null) {
+            Look(VerseImagePhotoLook.TEXT, VerseImagePhotoLook.TEXT, VerseImagePhotoLook.TEXT, decoration = null)
+        } else {
+            Look(style.text, style.accent, style.secondary, style.decoration)
+        }
         val scale = width / 1080f
         val w = width.toFloat()
         val h = height.toFloat()
 
-        drawBackground(canvas, style, w, h)
-        drawFrameDecoration(canvas, style, w, h, scale)
+        if (photo != null) {
+            drawPhoto(canvas, photo, w, h)
+        } else {
+            drawBackground(canvas, style, w, h)
+            drawFrameDecoration(canvas, style, w, h, scale)
+        }
 
         val margin = 108f * scale
         val contentWidth = (w - 2 * margin).toInt()
@@ -81,17 +99,17 @@ object VerseImageRenderer {
 
         // Everything around the verse, measured first so the verse gets the rest of the height.
         val label = content.label?.takeIf { options.showLabel }?.let { text ->
-            layout(text, sansPaint(style.accent, 32f * scale, medium = true, letterSpacing = 0.06f), contentWidth, alignment)
+            layout(text, sansPaint(look.accent, 32f * scale, medium = true, letterSpacing = 0.06f), contentWidth, alignment)
         }
         val credit = layout(
-            content.creditLine, sansPaint(style.secondary, 36f * scale, medium = true), contentWidth, alignment
+            content.creditLine, sansPaint(look.secondary, 36f * scale, medium = true), contentWidth, alignment
         )
         val notice = content.notice?.takeIf { it.isNotBlank() }?.let { text ->
-            layout(text, sansPaint(style.secondary, 26f * scale), contentWidth, alignment, maxLines = 4)
+            layout(text, sansPaint(look.secondary, 26f * scale), contentWidth, alignment, maxLines = 4)
         }
         val quoteSize = 190f * scale
-        val quoteHeight = if (style.decoration == VerseImageDecoration.QUOTE_MARK) quoteSize * 0.5f else 0f
-        val dividerSpace = if (style.decoration == VerseImageDecoration.DIVIDERS) 56f * scale else 0f
+        val quoteHeight = if (look.decoration == VerseImageDecoration.QUOTE_MARK) quoteSize * 0.5f else 0f
+        val dividerSpace = if (look.decoration == VerseImageDecoration.DIVIDERS) 56f * scale else 0f
         val gapLabel = 28f * scale
         val gapCredit = 44f * scale
         val gapNotice = 20f * scale
@@ -113,9 +131,9 @@ object VerseImageRenderer {
         }
         val availableHeight = bandBottom - bandTop - fixedHeight
 
-        val verseText = verseText(content, options, style)
+        val verseText = verseText(content, options, look.accent)
         val versePaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = style.text
+            color = look.text
             typeface = Typeface.SERIF
         }
         // A tall image (story, wallpaper) has room for a larger verse than a square one.
@@ -124,16 +142,21 @@ object VerseImageRenderer {
             h / w >= 1.6f -> 95f * scale
             else -> 76f * scale
         }
-        val size = fitTextSize(max = maxSize, min = 30f * scale, step = 2f * scale) { candidate ->
+        val fitted = fitTextSize(max = maxSize, min = 30f * scale, step = 2f * scale) { candidate ->
             versePaint.textSize = candidate
             layout(verseText, versePaint, contentWidth, alignment).height <= availableHeight
-        } ?: (30f * scale)
-        versePaint.textSize = size
-        // Too long even at the smallest size (the editor stops before this): cut it with "…"
-        // rather than drawing over the reference.
-        val lineHeight = versePaint.fontSpacing * LINE_SPACING
-        val maxLines = (availableHeight / lineHeight).toInt().coerceAtLeast(1)
-        val verse = layout(verseText, versePaint, contentWidth, alignment, maxLines = maxLines)
+        }
+        versePaint.textSize = fitted ?: (30f * scale)
+        val verse = if (fitted != null) {
+            layout(verseText, versePaint, contentWidth, alignment)
+        } else {
+            // Too long even at the smallest size (the editor stops before this): cut it with "…"
+            // rather than drawing over the reference. Only here: the last line gets no extra
+            // spacing, so a line count worked out from the spacing would cut a text that fits.
+            val lineHeight = versePaint.fontSpacing * LINE_SPACING
+            val maxLines = (availableHeight / lineHeight).toInt().coerceAtLeast(1)
+            layout(verseText, versePaint, contentWidth, alignment, maxLines = maxLines)
+        }
 
         val blockHeight = fixedHeight + verse.height
         var y = bandTop + (bandBottom - bandTop - blockHeight) / 2f
@@ -143,9 +166,9 @@ object VerseImageRenderer {
             drawLayout(canvas, it, margin, y)
             y += it.height + gapLabel
         }
-        if (style.decoration == VerseImageDecoration.QUOTE_MARK) {
+        if (look.decoration == VerseImageDecoration.QUOTE_MARK) {
             val quotePaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = style.accent
+                color = look.accent
                 typeface = Typeface.SERIF
                 textSize = quoteSize
                 textAlign = if (options.centered) Paint.Align.CENTER else Paint.Align.LEFT
@@ -155,13 +178,13 @@ object VerseImageRenderer {
             y += quoteHeight
         }
         if (dividerSpace > 0f) {
-            drawDivider(canvas, style, if (options.centered) centerX else margin, y + dividerSpace / 2f, scale, options.centered)
+            drawDivider(canvas, look.accent, if (options.centered) centerX else margin, y + dividerSpace / 2f, scale, options.centered)
             y += dividerSpace
         }
         drawLayout(canvas, verse, margin, y)
         y += verse.height
         if (dividerSpace > 0f) {
-            drawDivider(canvas, style, if (options.centered) centerX else margin, y + dividerSpace / 2f, scale, options.centered)
+            drawDivider(canvas, look.accent, if (options.centered) centerX else margin, y + dividerSpace / 2f, scale, options.centered)
             y += dividerSpace
         }
         y += gapCredit
@@ -173,7 +196,7 @@ object VerseImageRenderer {
         }
 
         if (options.showMark && !forWallpaper) {
-            val markPaint = sansPaint(style.secondary, 28f * scale, medium = true, letterSpacing = 0.04f).apply {
+            val markPaint = sansPaint(look.secondary, 28f * scale, medium = true, letterSpacing = 0.04f).apply {
                 textAlign = Paint.Align.CENTER
             }
             // Between the text block's margin and the frame/corner decorations (48 px in), so it
@@ -183,7 +206,7 @@ object VerseImageRenderer {
     }
 
     /** The verses as one paragraph, each number a small superscript in the accent color. */
-    private fun verseText(content: VerseImageContent, options: VerseImageOptions, style: VerseImageStyle): CharSequence {
+    private fun verseText(content: VerseImageContent, options: VerseImageOptions, numberColor: Int): CharSequence {
         val numbered = options.showVerseNumbers && content.hasSeveralVerses
         val builder = SpannableStringBuilder()
         content.lines.forEachIndexed { index, line ->
@@ -194,12 +217,27 @@ object VerseImageRenderer {
                 val end = builder.length
                 builder.setSpan(SuperscriptSpan(), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                 builder.setSpan(RelativeSizeSpan(0.6f), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-                builder.setSpan(ForegroundColorSpan(style.accent), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                builder.setSpan(ForegroundColorSpan(numberColor), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                 builder.append(' ')
             }
             builder.append(line.text.trim())
         }
         return builder
+    }
+
+    /** [photo] scaled to fill the image and centered (the edges that don't fit are cut), under
+     *  the dark layer that keeps white text readable on it. */
+    private fun drawPhoto(canvas: Canvas, photo: Bitmap, w: Float, h: Float) {
+        val fill = maxOf(w / photo.width, h / photo.height)
+        val drawnWidth = photo.width * fill
+        val drawnHeight = photo.height * fill
+        val left = (w - drawnWidth) / 2f
+        val top = (h - drawnHeight) / 2f
+        canvas.drawBitmap(
+            photo, null, RectF(left, top, left + drawnWidth, top + drawnHeight),
+            Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
+        )
+        canvas.drawColor((VerseImagePhotoLook.SCRIM_ALPHA shl 24) or 0x000000)
     }
 
     private fun drawBackground(canvas: Canvas, style: VerseImageStyle, w: Float, h: Float) {
@@ -250,10 +288,10 @@ object VerseImageRenderer {
         }
     }
 
-    private fun drawDivider(canvas: Canvas, style: VerseImageStyle, x: Float, y: Float, scale: Float, centered: Boolean) {
+    private fun drawDivider(canvas: Canvas, color: Int, x: Float, y: Float, scale: Float, centered: Boolean) {
         val half = 44f * scale
         val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = style.accent
+            this.color = color
             strokeWidth = 2.5f * scale
             strokeCap = Paint.Cap.ROUND
         }

@@ -55,6 +55,16 @@
     <string name="verse_image_show_label">显示“%1$s”</string>
     <!-- The daily verse notification's button that opens the verse image editor -->
     <string name="daily_verse_share_image">分享图片</string>
+    <!-- Photo backgrounds and the daily verse wallpaper (#257) -->
+    <string name="verse_image_photo">你的照片</string>
+    <string name="verse_image_photo_failed">无法打开该照片，请换一张。</string>
+    <string name="settings_daily_wallpaper">每日经文壁纸</string>
+    <string name="settings_daily_wallpaper_subtitle_off">把今日经文设为壁纸，每天更新</string>
+    <string name="settings_daily_wallpaper_subtitle_on">每天更新。关闭后会保留当前壁纸。</string>
+    <string name="settings_daily_wallpaper_where">位置</string>
+    <string name="daily_wallpaper_confirm_title">将每日经文设为壁纸？</string>
+    <string name="daily_wallpaper_confirm_text">这会立即替换你当前的壁纸，之后每天换成当天的经文。</string>
+    <string name="daily_wallpaper_turn_on">开启</string>
     <string name="action_download">下载</string>
     <string name="tap_to_retry">点按重试</string>
     <string name="error_generic">出了点问题</string>

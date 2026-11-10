@@ -12,16 +12,18 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
+import com.application.bibleapp.verseimage.DailyWallpaper
 import com.application.bibleapp.worker.DailyVerseScheduler
 import java.util.concurrent.TimeUnit
 
 /**
- * When the daily verse widget (#245) is redrawn. No periodic updates and no network: only
+ * When the daily verse widget (#245) is redrawn, and the daily verse wallpaper (#257) set. No
+ * periodic updates and no network: only
  * - just after midnight, so it never shows yesterday's verse (works offline);
  * - when the day's verse is fetched (BibleRepository.refreshDailyVerse);
  * - when the translation or the app language changes, or the phone's language.
- * All of it goes through WorkManager, and only while a widget is placed: removing the last one
- * cancels the midnight job, so nothing keeps running in the background.
+ * All of it goes through WorkManager, and only while a widget is placed or the daily wallpaper is
+ * on: when neither is, the midnight job is cancelled, so nothing keeps running in the background.
  */
 object DailyVerseWidgetUpdates {
     private const val MIDNIGHT_WORK_NAME = "daily_verse_widget_midnight"
@@ -38,9 +40,13 @@ object DailyVerseWidgetUpdates {
             ?.getAppWidgetIds(ComponentName(context, DailyVerseWidgetReceiver::class.java))
             ?.isNotEmpty() == true
 
-    /** Redraws the placed widgets soon; a no-op when there are none. */
+    /** Whether anything needs the daily updates: a placed widget or the daily wallpaper. */
+    fun isNeeded(context: Context): Boolean = hasWidgets(context) || DailyWallpaper.isEnabled(context)
+
+    /** Redraws the placed widgets and updates the daily wallpaper soon; a no-op when neither
+     *  is in use. */
     fun refreshNow(context: Context) {
-        if (!hasWidgets(context)) return
+        if (!isNeeded(context)) return
         val request = OneTimeWorkRequestBuilder<DailyVerseWidgetWorker>().build()
         WorkManager.getInstance(context).enqueueUniqueWork(REFRESH_WORK_NAME, ExistingWorkPolicy.REPLACE, request)
     }
@@ -48,7 +54,7 @@ object DailyVerseWidgetUpdates {
     /** Arms the just-after-midnight redraw. KEEP from app start and when a widget is added (don't
      *  disturb one already pending); REPLACE when the worker re-arms itself for the next night. */
     fun scheduleMidnight(context: Context, policy: ExistingWorkPolicy, force: Boolean = false) {
-        if (!force && !hasWidgets(context)) return
+        if (!force && !isNeeded(context)) return
         val request = OneTimeWorkRequestBuilder<DailyVerseWidgetWorker>()
             .setInitialDelay(DailyVerseScheduler.delayUntilNext(MIDNIGHT_HOUR, MIDNIGHT_MINUTE), TimeUnit.MILLISECONDS)
             .setInputData(workDataOf(KEY_REARM_MIDNIGHT to true))
@@ -64,12 +70,15 @@ object DailyVerseWidgetUpdates {
     }
 }
 
-/** Redraws the widgets; the midnight run also arms the next night's, while widgets remain. */
+/** Redraws the widgets and updates the daily wallpaper; the midnight run also arms the next
+ *  night's, while either is still in use. */
 class DailyVerseWidgetWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
-        // The last widget was removed since this was scheduled: nothing to draw, and no re-arming.
-        if (!DailyVerseWidgetUpdates.hasWidgets(applicationContext)) return Result.success()
+        // The last widget was removed and the wallpaper turned off since this was scheduled:
+        // nothing to do, and no re-arming.
+        if (!DailyVerseWidgetUpdates.isNeeded(applicationContext)) return Result.success()
         DailyVerseWidget.refreshAll(applicationContext)
+        DailyWallpaper.update(applicationContext)
         // Last, like DailyVerseNotificationWorker: REPLACE cancels this running instance.
         if (inputData.getBoolean(DailyVerseWidgetUpdates.KEY_REARM_MIDNIGHT, false)) {
             DailyVerseWidgetUpdates.scheduleMidnight(applicationContext, ExistingWorkPolicy.REPLACE)
@@ -89,7 +98,8 @@ class DailyVerseWidgetReceiver : GlanceAppWidgetReceiver() {
 
     override fun onDisabled(context: Context) {
         super.onDisabled(context)
-        DailyVerseWidgetUpdates.cancel(context)
+        // The daily wallpaper (#257) still needs the midnight update.
+        if (!DailyWallpaper.isEnabled(context)) DailyVerseWidgetUpdates.cancel(context)
     }
 
     override fun onReceive(context: Context, intent: Intent) {

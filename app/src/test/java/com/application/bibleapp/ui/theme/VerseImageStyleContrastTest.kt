@@ -46,6 +46,15 @@ class VerseImageStyleContrastTest {
     }
 
     @Test
+    fun whiteTextReadsOnAnyPhoto() {
+        // The worst case is a pure white photo under the dark layer (#257).
+        val scrim = Color(red = 0f, green = 0f, blue = 0f, alpha = VerseImagePhotoLook.SCRIM_ALPHA / 255f)
+        val ground = scrim.compositeOver(Color.White)
+        val ratio = contrast(Color(VerseImagePhotoLook.TEXT), ground)
+        assertTrue("white on a white photo is ${"%.2f".format(ratio)}:1", ratio >= TEXT)
+    }
+
+    @Test
     fun everyColorThemeHasItsStyle() {
         ThemePalette.entries.forEach { palette ->
             assertEquals(palette.name, VerseImageStyle.forPalette(palette).name)

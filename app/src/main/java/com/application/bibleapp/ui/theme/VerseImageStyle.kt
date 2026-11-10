@@ -95,3 +95,15 @@ enum class VerseImageStyle(
         }
     }
 }
+
+/**
+ * A verse image on the user's own photo (#257): the photo goes under a black layer at
+ * [SCRIM_ALPHA], and all text is [TEXT]. VerseImageStyleContrastTest checks white on that layer
+ * over a pure white photo, the worst case, so the text reads on any photo.
+ */
+object VerseImagePhotoLook {
+    const val TEXT = 0xFFFFFFFF.toInt()
+
+    /** The black layer's opacity, 0-255. */
+    const val SCRIM_ALPHA = 0x8C
+}

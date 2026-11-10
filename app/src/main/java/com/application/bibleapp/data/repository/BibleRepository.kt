@@ -25,6 +25,8 @@ import com.application.bibleapp.data.remote.VerseLocationDto
 import com.application.bibleapp.ui.theme.ThemeMode
 import com.application.bibleapp.ui.theme.ThemePalette
 import com.application.bibleapp.ui.theme.VerseImageStyle
+import com.application.bibleapp.verseimage.DailyWallpaper
+import com.application.bibleapp.verseimage.DailyWallpaperSettings
 import com.application.bibleapp.verseimage.VerseImageFormat
 import com.application.bibleapp.verseimage.VerseImageOptions
 import com.application.bibleapp.ui.theme.VerseTextScale
@@ -464,6 +466,14 @@ class BibleRepository(
         showMark = prefs.getBoolean(KEY_VERSE_IMAGE_MARK, true),
         showLabel = prefs.getBoolean(KEY_VERSE_IMAGE_LABEL, true)
     )
+
+    /** The daily verse wallpaper (#257). Kept by [DailyWallpaper] in its own file, which backups
+     *  don't copy; its style defaults to the one named after the app's color theme. */
+    fun loadDailyWallpaper(): DailyWallpaperSettings =
+        DailyWallpaper.load(context, VerseImageStyle.forPalette(loadThemePalette()))
+
+    /** Saves it and starts or stops the daily updates; turning it on sets today's wallpaper. */
+    fun saveDailyWallpaper(settings: DailyWallpaperSettings) = DailyWallpaper.save(context, settings)
 
     fun saveVerseImageOptions(options: VerseImageOptions) {
         prefs.edit()
