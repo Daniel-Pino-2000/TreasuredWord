@@ -21,6 +21,21 @@
     <string name="action_sign_in">Anmelden</string>
     <string name="action_copy">Kopieren</string>
     <string name="action_share">Teilen</string>
+    <!-- Verse images (#254) -->
+    <string name="share_as_text">Als Text teilen</string>
+    <string name="share_as_image">Als Bild teilen</string>
+    <string name="verse_image_style">Stil</string>
+    <string name="verse_image_size">Größe</string>
+    <string name="verse_image_size_square">Quadrat</string>
+    <string name="verse_image_size_portrait">Hochformat</string>
+    <string name="verse_image_size_story">Story</string>
+    <string name="verse_image_verse_numbers">Versnummern</string>
+    <string name="verse_image_centered">Text zentrieren</string>
+    <string name="verse_image_show_mark">Den Namen TreasuredWord zeigen</string>
+    <string name="verse_image_too_long">Dieser Abschnitt ist zu lang, um als Bild gut lesbar zu sein. Teile ihn als Text oder wähle weniger Verse aus.</string>
+    <!-- %1$s = the image's reference and translation, e.g. "John 3:16 · KJV" -->
+    <string name="verse_image_preview_description">Vorschau des Bildes für %1$s</string>
+    <string name="verse_image_failed">Das Bild konnte nicht erstellt werden. Versuche es erneut.</string>
     <string name="action_download">Herunterladen</string>
     <string name="tap_to_retry">Tippe, um es erneut zu versuchen</string>
     <string name="error_generic">Etwas ist schiefgelaufen</string>

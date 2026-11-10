@@ -22,6 +22,21 @@
     <string name="action_sign_in">Masuk</string>
     <string name="action_copy">Salin</string>
     <string name="action_share">Bagikan</string>
+    <!-- Verse images (#254) -->
+    <string name="share_as_text">Bagikan sebagai teks</string>
+    <string name="share_as_image">Bagikan sebagai gambar</string>
+    <string name="verse_image_style">Gaya</string>
+    <string name="verse_image_size">Ukuran</string>
+    <string name="verse_image_size_square">Persegi</string>
+    <string name="verse_image_size_portrait">Potret</string>
+    <string name="verse_image_size_story">Story</string>
+    <string name="verse_image_verse_numbers">Nomor ayat</string>
+    <string name="verse_image_centered">Ratakan teks ke tengah</string>
+    <string name="verse_image_show_mark">Tampilkan nama TreasuredWord</string>
+    <string name="verse_image_too_long">Bagian ini terlalu panjang untuk dibaca sebagai gambar. Bagikan sebagai teks, atau pilih lebih sedikit ayat.</string>
+    <!-- %1$s = the image's reference and translation, e.g. "John 3:16 · KJV" -->
+    <string name="verse_image_preview_description">Pratinjau gambar untuk %1$s</string>
+    <string name="verse_image_failed">Tidak dapat membuat gambar. Coba lagi.</string>
     <string name="action_download">Unduh</string>
     <string name="tap_to_retry">Ketuk untuk mencoba lagi</string>
     <string name="error_generic">Terjadi kesalahan</string>

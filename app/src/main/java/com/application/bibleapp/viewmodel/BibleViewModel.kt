@@ -37,6 +37,11 @@ import com.application.bibleapp.ui.theme.ThemeMode
 import com.application.bibleapp.ui.theme.ThemePalette
 import com.application.bibleapp.ui.theme.VerseTextScale
 import com.application.bibleapp.utils.buildVerseShareText
+import com.application.bibleapp.utils.formatFullVerseRefs
+import com.application.bibleapp.verseimage.VerseImageContent
+import com.application.bibleapp.verseimage.VerseImageLine
+import com.application.bibleapp.verseimage.VerseImageOptions
+import com.application.bibleapp.verseimage.VerseImageRequest
 import com.application.bibleapp.worker.SyncEvents
 import com.application.bibleapp.worker.serverPositionWins
 import kotlinx.coroutines.Job
@@ -225,6 +230,15 @@ class BibleViewModel(
     // so a message is shown once rather than re-shown on every recomposition/config change.
     private val _userMessages = MutableSharedFlow<UserMessage>(extraBufferCapacity = 4)
     val userMessages: SharedFlow<UserMessage> = _userMessages.asSharedFlow()
+
+    // The open verse image editor (#254): what it shows, or null when it's closed. Here rather
+    // than in a screen, so the reader, Home and the daily verse notification can all open it.
+    private val _verseImageRequest = MutableStateFlow<VerseImageRequest?>(null)
+    val verseImageRequest: StateFlow<VerseImageRequest?> = _verseImageRequest.asStateFlow()
+
+    // The editor's choices, remembered for the next image.
+    private val _verseImageOptions = MutableStateFlow(repository.loadVerseImageOptions())
+    val verseImageOptions: StateFlow<VerseImageOptions> = _verseImageOptions.asStateFlow()
 
     // The verse whose notes list sheet is open (a verse with 2+ notes was tapped), or null.
     private val _noteListVerse = MutableStateFlow<VerseLocationDto?>(null)
@@ -767,6 +781,47 @@ class BibleViewModel(
         )
         clearSelection()
         return passage
+    }
+
+    /**
+     * Opens the verse image editor (#254) for the current selection, with the same passage as
+     * text for its "too long" fallback. Ends selection mode, like Copy and Share. A verse stored
+     * as several rows is joined back together, and the translation's license notice (#98) goes
+     * on the image with it.
+     */
+    fun shareSelectionAsImage() {
+        val selection = _selectedVerses.value
+        if (selection.isEmpty()) return
+        val sorted = selection.distinct().sortedWith(compareBy({ it.bookId }, { it.chapter }, { it.verse }))
+        val textByLocation = _verses.value
+            .filter { it.bookId != null && it.chapter != null && it.verse != null }
+            .groupBy { VerseLocationDto(it.bookId!!, it.chapter!!, it.verse!!) }
+            .mapValues { (_, rows) -> rows.joinToString(" ") { it.text.removePrefix(LEGACY_PARAGRAPH_MARKER).trim() } }
+        val names = _bookNames.value
+        val bookName = { id: Int -> names[id] ?: BibleBooks.getBookById(id)?.name ?: "" }
+        val lines = sorted.mapNotNull { location ->
+            textByLocation[location]?.takeIf { it.isNotBlank() }?.let { VerseImageLine(location.verse, it) }
+        }
+        if (lines.isEmpty()) return
+        val versionLabel = currentVersionLabel.value
+        val content = VerseImageContent(
+            lines = lines,
+            reference = formatFullVerseRefs(sorted, bookName),
+            versionLabel = versionLabel,
+            notice = currentTranslationCredit.value.license?.notice
+        )
+        val shareText = buildVerseShareText(sorted, textByLocation::get, bookName, versionLabel)
+        clearSelection()
+        _verseImageRequest.value = VerseImageRequest(content, shareText)
+    }
+
+    fun closeVerseImage() {
+        _verseImageRequest.value = null
+    }
+
+    fun updateVerseImageOptions(options: VerseImageOptions) {
+        _verseImageOptions.value = options
+        repository.saveVerseImageOptions(options)
     }
 
     /** The Home verse card's Copy/Share text, in the same `"…" — Ref (VER)` shape as a reader

@@ -22,6 +22,21 @@
     <string name="action_sign_in">로그인</string>
     <string name="action_copy">복사</string>
     <string name="action_share">공유</string>
+    <!-- Verse images (#254) -->
+    <string name="share_as_text">텍스트로 공유</string>
+    <string name="share_as_image">이미지로 공유</string>
+    <string name="verse_image_style">스타일</string>
+    <string name="verse_image_size">크기</string>
+    <string name="verse_image_size_square">정사각형</string>
+    <string name="verse_image_size_portrait">세로</string>
+    <string name="verse_image_size_story">스토리</string>
+    <string name="verse_image_verse_numbers">절 번호</string>
+    <string name="verse_image_centered">가운데 정렬</string>
+    <string name="verse_image_show_mark">TreasuredWord 이름 표시</string>
+    <string name="verse_image_too_long">이 본문은 너무 길어서 이미지로 읽기 어려워요. 텍스트로 공유하거나 절을 더 적게 선택하세요.</string>
+    <!-- %1$s = the image's reference and translation, e.g. "John 3:16 · KJV" -->
+    <string name="verse_image_preview_description">%1$s 이미지 미리보기</string>
+    <string name="verse_image_failed">이미지를 만들지 못했어요. 다시 시도하세요.</string>
     <string name="action_download">다운로드</string>
     <string name="tap_to_retry">탭하여 다시 시도</string>
     <string name="error_generic">문제가 발생했어요</string>
