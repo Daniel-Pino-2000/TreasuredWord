@@ -3,10 +3,11 @@ package com.application.bibleapp.widget
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.widget.RemoteViews
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.toArgb
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -24,6 +25,7 @@ import androidx.glance.GlanceTheme
 import androidx.glance.LocalContext
 import androidx.glance.LocalSize
 import androidx.glance.action.clickable
+import androidx.glance.appwidget.AndroidRemoteViews
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.SizeMode
@@ -58,7 +60,6 @@ import com.application.bibleapp.data.repository.todaysDailyVerseOffline
 import com.application.bibleapp.ui.theme.ThemePalette
 import com.application.bibleapp.utils.AppLanguage
 import com.application.bibleapp.viewmodel.versionLabelFor
-import kotlin.math.floor
 
 /**
  * Home screen widget with today's daily verse (#245). It only reads the device: today's cached
@@ -97,7 +98,9 @@ class DailyVerseWidget : GlanceAppWidget() {
     private fun WidgetContent(title: String, text: String, reference: String, fontScale: Float) {
         val size = LocalSize.current
         val context = LocalContext.current
-        val layout = widgetTextLayout(size, fontScale)
+        val autoSize = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+        // Measured as the TextView draws it (#272): Android 8+'s XML layout has no font padding.
+        val layout = fitWidgetVerse(text, size, fontScale, autoSize, StaticLayoutVerseMeasurer(context, includePad = !autoSize))
         // CLEAR_TASK like the notification: always lands on Home, where the daily verse is.
         val openHome = Intent(context, MainActivity::class.java)
             .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
@@ -136,8 +139,8 @@ class DailyVerseWidget : GlanceAppWidget() {
                     )
                     Box(
                         modifier = GlanceModifier
-                            .size(TITLE_ROW_HEIGHT.dp)
-                            .cornerRadius((TITLE_ROW_HEIGHT / 2).dp)
+                            .size(TITLE_ROW_HEIGHT_DP.dp)
+                            .cornerRadius((TITLE_ROW_HEIGHT_DP / 2).dp)
                             .clickable(actionStartActivity(dailyVerseImageIntent(context))),
                         contentAlignment = Alignment.Center
                     ) {
@@ -150,16 +153,35 @@ class DailyVerseWidget : GlanceAppWidget() {
                     }
                 }
             }
-            Text(
-                text = fitVerse(text, layout.maxChars),
-                style = TextStyle(
-                    color = GlanceTheme.colors.onPrimaryContainer,
-                    fontSize = layout.verseFontSize.sp,
-                    fontFamily = FontFamily.Serif
-                ),
-                maxLines = layout.maxLines,
-                modifier = GlanceModifier.fillMaxWidth().defaultWeight()
-            )
+            if (layout.autoSize && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                // Android 8+: an autosizing TextView, so the launcher sizes the real text to the
+                // real room (#272): a short verse grows to fill a big widget, a long one shrinks
+                // before it's cut. maxLines lets it end with "…" if the room is less than measured.
+                val views = RemoteViews(context.packageName, R.layout.widget_daily_verse_text).apply {
+                    setTextViewText(R.id.widget_verse_text, layout.text)
+                    setInt(R.id.widget_verse_text, "setMaxLines", layout.maxLines)
+                    // Below Android 12, Glance fixes its colors (light or dark) when it draws, while
+                    // the layout's color resource would follow the launcher's mode on its own; the
+                    // same color as the title and reference keeps them together. Android 12+ uses
+                    // the resource, the same system color Glance uses.
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+                        setTextColor(R.id.widget_verse_text, GlanceTheme.colors.onPrimaryContainer.getColor(context).toArgb())
+                    }
+                }
+                AndroidRemoteViews(remoteViews = views, modifier = GlanceModifier.fillMaxWidth().defaultWeight())
+            } else {
+                // Android 7 has no autosizing in widgets: the largest size that holds the verse.
+                Text(
+                    text = layout.text,
+                    style = TextStyle(
+                        color = GlanceTheme.colors.onPrimaryContainer,
+                        fontSize = layout.fontSizeSp.sp,
+                        fontFamily = FontFamily.Serif
+                    ),
+                    maxLines = layout.maxLines,
+                    modifier = GlanceModifier.fillMaxWidth().defaultWeight()
+                )
+            }
             Spacer(GlanceModifier.height(4.dp))
             Text(
                 text = reference,
@@ -175,7 +197,7 @@ class DailyVerseWidget : GlanceAppWidget() {
         private val KEY_REFERENCE = stringPreferencesKey("reference")
         private val KEY_LOADED_AT = longPreferencesKey("loaded_at")
 
-        private val PADDING_HORIZONTAL = 16.dp
+        private val PADDING_HORIZONTAL = WIDGET_PADDING_HORIZONTAL_DP.dp
         private val PADDING_VERTICAL = 12.dp
         private val PADDING_TOP_WITH_TITLE = 4.dp
 
@@ -236,36 +258,3 @@ class DailyVerseWidget : GlanceAppWidget() {
 }
 
 private data class WidgetVerse(val title: String, val text: String, val reference: String, val loadedAt: Long)
-
-/** How the verse fits a widget: whether the title shows, the verse's font size, how many lines
- *  fit, and roughly how many characters those hold. Widgets can't measure text, so this
- *  estimates from the size. */
-internal data class WidgetTextLayout(val showTitle: Boolean, val verseFontSize: Int, val maxLines: Int, val maxChars: Int)
-
-internal fun widgetTextLayout(size: DpSize, fontScale: Float): WidgetTextLayout {
-    val showTitle = size.height >= TITLE_MIN_HEIGHT
-    val fontSize = if (size.height >= 150.dp && size.width >= 200.dp) 16 else 14
-    val lineHeight = fontSize * LINE_HEIGHT_FACTOR * fontScale
-    // Vertical padding, the reference line and its gap, and the title row and its gap when shown
-    // (its share button, #256, makes it at least TITLE_ROW_HEIGHT, and the top padding smaller).
-    val reserved = 4f + 18f * fontScale +
-        if (showTitle) 4f + 12f + 4f + maxOf(16f * fontScale, TITLE_ROW_HEIGHT) else 24f
-    val maxLines = floor((size.height.value - reserved) / lineHeight).toInt().coerceAtLeast(1)
-    val charsPerLine = ((size.width.value - 32f) / (fontSize * fontScale * AVERAGE_CHAR_WIDTH)).toInt().coerceAtLeast(8)
-    return WidgetTextLayout(showTitle, fontSize, maxLines, maxLines * charsPerLine)
-}
-
-/** [text] cut at a word to about [maxChars], ending in "…" when it was cut. */
-internal fun fitVerse(text: String, maxChars: Int): String {
-    if (text.length <= maxChars) return text
-    val cut = text.take((maxChars - 1).coerceAtLeast(1))
-    val atWord = cut.substringBeforeLast(' ', cut).ifBlank { cut }
-    return atWord.trimEnd(' ', ',', ';', ':', '.', '—', '-') + "…"
-}
-
-private val TITLE_MIN_HEIGHT = 100.dp
-
-/** The title row's height in dp: "Share image"'s tap target (#256), centered on its 20dp icon. */
-private const val TITLE_ROW_HEIGHT = 36f
-private const val LINE_HEIGHT_FACTOR = 1.25f
-private const val AVERAGE_CHAR_WIDTH = 0.5f
