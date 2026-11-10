@@ -1,6 +1,13 @@
 package com.application.bibleapp.components
 
 import android.graphics.Bitmap
+import android.net.Uri
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.outlined.AddPhotoAlternate
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import com.application.bibleapp.verseimage.VerseImagePhoto
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -148,9 +155,39 @@ private fun EditorContent(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+
+    // Your own photo as the background (#257). Only its link is kept (saveable, so a rotation
+    // keeps it); the photo is read into memory to draw with, never copied or uploaded.
+    var photoUri by rememberSaveable { mutableStateOf<Uri?>(null) }
+    var usePhoto by rememberSaveable { mutableStateOf(false) }
+    val photoFailedMessage = stringResource(R.string.verse_image_photo_failed)
+    val loadedPhoto by produceState<Bitmap?>(null, photoUri) {
+        val uri = photoUri
+        if (uri == null) {
+            value = null
+            return@produceState
+        }
+        value = try {
+            VerseImagePhoto.load(context, uri)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            usePhoto = false
+            snackbarHostState.showSnackbar(photoFailedMessage)
+            null
+        }
+    }
+    val photo = loadedPhoto.takeIf { usePhoto }
+    val pickPhoto = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null) {
+            photoUri = uri
+            usePhoto = true
+        }
+    }
+
     // Keeps showing the last image while the next one is drawn, so a change never flashes empty.
-    val bitmap by produceState<Bitmap?>(null, request.content, options) {
-        value = withContext(Dispatchers.Default) { VerseImageRenderer.render(request.content, options) }
+    val bitmap by produceState<Bitmap?>(null, request.content, options, photo) {
+        value = withContext(Dispatchers.Default) { VerseImageRenderer.render(request.content, options, photo = photo) }
     }
     val failedMessage = stringResource(R.string.verse_image_failed)
     val share: () -> Unit = {
@@ -215,7 +252,7 @@ private fun EditorContent(
                     try {
                         val (width, height) = VerseImageSaving.screenSize(context)
                         val wallpaper = withContext(Dispatchers.Default) {
-                            VerseImageRenderer.render(request.content, options, width, height, forWallpaper = true)
+                            VerseImageRenderer.render(request.content, options, width, height, forWallpaper = true, photo = photo)
                         }
                         VerseImageSaving.setWallpaper(context, wallpaper, target)
                         snackbarHostState.showSnackbar(wallpaperSetMessage)
@@ -239,7 +276,20 @@ private fun EditorContent(
     }
     val controls: @Composable () -> Unit = {
         VerseImageControls(
-            request, options, onOptionsChange,
+            request, options,
+            onOptionsChange = { changed ->
+                // Picking a style puts its own background back.
+                if (changed.style != options.style || usePhoto && changed == options) usePhoto = false
+                onOptionsChange(changed)
+            },
+            photoSelected = photo != null,
+            onPhotoClick = {
+                if (usePhoto) {
+                    usePhoto = false
+                } else {
+                    pickPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                }
+            },
             onShare = share,
             onSave = onSave,
             onSetWallpaper = openWallpaperDialog,
@@ -321,6 +371,8 @@ private fun VerseImageControls(
     request: VerseImageRequest,
     options: VerseImageOptions,
     onOptionsChange: (VerseImageOptions) -> Unit,
+    photoSelected: Boolean,
+    onPhotoClick: () -> Unit,
     onShare: () -> Unit,
     onSave: () -> Unit,
     onSetWallpaper: (() -> Unit)?,
@@ -328,7 +380,23 @@ private fun VerseImageControls(
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
         SectionLabel(stringResource(R.string.verse_image_style))
-        StyleSwatches(selected = options.style, onSelect = { onOptionsChange(options.copy(style = it)) })
+        StyleSwatches(
+            selected = options.style.takeUnless { photoSelected },
+            // Re-picking the current style also leaves the photo (#257).
+            onSelect = { onOptionsChange(options.copy(style = it)) }
+        )
+        FilterChip(
+            selected = photoSelected,
+            onClick = onPhotoClick,
+            label = { Text(stringResource(R.string.verse_image_photo)) },
+            leadingIcon = {
+                Icon(
+                    if (photoSelected) Icons.Filled.Check else Icons.Outlined.AddPhotoAlternate,
+                    contentDescription = null,
+                    modifier = Modifier.size(FilterChipDefaults.IconSize)
+                )
+            }
+        )
 
         SectionLabel(stringResource(R.string.verse_image_size))
         SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
@@ -396,7 +464,7 @@ private fun SectionLabel(text: String) {
 
 /** One circle per style, painted with its background and its text color's "Aa". */
 @Composable
-private fun StyleSwatches(selected: VerseImageStyle, onSelect: (VerseImageStyle) -> Unit) {
+private fun StyleSwatches(selected: VerseImageStyle?, onSelect: (VerseImageStyle) -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()

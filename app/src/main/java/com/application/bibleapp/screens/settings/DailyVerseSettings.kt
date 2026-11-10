@@ -13,6 +13,27 @@ import android.text.format.DateFormat
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material.icons.Icons
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.outlined.Palette
+import androidx.compose.material.icons.outlined.Smartphone
+import androidx.compose.material.icons.outlined.Wallpaper
+import androidx.compose.material3.RadioButton
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.unit.dp
+import com.application.bibleapp.ui.theme.Spacing
+import com.application.bibleapp.ui.theme.VerseImageStyle
+import com.application.bibleapp.verseimage.VerseImageSaving
+import com.application.bibleapp.verseimage.WallpaperTarget
 import androidx.compose.material.icons.outlined.BatteryAlert
 import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.Schedule
@@ -53,6 +74,9 @@ internal fun DailyVerseSettings(bibleViewModel: BibleViewModel) {
     val context = LocalContext.current
     val notificationEnabled by bibleViewModel.notificationEnabled.collectAsState()
     val notificationTime by bibleViewModel.notificationTime.collectAsState()
+    val dailyWallpaper by bibleViewModel.dailyWallpaper.collectAsState()
+    val canSetWallpaper = remember { VerseImageSaving.canSetWallpaper(context) }
+    var wallpaperDialog by rememberSaveable { mutableStateOf(WallpaperDialog.NONE) }
     // Saveable so recreating the activity doesn't close the picker (#231).
     var showTimePicker by rememberSaveable { mutableStateOf(false) }
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -130,6 +154,83 @@ internal fun DailyVerseSettings(bibleViewModel: BibleViewModel) {
                 )
             }
         }
+        // The daily verse wallpaper (#257), hidden where the phone doesn't let apps change it.
+        if (canSetWallpaper) {
+            GroupedDivider()
+            GroupedSwitchRow(
+                title = stringResource(R.string.settings_daily_wallpaper),
+                subtitle = stringResource(
+                    if (dailyWallpaper.enabled) R.string.settings_daily_wallpaper_subtitle_on
+                    else R.string.settings_daily_wallpaper_subtitle_off
+                ),
+                icon = Icons.Outlined.Wallpaper,
+                checked = dailyWallpaper.enabled,
+                onCheckedChange = { checked ->
+                    // Turning it on replaces the wallpaper, so it asks first.
+                    if (checked) {
+                        wallpaperDialog = WallpaperDialog.CONFIRM
+                    } else {
+                        bibleViewModel.updateDailyWallpaper(dailyWallpaper.copy(enabled = false))
+                    }
+                }
+            )
+            if (dailyWallpaper.enabled) {
+                GroupedDivider()
+                GroupedRow(
+                    title = stringResource(R.string.settings_daily_wallpaper_where),
+                    icon = Icons.Outlined.Smartphone,
+                    value = stringResource(dailyWallpaper.target.labelRes()),
+                    onClick = { wallpaperDialog = WallpaperDialog.TARGET }
+                )
+                GroupedDivider()
+                GroupedRow(
+                    title = stringResource(R.string.verse_image_style),
+                    icon = Icons.Outlined.Palette,
+                    value = stringResource(dailyWallpaper.style.labelRes),
+                    onClick = { wallpaperDialog = WallpaperDialog.STYLE }
+                )
+            }
+        }
+    }
+
+    when (wallpaperDialog) {
+        WallpaperDialog.NONE -> Unit
+        WallpaperDialog.CONFIRM -> AlertDialog(
+            onDismissRequest = { wallpaperDialog = WallpaperDialog.NONE },
+            title = { Text(stringResource(R.string.daily_wallpaper_confirm_title)) },
+            text = { Text(stringResource(R.string.daily_wallpaper_confirm_text)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    wallpaperDialog = WallpaperDialog.NONE
+                    bibleViewModel.updateDailyWallpaper(dailyWallpaper.copy(enabled = true))
+                }) { Text(stringResource(R.string.daily_wallpaper_turn_on)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { wallpaperDialog = WallpaperDialog.NONE }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            }
+        )
+        WallpaperDialog.TARGET -> ChoiceDialog(
+            title = stringResource(R.string.settings_daily_wallpaper_where),
+            choices = WallpaperTarget.entries.map { it to stringResource(it.labelRes()) },
+            selected = dailyWallpaper.target,
+            onChoose = { target ->
+                wallpaperDialog = WallpaperDialog.NONE
+                bibleViewModel.updateDailyWallpaper(dailyWallpaper.copy(target = target))
+            },
+            onDismiss = { wallpaperDialog = WallpaperDialog.NONE }
+        )
+        WallpaperDialog.STYLE -> ChoiceDialog(
+            title = stringResource(R.string.verse_image_style),
+            choices = VerseImageStyle.entries.map { it to stringResource(it.labelRes) },
+            selected = dailyWallpaper.style,
+            onChoose = { style ->
+                wallpaperDialog = WallpaperDialog.NONE
+                bibleViewModel.updateDailyWallpaper(dailyWallpaper.copy(style = style))
+            },
+            onDismiss = { wallpaperDialog = WallpaperDialog.NONE }
+        )
     }
 
     if (showTimePicker) {
@@ -188,4 +289,51 @@ private fun openAppSettings(context: Context) {
         data = Uri.fromParts("package", context.packageName, null)
     }
     context.startActivity(intent)
+}
+
+/** Which daily-wallpaper dialog is open (#257). Saveable, so rotating keeps it open. */
+private enum class WallpaperDialog { NONE, CONFIRM, TARGET, STYLE }
+
+private fun WallpaperTarget.labelRes(): Int = when (this) {
+    WallpaperTarget.HOME -> R.string.wallpaper_target_home
+    WallpaperTarget.LOCK -> R.string.wallpaper_target_lock
+    WallpaperTarget.BOTH -> R.string.wallpaper_target_both
+}
+
+/** A titled list of radio choices; picking one closes it. Scrolls, for landscape. */
+@Composable
+private fun <T> ChoiceDialog(
+    title: String,
+    choices: List<Pair<T, String>>,
+    selected: T,
+    onChoose: (T) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            Column(modifier = Modifier.verticalScroll(rememberScrollState()).selectableGroup()) {
+                choices.forEach { (value, label) ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 48.dp)
+                            .selectable(selected = value == selected, role = Role.RadioButton, onClick = { onChoose(value) }),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(selected = value == selected, onClick = null)
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.padding(start = Spacing.md)
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
+        }
+    )
 }

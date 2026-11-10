@@ -195,6 +195,9 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     // Per-app language below Android 13 (AppCompatDelegate.setApplicationLocales) - see utils/AppLanguage.kt
     implementation("androidx.appcompat:appcompat:1.7.0")
+    // Turns photos upright on Android 7-8 for verse image backgrounds (#257); the framework
+    // ExifInterface has bugs there. Apache 2.0, free.
+    implementation("androidx.exifinterface:exifinterface:1.3.7")
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)

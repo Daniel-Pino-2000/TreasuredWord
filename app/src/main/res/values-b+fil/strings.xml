@@ -57,6 +57,16 @@
     <string name="verse_image_show_label">Ipakita ang “%1$s”</string>
     <!-- The daily verse notification's button that opens the verse image editor -->
     <string name="daily_verse_share_image">Ibahagi ang larawan</string>
+    <!-- Photo backgrounds and the daily verse wallpaper (#257) -->
+    <string name="verse_image_photo">Ang larawan mo</string>
+    <string name="verse_image_photo_failed">Hindi mabuksan ang larawang iyan. Sumubok ng iba.</string>
+    <string name="settings_daily_wallpaper">Wallpaper ng talata sa araw-araw</string>
+    <string name="settings_daily_wallpaper_subtitle_off">Ang talata ngayong araw bilang wallpaper, napapalitan araw-araw</string>
+    <string name="settings_daily_wallpaper_subtitle_on">Napapalitan araw-araw. Kapag pinatay, mananatili ang kasalukuyang wallpaper.</string>
+    <string name="settings_daily_wallpaper_where">Saan</string>
+    <string name="daily_wallpaper_confirm_title">Gawing wallpaper ang talata sa araw-araw?</string>
+    <string name="daily_wallpaper_confirm_text">Papalitan nito ang wallpaper mo ngayon, at araw-araw pagkatapos gamit ang talata sa araw na iyon.</string>
+    <string name="daily_wallpaper_turn_on">I-on</string>
     <string name="action_download">I-download</string>
     <string name="tap_to_retry">I-tap para subukan ulit</string>
     <string name="error_generic">Nagkaproblema</string>

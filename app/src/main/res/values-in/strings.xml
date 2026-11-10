@@ -56,6 +56,16 @@
     <string name="verse_image_show_label">Tampilkan “%1$s”</string>
     <!-- The daily verse notification's button that opens the verse image editor -->
     <string name="daily_verse_share_image">Bagikan gambar</string>
+    <!-- Photo backgrounds and the daily verse wallpaper (#257) -->
+    <string name="verse_image_photo">Foto Anda</string>
+    <string name="verse_image_photo_failed">Tidak dapat membuka foto itu. Coba foto lain.</string>
+    <string name="settings_daily_wallpaper">Wallpaper ayat harian</string>
+    <string name="settings_daily_wallpaper_subtitle_off">Ayat hari ini sebagai wallpaper, diperbarui setiap hari</string>
+    <string name="settings_daily_wallpaper_subtitle_on">Diperbarui setiap hari. Mematikannya akan mempertahankan wallpaper saat ini.</string>
+    <string name="settings_daily_wallpaper_where">Di mana</string>
+    <string name="daily_wallpaper_confirm_title">Gunakan ayat harian sebagai wallpaper?</string>
+    <string name="daily_wallpaper_confirm_text">Ini mengganti wallpaper Anda sekarang, lalu setiap hari dengan ayat hari itu.</string>
+    <string name="daily_wallpaper_turn_on">Aktifkan</string>
     <string name="action_download">Unduh</string>
     <string name="tap_to_retry">Ketuk untuk mencoba lagi</string>
     <string name="error_generic">Terjadi kesalahan</string>

@@ -56,6 +56,16 @@
     <string name="verse_image_show_label">Onyesha “%1$s”</string>
     <!-- The daily verse notification's button that opens the verse image editor -->
     <string name="daily_verse_share_image">Shiriki picha</string>
+    <!-- Photo backgrounds and the daily verse wallpaper (#257) -->
+    <string name="verse_image_photo">Picha yako</string>
+    <string name="verse_image_photo_failed">Imeshindwa kufungua picha hiyo. Jaribu nyingine.</string>
+    <string name="settings_daily_wallpaper">Mandhari ya mstari wa siku</string>
+    <string name="settings_daily_wallpaper_subtitle_off">Mstari wa leo kama mandhari yako, unasasishwa kila siku</string>
+    <string name="settings_daily_wallpaper_subtitle_on">Inasasishwa kila siku. Ukiizima, mandhari ya sasa itabaki.</string>
+    <string name="settings_daily_wallpaper_where">Wapi</string>
+    <string name="daily_wallpaper_confirm_title">Tumia mstari wa siku kama mandhari?</string>
+    <string name="daily_wallpaper_confirm_text">Hii itabadilisha mandhari yako sasa, na tena kila siku kwa mstari wa siku hiyo.</string>
+    <string name="daily_wallpaper_turn_on">Washa</string>
     <string name="action_download">Pakua</string>
     <string name="tap_to_retry">Gusa ili ujaribu tena</string>
     <string name="error_generic">Hitilafu fulani imetokea</string>

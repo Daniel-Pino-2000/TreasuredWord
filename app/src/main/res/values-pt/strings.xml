@@ -56,6 +56,16 @@
     <string name="verse_image_show_label">Mostrar “%1$s”</string>
     <!-- The daily verse notification's button that opens the verse image editor -->
     <string name="daily_verse_share_image">Compartilhar imagem</string>
+    <!-- Photo backgrounds and the daily verse wallpaper (#257) -->
+    <string name="verse_image_photo">Sua foto</string>
+    <string name="verse_image_photo_failed">Não foi possível abrir essa foto. Tente outra.</string>
+    <string name="settings_daily_wallpaper">Plano de fundo com o versículo do dia</string>
+    <string name="settings_daily_wallpaper_subtitle_off">O versículo do dia como plano de fundo, todos os dias</string>
+    <string name="settings_daily_wallpaper_subtitle_on">Atualizado todos os dias. Ao desativar, o plano de fundo atual continua.</string>
+    <string name="settings_daily_wallpaper_where">Onde</string>
+    <string name="daily_wallpaper_confirm_title">Usar o versículo do dia como plano de fundo?</string>
+    <string name="daily_wallpaper_confirm_text">Isso substitui seu plano de fundo agora e de novo todos os dias com o versículo do dia.</string>
+    <string name="daily_wallpaper_turn_on">Ativar</string>
     <string name="action_download">Baixar</string>
     <string name="tap_to_retry">Toque para tentar de novo</string>
     <string name="error_generic">Algo deu errado</string>

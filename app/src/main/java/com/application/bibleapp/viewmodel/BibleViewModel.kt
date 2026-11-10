@@ -38,6 +38,7 @@ import com.application.bibleapp.ui.theme.ThemePalette
 import com.application.bibleapp.ui.theme.VerseTextScale
 import com.application.bibleapp.utils.buildVerseShareText
 import com.application.bibleapp.utils.formatFullVerseRefs
+import com.application.bibleapp.verseimage.DailyWallpaperSettings
 import com.application.bibleapp.verseimage.VerseImageContent
 import com.application.bibleapp.verseimage.VerseImageLine
 import com.application.bibleapp.verseimage.VerseImageOptions
@@ -481,6 +482,10 @@ class BibleViewModel(
 
     private val _notificationTime = MutableStateFlow(repository.loadNotificationTime())
     val notificationTime: StateFlow<NotificationTime> = _notificationTime.asStateFlow()
+
+    // The daily verse wallpaper (#257), in Settings › Daily verse.
+    private val _dailyWallpaper = MutableStateFlow(repository.loadDailyWallpaper())
+    val dailyWallpaper: StateFlow<DailyWallpaperSettings> = _dailyWallpaper.asStateFlow()
 
     // ---- Sync preferences & status (Phase G) — actual WorkManager (re)scheduling happens in the
     // composable that has a Context (SettingsView), same split already used for
@@ -1288,6 +1293,11 @@ class BibleViewModel(
 
     /** Persisting the flag also (de)schedules the reminder worker — see
      *  [BibleRepository.setNotificationEnabled]. */
+    fun updateDailyWallpaper(settings: DailyWallpaperSettings) {
+        _dailyWallpaper.value = settings
+        repository.saveDailyWallpaper(settings)
+    }
+
     fun setNotificationEnabled(enabled: Boolean) {
         _notificationEnabled.value = enabled
         repository.setNotificationEnabled(enabled)
