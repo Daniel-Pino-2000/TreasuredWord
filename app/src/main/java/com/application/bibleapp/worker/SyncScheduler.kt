@@ -1,6 +1,7 @@
 package com.application.bibleapp.worker
 
 import android.content.Context
+import android.os.Build
 import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.ExistingWorkPolicy
@@ -70,11 +71,20 @@ object SyncScheduler {
      *  right after a fresh install/login sat unrun for over a minute with no expedited flag, which
      *  defeats the entire point of a "sync right now" call. `RUN_AS_NON_EXPEDITED_WORK_REQUEST`
      *  falls back to ordinary (deferred) scheduling only if the app's expedited-job quota is
-     *  exhausted, rather than failing outright. */
+     *  exhausted, rather than failing outright.
+     *
+     *  Only on Android 12+ (#262). Below that, WorkManager runs expedited work as a foreground
+     *  service and asks the worker for its notification (getForegroundInfo); SyncWorker has none,
+     *  so the app crashed right after every start on Android 7-11. There it's ordinary work,
+     *  which may start a little later. */
     fun triggerImmediateSync(context: Context) {
         val request = OneTimeWorkRequestBuilder<SyncWorker>()
             .setConstraints(currentConstraints(context))
-            .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
+            .apply {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
+                }
+            }
             .build()
         WorkManager.getInstance(context)
             .enqueueUniqueWork(IMMEDIATE_WORK_NAME, ExistingWorkPolicy.REPLACE, request)
