@@ -35,7 +35,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableIntStateOf
@@ -45,6 +44,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.material3.SwipeToDismissBoxState
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.semantics.CustomAccessibilityAction
@@ -312,20 +312,34 @@ internal fun SwipeToDeleteRow(onDelete: () -> Unit, content: @Composable () -> U
     var rowWidth by remember { mutableIntStateOf(0) }
     // confirmValueChange runs inside the state, so it reads the state back through this holder.
     val stateHolder = remember { arrayOfNulls<SwipeToDismissBoxState>(1) }
-    val dismissState = rememberSwipeToDismissBoxState(
-        confirmValueChange = { value ->
-            // Material also settles on "dismissed" for a quick flick of any length; only a drag
-            // that really crossed the threshold counts.
-            val offset = stateHolder[0]?.let { runCatching { it.requireOffset() }.getOrNull() } ?: 0f
-            value != SwipeToDismissBoxValue.EndToStart || abs(offset) >= rowWidth * DELETE_SWIPE_FRACTION
-        },
-        positionalThreshold = { distance -> distance * DELETE_SWIPE_FRACTION }
-    )
+    val density = LocalDensity.current
+    // Plain remember, not rememberSwipeToDismissBoxState (#270): that one is rememberSaveable, and
+    // LazyColumn keeps an item's saved state by its key after the item leaves the list. Undo brings
+    // the card back with the same localId, so it came back already "dismissed", drawn off-screen,
+    // and the effect below deleted it a second time. A card that comes back now starts settled.
+    val dismissState = remember(density) {
+        SwipeToDismissBoxState(
+            initialValue = SwipeToDismissBoxValue.Settled,
+            density = density,
+            confirmValueChange = { value ->
+                // Material also settles on "dismissed" for a quick flick of any length; only a drag
+                // that really crossed the threshold counts.
+                val offset = stateHolder[0]?.let { runCatching { it.requireOffset() }.getOrNull() } ?: 0f
+                value != SwipeToDismissBoxValue.EndToStart || abs(offset) >= rowWidth * DELETE_SWIPE_FRACTION
+            },
+            positionalThreshold = { distance -> distance * DELETE_SWIPE_FRACTION }
+        )
+    }
     stateHolder[0] = dismissState
 
-    // Deleted once the card has finished sliding off, not the moment the gesture targets it.
+    // Deleted once the card has finished sliding off, not the moment the gesture targets it, and
+    // only once per swipe even if this effect is restarted while the card is still dismissed.
+    var deleteSent by remember { mutableStateOf(false) }
     LaunchedEffect(dismissState.currentValue) {
-        if (dismissState.currentValue == SwipeToDismissBoxValue.EndToStart) latestOnDelete()
+        if (dismissState.currentValue == SwipeToDismissBoxValue.EndToStart && !deleteSent) {
+            deleteSent = true
+            latestOnDelete()
+        }
     }
     val armed = dismissState.targetValue == SwipeToDismissBoxValue.EndToStart
     var wasArmed by remember { mutableStateOf(false) }
