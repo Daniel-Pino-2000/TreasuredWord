@@ -27,8 +27,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.application.bibleapp.R
 import com.application.bibleapp.ui.theme.Spacing
@@ -168,6 +170,9 @@ private fun ShareSelectionAction(onShareText: () -> Unit, onShareImage: () -> Un
     )
 }
 
+/** Tags each action's icon-and-label column, so a test can check it's centered on its button (#269). */
+internal const val SELECTION_ACTION_CONTENT_TAG = "selection_action_content"
+
 @Composable
 private fun SelectionAction(
     label: String,
@@ -188,15 +193,17 @@ private fun SelectionAction(
         color = container,
         contentColor = content
     ) {
-        // The Box anchors [menu]'s popup to this button.
-        Box {
+        // The Box anchors [menu]'s popup to this button. It takes the button's full width but,
+        // unlike a Surface's only child, doesn't stretch what's inside it, so it centers the
+        // icon and label itself; without that they sat at the left edge of the filled Note (#269).
+        Box(contentAlignment = Alignment.Center) {
             Column(
-                modifier = Modifier.padding(vertical = Spacing.sm),
+                modifier = Modifier.padding(vertical = Spacing.sm).testTag(SELECTION_ACTION_CONTENT_TAG),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(Spacing.xs)
             ) {
                 Icon(painter = icon, contentDescription = null, modifier = Modifier.size(22.dp))
-                Text(text = label, style = MaterialTheme.typography.labelMedium)
+                Text(text = label, style = MaterialTheme.typography.labelMedium, textAlign = TextAlign.Center)
             }
             menu?.invoke()
         }
