@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.rememberScrollState
@@ -16,6 +18,7 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarDefaults
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailDefaults
 import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -175,7 +178,10 @@ fun BibleChapterNav(
  * [MainBottomBar]'s tabs as a side rail, used instead of it when the window height is compact
  * (a phone in landscape) — a bottom bar there eats a quarter of the height, a rail only some of
  * the far more plentiful width. Items are centered vertically so they're within thumb reach.
- * The rail's own default insets cover the status bar and a start-side display cutout.
+ * The rail pads for the status bar and a start-side display cutout or navigation bar, but not
+ * for the bottom gesture bar (#266): nothing there is the system's to tap, the gesture handle sits
+ * mid-screen, not under the rail, and those few dp let five tabs fit in Korean and Chinese, whose
+ * labels are taller than Latin ones. The rail's background still runs behind the gesture bar.
  */
 @Composable
 fun MainNavigationRail(
@@ -185,6 +191,7 @@ fun MainNavigationRail(
 ) {
     NavigationRail(
         modifier = modifier,
+        windowInsets = NavigationRailDefaults.windowInsets.only(WindowInsetsSides.Top + WindowInsetsSides.Start),
         containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(NavigationBarDefaults.Elevation)
     ) {
         // Five tabs (with the Bible Helper) at the rail's own 4 dp spacing don't fit a landscape
