@@ -568,7 +568,8 @@ Rules for `AiAskRequest` (any broken one is `400 VALIDATION_ERROR`, with `fieldE
   started from the reader, so follow-ups keep it; it isn't part of `messages` or their size limits.
 
 A rate limit that's hit answers `429` with no body: the `ai` zone, 5 questions a minute per
-account.
+account. An account that has already had today's 15 answers isn't counted against it, so however
+quickly it asks, it gets `AI_DAILY_LIMIT`, never the bare rate-limit `429` (#271).
 
 ### `POST /api/v1/ai/ask`
 Auth: required
@@ -581,7 +582,7 @@ Errors:
 | 400 | `VALIDATION_ERROR` | The rules above | No |
 | 401 | `UNAUTHORIZED` | Not signed in or the token expired | No |
 | 429 | `AI_DAILY_LIMIT` | This account already got 15 answers today (UTC); more at 00:00 UTC | No |
-| 429 | (no body) | More than 5 questions in a minute (`ai` zone) | No |
+| 429 | (no body) | More than 5 questions in a minute (`ai` zone), while some of today's 15 are left | No |
 | 503 | `AI_RESTING` | Cloudflare's free daily allowance is used up (its error `3036`); back at 00:00 UTC | No |
 | 503 | `AI_UNAVAILABLE` | The AI failed, took longer than 30 s, or isn't set up on this server | No |
 

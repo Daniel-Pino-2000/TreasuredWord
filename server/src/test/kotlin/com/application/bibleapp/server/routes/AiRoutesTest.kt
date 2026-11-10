@@ -191,6 +191,33 @@ class AiRoutesTest {
     }
 
     @Test
+    fun askingQuicklyAfterTheDailyLimitStillSaysTheDailyLimit() = testApplication {
+        // Past the 5-a-minute rate limit, someone out of questions still hears why (#271).
+        val clock = MutableClock()
+        val ai = FakeAiProvider()
+        val client = startWithFakeAi(ai, clock)
+        val user = client.registerTestUser()
+        transaction {
+            AiDailyUsage.insert {
+                it[userId] = UUID.fromString(user.auth.userId)
+                it[day] = clock.today()
+                it[count] = 15
+            }
+        }
+
+        repeat(8) {
+            val response = client.ask(user)
+            assertEquals(HttpStatusCode.TooManyRequests, response.status)
+            assertEquals("AI_DAILY_LIMIT", response.error().code)
+        }
+        assertTrue(ai.calls.isEmpty())
+
+        // The next UTC day the rate limit still has all five: the refused ones didn't use it up.
+        clock.now = clock.now.plus(Duration.ofDays(1))
+        repeat(5) { assertEquals(HttpStatusCode.OK, client.ask(user).status) }
+    }
+
+    @Test
     fun aUsedUpFreeAllowanceAnswersAiRestingAndCountsNothing() = testApplication {
         val ai = FakeAiProvider().apply { failure = QuotaExhausted("used up") }
         val clock = MutableClock()

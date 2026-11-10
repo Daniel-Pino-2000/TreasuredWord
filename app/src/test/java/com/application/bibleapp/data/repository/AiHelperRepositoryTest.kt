@@ -46,6 +46,12 @@ class AiHelperRepositoryTest {
             conversations.removeAll { it.id == conversationId }
             messages.removeAll { it.conversationId == conversationId }
         }
+
+        val failures = mutableMapOf<Long, AiAskResult.Failure>()
+        override suspend fun setFailure(conversationId: Long, failure: AiAskResult.Failure?) {
+            if (failure == null) failures.remove(conversationId) else failures[conversationId] = failure
+        }
+        override suspend fun failure(conversationId: Long) = failures[conversationId]
     }
 
     private val store = FakeStore()

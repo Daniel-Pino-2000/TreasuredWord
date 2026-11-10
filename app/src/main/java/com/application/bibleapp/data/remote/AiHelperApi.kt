@@ -128,13 +128,16 @@ class AiHelperApi(
         null // no body (Ktor's rate limiter) or not JSON
     }
 
-    /** The daily limits reset at 00:00 UTC (plan section 5); the screen shows it in local time. */
-    private fun nextUtcMidnight(): Long = (now() / DAY_MILLIS + 1) * DAY_MILLIS
+    private fun nextUtcMidnight(): Long = nextUtcMidnight(now())
 
     private companion object {
         const val TAG = "AiHelperApi"
         const val CODE_DAILY_LIMIT = "AI_DAILY_LIMIT"
         const val CODE_RESTING = "AI_RESTING"
-        const val DAY_MILLIS = 24 * 60 * 60 * 1000L
     }
 }
+
+/** The daily limits reset at 00:00 UTC (plan section 5); the screen shows it in local time. */
+internal fun nextUtcMidnight(nowMillis: Long): Long = (nowMillis / DAY_MILLIS + 1) * DAY_MILLIS
+
+private const val DAY_MILLIS = 24 * 60 * 60 * 1000L

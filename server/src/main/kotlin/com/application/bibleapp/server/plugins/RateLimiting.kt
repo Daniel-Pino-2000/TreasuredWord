@@ -8,6 +8,10 @@ import io.ktor.server.auth.principal
 import io.ktor.server.plugins.origin
 import io.ktor.server.plugins.ratelimit.RateLimit
 import io.ktor.server.plugins.ratelimit.RateLimitName
+import com.application.bibleapp.server.routes.AI_DAILY_LIMIT
+import com.application.bibleapp.server.routes.aiAnswersUsedToday
+import java.time.Clock
+import java.util.UUID
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
 
@@ -53,7 +57,7 @@ internal fun ApplicationCall.clientIp(): String =
  * Until #162 the auth zone had no key of its own, so Ktor's default (one key for everyone) made
  * it 10 a minute for the whole server: ten people signing in at once locked out the eleventh.
  */
-fun Application.configureRateLimiting() {
+fun Application.configureRateLimiting(clock: Clock = Clock.systemUTC()) {
     install(RateLimit) {
         register(AUTH_RATE_LIMIT) {
             rateLimiter(limit = 10, refillPeriod = 1.minutes)
@@ -71,6 +75,13 @@ fun Application.configureRateLimiting() {
         register(AI_RATE_LIMIT) {
             rateLimiter(limit = 5, refillPeriod = 1.minutes)
             requestKey { call -> call.principal<JWTPrincipal>()?.payload?.subject ?: call.clientIp() }
+            // Someone who has used up today's questions isn't counted here (a weight of 0 always
+            // passes), so however often they try, they hear that today's questions are used up,
+            // not "a lot of questions at once" (#271). One primary-key read per question.
+            requestWeight { call, _ ->
+                val userId = call.principal<JWTPrincipal>()?.payload?.subject?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+                if (userId != null && aiAnswersUsedToday(userId, clock) >= AI_DAILY_LIMIT) 0 else 1
+            }
         }
         // 10 reports an hour per account (#125), keyed like the ai zone.
         register(AI_REPORT_RATE_LIMIT) {

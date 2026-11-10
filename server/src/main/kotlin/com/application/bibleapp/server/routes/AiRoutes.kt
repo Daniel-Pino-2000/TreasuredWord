@@ -31,6 +31,7 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.plus
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import org.jetbrains.exposed.sql.upsertReturning
@@ -152,6 +153,15 @@ private fun reserveAnswer(userId: UUID, day: LocalDate): Int? = transaction {
     }.singleOrNull()?.get(AiDailyUsage.count)
 }
 
+/** How many answers [userId] has had on the UTC day [clock] is in: what the `ai` rate limit
+ *  reads to let someone who's out of questions hear so (#271). */
+internal fun aiAnswersUsedToday(userId: UUID, clock: Clock): Int = transaction {
+    val today = LocalDate.ofInstant(clock.instant(), ZoneOffset.UTC)
+    AiDailyUsage.selectAll()
+        .where { (AiDailyUsage.userId eq userId) and (AiDailyUsage.day eq today) }
+        .singleOrNull()?.get(AiDailyUsage.count) ?: 0
+}
+
 /** Gives back an answer taken by [reserveAnswer] when none came: only answers count. */
 private fun releaseAnswer(userId: UUID, day: LocalDate) = transaction {
     AiDailyUsage.update({ (AiDailyUsage.userId eq userId) and (AiDailyUsage.day eq day) and (AiDailyUsage.count greater 0) }) {
@@ -161,7 +171,8 @@ private fun releaseAnswer(userId: UUID, day: LocalDate) = transaction {
 
 /**
  * The Bible Helper (#124). Signed in only, 5 questions a minute per user (the `ai` rate-limit
- * zone) and [AI_DAILY_LIMIT] answers per UTC day. Reports of bad answers (#125) are stored
+ * zone, which doesn't count someone whose day is used up, #271) and [AI_DAILY_LIMIT] answers
+ * per UTC day. Reports of bad answers (#125) are stored
  * without the user's ID, 10 an hour per user, and kept [REPORT_RETENTION]. [aiProvider] is null when the AI_* settings
  * aren't set, and every question then answers AI_UNAVAILABLE. [clock] decides the day; tests
  * move it forward.
