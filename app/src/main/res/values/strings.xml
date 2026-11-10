@@ -24,6 +24,21 @@
     <string name="action_sign_in">Sign in</string>
     <string name="action_copy">Copy</string>
     <string name="action_share">Share</string>
+    <!-- Verse images (#254) -->
+    <string name="share_as_text">Share as text</string>
+    <string name="share_as_image">Share as image</string>
+    <string name="verse_image_style">Style</string>
+    <string name="verse_image_size">Size</string>
+    <string name="verse_image_size_square">Square</string>
+    <string name="verse_image_size_portrait">Portrait</string>
+    <string name="verse_image_size_story">Story</string>
+    <string name="verse_image_verse_numbers">Verse numbers</string>
+    <string name="verse_image_centered">Center the text</string>
+    <string name="verse_image_show_mark">Show the TreasuredWord name</string>
+    <string name="verse_image_too_long">This passage is too long to read as an image. Share it as text, or select fewer verses.</string>
+    <!-- %1$s = the image's reference and translation, e.g. "John 3:16 · KJV" -->
+    <string name="verse_image_preview_description">Preview of the image for %1$s</string>
+    <string name="verse_image_failed">Couldn\'t create the image. Try again.</string>
     <string name="action_download">Download</string>
     <string name="tap_to_retry">Tap to retry</string>
     <string name="error_generic">Something went wrong</string>

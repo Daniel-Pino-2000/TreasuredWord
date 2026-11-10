@@ -22,6 +22,21 @@
     <string name="action_sign_in">Ingia</string>
     <string name="action_copy">Nakili</string>
     <string name="action_share">Shiriki</string>
+    <!-- Verse images (#254) -->
+    <string name="share_as_text">Shiriki kama maandishi</string>
+    <string name="share_as_image">Shiriki kama picha</string>
+    <string name="verse_image_style">Mtindo</string>
+    <string name="verse_image_size">Ukubwa</string>
+    <string name="verse_image_size_square">Mraba</string>
+    <string name="verse_image_size_portrait">Wima</string>
+    <string name="verse_image_size_story">Story</string>
+    <string name="verse_image_verse_numbers">Namba za mistari</string>
+    <string name="verse_image_centered">Weka maandishi katikati</string>
+    <string name="verse_image_show_mark">Onyesha jina TreasuredWord</string>
+    <string name="verse_image_too_long">Kifungu hiki ni kirefu mno kusomeka kwenye picha. Kishiriki kama maandishi, au chagua mistari michache.</string>
+    <!-- %1$s = the image's reference and translation, e.g. "John 3:16 · KJV" -->
+    <string name="verse_image_preview_description">Onyesho la picha ya %1$s</string>
+    <string name="verse_image_failed">Imeshindwa kutengeneza picha. Jaribu tena.</string>
     <string name="action_download">Pakua</string>
     <string name="tap_to_retry">Gusa ili ujaribu tena</string>
     <string name="error_generic">Hitilafu fulani imetokea</string>

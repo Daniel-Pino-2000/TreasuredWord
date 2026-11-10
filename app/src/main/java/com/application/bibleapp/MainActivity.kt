@@ -101,6 +101,7 @@ import com.application.bibleapp.components.SettingsTopBar
 import com.application.bibleapp.components.TopBar
 import com.application.bibleapp.components.VersePickerTopBar
 import com.application.bibleapp.components.VersionPickerTopBar
+import com.application.bibleapp.components.VerseImageSheet
 import com.application.bibleapp.components.VerseSelectionToolbar
 import com.application.bibleapp.components.YouTopBar
 import com.application.bibleapp.data.model.BibleBooks
@@ -596,6 +597,7 @@ class MainActivity : AppCompatActivity() {
                                         context.startActivity(Intent.createChooser(send, null))
                                     }
                                 },
+                                onShareImage = { bibleViewModel.shareSelectionAsImage() },
                                 onAddNote = { bibleViewModel.openNoteEditorForSelection() },
                                 onCancel = { bibleViewModel.clearSelection() },
                                 // "Ask about this verse" (#132): a new Bible Helper conversation with
@@ -615,6 +617,25 @@ class MainActivity : AppCompatActivity() {
                                     .then(if (compactHeight) Modifier.navigationBarsPadding() else Modifier)
                                     .padding(horizontal = Spacing.lg)
                                     .offset(y = -(bottomBarHeight + gap))
+                            )
+                        }
+
+                        // The verse image editor (#254), on whatever screen opened it.
+                        val verseImageRequest by bibleViewModel.verseImageRequest.collectAsState()
+                        verseImageRequest?.let { request ->
+                            val verseImageOptions by bibleViewModel.verseImageOptions.collectAsState()
+                            VerseImageSheet(
+                                request = request,
+                                options = verseImageOptions,
+                                onOptionsChange = bibleViewModel::updateVerseImageOptions,
+                                onShareText = { text ->
+                                    val send = Intent(Intent.ACTION_SEND).apply {
+                                        type = "text/plain"
+                                        putExtra(Intent.EXTRA_TEXT, text)
+                                    }
+                                    context.startActivity(Intent.createChooser(send, null))
+                                },
+                                onDismiss = bibleViewModel::closeVerseImage
                             )
                         }
 

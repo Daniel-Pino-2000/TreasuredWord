@@ -91,6 +91,18 @@
                 android:resource="@xml/daily_verse_widget_info" />
         </receiver>
 
+        <!-- Shares a verse image with another app (#254): read access to one cached file at a
+             time, granted per share. Not exported; access comes only from those grants. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
         <receiver
             android:name=".receiver.BootCompletedReceiver"
             android:exported="true">

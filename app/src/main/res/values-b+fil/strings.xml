@@ -23,6 +23,21 @@
     <string name="action_sign_in">Mag-sign in</string>
     <string name="action_copy">Kopyahin</string>
     <string name="action_share">Ibahagi</string>
+    <!-- Verse images (#254) -->
+    <string name="share_as_text">Ibahagi bilang text</string>
+    <string name="share_as_image">Ibahagi bilang larawan</string>
+    <string name="verse_image_style">Istilo</string>
+    <string name="verse_image_size">Laki</string>
+    <string name="verse_image_size_square">Parisukat</string>
+    <string name="verse_image_size_portrait">Patayo</string>
+    <string name="verse_image_size_story">Story</string>
+    <string name="verse_image_verse_numbers">Mga numero ng talata</string>
+    <string name="verse_image_centered">Igitna ang text</string>
+    <string name="verse_image_show_mark">Ipakita ang pangalang TreasuredWord</string>
+    <string name="verse_image_too_long">Masyadong mahaba ang talatang ito para mabasa bilang larawan. Ibahagi ito bilang text, o pumili ng mas kaunting talata.</string>
+    <!-- %1$s = the image's reference and translation, e.g. "John 3:16 · KJV" -->
+    <string name="verse_image_preview_description">Preview ng larawan para sa %1$s</string>
+    <string name="verse_image_failed">Hindi magawa ang larawan. Subukan ulit.</string>
     <string name="action_download">I-download</string>
     <string name="tap_to_retry">I-tap para subukan ulit</string>
     <string name="error_generic">Nagkaproblema</string>
