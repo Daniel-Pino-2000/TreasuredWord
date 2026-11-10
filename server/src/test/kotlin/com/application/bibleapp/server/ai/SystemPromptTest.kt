@@ -40,7 +40,7 @@ class SystemPromptTest {
         // The evaluation runs of #206: the crisis card is drawn above the answer (#130), and the
         // app shows a whole chapter as a card (#190), so the instructions may ask for one.
         val prompt = SystemPrompt.forLanguage("en")
-        assertEquals("12", SystemPrompt.PROMPT_VERSION)
+        assertEquals("5", SystemPrompt.PROMPT_VERSION)
         assertFalse("crisis lines below" in prompt)
         assertTrue("help card above your answer" in prompt)
         assertTrue("[[BOOK C]] for a" in prompt && "[[PSA 23]]" in prompt)
@@ -48,34 +48,6 @@ class SystemPromptTest {
         assertTrue("as undecided" in prompt && "one view among several" in prompt)
         assertTrue("each passage in its own marker" in prompt && "two to four passages" in prompt)
         assertTrue("name books as readers of English" in prompt)
-    }
-
-    @Test
-    fun theInstructionsAreV5sWithTheNewDoctrine() {
-        // #236, v12: v5's instructions, which gave no Wrong answer in three strictly graded runs,
-        // with v10's doctrine.md. The Bible-first framing of v10 and v11 is gone.
-        val prompt = SystemPrompt.forLanguage("en")
-        assertTrue("from a Baptist perspective" in prompt)
-        assertTrue("the points a Baptist pastor would make" in prompt)
-        assertFalse("Say what the Bible teaches, not what Baptists believe" in prompt)
-        assertTrue("about 250 words or fewer" in prompt)
-        assertFalse("350 words" in prompt)
-        // v6-v9's answer shape and extra rules are gone (#236): they crowded out the points answers need.
-        assertFalse("start with a direct answer" in prompt)
-        assertFalse("care comes first" in prompt)
-    }
-
-    @Test
-    fun theDoctrineTakesTheDevelopersFirmPositions() {
-        // #236: positions from the BF&M 2000 and its LifeWay commentary, and the developer's
-        // decision on alcohol, which is no longer among the questions answered without a side.
-        val prompt = SystemPrompt.forLanguage("en")
-        assertTrue("make abstaining the wise and loving" in prompt)
-        assertFalse("drink alcohol in moderation" in prompt)
-        assertTrue("no later, second baptism of the Spirit" in prompt)
-        assertTrue("homosexual behavior is sin" in prompt)
-        assertTrue("not a choice each church makes" in prompt)
-        assertTrue("to be baptized as a believer" in prompt)
     }
 
     @Test

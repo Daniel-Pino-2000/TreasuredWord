@@ -521,7 +521,7 @@ Errors: `401 UNAUTHORIZED`, `404 NOT_FOUND`
 
 ## Bible Helper
 
-AI answers to Bible questions from Scripture, in line with Baptist doctrine (#120, #236; plan: `docs/ai_helper_plan.md`).
+AI answers to Bible questions from a Baptist position (#120; plan: `docs/ai_helper_plan.md`).
 The server adds its own fixed instructions and asks Cloudflare Workers AI's free plan. Until
 #131 only debug builds of the app call these endpoints.
 
