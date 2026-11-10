@@ -66,10 +66,12 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.application.bibleapp.R
 import com.application.bibleapp.components.MissingVersionBanners
+import com.application.bibleapp.components.ShareChoiceMenu
 import com.application.bibleapp.data.model.BookResources
 import com.application.bibleapp.data.model.DailyVerseUI
 import com.application.bibleapp.data.model.Highlight
 import com.application.bibleapp.data.model.chapterCount
+import com.application.bibleapp.ui.theme.highlightFill
 import com.application.bibleapp.ui.theme.MaxContentWidth
 import com.application.bibleapp.ui.theme.ReadingStyle
 import com.application.bibleapp.ui.theme.Spacing
@@ -125,6 +127,9 @@ fun HomeView(
     val clipboardManager = LocalClipboardManager.current
     val context = LocalContext.current
 
+    // The image's label (#256), in the app language like the card's own heading.
+    val verseOfTheDayLabel = stringResource(R.string.verse_of_the_day)
+
     val greeting: @Composable () -> Unit = { HomeGreeting() }
     val verseCard: @Composable () -> Unit = {
         verseOfTheDay?.let { verse ->
@@ -149,7 +154,8 @@ fun HomeView(
                         }
                         context.startActivity(Intent.createChooser(send, null))
                     }
-                }
+                },
+                onShareImage = { bibleViewModel.shareVerseOfTheDayAsImage(verseOfTheDayLabel) }
             )
         }
     }
@@ -287,7 +293,8 @@ private fun VerseOfTheDayCard(
     textScale: Float,
     onOpen: () -> Unit,
     onCopy: () -> Unit,
-    onShare: () -> Unit
+    onShare: () -> Unit,
+    onShareImage: () -> Unit
 ) {
     val contentColor = MaterialTheme.colorScheme.onPrimaryContainer
     // A range shows each verse's number as a superscript before its text, like the reader does.
@@ -351,11 +358,21 @@ private fun VerseOfTheDayCard(
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }
-                IconButton(onClick = onShare) {
-                    Icon(
-                        Icons.Filled.Share,
-                        contentDescription = stringResource(R.string.action_share),
-                        tint = MaterialTheme.colorScheme.primary
+                // Asks text or image (#256), like the reader's Share; the Box anchors the menu here.
+                Box {
+                    var shareMenuOpen by remember { mutableStateOf(false) }
+                    IconButton(onClick = { shareMenuOpen = true }) {
+                        Icon(
+                            Icons.Filled.Share,
+                            contentDescription = stringResource(R.string.action_share),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    ShareChoiceMenu(
+                        expanded = shareMenuOpen,
+                        onDismiss = { shareMenuOpen = false },
+                        onShareText = onShare,
+                        onShareImage = onShareImage
                     )
                 }
             }
@@ -410,7 +427,8 @@ private fun ContinueReadingCard(reference: String, chapter: Int, chapterCount: I
                             .weight(1f)
                             .height(6.dp),
                         color = MaterialTheme.colorScheme.primary,
-                        trackColor = MaterialTheme.colorScheme.outline,
+                        // A decorative track, so outlineVariant; `outline` is for control borders (#244).
+                        trackColor = MaterialTheme.colorScheme.outlineVariant,
                         strokeCap = StrokeCap.Round,
                         gapSize = 0.dp,
                         drawStopIndicator = {}
@@ -495,7 +513,7 @@ private fun RecentHighlightsSection(
                     RecentHighlightCard(
                         reference = verseRefsText(highlight.verses) { bookName(highlight.versionId, it) },
                         text = verseText(highlight),
-                        color = Color(highlight.color),
+                        color = highlightFill(highlight.color),
                         onClick = { onHighlightClick(highlight) }
                     )
                 }
@@ -506,8 +524,8 @@ private fun RecentHighlightsSection(
 
 @Composable
 private fun RecentHighlightCard(reference: String, text: String, color: Color, onClick: () -> Unit) {
-    // The stored color is already translucent (see toHighlightArgb), so over `surface` it reads
-    // as the same tint the verse has in the reader, in light and dark alike.
+    // highlightFill is translucent (weaker in dark mode, #246), so over `surface` it reads as the
+    // same tint the verse has in the reader, in light and dark alike.
     Surface(
         modifier = Modifier.width(176.dp),
         shape = MaterialTheme.shapes.medium,

@@ -21,10 +21,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import com.application.bibleapp.R
 import com.application.bibleapp.ui.theme.BibleAppTheme
 import com.application.bibleapp.ui.theme.Spacing
+import com.application.bibleapp.ui.theme.ThemePalette
+import com.application.bibleapp.ui.theme.ThemePalettePreviewProvider
 
 /** Find A Helpline's directory of free crisis lines by country (ThroughLine). Link only, its name
  *  shown beside it. Checked by hand 2026-11-02: curl 200, the page lists helplines by country. */
@@ -75,8 +78,8 @@ fun AiCrisisCard(onFindHelpline: () -> Unit, modifier: Modifier = Modifier) {
 @Preview(name = "Light", widthDp = 360)
 @Preview(name = "Dark", widthDp = 360, uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
-private fun AiCrisisCardPreview() {
-    BibleAppTheme {
+private fun AiCrisisCardPreview(@PreviewParameter(ThemePalettePreviewProvider::class) palette: ThemePalette) {
+    BibleAppTheme(palette = palette) {
         Surface { AiCrisisCard(onFindHelpline = {}, modifier = Modifier.padding(Spacing.lg)) }
     }
 }

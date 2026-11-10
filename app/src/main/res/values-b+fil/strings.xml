@@ -23,6 +23,50 @@
     <string name="action_sign_in">Mag-sign in</string>
     <string name="action_copy">Kopyahin</string>
     <string name="action_share">Ibahagi</string>
+    <!-- Verse images (#254) -->
+    <string name="share_as_text">Ibahagi bilang text</string>
+    <string name="share_as_image">Ibahagi bilang larawan</string>
+    <string name="verse_image_style">Istilo</string>
+    <string name="verse_image_size">Laki</string>
+    <string name="verse_image_size_square">Parisukat</string>
+    <string name="verse_image_size_portrait">Patayo</string>
+    <string name="verse_image_size_story">Story</string>
+    <string name="verse_image_verse_numbers">Mga numero ng talata</string>
+    <string name="verse_image_centered">Igitna ang text</string>
+    <string name="verse_image_show_mark">Ipakita ang pangalang TreasuredWord</string>
+    <string name="verse_image_too_long">Masyadong mahaba ang talatang ito para mabasa bilang larawan. Ibahagi ito bilang text, o pumili ng mas kaunting talata.</string>
+    <!-- %1$s = the image's reference and translation, e.g. "John 3:16 · KJV" -->
+    <string name="verse_image_preview_description">Preview ng larawan para sa %1$s</string>
+    <string name="verse_image_failed">Hindi magawa ang larawan. Subukan ulit.</string>
+    <!-- Saving verse images and setting them as wallpaper (#255) -->
+    <string name="verse_image_save">I-save</string>
+    <string name="verse_image_saved">Na-save sa Photos</string>
+    <string name="verse_image_save_failed">Hindi ma-save ang larawan. Subukan ulit.</string>
+    <string name="verse_image_storage_denied">Sa bersyong ito ng Android, kailangan ng access sa storage para mag-save. Maibabahagi mo pa rin ang larawan.</string>
+    <string name="verse_image_set_wallpaper">Gawing wallpaper</string>
+    <string name="wallpaper_dialog_title">Gawing wallpaper?</string>
+    <string name="wallpaper_dialog_text">Papalitan nito ang kasalukuyang wallpaper mo. Mapapalitan mo ito ulit sa settings ng phone mo.</string>
+    <string name="wallpaper_target_home">Home screen</string>
+    <string name="wallpaper_target_lock">Lock screen</string>
+    <string name="wallpaper_target_both">Home at lock screen</string>
+    <string name="wallpaper_set_action">Itakda</string>
+    <string name="wallpaper_set_done">Naitakda ang wallpaper</string>
+    <string name="wallpaper_set_failed">Hindi maitakda ang wallpaper. Subukan ulit.</string>
+    <!-- Verse images from the daily verse (#256) -->
+    <!-- %1$s = the label on the image, e.g. "Verse of the Day" -->
+    <string name="verse_image_show_label">Ipakita ang “%1$s”</string>
+    <!-- The daily verse notification's button that opens the verse image editor -->
+    <string name="daily_verse_share_image">Ibahagi ang larawan</string>
+    <!-- Photo backgrounds and the daily verse wallpaper (#257) -->
+    <string name="verse_image_photo">Ang larawan mo</string>
+    <string name="verse_image_photo_failed">Hindi mabuksan ang larawang iyan. Sumubok ng iba.</string>
+    <string name="settings_daily_wallpaper">Wallpaper ng talata sa araw-araw</string>
+    <string name="settings_daily_wallpaper_subtitle_off">Ang talata ngayong araw bilang wallpaper, napapalitan araw-araw</string>
+    <string name="settings_daily_wallpaper_subtitle_on">Napapalitan araw-araw. Kapag pinatay, mananatili ang kasalukuyang wallpaper.</string>
+    <string name="settings_daily_wallpaper_where">Saan</string>
+    <string name="daily_wallpaper_confirm_title">Gawing wallpaper ang talata sa araw-araw?</string>
+    <string name="daily_wallpaper_confirm_text">Papalitan nito ang wallpaper mo ngayon, at araw-araw pagkatapos gamit ang talata sa araw na iyon.</string>
+    <string name="daily_wallpaper_turn_on">I-on</string>
     <string name="action_download">I-download</string>
     <string name="tap_to_retry">I-tap para subukan ulit</string>
     <string name="error_generic">Nagkaproblema</string>
@@ -277,6 +321,14 @@
     <string name="language_system_default">Default ng system</string>
     <string name="settings_section_appearance">Hitsura</string>
     <string name="settings_theme">Tema</string>
+    <!-- Settings › Appearance: the color themes (#244). Each name is the theme's look, short enough for a swatch label. -->
+    <string name="settings_colors">Mga kulay</string>
+    <string name="palette_parchment">Pergamino</string>
+    <string name="palette_ink">Tinta</string>
+    <string name="palette_graphite">Grapito</string>
+    <string name="palette_sage">Sage</string>
+    <string name="palette_slate">Pisara</string>
+    <string name="palette_rose">Rosas</string>
     <string name="theme_system">System</string>
     <string name="theme_light">Light</string>
     <string name="theme_dark">Dark</string>
@@ -320,6 +372,12 @@
     <string name="daily_verse_notification_title">Talata ng Araw</string>
     <string name="notification_channel_daily_verse">Talata Araw-araw</string>
     <string name="notification_channel_daily_verse_description">Ang iyong paalala araw-araw na may talata mula sa Bibliya</string>
+
+    <!-- Home screen widget with the daily verse (#245): its name in the phone's widget picker,
+         the picker's short description, and what it shows if no verse can be read. -->
+    <string name="widget_daily_verse_name">TreasuredWord: Talata ng Araw</string>
+    <string name="widget_daily_verse_description">Ang talata ngayong araw sa iyong home screen, sa saling pinili mo</string>
+    <string name="widget_daily_verse_unavailable">Buksan ang TreasuredWord para i-load ang talata ngayong araw</string>
 
     <!-- Translation credit at the end of every chapter (#98) -->
     <!-- Link to the Bible translation's license page -->

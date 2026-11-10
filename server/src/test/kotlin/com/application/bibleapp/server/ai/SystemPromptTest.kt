@@ -36,6 +36,21 @@ class SystemPromptTest {
     }
 
     @Test
+    fun theInstructionsFixWhatTheEvaluationRunsFound() {
+        // The evaluation runs of #206: the crisis card is drawn above the answer (#130), and the
+        // app shows a whole chapter as a card (#190), so the instructions may ask for one.
+        val prompt = SystemPrompt.forLanguage("en")
+        assertEquals("5", SystemPrompt.PROMPT_VERSION)
+        assertFalse("crisis lines below" in prompt)
+        assertTrue("help card above your answer" in prompt)
+        assertTrue("[[BOOK C]] for a" in prompt && "[[PSA 23]]" in prompt)
+        assertTrue("says your point itself" in prompt)
+        assertTrue("as undecided" in prompt && "one view among several" in prompt)
+        assertTrue("each passage in its own marker" in prompt && "two to four passages" in prompt)
+        assertTrue("name books as readers of English" in prompt)
+    }
+
+    @Test
     fun aPassageFollowsTheInstructionsAsQuotedScripture() {
         val plain = SystemPrompt.forLanguage("es")
         val prompt = SystemPrompt.forLanguage("es", "JHN 3:16-18", "16 Porque de tal manera amó Dios al mundo…")

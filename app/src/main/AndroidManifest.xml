@@ -10,6 +10,13 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <!-- Lets BootCompletedReceiver re-arm the daily verse jobs after a reboot -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <!-- Saving a verse image into Pictures (#255) needs this only on Android 9 and older;
+         Android 10+ saves through MediaStore without any permission. -->
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28"/>
+    <!-- "Set as wallpaper" for a verse image (#255). Granted on install, never asked for. -->
+    <uses-permission android:name="android.permission.SET_WALLPAPER"/>
 
     <!-- Android 11+ hides other apps unless asked for: lets utils/ExternalLinks.kt find a browser
          that supports Custom Tabs before falling back to a plain link. -->
@@ -37,6 +44,12 @@
              field, which the first switch away from "System default" changes along with the
              language (when the system creates the app's own configuration), so without it that
              switch still recreated the activity and flashed black (#89).
+             Turning the phone (orientation, screenSize, smallestScreenSize) and plugging in a
+             keyboard (keyboard, keyboardHidden, navigation) are handled in place too, as Android
+             recommends for Compose-only apps: recreating blinked, closed the keyboard mid-word and
+             dropped what was waiting on the old screen, like Google's sign-in sheet (#238). The
+             app has no Android views or -land resources to rebuild by hand. The rememberSaveable
+             state stays, since process death still recreates the activity (#231).
              windowSoftInputMode: the keyboard resizes the app's content instead of panning the
              whole window up, which in landscape pushed screens under the status bar (#225, #228).
              Every screen with a text field pads itself with imePadding (keyboardScreenModifier
@@ -45,7 +58,7 @@
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_short_name"
-            android:configChanges="locale|layoutDirection|screenLayout"
+            android:configChanges="locale|layoutDirection|screenLayout|orientation|screenSize|smallestScreenSize|keyboard|keyboardHidden|navigation"
             android:windowSoftInputMode="adjustResize"
             android:theme="@style/Theme.BibleApp.Splash">
             <intent-filter>
@@ -68,6 +81,35 @@
 
         <!-- exported="true": required for the system to be able to deliver these
              protected broadcasts, which only the OS itself is allowed to send. -->
+        <!-- Home screen widget with the daily verse (#245). Exported for the launcher's widget
+             broadcasts; the locale actions redraw it when the phone's or the app's language
+             changes outside the app. -->
+        <receiver
+            android:name=".widget.DailyVerseWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_daily_verse_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.intent.action.LOCALE_CHANGED" />
+                <action android:name="android.intent.action.APPLICATION_LOCALE_CHANGED" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/daily_verse_widget_info" />
+        </receiver>
+
+        <!-- Shares a verse image with another app (#254): read access to one cached file at a
+             time, granted per share. Not exported; access comes only from those grants. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
         <receiver
             android:name=".receiver.BootCompletedReceiver"
             android:exported="true">

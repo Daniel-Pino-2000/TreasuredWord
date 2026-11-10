@@ -66,7 +66,20 @@ scale, with no credit card needed to keep it running.
 - **Theme:** the app has its own Light/Dark/System setting. Inside `BibleAppTheme`,
   `isSystemInDarkTheme()` returns the app's choice, not the phone's (#24). Use
   `MaterialTheme.colorScheme`, `MaterialTheme.shapes` and the `Spacing` tokens, never raw colors
-  or dp values for spacing.
+  or dp values for spacing. There are six color themes (`ThemePalette`, #244), so pick roles by
+  purpose: `outline` only for control borders (`outlineVariant` for decorative lines), and
+  `primaryContainer` for banners (`secondaryContainer` means "selected" and is solid black in Ink).
+  `ThemePaletteContrastTest` checks every theme against WCAG AA; add a pair there when a new
+  screen puts text on a new color.
+- **Every theme, every mode (house rule):** a new or changed screen, sheet, dialog or UI feature
+  is not done until it works and reads well in **all six color themes, each in light and dark**,
+  portrait and landscape. That means color roles only (no `Color(0x…)`, `Color.White`/`Black`
+  outside `ui/theme`, except third-party branding like the Google button), a
+  `ThemePaletteContrastTest` pair for every new text/icon-on-color combination, and a look at it
+  on the emulator in each theme. To switch quickly there, stop the app and write `theme_palette`
+  (`PARCHMENT`, `INK`, `GRAPHITE`, `SAGE`, `SLATE`, `ROSE`) and `theme_mode` (`LIGHT`, `DARK`)
+  into `shared_prefs/bible_prefs.xml` with `adb shell run-as com.treasuredword.app`. Ink is the
+  usual trouble spot: its primary and selection colors are solid black/white.
 - **Keyboard:** the activity is `adjustResize` (manifest), so the keyboard never pans the window.
   Every screen with a text field gets `keyboardScreenModifier` in `Navigation.kt` and
   `imePadding()` on its root column, or its field ends up behind the keyboard (#225, #228). In
@@ -92,8 +105,8 @@ scale, with no credit card needed to keep it running.
 - Commands: `./gradlew :app:testDebugUnitTest`, `:app:assembleDebug`, `:app:lintDebug`,
   `:app:installDebug`, and `:server:test` (needs a local Postgres; see
   `.github/workflows/server-ci.yml` for the env vars). Run long Gradle tasks in the background.
-- Check UI changes on a device in **light and dark, portrait and landscape**, plus a translated
-  language and **offline** when the feature touches the network.
+- Check UI changes on a device in **every color theme, light and dark, portrait and landscape**,
+  plus a translated language and **offline** when the feature touches the network.
 - **The physical Galaxy S23 is the developer's personal phone.** Before *every* tap, check
   `adb shell dumpsys window | grep mCurrentFocus` shows `com.treasuredword.app`; if not, stop
   and tell them. Never change its system settings. Only create test highlights/notes you remove

@@ -22,6 +22,50 @@
     <string name="action_sign_in">Iniciar sesión</string>
     <string name="action_copy">Copiar</string>
     <string name="action_share">Compartir</string>
+    <!-- Verse images (#254) -->
+    <string name="share_as_text">Compartir como texto</string>
+    <string name="share_as_image">Compartir como imagen</string>
+    <string name="verse_image_style">Estilo</string>
+    <string name="verse_image_size">Tamaño</string>
+    <string name="verse_image_size_square">Cuadrado</string>
+    <string name="verse_image_size_portrait">Vertical</string>
+    <string name="verse_image_size_story">Historia</string>
+    <string name="verse_image_verse_numbers">Números de versículo</string>
+    <string name="verse_image_centered">Centrar el texto</string>
+    <string name="verse_image_show_mark">Mostrar el nombre TreasuredWord</string>
+    <string name="verse_image_too_long">Este pasaje es demasiado largo para leerse en una imagen. Compártelo como texto o selecciona menos versículos.</string>
+    <!-- %1$s = the image's reference and translation, e.g. "John 3:16 · KJV" -->
+    <string name="verse_image_preview_description">Vista previa de la imagen de %1$s</string>
+    <string name="verse_image_failed">No se pudo crear la imagen. Vuelve a intentarlo.</string>
+    <!-- Saving verse images and setting them as wallpaper (#255) -->
+    <string name="verse_image_save">Guardar</string>
+    <string name="verse_image_saved">Guardada en Fotos</string>
+    <string name="verse_image_save_failed">No se pudo guardar la imagen. Vuelve a intentarlo.</string>
+    <string name="verse_image_storage_denied">En esta versión de Android, guardar necesita acceso al almacenamiento. Aún puedes compartir la imagen.</string>
+    <string name="verse_image_set_wallpaper">Usar como fondo de pantalla</string>
+    <string name="wallpaper_dialog_title">¿Usar como fondo de pantalla?</string>
+    <string name="wallpaper_dialog_text">Esto reemplaza tu fondo de pantalla actual. Puedes cambiarlo de nuevo en los ajustes del teléfono.</string>
+    <string name="wallpaper_target_home">Pantalla de inicio</string>
+    <string name="wallpaper_target_lock">Pantalla de bloqueo</string>
+    <string name="wallpaper_target_both">Pantallas de inicio y de bloqueo</string>
+    <string name="wallpaper_set_action">Usar</string>
+    <string name="wallpaper_set_done">Fondo de pantalla cambiado</string>
+    <string name="wallpaper_set_failed">No se pudo cambiar el fondo de pantalla. Vuelve a intentarlo.</string>
+    <!-- Verse images from the daily verse (#256) -->
+    <!-- %1$s = the label on the image, e.g. "Verse of the Day" -->
+    <string name="verse_image_show_label">Mostrar «%1$s»</string>
+    <!-- The daily verse notification's button that opens the verse image editor -->
+    <string name="daily_verse_share_image">Compartir imagen</string>
+    <!-- Photo backgrounds and the daily verse wallpaper (#257) -->
+    <string name="verse_image_photo">Tu foto</string>
+    <string name="verse_image_photo_failed">No se pudo abrir esa foto. Prueba con otra.</string>
+    <string name="settings_daily_wallpaper">Fondo con el versículo del día</string>
+    <string name="settings_daily_wallpaper_subtitle_off">El versículo del día como fondo de pantalla, cada día</string>
+    <string name="settings_daily_wallpaper_subtitle_on">Se actualiza cada día. Al desactivarlo se mantiene el fondo actual.</string>
+    <string name="settings_daily_wallpaper_where">Dónde</string>
+    <string name="daily_wallpaper_confirm_title">¿Usar el versículo del día como fondo de pantalla?</string>
+    <string name="daily_wallpaper_confirm_text">Esto reemplaza tu fondo de pantalla ahora y de nuevo cada día con el versículo de ese día.</string>
+    <string name="daily_wallpaper_turn_on">Activar</string>
     <string name="action_download">Descargar</string>
     <string name="tap_to_retry">Toca para reintentar</string>
     <string name="error_generic">Algo salió mal</string>
@@ -301,6 +345,14 @@
     <string name="language_system_default">Predeterminado del sistema</string>
     <string name="settings_section_appearance">Apariencia</string>
     <string name="settings_theme">Tema</string>
+    <!-- Settings › Appearance: the color themes (#244). Each name is the theme's look, short enough for a swatch label. -->
+    <string name="settings_colors">Colores</string>
+    <string name="palette_parchment">Pergamino</string>
+    <string name="palette_ink">Tinta</string>
+    <string name="palette_graphite">Grafito</string>
+    <string name="palette_sage">Salvia</string>
+    <string name="palette_slate">Pizarra</string>
+    <string name="palette_rose">Rosa</string>
     <string name="theme_system">Sistema</string>
     <string name="theme_light">Claro</string>
     <string name="theme_dark">Oscuro</string>
@@ -345,6 +397,12 @@
     <string name="daily_verse_notification_title">Versículo del día</string>
     <string name="notification_channel_daily_verse">Versículo diario</string>
     <string name="notification_channel_daily_verse_description">Tu recordatorio diario con un versículo de la Biblia</string>
+
+    <!-- Home screen widget with the daily verse (#245): its name in the phone's widget picker,
+         the picker's short description, and what it shows if no verse can be read. -->
+    <string name="widget_daily_verse_name">TreasuredWord: versículo del día</string>
+    <string name="widget_daily_verse_description">El versículo de hoy en tu pantalla de inicio, en la traducción que elegiste</string>
+    <string name="widget_daily_verse_unavailable">Abre TreasuredWord para cargar el versículo de hoy</string>
 
     <!-- Translation credit at the end of every chapter (#98) -->
     <!-- Link to the Bible translation's license page -->

@@ -13,15 +13,17 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.application.bibleapp.MainActivity
 import com.application.bibleapp.R
-import com.application.bibleapp.data.model.BibleBooks
-import com.application.bibleapp.data.model.DailyVerseRef
-import com.application.bibleapp.data.model.DailyVerseUI
+import com.application.bibleapp.verseimage.dailyVerseImageIntent
 import com.application.bibleapp.data.model.VerseOfTheDay
-import com.application.bibleapp.data.model.resolveDailyVerseUI
 import com.application.bibleapp.data.remote.HelloAoBibleDataSource
 import com.application.bibleapp.data.remote.OurMannaBibleDataSource
 import com.application.bibleapp.data.repository.BibleRepository
+import com.application.bibleapp.data.repository.resolveDailyVerseText
 import com.application.bibleapp.utils.AppLanguage
+
+/** The daily verse notification's id. MainActivity dismisses it when its "Share image" (#256) is
+ *  used, since an action button, unlike a tap on the notification, doesn't clear it. */
+internal const val DAILY_VERSE_NOTIFICATION_ID = 1001
 
 /**
  * Runs at the user's chosen local time (see [DailyVerseScheduler]) and posts a
@@ -73,14 +75,9 @@ class DailyVerseNotificationWorker(
         val versionId = repository.loadSelectedVersion()
         val ref = runCatching { repository.getDailyVerse() }.getOrElse { VerseOfTheDay.forToday() }
 
-        // The cached/fallback ref is resolved against whatever the *chosen* translation
-        // has locally, which can legitimately be missing it (not downloaded, deleted
-        // since, or a partial-canon translation that never covers that book) — in which
-        // case this would otherwise post nothing at all, silently, forever. KJV is
-        // bundled and always has the full canon, so it's a fallback that's guaranteed to
-        // resolve for any ref this app itself produces.
-        val verse = resolveVerse(repository, ref, versionId)
-            ?: resolveVerse(repository, VerseOfTheDay.forToday(), "kjv")
+        // Read from the device only, falling back to bundled KJV when the chosen translation
+        // doesn't have it — the same lookup as the home screen widget (#245).
+        val verse = repository.resolveDailyVerseText(ref, versionId)?.verse
         if (verse == null) {
             Log.w(TAG, "Could not resolve daily verse (ref=$ref, version=$versionId) even with KJV fallback")
             return
@@ -97,16 +94,25 @@ class DailyVerseNotificationWorker(
         }
         val contentIntent = PendingIntent.getActivity(
             applicationContext,
-            NOTIFICATION_ID,
+            DAILY_VERSE_NOTIFICATION_ID,
             openAppIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
+
+        // "Share image" (#256): opens the app with the verse image editor on today's verse.
+        val shareImageIntent = PendingIntent.getActivity(
+            applicationContext,
+            SHARE_IMAGE_REQUEST_CODE,
+            dailyVerseImageIntent(applicationContext),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val localized = AppLanguage.localizedContext(applicationContext)
 
         val notification = NotificationCompat.Builder(applicationContext, DailyVerseScheduler.NOTIFICATION_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification_daily_verse)
             .setColor(BRAND_COLOR)
             // Workers run without an activity, so below Android 13 the app language has to be applied here.
-            .setContentTitle(AppLanguage.localizedContext(applicationContext).getString(R.string.daily_verse_notification_title))
+            .setContentTitle(localized.getString(R.string.daily_verse_notification_title))
             .setContentText(verse.reference)
             .setStyle(
                 NotificationCompat.BigTextStyle()
@@ -116,23 +122,17 @@ class DailyVerseNotificationWorker(
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT) // channel importance governs API 26+; this covers 24-25
             .setContentIntent(contentIntent)
+            .addAction(R.drawable.ic_share_image, localized.getString(R.string.daily_verse_share_image), shareImageIntent)
             .setAutoCancel(true)
             .build()
 
-        NotificationManagerCompat.from(applicationContext).notify(NOTIFICATION_ID, notification)
-    }
-
-    private suspend fun resolveVerse(repository: BibleRepository, ref: DailyVerseRef, versionId: String): DailyVerseUI? {
-        val bookName = repository.getBookNames(versionId)[ref.bookId]
-            ?: BibleBooks.getBookById(ref.bookId)?.name
-            ?: return null
-        val chapterVerses = repository.getChapter(ref.bookId, ref.chapter, versionId)
-        return resolveDailyVerseUI(bookName, ref, chapterVerses)
+        NotificationManagerCompat.from(applicationContext).notify(DAILY_VERSE_NOTIFICATION_ID, notification)
     }
 
     private companion object {
         const val TAG = "DailyVerseNotifWorker"
-        const val NOTIFICATION_ID = 1001
+        // Its own request code, so it doesn't replace the content intent's PendingIntent.
+        const val SHARE_IMAGE_REQUEST_CODE = 1002
 
         // Matches ui/theme/Color.kt's LightPrimary, so the notification reads as part of
         // the same app instead of using the OS's generic default accent.

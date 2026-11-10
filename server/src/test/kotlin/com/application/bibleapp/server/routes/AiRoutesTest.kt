@@ -5,6 +5,7 @@ import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.read.ListAppender
 import com.application.bibleapp.server.ai.AiRole
 import com.application.bibleapp.server.ai.QuotaExhausted
+import com.application.bibleapp.server.ai.SystemPrompt
 import com.application.bibleapp.server.ai.Unavailable
 import com.application.bibleapp.server.db.tables.AiDailyUsage
 import com.application.bibleapp.server.db.tables.Users
@@ -87,7 +88,7 @@ class AiRoutesTest {
         assertEquals(ai.answer, body.answer)
         assertFalse(body.crisis)
         assertEquals(14, body.remainingToday)
-        assertEquals("1", body.promptVersion)
+        assertEquals(SystemPrompt.PROMPT_VERSION, body.promptVersion)
         assertEquals(1, usedToday(user, clock))
 
         val call = ai.calls.single()

@@ -20,6 +20,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.isSystemInDarkTheme
+import com.application.bibleapp.ui.theme.highlightFill
 import com.application.bibleapp.components.BibleText
 import com.application.bibleapp.components.HighlightActionSheet
 import com.application.bibleapp.components.NoteEditorSheet
@@ -74,10 +76,12 @@ fun BibleView(
     // highlight covers, not per highlight. New overlaps can't be created (api_contract.md decision
     // 19), but one from another client/older sync resolves to the most recently created highlight,
     // matching which one BibleViewModel.onVerseTap opens.
-    val highlightColorsByVerse = remember(highlightsInChapter) {
+    // Drawn weaker in dark mode (#246), so light/dark is a key too.
+    val isDark = isSystemInDarkTheme()
+    val highlightColorsByVerse = remember(highlightsInChapter, isDark) {
         buildMap<VerseLocationDto, Color> {
             highlightsInChapter.sortedBy { it.createdAt }.forEach { highlight ->
-                val color = Color(highlight.color)
+                val color = highlightFill(highlight.color, isDark)
                 highlight.verses.forEach { put(it, color) }
             }
         }

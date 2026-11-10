@@ -22,6 +22,50 @@
     <string name="action_sign_in">로그인</string>
     <string name="action_copy">복사</string>
     <string name="action_share">공유</string>
+    <!-- Verse images (#254) -->
+    <string name="share_as_text">텍스트로 공유</string>
+    <string name="share_as_image">이미지로 공유</string>
+    <string name="verse_image_style">스타일</string>
+    <string name="verse_image_size">크기</string>
+    <string name="verse_image_size_square">정사각형</string>
+    <string name="verse_image_size_portrait">세로</string>
+    <string name="verse_image_size_story">스토리</string>
+    <string name="verse_image_verse_numbers">절 번호</string>
+    <string name="verse_image_centered">가운데 정렬</string>
+    <string name="verse_image_show_mark">TreasuredWord 이름 표시</string>
+    <string name="verse_image_too_long">이 본문은 너무 길어서 이미지로 읽기 어려워요. 텍스트로 공유하거나 절을 더 적게 선택하세요.</string>
+    <!-- %1$s = the image's reference and translation, e.g. "John 3:16 · KJV" -->
+    <string name="verse_image_preview_description">%1$s 이미지 미리보기</string>
+    <string name="verse_image_failed">이미지를 만들지 못했어요. 다시 시도하세요.</string>
+    <!-- Saving verse images and setting them as wallpaper (#255) -->
+    <string name="verse_image_save">저장</string>
+    <string name="verse_image_saved">사진에 저장했어요</string>
+    <string name="verse_image_save_failed">이미지를 저장하지 못했어요. 다시 시도하세요.</string>
+    <string name="verse_image_storage_denied">이 Android 버전에서는 저장하려면 저장소 접근 권한이 필요해요. 이미지는 계속 공유할 수 있어요.</string>
+    <string name="verse_image_set_wallpaper">배경화면으로 설정</string>
+    <string name="wallpaper_dialog_title">배경화면으로 설정할까요?</string>
+    <string name="wallpaper_dialog_text">지금 배경화면이 바뀌어요. 휴대전화 설정에서 다시 바꿀 수 있어요.</string>
+    <string name="wallpaper_target_home">홈 화면</string>
+    <string name="wallpaper_target_lock">잠금 화면</string>
+    <string name="wallpaper_target_both">홈 화면과 잠금 화면</string>
+    <string name="wallpaper_set_action">설정</string>
+    <string name="wallpaper_set_done">배경화면을 설정했어요</string>
+    <string name="wallpaper_set_failed">배경화면을 설정하지 못했어요. 다시 시도하세요.</string>
+    <!-- Verse images from the daily verse (#256) -->
+    <!-- %1$s = the label on the image, e.g. "Verse of the Day" -->
+    <string name="verse_image_show_label">“%1$s” 표시</string>
+    <!-- The daily verse notification's button that opens the verse image editor -->
+    <string name="daily_verse_share_image">이미지 공유</string>
+    <!-- Photo backgrounds and the daily verse wallpaper (#257) -->
+    <string name="verse_image_photo">내 사진</string>
+    <string name="verse_image_photo_failed">그 사진을 열지 못했어요. 다른 사진을 선택하세요.</string>
+    <string name="settings_daily_wallpaper">오늘의 말씀 배경화면</string>
+    <string name="settings_daily_wallpaper_subtitle_off">오늘의 말씀을 배경화면으로, 매일 새로 바뀌어요</string>
+    <string name="settings_daily_wallpaper_subtitle_on">매일 바뀌어요. 끄면 지금 배경화면이 그대로 남아요.</string>
+    <string name="settings_daily_wallpaper_where">위치</string>
+    <string name="daily_wallpaper_confirm_title">오늘의 말씀을 배경화면으로 사용할까요?</string>
+    <string name="daily_wallpaper_confirm_text">지금 배경화면이 바뀌고, 이후 매일 그날의 말씀으로 다시 바뀌어요.</string>
+    <string name="daily_wallpaper_turn_on">켜기</string>
     <string name="action_download">다운로드</string>
     <string name="tap_to_retry">탭하여 다시 시도</string>
     <string name="error_generic">문제가 발생했어요</string>
@@ -267,6 +311,14 @@
     <string name="language_system_default">시스템 기본값</string>
     <string name="settings_section_appearance">화면</string>
     <string name="settings_theme">테마</string>
+    <!-- Settings › Appearance: the color themes (#244). Each name is the theme's look, short enough for a swatch label. -->
+    <string name="settings_colors">색상</string>
+    <string name="palette_parchment">양피지</string>
+    <string name="palette_ink">잉크</string>
+    <string name="palette_graphite">그래파이트</string>
+    <string name="palette_sage">세이지</string>
+    <string name="palette_slate">슬레이트</string>
+    <string name="palette_rose">로즈</string>
     <string name="theme_system">시스템</string>
     <string name="theme_light">라이트</string>
     <string name="theme_dark">다크</string>
@@ -310,6 +362,12 @@
     <string name="daily_verse_notification_title">오늘의 말씀</string>
     <string name="notification_channel_daily_verse">매일 말씀</string>
     <string name="notification_channel_daily_verse_description">매일 성경 말씀 알림</string>
+
+    <!-- Home screen widget with the daily verse (#245): its name in the phone's widget picker,
+         the picker's short description, and what it shows if no verse can be read. -->
+    <string name="widget_daily_verse_name">TreasuredWord 오늘의 말씀</string>
+    <string name="widget_daily_verse_description">선택한 번역본으로 홈 화면에서 보는 오늘의 말씀</string>
+    <string name="widget_daily_verse_unavailable">TreasuredWord를 열어 오늘의 말씀을 불러오세요</string>
 
     <!-- Translation credit at the end of every chapter (#98) -->
     <!-- Link to the Bible translation's license page -->

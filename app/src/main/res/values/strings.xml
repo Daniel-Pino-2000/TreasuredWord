@@ -24,6 +24,50 @@
     <string name="action_sign_in">Sign in</string>
     <string name="action_copy">Copy</string>
     <string name="action_share">Share</string>
+    <!-- Verse images (#254) -->
+    <string name="share_as_text">Share as text</string>
+    <string name="share_as_image">Share as image</string>
+    <string name="verse_image_style">Style</string>
+    <string name="verse_image_size">Size</string>
+    <string name="verse_image_size_square">Square</string>
+    <string name="verse_image_size_portrait">Portrait</string>
+    <string name="verse_image_size_story">Story</string>
+    <string name="verse_image_verse_numbers">Verse numbers</string>
+    <string name="verse_image_centered">Center the text</string>
+    <string name="verse_image_show_mark">Show the TreasuredWord name</string>
+    <string name="verse_image_too_long">This passage is too long to read as an image. Share it as text, or select fewer verses.</string>
+    <!-- %1$s = the image's reference and translation, e.g. "John 3:16 · KJV" -->
+    <string name="verse_image_preview_description">Preview of the image for %1$s</string>
+    <string name="verse_image_failed">Couldn\'t create the image. Try again.</string>
+    <!-- Saving verse images and setting them as wallpaper (#255) -->
+    <string name="verse_image_save">Save</string>
+    <string name="verse_image_saved">Saved to Photos</string>
+    <string name="verse_image_save_failed">Couldn\'t save the image. Try again.</string>
+    <string name="verse_image_storage_denied">Saving needs storage access on this version of Android. You can still share the image.</string>
+    <string name="verse_image_set_wallpaper">Set as wallpaper</string>
+    <string name="wallpaper_dialog_title">Set as wallpaper?</string>
+    <string name="wallpaper_dialog_text">This replaces your current wallpaper. You can change it back in your phone\'s settings.</string>
+    <string name="wallpaper_target_home">Home screen</string>
+    <string name="wallpaper_target_lock">Lock screen</string>
+    <string name="wallpaper_target_both">Home and lock screens</string>
+    <string name="wallpaper_set_action">Set</string>
+    <string name="wallpaper_set_done">Wallpaper set</string>
+    <string name="wallpaper_set_failed">Couldn\'t set the wallpaper. Try again.</string>
+    <!-- Verse images from the daily verse (#256) -->
+    <!-- %1$s = the label on the image, e.g. "Verse of the Day" -->
+    <string name="verse_image_show_label">Show “%1$s”</string>
+    <!-- The daily verse notification's button that opens the verse image editor -->
+    <string name="daily_verse_share_image">Share image</string>
+    <!-- Photo backgrounds and the daily verse wallpaper (#257) -->
+    <string name="verse_image_photo">Your photo</string>
+    <string name="verse_image_photo_failed">Couldn\'t open that photo. Try another one.</string>
+    <string name="settings_daily_wallpaper">Daily verse wallpaper</string>
+    <string name="settings_daily_wallpaper_subtitle_off">Today\'s verse as your wallpaper, updated each day</string>
+    <string name="settings_daily_wallpaper_subtitle_on">Updated each day. Turning it off keeps the current wallpaper.</string>
+    <string name="settings_daily_wallpaper_where">Where</string>
+    <string name="daily_wallpaper_confirm_title">Use the daily verse as your wallpaper?</string>
+    <string name="daily_wallpaper_confirm_text">This replaces your current wallpaper now, and again each day with that day\'s verse.</string>
+    <string name="daily_wallpaper_turn_on">Turn on</string>
     <string name="action_download">Download</string>
     <string name="tap_to_retry">Tap to retry</string>
     <string name="error_generic">Something went wrong</string>
@@ -320,6 +364,14 @@
     <string name="language_system_default">System default</string>
     <string name="settings_section_appearance">Appearance</string>
     <string name="settings_theme">Theme</string>
+    <!-- Settings › Appearance: the color themes (#244). Each name is the theme's look, short enough for a swatch label. -->
+    <string name="settings_colors">Colors</string>
+    <string name="palette_parchment">Parchment</string>
+    <string name="palette_ink">Ink</string>
+    <string name="palette_graphite">Graphite</string>
+    <string name="palette_sage">Sage</string>
+    <string name="palette_slate">Slate</string>
+    <string name="palette_rose">Rose</string>
     <string name="theme_system">System</string>
     <string name="theme_light">Light</string>
     <string name="theme_dark">Dark</string>
@@ -366,6 +418,12 @@
     <string name="daily_verse_notification_title">Verse of the Day</string>
     <string name="notification_channel_daily_verse">Daily Verse</string>
     <string name="notification_channel_daily_verse_description">Your daily Bible verse reminder</string>
+
+    <!-- Home screen widget with the daily verse (#245): its name in the phone's widget picker,
+         the picker's short description, and what it shows if no verse can be read. -->
+    <string name="widget_daily_verse_name">TreasuredWord daily verse</string>
+    <string name="widget_daily_verse_description">Today\'s verse on your home screen, in your chosen translation</string>
+    <string name="widget_daily_verse_unavailable">Open TreasuredWord to load today\'s verse</string>
 
     <!-- Translation credit at the end of every chapter (#98) -->
     <!-- Link to the Bible translation's license page -->

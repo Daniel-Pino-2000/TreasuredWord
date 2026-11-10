@@ -60,7 +60,9 @@ private fun MissingVersionBanner(
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.secondaryContainer,
+        // primaryContainer, not secondaryContainer: that one is the selection color, solid black
+        // in Ink, which would hide the Download button (#244).
+        color = MaterialTheme.colorScheme.primaryContainer,
         shape = MaterialTheme.shapes.medium
     ) {
         Column(modifier = Modifier.padding(start = Spacing.lg, end = Spacing.sm, top = Spacing.sm, bottom = Spacing.sm)) {
@@ -68,14 +70,14 @@ private fun MissingVersionBanner(
                 Text(
                     text = stringResource(R.string.library_missing_version, versionLabel),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
                     modifier = Modifier.weight(1f)
                 )
                 if (downloadProgress != null) {
                     Text(
                         text = stringResource(R.string.version_download_progress, (downloadProgress * 100).toInt()),
                         style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
                         modifier = Modifier.padding(horizontal = Spacing.md)
                     )
                 } else {

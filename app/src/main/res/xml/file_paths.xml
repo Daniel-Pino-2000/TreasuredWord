@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- What the FileProvider may hand to other apps: only the verse image being shared (#254). -->
+<paths>
+    <cache-path name="verse_images" path="verse_images/" />
+</paths>
