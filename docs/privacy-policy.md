@@ -5,7 +5,7 @@ permalink: /privacy/
 
 # TreasuredWord privacy policy
 
-**Effective date:** November 2, 2026
+**Effective date:** November 10, 2026
 
 TreasuredWord is a free Bible reading app made by Daniel Pino, an independent developer. In this policy, "we" and "us" mean Daniel Pino, the developer of TreasuredWord. It explains what information the app uses, where it goes, and the choices you have. If you have questions, email [pinoponedaniel@gmail.com](mailto:pinoponedaniel@gmail.com).
 
@@ -60,14 +60,14 @@ When you sign out, the app removes your account's highlights and notes from that
 
 ## The Bible Helper (AI answers)
 
-The Bible Helper is an optional feature, for signed-in accounts, that answers questions about the Bible with AI. It's being tested and may not be in your version of the app yet; if you don't see an **Ask** tab, nothing in this section applies to you.
+The Bible Helper is an optional feature, for signed-in accounts, that answers questions about the Bible with AI. It's in the app's **Ask** tab. If you don't use it, or your version of the app has no **Ask** tab, nothing in this section applies to you.
 
 When you ask a question:
 
 - **The app sends** your question, up to the last few messages of that conversation (so the answer can follow it), and the app's language to our server. If you asked from the reader with **Ask about this verse**, it also sends the verses you selected: their reference and their text in your Bible translation.
-- **Our server adds** its own fixed instructions and sends the conversation to [Cloudflare Workers AI](https://developers.cloudflare.com/workers-ai/platform/data-usage/), which runs the AI model and sends the answer back. Cloudflare acts as our service provider: it doesn't use what we send to train AI models and doesn't keep it after answering. Your account, email address and IP address aren't sent to Cloudflare.
+- **Our server adds** its own fixed instructions and sends the conversation to [Cloudflare Workers AI](https://developers.cloudflare.com/workers-ai/platform/data-usage/), which runs the AI model and sends the answer back. Cloudflare acts as our service provider: it doesn't use what we send to train AI models and doesn't keep it after answering, except where the law requires it. Your account, email address and IP address aren't sent to Cloudflare.
 - **Our server doesn't store** your questions or the answers, and never writes them to its logs. It keeps only a count of how many questions your account asked each day, to apply the daily limit; the count is deleted with your account.
-- **Your conversations are saved on your phone**, so you can read them again. You can delete them in the app, and they're removed when you remove the app.
+- **Your conversations are saved on your phone**, so you can read them again. They aren't in your phone's cloud backup; a direct phone-to-phone transfer can copy them along with your downloaded Bibles. You can delete them in the app, and they're removed when you sign out or remove the app.
 
 If you **report an answer**, the app sends us the question, the answer, the reason you chose, an optional comment and the app's language. We store the report **without your account or any other way to tell who sent it**, read it to improve the Bible Helper's instructions, and delete it after 90 days.
 

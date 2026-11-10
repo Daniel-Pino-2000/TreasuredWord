@@ -386,11 +386,11 @@
     <string name="ai_conversations_title">对话</string>
     <string name="ai_action_new_conversation">新对话</string>
     <string name="ai_signed_out_title">向圣经助手提问</string>
-    <string name="ai_signed_out_message">就圣经和基督教信仰提问，从浸信会的角度获得回答，并附上相关经文。登录后即可开始提问。</string>
+    <string name="ai_signed_out_message">就圣经和基督教信仰提问，获得出自圣经的回答，并附上相关经文。登录后即可开始提问。</string>
     <string name="ai_intro_title">你想问什么？</string>
-    <string name="ai_intro_message">回答基于浸信会的观点，并附上所依据的经文。点按一个问题，或写下你自己的问题。</string>
+    <string name="ai_intro_message">回答出自圣经，并附上所依据的经文。点按一个问题，或写下你自己的问题。</string>
     <string name="ai_starter_saved">我怎样才能得救？</string>
-    <string name="ai_starter_baptism">浸信会为什么施行浸水礼？</string>
+    <string name="ai_starter_baptism">圣经对洗礼是怎么说的？</string>
     <string name="ai_starter_trinity">什么是三位一体？</string>
     <string name="ai_starter_prayer">我应该怎样祷告？</string>
     <string name="ai_starter_start_reading">我该从哪里开始读圣经？</string>
@@ -411,7 +411,7 @@
     </plurals>
     <string name="ai_notice_title">提问之前</string>
     <string name="ai_notice_ai">圣经助手是 AI，可能会出错。</string>
-    <string name="ai_notice_baptist">它从浸信会的角度回答，遵循《浸信会信仰与信息 2000》（Baptist Faith and Message 2000）。</string>
+    <string name="ai_notice_baptist">它根据圣经回答，与《浸信会信仰与信息 2000》（Baptist Faith and Message 2000）一致。</string>
     <string name="ai_notice_bfm_link">阅读 Baptist Faith and Message 2000（英文）</string>
     <string name="ai_notice_scripture">像庇哩亚人那样，用圣经来查验它的话（使徒行传 17:11）。</string>
     <string name="ai_notice_personal">不要分享个人信息，例如全名、地址或健康状况。</string>

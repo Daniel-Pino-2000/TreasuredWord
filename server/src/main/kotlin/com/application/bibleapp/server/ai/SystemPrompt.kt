@@ -10,8 +10,19 @@ package com.application.bibleapp.server.ai
  */
 object SystemPrompt {
 
-    /** Sent back with every answer and stored with reports, so a report says which instructions it was about. */
-    const val PROMPT_VERSION = "1"
+    /**
+     * Sent back with every answer and stored with reports, so a report says which instructions it
+     * was about. Bumped for any change that changes answers: the instructions, doctrine.md, or the
+     * provider's temperature. v5 (v4's instructions at temperature 0.2, #206) passed one run; v6-v9
+     * tried other answer shapes and scored lower; v10 is v5 with only the framing changed (the Bible
+     * first, Baptists named only when asked, longer answers when needed) and firmer doctrine.md (#236).
+     * v11 is v10 back at about 250 words: no answer in v5 or v10 needed more (longest 260 and 281).
+     * Graded strictly, v10 and v11 gave Wrong answers in every run and v5 in none of three, so v12
+     * is v5's instructions with v10's doctrine.md, and alcohol off the list of open questions. v12
+     * gave one Wrong answer in two runs, so the developer chose to ship v5 unchanged (2026-11-10):
+     * the files are af7f9e8's again, under v5's number, because answers are the ones v5's runs measured.
+     */
+    const val PROMPT_VERSION = "5"
 
     /** The app's language tags (`AppLanguage.supportedTags`) and the English name the model is told to answer in. */
     val languageNames: Map<String, String> = mapOf(

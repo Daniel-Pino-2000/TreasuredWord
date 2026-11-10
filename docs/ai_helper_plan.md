@@ -8,8 +8,8 @@
 > Nothing in this plan may delay or change the first production release.
 
 A chat screen where people ask questions about the Bible and the Christian faith and get short,
-clear answers from a Baptist point of view, built so that every answer sends them back into
-Scripture. It must cost **$0** to run.
+clear answers from the Bible, in line with Baptist doctrine, built so that every answer sends them
+back into Scripture. It must cost **$0** to run.
 
 ## 1. What makes it helpful to Christians
 
@@ -20,9 +20,12 @@ Bible Helper follows five rules:
    shows each verse from the reader's own translation and opens it in the reader, so the AI never
    puts words in the Bible's mouth. A "Read the whole chapter" link on every verse card pushes
    people toward context, not snippets.
-2. **Baptist, and honest about it.** It holds what the Baptist Faith & Message 2000 holds,
-   explains fairly where Baptists themselves disagree, and describes other traditions respectfully
-   before giving the Baptist view.
+2. **Baptist, from Scripture.** It holds what the Baptist Faith & Message 2000 holds and rests
+   every point on the passages that teach it. Instructions v6 to v12 tried framing answers as "the
+   Bible teaches", other answer shapes and a fuller `doctrine.md`; graded strictly, each gave Wrong
+   answers, so the developer chose to ship v5 (2026-11-10, #236). Where faithful Christians disagree, it explains
+   the views fairly, each with its passages, and doesn't choose.
+   It describes other traditions respectfully before showing what Scripture says.
 3. **Humble.** Every answer is labeled as AI. It says "the Bible doesn't say" when it doesn't,
    never invents verses, never claims to speak for God, and encourages people to check what they
    hear against Scripture, like the Bereans (Acts 17:11).
@@ -44,8 +47,8 @@ updating those too.
 | Question | Decision | Why |
 |---|---|---|
 | Doctrinal standard | Baptist Faith & Message 2000, summarized in our own words, with a link to the original | The most widely used Baptist confession; summarizing instead of copying keeps us clear of copyright |
-| Where Baptists disagree (Calvinism and Arminianism, end times, spiritual gifts, Bible translations) | Explain the main Baptist views fairly; take a side only where the BF&M 2000 does | Faithful Baptists hold different views on these |
-| Other Christian traditions | Describe them accurately and respectfully, then give the Baptist view with Scripture | Helps people understand friends and family without mockery |
+| Where faithful Christians disagree (Calvinism and Arminianism, end times, spiritual gifts, Bible translations) | Explain the main views fairly, each with the passages its holders use, and never choose or lean; take a side only where `doctrine.md` does (#236) | Faithful believers hold different views on these, and the doctrine leaves them open |
+| Other Christian traditions | Describe them accurately and respectfully, then show what Scripture says | Helps people understand friends and family without mockery |
 | Who can use it | Signed-in users only | Gives each person a daily limit, and stops people from using our free quota as their own free AI |
 | Daily limit | 15 questions per person per day, resetting at 00:00 UTC (when Cloudflare's free quota resets) | Shares the free quota fairly |
 | Languages | All 10 app languages; answers come in the app's language | Matches the rest of the app; each language is checked before release |
@@ -59,7 +62,7 @@ updating those too.
 | Until release | The Bible Helper shows only in debug builds (`BuildConfig.AI_HELPER_ENABLED`); #131 turns it on for release builds | Work can merge to `main` without reaching closed-test or production users |
 | Who writes the doctrine summary | Claude drafted it from the BF&M 2000 at your request (2026-10-30); you reviewed it and approved it on 2026-11-02. Claude also drafts the rest of #121 (answer rules and test questions) | It's the heart of the feature, so nothing else waits for its approval (section 9) |
 
-## 3. Why Cloudflare Workers AI (free options compared, checked 2026-10-27, Cloudflare re-checked 2026-11-02 and 2026-11-05)
+## 3. Why Cloudflare Workers AI (free options compared, checked 2026-10-27, Cloudflare re-checked 2026-11-02, 2026-11-05 and 2026-11-10)
 
 | Option | Cost | Why or why not |
 |---|---|---|
@@ -75,7 +78,7 @@ Free tiers change often: re-check the numbers in #122 and again before release (
 
 Cloudflare measures free-plan usage in neurons per million tokens (a token is about ¾ of an
 English word). Gemma 4 26B costs 9,091 neurons per million input tokens and 27,273 per million
-output tokens (unchanged when re-checked on 2026-11-02 and 2026-11-05). Every response reports the neurons it
+output tokens (unchanged when re-checked on 2026-11-02, 2026-11-05 and 2026-11-10). Every response reports the neurons it
 used in `usage.neurons`.
 
 Measured in #122 (2026-11-02, 10 test questions, thinking off): our instructions plus one question
@@ -219,16 +222,21 @@ the tests could be built and tried with it in debug builds. The developer approv
 `{bookCodes}` filled in by `SystemPrompt.kt`:
 
 1. **Who it is:** the Bible Helper inside TreasuredWord, an AI that helps people understand the
-   Bible from a Baptist perspective; not a pastor, and not God's voice.
+   Bible, with Scripture as its authority; not a pastor, and not God's voice.
 2. **What it believes:** `doctrine.md`, a one-to-two-page summary of the BF&M 2000 in our own
    words: Scripture; God; Christ; salvation by grace through faith; the church and its two
    ordinances, with believer's baptism by immersion; the priesthood of believers; religious
    liberty; the family; last things.
 3. **Where Baptists differ, and other traditions:** the rules from section 2.
 4. **How to answer:** plain words, about 250 words or fewer, Scripture first, in `{language}`.
-   Every passage written as `[[BOOK C:V]]` or `[[BOOK C:V-V]]` with the USFM book code (the list
-   is appended by `SystemPrompt.kt`). Don't quote the verse text, because the app shows it.
-   Suggest reading the passage when that helps.
+   Every passage written as `[[BOOK C:V]]`, `[[BOOK C:V-V]]` or `[[BOOK C]]` (a whole chapter)
+   with the USFM book code (the list is appended by `SystemPrompt.kt`); in its own sentences, book
+   names in the reader's language, never codes. Cite a passage only if it says the point itself.
+   Don't quote the verse text, because the app shows it. Suggest reading the passage when that
+   helps. Where `doctrine.md` takes a position, state it plainly and kindly, never as undecided
+   (instructions v2, #206). v6 to v12 tried a Bible-first
+   framing, other answer shapes, extra rules and a fuller `doctrine.md` (#236). Graded strictly,
+   each gave Wrong answers, while v5 gave none in three runs, so v5 ships unchanged (2026-11-10).
 5. **Staying on topic:** the Bible, theology, church history, prayer and Christian living.
    Anything else gets a kind "no", with a Bible-related angle when there is one.
 6. **Care and safety:** if the person mentions self-harm, suicide, abuse or danger, start with
@@ -275,11 +283,12 @@ lines (link only, source named), through `utils/ExternalLinks.kt`.
   markers), history trimming, and sign-out removing history.
 - **Evaluation** (`docs/ai_helper_eval.md`, run with #126 before every change to the
   instructions or model, and before release): about 50 questions in eight groups — core doctrine,
-  Baptist distinctives, where Baptists disagree, other traditions, life and care, crisis, tricks
-  and off-topic, and other languages — each graded on faithfulness to Scripture, Baptist
-  accuracy, fairness, valid references, tone and safety.
-  **Release bar:** no wrong answers on core doctrine, no invented verses, every crisis question
-  handled, and at least 90% rated good overall. Plus a Baptist pastor's review, if one is
+  Baptist distinctives, where Christians disagree, other traditions, life and care, crisis, tricks
+  and off-topic, and other languages — each graded on faithfulness to Scripture, doctrine,
+  Scripture first, fairness, valid references, tone and safety.
+  **Release bar** (updated 2026-11-10, #236; `docs/ai_helper_eval.md` has the exact rules): no
+  wrong answers, no invented or misattributed verses, every crisis question handled, and at least
+  70% rated good, graded strictly, in each of two runs in a row. Plus a Baptist pastor's review, if one is
   available.
 - **On a device:** light and dark, portrait and landscape (emulator), a translated language,
   offline, the server asleep, the daily limit reached, and Cloudflare's quota used up
@@ -338,6 +347,13 @@ with no beta or deprecation notice, at the prices above; Cloudflare still doesn'
 what we send; its Workers AI terms say nothing about users' ages or regions and ask us to follow
 the model's license; the Gemma 4 license page is still Apache 2.0, which has no use policy or
 display rule.
+
+Re-checked again on 2026-11-10, when the Bible Helper went into release builds (#131): the same.
+10,000 free neurons a day, reset at 00:00 UTC, errors past it; Gemma 4 26B still at 9,091 and
+27,273 neurons per million input and output tokens, with no beta or deprecation note; Cloudflare
+still doesn't train on what we send and doesn't keep it after answering, except where the law
+requires it or for features we don't use (AI Gateway logging, batch); the Gemma 4 license page is
+still Apache 2.0.
 
 - [Gemini API Additional Terms of Service](https://ai.google.dev/gemini-api/terms)
 - Cloudflare Workers AI: [pricing](https://developers.cloudflare.com/workers-ai/platform/pricing/),
