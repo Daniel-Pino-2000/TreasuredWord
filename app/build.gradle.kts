@@ -55,8 +55,9 @@ android {
         // Every bundle uploaded to Play needs a higher versionCode (docs/release.md).
         // 1.5: asks to update when a newer version is on Google Play (#202).
         // 1.6: landscape keyboard and rotation fixes (#234).
-        versionCode = 7
-        versionName = "1.6"
+        // 1.7: color themes, daily verse widget, verse images, Android 7–11 crash fix (#264).
+        versionCode = 8
+        versionName = "1.7"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
