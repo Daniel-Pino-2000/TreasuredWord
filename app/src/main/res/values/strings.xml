@@ -449,11 +449,11 @@
     <string name="ai_conversations_title">Conversations</string>
     <string name="ai_action_new_conversation">New conversation</string>
     <string name="ai_signed_out_title">Ask the Bible Helper</string>
-    <string name="ai_signed_out_message">Ask questions about the Bible and the Christian faith, and get answers from a Baptist perspective with the verses behind them. Sign in to start asking.</string>
+    <string name="ai_signed_out_message">Ask questions about the Bible and the Christian faith, and get answers from Scripture with the verses behind them. Sign in to start asking.</string>
     <string name="ai_intro_title">What would you like to ask?</string>
-    <string name="ai_intro_message">Answers come from a Baptist perspective, with the verses they rest on. Tap a question or write your own.</string>
+    <string name="ai_intro_message">Answers come from the Bible, with the verses they rest on. Tap a question or write your own.</string>
     <string name="ai_starter_saved">How can I be saved?</string>
-    <string name="ai_starter_baptism">Why do Baptists baptize by immersion?</string>
+    <string name="ai_starter_baptism">What does the Bible say about baptism?</string>
     <string name="ai_starter_trinity">What is the Trinity?</string>
     <string name="ai_starter_prayer">How should I pray?</string>
     <string name="ai_starter_start_reading">Where should I start reading the Bible?</string>
@@ -478,7 +478,7 @@
     </plurals>
     <string name="ai_notice_title">Before you ask</string>
     <string name="ai_notice_ai">The Bible Helper is an AI. It can make mistakes.</string>
-    <string name="ai_notice_baptist">It answers from a Baptist perspective, following the Baptist Faith and Message 2000.</string>
+    <string name="ai_notice_baptist">It answers from the Bible, in line with the Baptist Faith and Message 2000.</string>
     <!-- Link to the Baptist Faith and Message 2000, a Baptist confession of faith; the page is in English -->
     <string name="ai_notice_bfm_link">Read the Baptist Faith and Message 2000</string>
     <string name="ai_notice_scripture">Check what it says against Scripture, as the Bereans did (Acts 17:11).</string>

@@ -424,11 +424,11 @@
     <string name="ai_conversations_title">Conversaciones</string>
     <string name="ai_action_new_conversation">Nueva conversación</string>
     <string name="ai_signed_out_title">Pregúntale al Ayudante bíblico</string>
-    <string name="ai_signed_out_message">Haz preguntas sobre la Biblia y la fe cristiana, y recibe respuestas desde una perspectiva bautista con los versículos que las respaldan. Inicia sesión para empezar a preguntar.</string>
+    <string name="ai_signed_out_message">Haz preguntas sobre la Biblia y la fe cristiana, y recibe respuestas de las Escrituras con los versículos que las respaldan. Inicia sesión para empezar a preguntar.</string>
     <string name="ai_intro_title">¿Qué te gustaría preguntar?</string>
-    <string name="ai_intro_message">Las respuestas vienen desde una perspectiva bautista, con los versículos en que se basan. Toca una pregunta o escribe la tuya.</string>
+    <string name="ai_intro_message">Las respuestas vienen de la Biblia, con los versículos en que se basan. Toca una pregunta o escribe la tuya.</string>
     <string name="ai_starter_saved">¿Cómo puedo ser salvo?</string>
-    <string name="ai_starter_baptism">¿Por qué los bautistas bautizan por inmersión?</string>
+    <string name="ai_starter_baptism">¿Qué dice la Biblia sobre el bautismo?</string>
     <string name="ai_starter_trinity">¿Qué es la Trinidad?</string>
     <string name="ai_starter_prayer">¿Cómo debo orar?</string>
     <string name="ai_starter_start_reading">¿Por dónde empiezo a leer la Biblia?</string>
@@ -451,7 +451,7 @@
     </plurals>
     <string name="ai_notice_title">Antes de preguntar</string>
     <string name="ai_notice_ai">El Ayudante bíblico es una IA. Puede equivocarse.</string>
-    <string name="ai_notice_baptist">Responde desde una perspectiva bautista, siguiendo la Fe y Mensaje Bautista 2000.</string>
+    <string name="ai_notice_baptist">Responde desde la Biblia, de acuerdo con la Fe y Mensaje Bautista 2000.</string>
     <string name="ai_notice_bfm_link">Leer la Fe y Mensaje Bautista 2000 (en inglés)</string>
     <string name="ai_notice_scripture">Compara lo que dice con las Escrituras, como hacían los de Berea (Hechos 17:11).</string>
     <string name="ai_notice_personal">No compartas datos personales, como tu nombre completo, tu dirección o tu salud.</string>

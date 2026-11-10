@@ -398,11 +398,11 @@
     <string name="ai_conversations_title">Mga usapan</string>
     <string name="ai_action_new_conversation">Bagong usapan</string>
     <string name="ai_signed_out_title">Magtanong sa Katulong sa Bibliya</string>
-    <string name="ai_signed_out_message">Magtanong tungkol sa Bibliya at sa pananampalatayang Kristiyano, at makakuha ng mga sagot mula sa pananaw ng Baptist kasama ang mga talatang pinagbabatayan nito. Mag-sign in para magsimulang magtanong.</string>
+    <string name="ai_signed_out_message">Magtanong tungkol sa Bibliya at sa pananampalatayang Kristiyano, at makakuha ng mga sagot mula sa Kasulatan kasama ang mga talatang pinagbabatayan nito. Mag-sign in para magsimulang magtanong.</string>
     <string name="ai_intro_title">Ano ang gusto mong itanong?</string>
-    <string name="ai_intro_message">Mula sa pananaw ng Baptist ang mga sagot, kasama ang mga talatang pinagbabatayan nito. Mag-tap ng tanong o isulat ang sarili mong tanong.</string>
+    <string name="ai_intro_message">Mula sa Bibliya ang mga sagot, kasama ang mga talatang pinagbabatayan nito. Mag-tap ng tanong o isulat ang sarili mong tanong.</string>
     <string name="ai_starter_saved">Paano ako maliligtas?</string>
-    <string name="ai_starter_baptism">Bakit nagbabautismo ang mga Baptist sa paglulubog?</string>
+    <string name="ai_starter_baptism">Ano ang sinasabi ng Bibliya tungkol sa bautismo?</string>
     <string name="ai_starter_trinity">Ano ang Trinidad?</string>
     <string name="ai_starter_prayer">Paano ako dapat manalangin?</string>
     <string name="ai_starter_start_reading">Saan ako dapat magsimulang magbasa ng Bibliya?</string>
@@ -424,7 +424,7 @@
     </plurals>
     <string name="ai_notice_title">Bago ka magtanong</string>
     <string name="ai_notice_ai">AI ang Katulong sa Bibliya. Puwede itong magkamali.</string>
-    <string name="ai_notice_baptist">Sumasagot ito mula sa pananaw ng Baptist, ayon sa Baptist Faith and Message 2000.</string>
+    <string name="ai_notice_baptist">Sumasagot ito mula sa Bibliya, alinsunod sa Baptist Faith and Message 2000.</string>
     <string name="ai_notice_bfm_link">Basahin ang Baptist Faith and Message 2000 (sa Ingles)</string>
     <string name="ai_notice_scripture">Suriin ang sinasabi nito ayon sa Kasulatan, gaya ng ginawa ng mga taga-Berea (Mga Gawa 17:11).</string>
     <string name="ai_notice_personal">Huwag magbahagi ng personal na detalye, gaya ng buong pangalan, address, o kalusugan mo.</string>

@@ -387,11 +387,11 @@
     <string name="ai_conversations_title">대화</string>
     <string name="ai_action_new_conversation">새 대화</string>
     <string name="ai_signed_out_title">성경 도우미에게 물어보세요</string>
-    <string name="ai_signed_out_message">성경과 기독교 신앙에 대해 질문하고, 침례교 관점에서 근거 구절과 함께 답을 받아 보세요. 질문하려면 로그인하세요.</string>
+    <string name="ai_signed_out_message">성경과 기독교 신앙에 대해 질문하고, 성경에서 근거 구절과 함께 답을 받아 보세요. 질문하려면 로그인하세요.</string>
     <string name="ai_intro_title">무엇이 궁금한가요?</string>
-    <string name="ai_intro_message">답변은 침례교 관점에서, 근거가 되는 구절과 함께 제공돼요. 질문을 탭하거나 직접 써 보세요.</string>
+    <string name="ai_intro_message">답변은 성경에서, 근거가 되는 구절과 함께 제공돼요. 질문을 탭하거나 직접 써 보세요.</string>
     <string name="ai_starter_saved">어떻게 구원받을 수 있나요?</string>
-    <string name="ai_starter_baptism">침례교인은 왜 물에 잠기는 침례를 하나요?</string>
+    <string name="ai_starter_baptism">성경은 세례에 대해 뭐라고 말하나요?</string>
     <string name="ai_starter_trinity">삼위일체란 무엇인가요?</string>
     <string name="ai_starter_prayer">어떻게 기도해야 하나요?</string>
     <string name="ai_starter_start_reading">성경은 어디서부터 읽으면 좋을까요?</string>
@@ -412,7 +412,7 @@
     </plurals>
     <string name="ai_notice_title">질문하기 전에</string>
     <string name="ai_notice_ai">성경 도우미는 AI예요. 실수할 수 있어요.</string>
-    <string name="ai_notice_baptist">침례교 관점에서, Baptist Faith and Message 2000을 따라 답해요.</string>
+    <string name="ai_notice_baptist">성경을 바탕으로, Baptist Faith and Message 2000에 맞게 답해요.</string>
     <string name="ai_notice_bfm_link">Baptist Faith and Message 2000 읽기(영어)</string>
     <string name="ai_notice_scripture">베뢰아 사람들처럼 성경에 비추어 확인해 보세요(사도행전 17:11).</string>
     <string name="ai_notice_personal">실명, 주소, 건강 정보 같은 개인 정보는 공유하지 마세요.</string>
