@@ -127,6 +127,13 @@ class AskViewModelTest {
         viewModel.state.first { !it.isSending }
     }
 
+    /** [awaitAnswer] without suspending, for tests about the limit's reset timer: while the test
+     *  is suspended, runTest moves virtual time on by itself and can fire the timer early. */
+    private fun awaitAnswerBlocking() {
+        val until = System.currentTimeMillis() + 5_000
+        while (viewModel.state.value.isSending && System.currentTimeMillis() < until) Thread.sleep(10)
+    }
+
     @Test
     fun `a question and its answer are shown and saved, and the draft clears`() = runTest {
         ask("How can I be saved?")
@@ -341,8 +348,17 @@ class AskViewModelTest {
         Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
         restart()
         hitDailyLimit()
-        ask("What is the Trinity?")
+        viewModel.onDraftChange("What is the Trinity?")
+        viewModel.send("en")
+        awaitAnswerBlocking()
         assertEquals(AiAskResult.DailyLimit(day), viewModel.state.value.limit)
+        // The app opened again, and left open past the reset. Its timer starts here, on the test's
+        // thread: started on MockEngine's thread, the scheduler missed it now and then (#280).
+        viewModel.viewModelScope.cancel()
+        restart()
+        viewModel.openConversation(1L)
+        assertEquals(AiAskResult.DailyLimit(day), viewModel.state.value.limit)
+        assertEquals(AiAskResult.DailyLimit(day), viewModel.state.value.failure)
 
         clock = day
         advanceTimeBy(day + 1)
