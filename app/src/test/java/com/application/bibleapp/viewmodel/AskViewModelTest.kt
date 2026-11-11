@@ -15,6 +15,7 @@ import com.application.bibleapp.data.remote.HttpClientProvider
 import com.application.bibleapp.data.remote.ServerWake
 import com.application.bibleapp.data.repository.AiConversationStore
 import com.application.bibleapp.data.repository.AiHelperRepository
+import androidx.lifecycle.viewModelScope
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
@@ -26,6 +27,7 @@ import io.ktor.http.headersOf
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
@@ -108,6 +110,10 @@ class AskViewModelTest {
 
     @After
     fun tearDown() {
+        // A coroutine still running when the test ends (a MockEngine answer on its way, a limit's
+        // reset timer) would resume after resetMain, with no Main dispatcher, and fail whichever
+        // test runs next with UncaughtExceptionsBeforeTest (#280). Stop them first.
+        viewModel.viewModelScope.cancel()
         Dispatchers.resetMain()
     }
 
