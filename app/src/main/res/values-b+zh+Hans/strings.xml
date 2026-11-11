@@ -438,6 +438,8 @@
     <string name="ai_crisis_message">如果你正处于危险之中，或有伤害自己的念头，请现在就联系身边的人。求助热线今天就可以和你交谈。</string>
     <string name="ai_crisis_find_helpline">查找求助热线</string>
     <string name="ai_crisis_emergency">如遇紧急情况，请拨打当地的紧急电话。</string>
+    <!-- Heading of the verse of comfort in the crisis help card, after the helpline (#282) -->
+    <string name="ai_crisis_comfort">安慰的话语</string>
     <!-- Bible Helper: "Ask about this verse" from the reader (#132) -->
     <!-- The question ready to edit when the reader's selected verses open the Ask tab -->
     <string name="ai_passage_default_question">这段经文是什么意思？</string>

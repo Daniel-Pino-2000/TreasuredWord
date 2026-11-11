@@ -509,6 +509,8 @@
     <string name="ai_crisis_message">If you\'re in danger or thinking about hurting yourself, please reach out to someone now. A helpline can talk with you today.</string>
     <string name="ai_crisis_find_helpline">Find a helpline</string>
     <string name="ai_crisis_emergency">In an emergency, call your local emergency number.</string>
+    <!-- Heading of the verse of comfort in the crisis help card, after the helpline (#282) -->
+    <string name="ai_crisis_comfort">A word of comfort</string>
     <!-- Bible Helper: "Ask about this verse" from the reader (#132) -->
     <!-- The question ready to edit when the reader's selected verses open the Ask tab -->
     <string name="ai_passage_default_question">What does this passage mean?</string>

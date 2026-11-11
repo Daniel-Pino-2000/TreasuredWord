@@ -40,7 +40,7 @@ class SystemPromptTest {
         // The evaluation runs of #206: the crisis card is drawn above the answer (#130), and the
         // app shows a whole chapter as a card (#190), so the instructions may ask for one.
         val prompt = SystemPrompt.forLanguage("en")
-        assertEquals("5", SystemPrompt.PROMPT_VERSION)
+        assertEquals("13", SystemPrompt.PROMPT_VERSION)
         assertFalse("crisis lines below" in prompt)
         assertTrue("help card above your answer" in prompt)
         assertTrue("[[BOOK C]] for a" in prompt && "[[PSA 23]]" in prompt)
@@ -48,6 +48,16 @@ class SystemPromptTest {
         assertTrue("as undecided" in prompt && "one view among several" in prompt)
         assertTrue("each passage in its own marker" in prompt && "two to four passages" in prompt)
         assertTrue("name books as readers of English" in prompt)
+    }
+
+    @Test
+    fun aCrisisAnswerChoosesItsVerseOfComfortFromTheAppsList() {
+        // The same passages as the app's CRISIS_COMFORT_VERSES (#282), which it shows in the help card.
+        val prompt = SystemPrompt.forLanguage("en")
+        for (marker in listOf("[[PSA 34:18]]", "[[PSA 147:3]]", "[[PSA 46:1]]", "[[ISA 41:10]]", "[[PSA 9:9]]", "[[MAT 11:28]]", "[[ROM 8:38-39]]", "[[LAM 3:22-23]]")) {
+            assertTrue(marker in prompt, marker)
+        }
+        assertTrue("one verse of comfort" in prompt)
     }
 
     @Test

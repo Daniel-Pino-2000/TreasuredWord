@@ -21,8 +21,10 @@ object SystemPrompt {
      * is v5's instructions with v10's doctrine.md, and alcohol off the list of open questions. v12
      * gave one Wrong answer in two runs, so the developer chose to ship v5 unchanged (2026-11-10):
      * the files are af7f9e8's again, under v5's number, because answers are the ones v5's runs measured.
+     * v13 is v5 plus one verse of comfort from a fixed list in crisis answers, which the app shows
+     * in the help card (#282). Its number skips the v6-v12 experiments, so reports can't mix them up.
      */
-    const val PROMPT_VERSION = "5"
+    const val PROMPT_VERSION = "13"
 
     /** The app's language tags (`AppLanguage.supportedTags`) and the English name the model is told to answer in. */
     val languageNames: Map<String, String> = mapOf(

@@ -461,6 +461,8 @@
     <string name="ai_crisis_message">Se você está em perigo ou pensando em se machucar, procure alguém agora. Uma linha de apoio pode conversar com você ainda hoje.</string>
     <string name="ai_crisis_find_helpline">Encontrar uma linha de apoio</string>
     <string name="ai_crisis_emergency">Em uma emergência, ligue para o número de emergência local.</string>
+    <!-- Heading of the verse of comfort in the crisis help card, after the helpline (#282) -->
+    <string name="ai_crisis_comfort">Uma palavra de consolo</string>
     <!-- Bible Helper: "Ask about this verse" from the reader (#132) -->
     <!-- The question ready to edit when the reader's selected verses open the Ask tab -->
     <string name="ai_passage_default_question">O que significa esta passagem?</string>
