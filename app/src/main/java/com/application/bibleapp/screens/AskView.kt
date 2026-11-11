@@ -48,6 +48,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -98,6 +99,7 @@ import com.application.bibleapp.utils.parseAiAnswer
 import com.application.bibleapp.utils.UiText
 import com.application.bibleapp.utils.rememberExternalLinks
 import com.application.bibleapp.utils.rememberIsOnline
+import com.application.bibleapp.viewmodel.AskChatScroll
 import com.application.bibleapp.viewmodel.AskUiState
 import com.application.bibleapp.viewmodel.AskViewModel
 import com.application.bibleapp.viewmodel.BibleViewModel
@@ -214,6 +216,7 @@ fun AskView(
         onRetry = { askViewModel.retry(language) },
         onSignInClick = onSignInClick,
         onRemovePassage = askViewModel::removePassage,
+        scroll = askViewModel.chatScroll,
         answer = { message ->
             AiAnswer(
                 message = message,
@@ -241,20 +244,27 @@ private fun AskChat(
     onRetry: () -> Unit,
     onSignInClick: () -> Unit,
     onRemovePassage: () -> Unit,
+    scroll: AskChatScroll = remember { AskChatScroll() },
     answer: @Composable (AiMessage) -> Unit
 ) {
-    val listState = rememberLazyListState()
+    // Starts where the person left it: each tab tap is a new screen, whose list would start at the
+    // top after reading a cited verse (#278).
+    val listState = rememberLazyListState(scroll.firstVisibleItem, scroll.firstVisibleItemOffset)
+    LaunchedEffect(listState, scroll) {
+        snapshotFlow { listState.firstVisibleItemIndex to listState.firstVisibleItemScrollOffset }
+            .collect { (item, offset) -> scroll.savePosition(item, offset) }
+    }
     val waitingLong = rememberWaitingLong(waiting = state.isSending, afterMillis = ASK_SLOW_AFTER_MILLIS)
-    // A new question scrolls down to the "Thinking…" row; its answer then shows from its first line.
-    // Indexes from the state, not the list's layout, which hasn't caught up yet when this runs.
-    // With messages there's no intro item, so the "Thinking…" row or failure card is right after them.
-    // The server-waking hint makes that row taller later, so it scrolls again then (#213).
-    LaunchedEffect(state.messages.size, state.isSending, state.failure, waitingLong) {
-        val lastQuestion = state.messages.indexOfLast { it.role == AiRole.USER }
-        when {
-            state.messages.isEmpty() -> Unit
-            state.isSending || state.failure != null -> listState.animateScrollToItem(state.messages.size)
-            lastQuestion >= 0 -> listState.animateScrollToItem(lastQuestion)
+    // A new question scrolls down to the "Thinking…" row; its answer then shows from its first line
+    // (see AskChatScroll). Coming back to the screen with nothing new leaves the list where it was.
+    LaunchedEffect(state.conversationId, state.messages.size, state.isSending, state.failure, waitingLong) {
+        val target = scroll.autoScrollTarget(state, waitingLong) ?: return@LaunchedEffect
+        // Before the list's first layout an animated scroll does nothing (it has no items yet),
+        // which is what left a returning chat at the top; jump there instead.
+        if (listState.layoutInfo.totalItemsCount > 0) {
+            listState.animateScrollToItem(target)
+        } else {
+            listState.scrollToItem(target)
         }
     }
 

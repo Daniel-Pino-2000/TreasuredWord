@@ -133,6 +133,9 @@ class AskViewModel(
         settings.limit?.let(::applyLimit)
     }
 
+    /** Where the chat is scrolled, so it's still there after reading a cited verse (#278). */
+    val chatScroll = AskChatScroll()
+
     private val _draft = MutableStateFlow("")
     val draft: StateFlow<String> = _draft.asStateFlow()
 

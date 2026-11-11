@@ -450,4 +450,45 @@ class AskViewModelTest {
 
         assertEquals(passage, viewModel.state.value.passage)
     }
+
+    /** What the chat scrolls to as the Ask screen shows [viewModel]'s state now (null: stays put). */
+    private fun autoScroll() = viewModel.chatScroll.autoScrollTarget(viewModel.state.value, waitingLong = false)
+
+    @Test
+    fun `coming back from a cited verse leaves the chat where it was (#278)`() = runTest {
+        ask("Who was Moses?")
+        ask("And Aaron?")
+        assertEquals(2, autoScroll()) // the last answer, from its question
+        viewModel.chatScroll.savePosition(item = 1, offset = 240) // the person scrolled up to read
+
+        // The reader opens; tapping the Ask tab brings a new Ask screen with the same state.
+        assertNull(autoScroll())
+        assertEquals(1, viewModel.chatScroll.firstVisibleItem)
+        assertEquals(240, viewModel.chatScroll.firstVisibleItemOffset)
+    }
+
+    @Test
+    fun `an answer that came while reading shows from its question on the way back (#278)`() = runTest {
+        ask("Who was Ruth?")
+        autoScroll()
+
+        ask("And Boaz?") // answered while the reader was open
+
+        assertEquals(2, autoScroll())
+    }
+
+    @Test
+    fun `another conversation or a new one doesn't keep the old place (#278)`() = runTest {
+        ask("Who was David?")
+        ask("And Jonathan?")
+        autoScroll()
+        viewModel.newConversation()
+        assertEquals(0, autoScroll())
+        ask("Who was Esther?")
+        autoScroll()
+
+        viewModel.openConversation(1L)
+
+        assertEquals(2, autoScroll())
+    }
 }
