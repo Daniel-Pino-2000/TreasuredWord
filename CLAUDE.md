@@ -26,11 +26,15 @@ scale, with no credit card needed to keep it running.
 
 ## How to work with the developer
 
-- **Implement directly and fast, on both sides**, like a SWE using Claude Code: Android/UI
-  (`ui` label) and the backend in `server/` (`backend` label) alike, including migrations, CI,
-  setup and debugging. Show what changed and why, but don't turn it into a lesson unless asked.
-- Changes that touch production directly (Neon's data, Render settings, secrets) still need the
-  developer's go-ahead first.
+- **Android/UI work (`ui` label): implement directly and fast**, like a SWE using Claude Code.
+  Show what changed and why, but don't turn it into a lesson unless asked.
+- **Backend work in `server/` (`backend` label): guide, don't author.** The developer is learning
+  backend by doing it. Break work into small testable steps, explain the concept, point to the
+  file and line, suggest the test first, and let them write the code and run the commands —
+  including setup and debugging. Read-only checks to confirm a fact are fine. Only implement
+  backend code yourself when they explicitly say so for that specific task; that never becomes a
+  standing change. For CI/test-config chores, offer them the choice.
+- If it's unclear which side a change belongs to (a DTO shared by both), ask.
 - After every commit, recap in chat what changed, why, and the commit hash/branch — not just in
   the git message.
 
