@@ -28,4 +28,8 @@
     <color name="widget_preview_background">#FFEDDFC4</color>
     <color name="widget_preview_title">#FF805A2B</color>
     <color name="widget_preview_text">#FF3D2D12</color>
+    <!-- The widget's verse text (#272), drawn by an XML TextView rather than Glance, so it takes
+         the color Glance gives the title and reference: Parchment's onPrimaryContainer here (and
+         in values-night), the wallpaper's (Material You) on Android 12+ (values-v31). -->
+    <color name="widget_verse_text">@color/widget_preview_text</color>
 </resources>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The daily verse widget's verse on Android 8+ (#272), embedded in the Glance layout. Widgets are
+     drawn by the launcher, so the app can't measure text; an autosizing TextView lets the launcher
+     fit it instead: a short verse grows to fill a big widget, a long one shrinks before it's cut.
+     The line count and text are set from DailyVerseWidget, which measures the verse with these
+     same settings (WidgetVerseFit.kt): keep them in step. Centered vertically, so a widget taller
+     than the verse splits the space above and below it. -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/widget_verse_text"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:autoSizeTextType="uniform"
+    android:autoSizeMinTextSize="@dimen/widget_verse_min_text_size"
+    android:autoSizeMaxTextSize="@dimen/widget_verse_max_text_size"
+    android:autoSizeStepGranularity="1sp"
+    android:breakStrategy="high_quality"
+    android:ellipsize="end"
+    android:fontFamily="serif"
+    android:gravity="center_vertical|start"
+    android:hyphenationFrequency="none"
+    android:includeFontPadding="false"
+    android:textColor="@color/widget_verse_text"
+    tools:ignore="UnusedAttribute"
+    tools:text="Let nothing be done through strife or vainglory; but in lowliness of mind let each esteem other better than themselves." />

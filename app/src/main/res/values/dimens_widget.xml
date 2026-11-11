@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The daily verse widget's verse sizes on Android 8+ (#272): the launcher picks the largest
+         that fits. Kept in step with WIDGET_VERSE_MIN_SP/MAX_SP in DailyVerseWidget.kt. -->
+    <dimen name="widget_verse_min_text_size">12sp</dimen>
+    <dimen name="widget_verse_max_text_size">22sp</dimen>
+</resources>

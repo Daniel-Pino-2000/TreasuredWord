@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Android 12+: the wallpaper's onPrimaryContainer, the same system color Glance's
+         DynamicThemeColorProviders uses for the widget's title and reference (#272). -->
+    <color name="widget_verse_text">@android:color/system_accent1_900</color>
+</resources>
