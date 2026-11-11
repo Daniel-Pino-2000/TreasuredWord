@@ -419,12 +419,21 @@
     <string name="ai_question_placeholder">Pose une question sur la Bible</string>
     <string name="ai_action_send">Envoyer</string>
     <string name="ai_answer_label">Réponse d\'IA</string>
-    <string name="ai_thinking">Réflexion…</string>
+    <!-- What the Bible Helper is doing while an answer comes (#283): only true steps -->
+    <string name="ai_stage_waking">Réveil du serveur…</string>
+    <string name="ai_stage_writing">Rédaction de ta réponse…</string>
+    <string name="ai_stage_still_writing">Toujours en cours. Les réponses plus longues prennent un peu plus de temps.</string>
+    <string name="ai_waking_detail">Le serveur était en veille et se réveille. La première réponse peut prendre jusqu\'à une minute ; les suivantes arrivent plus vite.</string>
+    <!-- Short titles above the failure messages under an unanswered question (#283) -->
+    <string name="ai_failure_unavailable_title">Impossible d\'obtenir une réponse</string>
+    <string name="ai_failure_offline_title">Tu es hors ligne</string>
+    <string name="ai_failure_rate_limited_title">Trop de questions à la fois</string>
+    <string name="ai_failure_signed_out_title">Tu as été déconnecté</string>
     <string name="ai_offline_banner">Tu es hors ligne. Tes conversations sont toujours là ; pour poser une question, il faut Internet.</string>
-    <string name="ai_failure_offline">Impossible d\'envoyer ta question : tu es hors ligne.</string>
-    <string name="ai_failure_unavailable">L\'Assistant biblique n\'a pas pu répondre pour le moment.</string>
-    <string name="ai_failure_rate_limited">Ça fait beaucoup de questions à la fois. Attends un instant, puis réessaie.</string>
-    <string name="ai_failure_signed_out">Tu as été déconnecté. Reconnecte-toi pour continuer à poser des questions.</string>
+    <string name="ai_failure_offline">Ta question est enregistrée. Renvoie-la quand tu seras de nouveau en ligne.</string>
+    <string name="ai_failure_unavailable">Ta question est enregistrée. Réessaie dans un instant.</string>
+    <string name="ai_failure_rate_limited">Attends un instant, puis réessaie.</string>
+    <string name="ai_failure_signed_out">Reconnecte-toi pour continuer à poser des questions.</string>
     <string name="ai_failure_daily_limit">Tu as posé toutes tes questions pour aujourd\'hui. Tu pourras en poser d\'autres à partir de : %1$s.</string>
     <string name="ai_failure_resting">L\'Assistant biblique se repose : le service gratuit qu\'il utilise a atteint sa limite pour aujourd\'hui. Il revient à partir de : %1$s.</string>
     <plurals name="ai_remaining_today">

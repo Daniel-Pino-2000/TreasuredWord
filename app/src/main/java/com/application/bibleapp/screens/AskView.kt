@@ -33,13 +33,17 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.AutoAwesome
+import androidx.compose.material.icons.outlined.Bedtime
+import androidx.compose.material.icons.outlined.HourglassEmpty
+import androidx.compose.material.icons.outlined.SyncProblem
 import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material.icons.outlined.QuestionAnswer
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
@@ -65,6 +69,9 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
@@ -85,7 +92,8 @@ import com.application.bibleapp.components.AiReportSheet
 import com.application.bibleapp.components.FIND_A_HELPLINE_URL
 import com.application.bibleapp.components.AiVerseCard
 import com.application.bibleapp.components.AiVerseCardList
-import com.application.bibleapp.components.ServerWakeHint
+import com.application.bibleapp.components.AiAnswerPlaceholder
+import com.application.bibleapp.components.AiTypingDots
 import com.application.bibleapp.components.rememberWaitingLong
 import com.application.bibleapp.data.model.AiMessage
 import com.application.bibleapp.data.model.AiQuestionPassage
@@ -133,11 +141,10 @@ private val STARTER_QUESTIONS = listOf(
 )
 
 /**
- * The app wakes a sleeping server before asking, and says so ([AskUiState.isWaking], #280). AI
- * answers take up to about 26 s on Render's logs, so a wait past this is something else being
- * slow, most likely the server falling asleep anyway.
+ * Most answers come in 5–11 s (Render's logs, #280); past this the writing state says a longer
+ * answer takes a little more time (#283). Counted from when the question goes, after any waking.
  */
-private const val ASK_SLOW_AFTER_MILLIS = 30_000L
+private const val STILL_WRITING_AFTER_MILLIS = 15_000L
 
 /**
  * The Ask tab (#128): the Bible Helper's chat. Signed out it explains itself and offers sign-in;
@@ -273,11 +280,11 @@ private fun AskChat(
         snapshotFlow { listState.firstVisibleItemIndex to listState.firstVisibleItemScrollOffset }
             .collect { (item, offset) -> scroll.savePosition(item, offset) }
     }
-    val waitingLong = rememberWaitingLong(waiting = state.isSending, afterMillis = ASK_SLOW_AFTER_MILLIS)
+    val stillWriting = rememberWaitingLong(waiting = state.isSending && !state.isWaking, afterMillis = STILL_WRITING_AFTER_MILLIS)
     // A new question scrolls down to the "Thinking…" row; its answer then shows from its first line
     // (see AskChatScroll). Coming back to the screen with nothing new leaves the list where it was.
-    LaunchedEffect(state.conversationId, state.messages.size, state.isSending, state.isWaking, state.failure, waitingLong) {
-        val target = scroll.autoScrollTarget(state, waitingLong) ?: return@LaunchedEffect
+    LaunchedEffect(state.conversationId, state.messages.size, state.isSending, state.isWaking, state.failure, stillWriting) {
+        val target = scroll.autoScrollTarget(state, stillWriting) ?: return@LaunchedEffect
         // Before the list's first layout an animated scroll does nothing (it has no items yet),
         // which is what left a returning chat at the top; jump there instead.
         if (listState.layoutInfo.totalItemsCount > 0) {
@@ -315,7 +322,7 @@ private fun AskChat(
             items(state.messages, key = { it.id }) { message ->
                 if (message.role == AiRole.USER) QuestionBubble(message) else answer(message)
             }
-            if (state.isSending) item(key = "thinking") { Thinking(waking = state.isWaking || waitingLong) }
+            if (state.isSending) item(key = "thinking") { Writing(waking = state.isWaking, stillWriting = stillWriting) }
             state.failure?.let { failure ->
                 item(key = "failure") {
                     FailureCard(failure = failure, online = online, onRetry = onRetry, onSignInClick = onSignInClick)
@@ -586,24 +593,58 @@ private fun answerText(
 }
 
 @Composable
-private fun Thinking(waking: Boolean) {
-    Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+private fun Writing(waking: Boolean, stillWriting: Boolean) {
+    val step = stringResource(
+        when {
+            waking -> R.string.ai_stage_waking
+            stillWriting -> R.string.ai_stage_still_writing
+            else -> R.string.ai_stage_writing
+        }
+    )
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
         AiAnswerLabel()
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-            CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
+            AiTypingDots()
+            // Read out as it changes, since the dots say nothing to TalkBack.
             Text(
-                text = stringResource(R.string.ai_thinking),
+                text = step,
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }
             )
         }
-        if (waking) ServerWakeHint()
+        if (waking) {
+            Text(
+                text = stringResource(R.string.ai_waking_detail),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        } else {
+            AiAnswerPlaceholder(modifier = Modifier.padding(top = Spacing.xs))
+        }
     }
 }
 
 /** Why the last question has no answer, and what can be done about it. */
 @Composable
 private fun FailureCard(failure: AiAskResult.Failure, online: Boolean, onRetry: () -> Unit, onSignInClick: () -> Unit) {
+    // The daily limit and resting messages are whole sentences with the reset time, also used by
+    // the banner, so they go without a title (#283).
+    val title = when (failure) {
+        AiAskResult.Offline -> stringResource(R.string.ai_failure_offline_title)
+        AiAskResult.Unavailable -> stringResource(R.string.ai_failure_unavailable_title)
+        AiAskResult.RateLimited -> stringResource(R.string.ai_failure_rate_limited_title)
+        AiAskResult.SignedOut -> stringResource(R.string.ai_failure_signed_out_title)
+        is AiAskResult.DailyLimit, is AiAskResult.Resting -> null
+    }
+    val icon = when (failure) {
+        AiAskResult.Offline -> Icons.Outlined.CloudOff
+        AiAskResult.Unavailable -> Icons.Outlined.SyncProblem
+        AiAskResult.RateLimited -> Icons.Outlined.HourglassEmpty
+        AiAskResult.SignedOut -> Icons.Outlined.AccountCircle
+        is AiAskResult.DailyLimit -> Icons.Outlined.Schedule
+        is AiAskResult.Resting -> Icons.Outlined.Bedtime
+    }
     val message = when (failure) {
         AiAskResult.Offline -> stringResource(R.string.ai_failure_offline)
         AiAskResult.Unavailable -> stringResource(R.string.ai_failure_unavailable)
@@ -617,24 +658,36 @@ private fun FailureCard(failure: AiAskResult.Failure, online: Boolean, onRetry: 
         shape = MaterialTheme.shapes.medium,
         modifier = Modifier.fillMaxWidth()
     ) {
-        Column(modifier = Modifier.padding(start = Spacing.lg, top = Spacing.md, end = Spacing.sm, bottom = Spacing.xs)) {
-            Text(
-                text = message,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(end = Spacing.sm)
-            )
+        Column(
+            modifier = Modifier.padding(Spacing.lg),
+            verticalArrangement = Arrangement.spacedBy(Spacing.md)
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(24.dp)
+                )
+                Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                    title?.let {
+                        Text(text = it, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Text(text = message, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
             when (failure) {
                 AiAskResult.Offline, AiAskResult.Unavailable, AiAskResult.RateLimited ->
-                    TextButton(onClick = onRetry, enabled = online, modifier = Modifier.align(Alignment.End)) {
-                        Text(stringResource(R.string.action_retry))
+                    Button(onClick = onRetry, enabled = online, modifier = Modifier.align(Alignment.End)) {
+                        Icon(Icons.Filled.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Text(stringResource(R.string.action_retry), modifier = Modifier.padding(start = Spacing.sm))
                     }
                 AiAskResult.SignedOut ->
-                    TextButton(onClick = onSignInClick, modifier = Modifier.align(Alignment.End)) {
+                    Button(onClick = onSignInClick, modifier = Modifier.align(Alignment.End)) {
                         Text(stringResource(R.string.action_sign_in))
                     }
                 // Trying again before the reset can't help.
-                is AiAskResult.DailyLimit, is AiAskResult.Resting -> Box(modifier = Modifier.padding(bottom = Spacing.sm))
+                is AiAskResult.DailyLimit, is AiAskResult.Resting -> Unit
             }
         }
     }
@@ -854,3 +907,42 @@ private fun AskLimitPreview(@PreviewParameter(ThemePalettePreviewProvider::class
         }
     }
 }
+
+/** A question on its way (#283): the writing state, or [waking] a sleeping server first (#280). */
+@Composable
+private fun AskWritingPreviewContent(palette: ThemePalette, waking: Boolean) {
+    BibleAppTheme(palette = palette) {
+        Surface {
+            AskChat(
+                state = AskUiState(
+                    conversationId = 1,
+                    messages = listOf(AiMessage(1, 1, AiRole.USER, "How should I pray?", createdAt = "")),
+                    isSending = true,
+                    isWaking = waking
+                ),
+                draft = "",
+                online = true,
+                modifier = Modifier,
+                onDraftChange = {},
+                onSend = {},
+                onStarter = {},
+                onRetry = {},
+                onSignInClick = {},
+                onRemovePassage = {},
+                answer = {}
+            )
+        }
+    }
+}
+
+@Preview(name = "Light", widthDp = 360, heightDp = 720)
+@Preview(name = "Dark", widthDp = 360, heightDp = 720, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun AskWritingPreview(@PreviewParameter(ThemePalettePreviewProvider::class) palette: ThemePalette) =
+    AskWritingPreviewContent(palette, waking = false)
+
+@Preview(name = "Light", widthDp = 360, heightDp = 720)
+@Preview(name = "Dark", widthDp = 360, heightDp = 720, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun AskWakingPreview(@PreviewParameter(ThemePalettePreviewProvider::class) palette: ThemePalette) =
+    AskWritingPreviewContent(palette, waking = true)

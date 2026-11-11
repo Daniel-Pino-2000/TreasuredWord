@@ -410,12 +410,21 @@
     <string name="ai_question_placeholder">Magtanong tungkol sa Bibliya</string>
     <string name="ai_action_send">Ipadala</string>
     <string name="ai_answer_label">Sagot ng AI</string>
-    <string name="ai_thinking">Nag-iisip…</string>
+    <!-- What the Bible Helper is doing while an answer comes (#283): only true steps -->
+    <string name="ai_stage_waking">Ginigising ang server…</string>
+    <string name="ai_stage_writing">Isinusulat ang sagot mo…</string>
+    <string name="ai_stage_still_writing">Nagsusulat pa. Mas matagal nang kaunti ang mas mahahabang sagot.</string>
+    <string name="ai_waking_detail">Nagpapahinga ang server at ginigising na ngayon. Puwedeng umabot nang hanggang isang minuto ang unang sagot; mas mabilis ang mga susunod.</string>
+    <!-- Short titles above the failure messages under an unanswered question (#283) -->
+    <string name="ai_failure_unavailable_title">Hindi nakakuha ng sagot</string>
+    <string name="ai_failure_offline_title">Offline ka</string>
+    <string name="ai_failure_rate_limited_title">Sobrang daming tanong nang sabay-sabay</string>
+    <string name="ai_failure_signed_out_title">Na-sign out ka</string>
     <string name="ai_offline_banner">Offline ka. Nandito pa rin ang mga usapan mo; kailangan ng internet para magtanong.</string>
-    <string name="ai_failure_offline">Hindi naipadala ang tanong mo dahil offline ka.</string>
-    <string name="ai_failure_unavailable">Hindi makasagot ang Katulong sa Bibliya ngayon.</string>
-    <string name="ai_failure_rate_limited">Napakaraming tanong nang sabay-sabay. Maghintay sandali, saka subukan ulit.</string>
-    <string name="ai_failure_signed_out">Na-sign out ka. Mag-sign in ulit para patuloy na magtanong.</string>
+    <string name="ai_failure_offline">Naka-save ang tanong mo. Ipadala ulit kapag online ka na.</string>
+    <string name="ai_failure_unavailable">Naka-save ang tanong mo. Subukan ulit maya-maya.</string>
+    <string name="ai_failure_rate_limited">Maghintay sandali, saka subukan ulit.</string>
+    <string name="ai_failure_signed_out">Mag-sign in ulit para patuloy na magtanong.</string>
     <string name="ai_failure_daily_limit">Naitanong mo na ang lahat ng tanong para ngayong araw. Puwede kang magtanong ulit simula %1$s.</string>
     <string name="ai_failure_resting">Nagpapahinga ang Katulong sa Bibliya: naabot na ng libreng serbisyong ginagamit nito ang limitasyon para ngayong araw. Babalik ito simula %1$s.</string>
     <plurals name="ai_remaining_today">

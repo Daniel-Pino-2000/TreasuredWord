@@ -461,12 +461,21 @@
     <string name="ai_question_placeholder">Ask a question about the Bible</string>
     <string name="ai_action_send">Send</string>
     <string name="ai_answer_label">AI answer</string>
-    <string name="ai_thinking">Thinking…</string>
+    <!-- What the Bible Helper is doing while an answer comes (#283): only true steps -->
+    <string name="ai_stage_waking">Waking up the server…</string>
+    <string name="ai_stage_writing">Writing your answer…</string>
+    <string name="ai_stage_still_writing">Still writing. Longer answers take a little more time.</string>
+    <string name="ai_waking_detail">The server was resting and is waking up. The first answer can take up to a minute; the next ones come faster.</string>
+    <!-- Short titles above the failure messages under an unanswered question (#283) -->
+    <string name="ai_failure_unavailable_title">Couldn\'t get an answer</string>
+    <string name="ai_failure_offline_title">You\'re offline</string>
+    <string name="ai_failure_rate_limited_title">Too many questions at once</string>
+    <string name="ai_failure_signed_out_title">You\'ve been signed out</string>
     <string name="ai_offline_banner">You\'re offline. Your conversations are still here; asking needs the internet.</string>
-    <string name="ai_failure_offline">Couldn\'t send your question because you\'re offline.</string>
-    <string name="ai_failure_unavailable">The Bible Helper couldn\'t answer right now.</string>
-    <string name="ai_failure_rate_limited">That\'s a lot of questions at once. Wait a moment, then try again.</string>
-    <string name="ai_failure_signed_out">You\'ve been signed out. Sign in again to keep asking.</string>
+    <string name="ai_failure_offline">Your question is saved. Send it again when you\'re back online.</string>
+    <string name="ai_failure_unavailable">Your question is saved. Try again in a moment.</string>
+    <string name="ai_failure_rate_limited">Wait a moment, then try again.</string>
+    <string name="ai_failure_signed_out">Sign in again to keep asking.</string>
     <!-- %1$s: when the daily limit resets, a weekday and time such as "Tue 7:00 PM" -->
     <string name="ai_failure_daily_limit">You\'ve asked all of today\'s questions. You can ask again from %1$s.</string>
     <!-- %1$s: when the daily limit resets, a weekday and time such as "Tue 7:00 PM" -->
