@@ -3,6 +3,7 @@ package com.application.bibleapp.server.ai
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.engine.cio.CIO
+import io.ktor.client.plugins.HttpRequestTimeoutException
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.bearerAuth
@@ -11,11 +12,13 @@ import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
+import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.config.ApplicationConfig
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -43,7 +46,8 @@ class OpenAiCompatibleProvider(
     private val model: String,
     private val disableThinking: Boolean = true,
     engine: HttpClientEngine = CIO.create(),
-    timeoutMillis: Long = TIMEOUT_MILLIS
+    timeoutMillis: Long = TIMEOUT_MILLIS,
+    private val retryPauseMillis: Long = RETRY_PAUSE_MILLIS
 ) : AiProvider {
 
     private val url = "${baseUrl.trimEnd('/')}/chat/completions"
@@ -94,6 +98,20 @@ class OpenAiCompatibleProvider(
             chatTemplateKwargs = if (disableThinking) ChatTemplateKwargs(enableThinking = false) else null
         )
         val started = System.nanoTime()
+        return try {
+            attempt(request)
+        } catch (e: Unavailable) {
+            // One more try after a hiccup that failed fast (#280), never after a slow failure:
+            // the person is already waiting, and the app gives up after 90 s.
+            if (!e.transient || millisSince(started) > RETRY_IF_FAILED_WITHIN_MILLIS) throw e
+            delay(retryPauseMillis)
+            log.info("AI provider: trying once more")
+            attempt(request)
+        }
+    }
+
+    private suspend fun attempt(request: ChatRequest): AiCompletion {
+        val started = System.nanoTime()
         val response = try {
             client.post(url) {
                 bearerAuth(apiToken)
@@ -106,7 +124,8 @@ class OpenAiCompatibleProvider(
         } catch (e: Exception) {
             // Timeouts, refused connections, DNS. The exception's class says which, without any text of ours.
             log.warn("AI provider unreachable after {} ms: {}", millisSince(started), e::class.simpleName)
-            throw Unavailable("Couldn't reach the AI provider", e)
+            // Waiting the whole timeout again would be too long; a refused or dropped connection isn't.
+            throw Unavailable("Couldn't reach the AI provider", e, transient = e !is HttpRequestTimeoutException)
         }
         return read(response, millisSince(started))
     }
@@ -130,7 +149,9 @@ class OpenAiCompatibleProvider(
             if (QUOTA_EXHAUSTED_CODE in codes) {
                 throw QuotaExhausted("The AI's free daily allowance is used up")
             }
-            throw Unavailable("The AI provider answered HTTP ${status.value}")
+            // A 5xx, or a 429 that isn't the daily allowance (3040, "capacity temporarily exceeded").
+            val transient = status.value >= 500 || status == HttpStatusCode.TooManyRequests
+            throw Unavailable("The AI provider answered HTTP ${status.value}", transient = transient)
         }
         val parsed = try {
             json.decodeFromString(ChatResponse.serializer(), body)
@@ -151,7 +172,11 @@ class OpenAiCompatibleProvider(
     }
 
     companion object {
-        private const val TIMEOUT_MILLIS = 30_000L
+        /** The slowest answers seen on Render took 26 s (#280), too close to the old 30 s. */
+        private const val TIMEOUT_MILLIS = 45_000L
+        /** Only a failure this quick is tried again, so the worst case stays well under the app's 90 s. */
+        private const val RETRY_IF_FAILED_WITHIN_MILLIS = 10_000L
+        private const val RETRY_PAUSE_MILLIS = 1_000L
         /**
          * Low, for steady answers: the same question shouldn't get a different doctrine each time.
          * 0.2 since #206: at 0.3, each evaluation run had a different verse or two cited loosely.

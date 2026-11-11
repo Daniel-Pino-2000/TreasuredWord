@@ -12,8 +12,10 @@ import com.application.bibleapp.data.remote.AiReportReason
 import com.application.bibleapp.data.remote.AiReportRequestDto
 import com.application.bibleapp.data.remote.AiReportResult
 import com.application.bibleapp.data.remote.HttpClientProvider
+import com.application.bibleapp.data.remote.ServerWake
 import com.application.bibleapp.data.repository.AiConversationStore
 import com.application.bibleapp.data.repository.AiHelperRepository
+import androidx.lifecycle.viewModelScope
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
@@ -25,6 +27,7 @@ import io.ktor.http.headersOf
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
@@ -106,6 +109,10 @@ class AskViewModelTest {
 
     @After
     fun tearDown() {
+        // A coroutine still running when the test ends (a MockEngine answer on its way, a limit's
+        // reset timer) would resume after resetMain, with no Main dispatcher, and fail whichever
+        // test runs next with UncaughtExceptionsBeforeTest (#280). Stop them first.
+        viewModel.viewModelScope.cancel()
         Dispatchers.resetMain()
     }
 
@@ -118,6 +125,13 @@ class AskViewModelTest {
 
     private suspend fun awaitAnswer() {
         viewModel.state.first { !it.isSending }
+    }
+
+    /** [awaitAnswer] without suspending, for tests about the limit's reset timer: while the test
+     *  is suspended, runTest moves virtual time on by itself and can fire the timer early. */
+    private fun awaitAnswerBlocking() {
+        val until = System.currentTimeMillis() + 5_000
+        while (viewModel.state.value.isSending && System.currentTimeMillis() < until) Thread.sleep(10)
     }
 
     @Test
@@ -133,6 +147,65 @@ class AskViewModelTest {
         assertEquals(3, state.remainingToday)
         assertEquals("", viewModel.draft.value)
         assertEquals(listOf("How can I be saved?"), viewModel.conversations.value.map { it.title })
+    }
+
+    /** A server that's [awake], or asleep until [wake] is called (#280); [log] records the order. */
+    private inner class FakeServerWake(var awake: Boolean) : ServerWake {
+        override fun isAwake() = awake
+        override suspend fun wake() {
+            log += "wake"
+            wakingSeen = viewModel.state.value.isWaking
+            awake = true
+        }
+    }
+
+    private val log = mutableListOf<String>()
+    private var wakingSeen = false
+
+    private fun viewModelWith(wake: ServerWake) {
+        viewModel = AskViewModel(AiHelperRepository(store, api), settings, now = { clock }, serverWake = wake)
+    }
+
+    @Test
+    fun `a sleeping server is woken before the question goes, and the screen says so (#280)`() = runTest {
+        viewModelWith(FakeServerWake(awake = false))
+
+        ask("How should I pray?")
+
+        assertEquals(listOf("wake"), log)
+        assertTrue(wakingSeen)
+        assertFalse(viewModel.state.value.isWaking)
+        // Saved before waking, so a question waiting for the server isn't lost; sent after it.
+        assertEquals(listOf(AiRole.USER, AiRole.ASSISTANT), store.messages.map { it.role })
+        assertEquals("/api/v1/ai/ask", sent.single().first)
+    }
+
+    @Test
+    fun `an awake server isn't woken (#280)`() = runTest {
+        viewModelWith(FakeServerWake(awake = true))
+
+        ask("How should I pray?")
+
+        assertTrue(log.isEmpty())
+        assertEquals(1, sent.size)
+    }
+
+    @Test
+    fun `retry wakes a server that fell asleep (#280)`() = runTest {
+        val wake = FakeServerWake(awake = true)
+        viewModelWith(wake)
+        status = HttpStatusCode.ServiceUnavailable
+        body = """{"code":"AI_UNAVAILABLE","message":"…"}"""
+        ask("Who was Ruth?")
+        wake.awake = false
+        status = HttpStatusCode.OK
+        body = """{"answer":"Grace [[EPH 2:8]]","crisis":false,"remainingToday":3,"promptVersion":"1"}"""
+
+        viewModel.retry("en")
+        awaitAnswer()
+
+        assertEquals(listOf("wake"), log)
+        assertNull(viewModel.state.value.failure)
     }
 
     @Test
@@ -275,8 +348,17 @@ class AskViewModelTest {
         Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
         restart()
         hitDailyLimit()
-        ask("What is the Trinity?")
+        viewModel.onDraftChange("What is the Trinity?")
+        viewModel.send("en")
+        awaitAnswerBlocking()
         assertEquals(AiAskResult.DailyLimit(day), viewModel.state.value.limit)
+        // The app opened again, and left open past the reset. Its timer starts here, on the test's
+        // thread: started on MockEngine's thread, the scheduler missed it now and then (#280).
+        viewModel.viewModelScope.cancel()
+        restart()
+        viewModel.openConversation(1L)
+        assertEquals(AiAskResult.DailyLimit(day), viewModel.state.value.limit)
+        assertEquals(AiAskResult.DailyLimit(day), viewModel.state.value.failure)
 
         clock = day
         advanceTimeBy(day + 1)

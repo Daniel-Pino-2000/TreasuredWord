@@ -53,7 +53,8 @@ class OpenAiCompatibleProviderTest {
         model = "@cf/google/gemma-4-26b-a4b-it",
         disableThinking = disableThinking,
         engine = MockEngine { request -> requests += request; reply(request) },
-        timeoutMillis = timeoutMillis
+        timeoutMillis = timeoutMillis,
+        retryPauseMillis = 0
     )
 
     private fun MockRequestHandleScope.json(body: String, status: HttpStatusCode = HttpStatusCode.OK) =
@@ -156,6 +157,8 @@ class OpenAiCompatibleProviderTest {
         }
 
         assertFailsWith<Unavailable> { runBlocking { provider.complete(conversation, maxTokens = 700) } }
+        // Tried once more first (#280).
+        assertEquals(2, requests.size)
     }
 
     @Test
@@ -163,6 +166,31 @@ class OpenAiCompatibleProviderTest {
         val provider = provider { json("""{"errors":[{"message":"Internal server error","code":7010}],"success":false}""", HttpStatusCode.InternalServerError) }
 
         assertFailsWith<Unavailable> { runBlocking { provider.complete(conversation, maxTokens = 700) } }
+        assertEquals(2, requests.size)
+    }
+
+    @Test
+    fun aQuickHiccupIsTriedOnceMoreAndItsAnswerReturned() = runBlocking {
+        // Cloudflare's "capacity temporarily exceeded" is over in a moment (#280).
+        val completion = provider {
+            if (requests.size == 1) {
+                json("""{"errors":[{"message":"AiError: Capacity temporarily exceeded, please try again.","code":3040}],"success":false}""", HttpStatusCode.TooManyRequests)
+            } else {
+                json(answer(content = "Grace is a gift."))
+            }
+        }.complete(conversation, maxTokens = 700)
+
+        assertEquals("Grace is a gift.", completion.text)
+        assertEquals(2, requests.size)
+    }
+
+    @Test
+    fun aRejectedQuestionIsNotTriedAgain() {
+        // A 400 would only be rejected again.
+        val provider = provider { json("""{"errors":[{"message":"bad input","code":5006}]}""", HttpStatusCode.BadRequest) }
+
+        assertFailsWith<Unavailable> { runBlocking { provider.complete(conversation, maxTokens = 700) } }
+        assertEquals(1, requests.size)
     }
 
     @Test
@@ -173,6 +201,8 @@ class OpenAiCompatibleProviderTest {
         }
 
         assertFailsWith<Unavailable> { runBlocking { provider.complete(conversation, maxTokens = 700) } }
+        // Not tried again: the person has already waited the whole timeout.
+        assertEquals(1, requests.size)
     }
 
     @Test

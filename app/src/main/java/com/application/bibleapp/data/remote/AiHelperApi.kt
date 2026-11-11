@@ -55,13 +55,15 @@ sealed interface AiReportResult {
  * `POST /api/v1/ai/ask` and `POST /api/v1/ai/reports` (docs/ai_helper_plan.md section 5, #127).
  * Uses the shared signed-in client, whose Auth plugin attaches the token and refreshes it on a 401
  * by itself — so a 401 that still reaches us means the session is gone. [client] and [now] are
- * swappable for tests (MockEngine, a fixed clock).
+ * swappable for tests (MockEngine, a fixed clock). [phoneIsOnline], when given, tells a phone
+ * that's really offline from a connection that dropped while the server was slow (#280).
  */
 class AiHelperApi(
     private val client: () -> HttpClient = { HttpClientProvider.client },
     private val baseUrl: String = HttpClientProvider.BASE_URL,
     private val now: () -> Long = System::currentTimeMillis,
-    private val log: (String) -> Unit = { Log.w(TAG, it) }
+    private val log: (String) -> Unit = { Log.w(TAG, it) },
+    private val phoneIsOnline: (() -> Boolean)? = null
 ) {
 
     suspend fun ask(request: AiAskRequestDto): AiAskResult = try {
@@ -114,7 +116,8 @@ class AiHelperApi(
         log("AI $what failed: ${e.javaClass.simpleName}: ${e.message}")
         return when {
             isServerResponseTimeout(e) -> AiAskResult.Unavailable
-            isRetriableNetworkError(e) -> AiAskResult.Offline
+            // A connection that dropped while the phone is online isn't "you're offline" (#280).
+            isRetriableNetworkError(e) -> if (phoneIsOnline?.invoke() == true) AiAskResult.Unavailable else AiAskResult.Offline
             // e.g. a 200 whose body isn't an answer
             else -> AiAskResult.Unavailable
         }

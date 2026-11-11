@@ -1,0 +1,32 @@
+name: Keep server awake
+
+# Render's free plan stops the server after 15 minutes without a request, and the next request
+# then waits about a minute while it starts again. With few users that was most Bible Helper
+# questions, which made answers slow and sometimes timed out on the phone (#280). A request to
+# /health every 10 minutes keeps it running. /health doesn't touch the database, so Neon still
+# sleeps on its own.
+#
+# Free limits:
+# - Render: 750 free instance hours a month per workspace. This one service awake all month uses
+#   at most 744. Adding a second free Render service would go past 750, and Render then suspends
+#   the free services until the next month (no charge). Turn this workflow off first.
+# - GitHub Actions: free for public repositories. Scheduled runs can start a few minutes late at
+#   busy times, and GitHub turns scheduled workflows off after 60 days without a commit; turn it
+#   back on in the Actions tab.
+on:
+  schedule:
+    # Off the top of the hour, when GitHub's scheduled runs are most often late.
+    - cron: "4-59/10 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Request /health
+        # Up to 2 minutes, in case the server was asleep anyway. A failure here only marks this
+        # run red; the next one tries again.
+        run: curl --fail --silent --show-error --max-time 120 --retry 2 --retry-delay 10 https://treasuredword.onrender.com/health

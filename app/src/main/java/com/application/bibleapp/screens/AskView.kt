@@ -123,8 +123,12 @@ private val STARTER_QUESTIONS = listOf(
     R.string.ai_starter_death
 )
 
-/** An AI answer usually takes 3–9 s (#122), so a longer wait than this means Render is waking up. */
-private const val ASK_SLOW_AFTER_MILLIS = 10_000L
+/**
+ * The app wakes a sleeping server before asking, and says so ([AskUiState.isWaking], #280). AI
+ * answers take up to about 26 s on Render's logs, so a wait past this is something else being
+ * slow, most likely the server falling asleep anyway.
+ */
+private const val ASK_SLOW_AFTER_MILLIS = 30_000L
 
 /**
  * The Ask tab (#128): the Bible Helper's chat. Signed out it explains itself and offers sign-in;
@@ -263,7 +267,7 @@ private fun AskChat(
     val waitingLong = rememberWaitingLong(waiting = state.isSending, afterMillis = ASK_SLOW_AFTER_MILLIS)
     // A new question scrolls down to the "Thinking…" row; its answer then shows from its first line
     // (see AskChatScroll). Coming back to the screen with nothing new leaves the list where it was.
-    LaunchedEffect(state.conversationId, state.messages.size, state.isSending, state.failure, waitingLong) {
+    LaunchedEffect(state.conversationId, state.messages.size, state.isSending, state.isWaking, state.failure, waitingLong) {
         val target = scroll.autoScrollTarget(state, waitingLong) ?: return@LaunchedEffect
         // Before the list's first layout an animated scroll does nothing (it has no items yet),
         // which is what left a returning chat at the top; jump there instead.
@@ -302,7 +306,7 @@ private fun AskChat(
             items(state.messages, key = { it.id }) { message ->
                 if (message.role == AiRole.USER) QuestionBubble(message.content) else answer(message)
             }
-            if (state.isSending) item(key = "thinking") { Thinking(waitingLong) }
+            if (state.isSending) item(key = "thinking") { Thinking(waking = state.isWaking || waitingLong) }
             state.failure?.let { failure ->
                 item(key = "failure") {
                     FailureCard(failure = failure, online = online, onRetry = onRetry, onSignInClick = onSignInClick)
@@ -516,7 +520,7 @@ private fun answerText(
 }
 
 @Composable
-private fun Thinking(waitingLong: Boolean) {
+private fun Thinking(waking: Boolean) {
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
         AiAnswerLabel()
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
@@ -527,7 +531,7 @@ private fun Thinking(waitingLong: Boolean) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-        if (waitingLong) ServerWakeHint()
+        if (waking) ServerWakeHint()
     }
 }
 

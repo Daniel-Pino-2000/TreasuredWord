@@ -9,6 +9,17 @@ Tradeoff worth knowing up front: Render's free tier spins the service down after
 no traffic. The first request after that takes ~30–50s to wake it back up; everything after is
 normal speed. That's the cost of "genuinely cannot be billed."
 
+Since #280 the **Keep server awake** workflow (`.github/workflows/keep-server-awake.yml`)
+requests `/health` every 10 minutes, so it rarely sleeps: with few users, most Bible Helper
+questions used to land on a sleeping server and wait about a minute. Its free limits:
+- Render gives **750 free instance hours a month** per workspace; this service awake all month
+  uses at most 744. **Before adding a second free Render service, turn the workflow off**
+  (Actions tab → Keep server awake → ⋯ → Disable workflow), or the workspace runs past 750 and
+  Render suspends the free services until the next month. Nothing is charged either way.
+- GitHub may start scheduled runs a few minutes late, and turns scheduled workflows off after
+  60 days without a commit; turn it back on in the Actions tab.
+- `/health` doesn't touch the database, so Neon still suspends when nobody uses the app.
+
 ## One-time setup
 
 1. **Create a Render account** at [render.com](https://render.com) — GitHub login is fastest, and

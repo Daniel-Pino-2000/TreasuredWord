@@ -13,6 +13,9 @@ import com.application.bibleapp.data.remote.AiAskResult
 import com.application.bibleapp.data.remote.AiReportReason
 import com.application.bibleapp.data.remote.AiReportRequestDto
 import com.application.bibleapp.data.remote.AiReportResult
+import com.application.bibleapp.data.remote.AiHelperApi
+import com.application.bibleapp.data.remote.RenderServerWake
+import com.application.bibleapp.data.remote.ServerWake
 import com.application.bibleapp.data.repository.AiHelperRepository
 import com.application.bibleapp.data.repository.AiHelperRepository.Companion.MAX_ANSWER_CHARS
 import com.application.bibleapp.data.repository.AiHelperRepository.Companion.MAX_QUESTION_CHARS
@@ -21,6 +24,7 @@ import com.application.bibleapp.data.repository.failureFromStored
 import com.application.bibleapp.data.repository.resetsAtMillis
 import com.application.bibleapp.data.repository.storedKind
 import com.application.bibleapp.data.remote.nextUtcMidnight
+import com.application.bibleapp.utils.NetworkUtils
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,12 +40,14 @@ import kotlinx.coroutines.launch
  * last answer. [passage] is the one "Ask about this verse" attached (#132): it goes with every
  * question while this conversation is open, so follow-ups keep it, and isn't saved with it.
  * [limit] is the daily limit or the resting service while it lasts, whichever conversation is
- * open (#271): nothing can be sent until it resets.
+ * open (#271): nothing can be sent until it resets. [isWaking] is the part of [isSending] spent
+ * waiting for a sleeping server to start, before the question goes (#280).
  */
 data class AskUiState(
     val conversationId: Long? = null,
     val messages: List<AiMessage> = emptyList(),
     val isSending: Boolean = false,
+    val isWaking: Boolean = false,
     val failure: AiAskResult.Failure? = null,
     val remainingToday: Int? = null,
     val passage: AiQuestionPassage? = null,
@@ -118,7 +124,9 @@ class SharedPreferencesAskSettings(context: Context) : AskSettings {
 class AskViewModel(
     private val repository: AiHelperRepository,
     private val settings: AskSettings,
-    private val now: () -> Long = System::currentTimeMillis
+    private val now: () -> Long = System::currentTimeMillis,
+    /** Wakes the server before a question when it may be asleep (#280); null (tests) never waits. */
+    private val serverWake: ServerWake? = null
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(
@@ -171,7 +179,7 @@ class AskViewModel(
         _state.update { it.copy(messages = it.messages + pending, isSending = true, failure = null) }
         val passage = _state.value.passage?.dto
         viewModelScope.launch {
-            val exchange = repository.ask(conversationId, question, language, passage)
+            val exchange = repository.ask(conversationId, question, language, passage, beforeSend = ::wakeServerIfAsleep)
             finish(exchange.conversationId, exchange.result)
         }
     }
@@ -207,7 +215,22 @@ class AskViewModel(
         if (_state.value.isSending || _state.value.limit != null) return
         _state.update { it.copy(isSending = true, failure = null) }
         val passage = _state.value.passage?.dto
-        viewModelScope.launch { finish(id, repository.retry(id, language, passage)) }
+        viewModelScope.launch { finish(id, repository.retry(id, language, passage, beforeSend = ::wakeServerIfAsleep)) }
+    }
+
+    /**
+     * Waits for a server that may be asleep before the question goes (#280), so the screen can
+     * say so and the question keeps its whole timeout for the answer.
+     */
+    private suspend fun wakeServerIfAsleep() {
+        val wake = serverWake ?: return
+        if (wake.isAwake()) return
+        _state.update { it.copy(isWaking = true) }
+        try {
+            wake.wake()
+        } finally {
+            _state.update { it.copy(isWaking = false) }
+        }
     }
 
     fun newConversation() {
@@ -344,12 +367,13 @@ class AskViewModel(
         _state.update { current ->
             // The person may have opened another conversation meanwhile; this one is saved anyway.
             if (current.conversationId != null && current.conversationId != conversationId) {
-                return@update current.copy(isSending = false)
+                return@update current.copy(isSending = false, isWaking = false)
             }
             current.copy(
                 conversationId = conversationId,
                 messages = messages,
                 isSending = false,
+                isWaking = false,
                 failure = result as? AiAskResult.Failure,
                 remainingToday = when (result) {
                     is AiAskResult.Answer -> result.remainingToday ?: current.remainingToday
@@ -369,9 +393,14 @@ class AskViewModelFactory(private val context: Context) : ViewModelProvider.Fact
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         require(modelClass.isAssignableFrom(AskViewModel::class.java)) { "Unknown ViewModel class" }
         @Suppress("UNCHECKED_CAST")
+        val appContext = context.applicationContext
         return AskViewModel(
-            AiHelperRepository(SqliteAiConversationStore(context)),
-            SharedPreferencesAskSettings(context)
+            AiHelperRepository(
+                SqliteAiConversationStore(appContext),
+                AiHelperApi(phoneIsOnline = { NetworkUtils.isOnline(appContext) })
+            ),
+            SharedPreferencesAskSettings(appContext),
+            serverWake = RenderServerWake
         ) as T
     }
 }
