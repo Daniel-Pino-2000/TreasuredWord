@@ -38,7 +38,8 @@ import kotlinx.coroutines.launch
  * first question creates. [failure] is why the last question has no answer, shown under it with
  * Retry where trying again can help. [remainingToday] is the day's questions left, from the
  * last answer. [passage] is the one "Ask about this verse" attached (#132): it goes with every
- * question while this conversation is open, so follow-ups keep it, and isn't saved with it.
+ * question while this conversation is open, so follow-ups keep it, and is saved with each one, so
+ * reopening the conversation brings it back (#281).
  * [limit] is the daily limit or the resting service while it lasts, whichever conversation is
  * open (#271): nothing can be sent until it resets. [isWaking] is the part of [isSending] spent
  * waiting for a sleeping server to start, before the question goes (#280).
@@ -175,9 +176,9 @@ class AskViewModel(
         passageQuestion = null
         val conversationId = _state.value.conversationId
         // Shown straight away; the saved copy replaces it once the repository has stored it.
-        val pending = AiMessage(PENDING_ID, conversationId ?: PENDING_ID, AiRole.USER, question, createdAt = "")
+        val passage = _state.value.passage
+        val pending = AiMessage(PENDING_ID, conversationId ?: PENDING_ID, AiRole.USER, question, createdAt = "", passage = passage)
         _state.update { it.copy(messages = it.messages + pending, isSending = true, failure = null) }
-        val passage = _state.value.passage?.dto
         viewModelScope.launch {
             val exchange = repository.ask(conversationId, question, language, passage, beforeSend = ::wakeServerIfAsleep)
             finish(exchange.conversationId, exchange.result)
@@ -214,8 +215,7 @@ class AskViewModel(
         val id = _state.value.conversationId ?: return
         if (_state.value.isSending || _state.value.limit != null) return
         _state.update { it.copy(isSending = true, failure = null) }
-        val passage = _state.value.passage?.dto
-        viewModelScope.launch { finish(id, repository.retry(id, language, passage, beforeSend = ::wakeServerIfAsleep)) }
+        viewModelScope.launch { finish(id, repository.retry(id, language, beforeSend = ::wakeServerIfAsleep)) }
     }
 
     /**
@@ -247,6 +247,9 @@ class AskViewModel(
             _state.value = AskUiState(
                 conversationId = id,
                 messages = messages,
+                // The passage the last question was asked about stays on for follow-ups, as it was
+                // before the conversation was closed (#281). Removed partway, it stays removed.
+                passage = messages.lastOrNull { it.role == AiRole.USER }?.passage,
                 // A question left without an answer says why again (#271): the daily limit until
                 // it resets, otherwise Retry.
                 failure = repository.unansweredFailure(id, now()),

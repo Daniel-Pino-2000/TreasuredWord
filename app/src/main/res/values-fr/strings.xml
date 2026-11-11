@@ -465,4 +465,7 @@
     <!-- The question ready to edit when the reader's selected verses open the Ask tab -->
     <string name="ai_passage_default_question">Que signifie ce passage ?</string>
     <string name="ai_passage_remove">Retirer %1$s</string>
+    <!-- Accessibility action on the passage shown above a question asked about it (#281) -->
+    <string name="ai_passage_show_whole">Afficher tout le passage</string>
+    <string name="ai_passage_show_less">Afficher moins</string>
 </resources>

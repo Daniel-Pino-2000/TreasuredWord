@@ -51,8 +51,9 @@ class AskViewModelTest {
         override suspend fun createConversation(title: String) =
             AiConversation(conversations.size + 1L, title, "t", "t").also { conversations += it }
 
-        override suspend fun addMessage(conversationId: Long, role: AiRole, content: String, crisis: Boolean, promptVersion: String?) =
-            AiMessage(messages.size + 1L, conversationId, role, content, crisis, promptVersion, "t").also { messages += it }
+        override suspend fun addMessage(
+            conversationId: Long, role: AiRole, content: String, crisis: Boolean, promptVersion: String?, passage: AiQuestionPassage?
+        ) = AiMessage(messages.size + 1L, conversationId, role, content, crisis, promptVersion, "t", passage).also { messages += it }
 
         override suspend fun conversations() = conversations.toList()
         override suspend fun messages(conversationId: Long) = messages.filter { it.conversationId == conversationId }
@@ -509,6 +510,56 @@ class AskViewModelTest {
         viewModel.onSignInChanged(true)
 
         assertEquals(passage, viewModel.state.value.passage)
+    }
+
+    private fun sentPassages() = sent.filter { it.first.endsWith("/ai/ask") }
+        .map { HttpClientProvider.json.decodeFromString(AiAskRequestDto.serializer(), it.second).passage }
+
+    @Test
+    fun `reopening a conversation asked about a passage shows it and keeps sending it (#281)`() = runTest {
+        viewModel.startWithPassage(passage, "What does this passage mean?")
+        ask("What does this passage mean?")
+        viewModel.newConversation()
+        assertNull(viewModel.state.value.passage)
+
+        viewModel.openConversation(1L)
+
+        assertEquals(passage, viewModel.state.value.passage)
+        assertEquals(passage, viewModel.state.value.messages.first().passage)
+        ask("Who said it?")
+        assertEquals(listOf(passage.dto, passage.dto), sentPassages())
+    }
+
+    @Test
+    fun `a reopened question asked about a passage is retried with it (#281)`() = runTest {
+        status = HttpStatusCode.ServiceUnavailable
+        body = """{"code":"AI_UNAVAILABLE","message":"…"}"""
+        viewModel.startWithPassage(passage, "What does this passage mean?")
+        ask("What does this passage mean?")
+        viewModel.newConversation()
+        viewModel.openConversation(1L)
+        status = HttpStatusCode.OK
+        body = """{"answer":"Grace [[EPH 2:8]]","crisis":false,"remainingToday":3,"promptVersion":"1"}"""
+
+        viewModel.retry("en")
+        awaitAnswer()
+
+        assertEquals(listOf(passage.dto, passage.dto), sentPassages())
+    }
+
+    @Test
+    fun `a passage removed partway stays removed, and earlier questions keep theirs (#281)`() = runTest {
+        viewModel.startWithPassage(passage, "What does this passage mean?")
+        ask("What does this passage mean?")
+        viewModel.removePassage()
+        ask("And what about grace?")
+        viewModel.newConversation()
+
+        viewModel.openConversation(1L)
+
+        assertNull(viewModel.state.value.passage)
+        val questions = viewModel.state.value.messages.filter { it.role == AiRole.USER }
+        assertEquals(listOf(passage, null), questions.map { it.passage })
     }
 
     /** What the chat scrolls to as the Ask screen shows [viewModel]'s state now (null: stays put). */

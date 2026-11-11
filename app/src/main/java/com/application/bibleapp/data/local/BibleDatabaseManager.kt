@@ -7,6 +7,7 @@ import android.util.Log
 import com.application.bibleapp.BuildConfig
 import com.application.bibleapp.data.model.AiConversation
 import com.application.bibleapp.data.model.AiMessage
+import com.application.bibleapp.data.model.AiQuestionPassage
 import com.application.bibleapp.data.model.AiRole
 import com.application.bibleapp.data.model.BibleTranslation
 import com.application.bibleapp.data.model.BibleVerse
@@ -21,6 +22,7 @@ import com.application.bibleapp.data.model.TranslationLicense
 import com.application.bibleapp.data.model.VerseUI
 import com.application.bibleapp.data.model.decodeVerseContentOrNull
 import com.application.bibleapp.data.model.encodeToJson
+import com.application.bibleapp.data.remote.AiPassageDto
 import com.application.bibleapp.data.remote.BibleRemoteDataSource
 import com.application.bibleapp.data.remote.DownloadedTranslation
 import com.application.bibleapp.data.remote.VerseLocationDto
@@ -394,6 +396,10 @@ object BibleDatabaseManager {
         // reopening it still says "You've asked all of today's questions" and not a generic failure.
         addColumnIfMissing(db, "ai_conversations", "failure", "TEXT")
         addColumnIfMissing(db, "ai_conversations", "failure_resets_at", "INTEGER")
+        // The passage a question was asked about (#281): its chip label, USFM reference and text.
+        addColumnIfMissing(db, "ai_messages", "passage_label", "TEXT")
+        addColumnIfMissing(db, "ai_messages", "passage_reference", "TEXT")
+        addColumnIfMissing(db, "ai_messages", "passage_text", "TEXT")
         Log.d("BibleDB", "Bible Helper tables ready")
     }
 
@@ -1398,14 +1404,16 @@ object BibleDatabaseManager {
         role: AiRole,
         content: String,
         crisis: Boolean = false,
-        promptVersion: String? = null
+        promptVersion: String? = null,
+        passage: AiQuestionPassage? = null
     ): AiMessage {
         val db = getDatabase(context)
         val now = isoTimestampNow()
         db.beginTransaction()
         try {
             val id = db.compileStatement(
-                "INSERT INTO ai_messages (conversation_id, role, content, crisis, prompt_version, created_at) VALUES (?, ?, ?, ?, ?, ?)"
+                "INSERT INTO ai_messages (conversation_id, role, content, crisis, prompt_version, created_at, " +
+                    "passage_label, passage_reference, passage_text) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
             ).use { statement ->
                 statement.bindLong(1, conversationId)
                 statement.bindString(2, role.stored)
@@ -1413,11 +1421,20 @@ object BibleDatabaseManager {
                 statement.bindLong(4, if (crisis) 1 else 0)
                 if (promptVersion == null) statement.bindNull(5) else statement.bindString(5, promptVersion)
                 statement.bindString(6, now)
+                if (passage == null) {
+                    statement.bindNull(7)
+                    statement.bindNull(8)
+                    statement.bindNull(9)
+                } else {
+                    statement.bindString(7, passage.label)
+                    statement.bindString(8, passage.dto.reference)
+                    statement.bindString(9, passage.dto.text)
+                }
                 statement.executeInsert()
             }
             db.execSQL("UPDATE ai_conversations SET updated_at = ? WHERE id = ?", arrayOf(now, conversationId))
             db.setTransactionSuccessful()
-            return AiMessage(id, conversationId, role, content, crisis, promptVersion, now)
+            return AiMessage(id, conversationId, role, content, crisis, promptVersion, now, passage)
         } finally {
             db.endTransaction()
         }
@@ -1441,7 +1458,8 @@ object BibleDatabaseManager {
     /** Oldest first, in the order they were saved. */
     fun getAiMessages(context: Context, conversationId: Long): List<AiMessage> =
         getDatabase(context).rawQuery(
-            "SELECT id, conversation_id, role, content, crisis, prompt_version, created_at FROM ai_messages WHERE conversation_id = ? ORDER BY id",
+            "SELECT id, conversation_id, role, content, crisis, prompt_version, created_at, " +
+                "passage_label, passage_reference, passage_text FROM ai_messages WHERE conversation_id = ? ORDER BY id",
             arrayOf(conversationId.toString())
         ).use { cursor ->
             generateSequence {
@@ -1453,7 +1471,13 @@ object BibleDatabaseManager {
                         content = cursor.getString(3),
                         crisis = cursor.getInt(4) != 0,
                         promptVersion = if (cursor.isNull(5)) null else cursor.getString(5),
-                        createdAt = cursor.getString(6)
+                        createdAt = cursor.getString(6),
+                        // All three or none: a passage is saved whole (#281).
+                        passage = if (cursor.isNull(7) || cursor.isNull(8) || cursor.isNull(9)) {
+                            null
+                        } else {
+                            AiQuestionPassage(cursor.getString(7), AiPassageDto(cursor.getString(8), cursor.getString(9)))
+                        }
                     )
                 } else {
                     null

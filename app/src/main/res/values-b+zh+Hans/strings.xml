@@ -442,4 +442,7 @@
     <!-- The question ready to edit when the reader's selected verses open the Ask tab -->
     <string name="ai_passage_default_question">这段经文是什么意思？</string>
     <string name="ai_passage_remove">移除 %1$s</string>
+    <!-- Accessibility action on the passage shown above a question asked about it (#281) -->
+    <string name="ai_passage_show_whole">显示整段经文</string>
+    <string name="ai_passage_show_less">收起</string>
 </resources>

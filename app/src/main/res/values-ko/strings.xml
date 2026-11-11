@@ -443,4 +443,7 @@
     <!-- The question ready to edit when the reader's selected verses open the Ask tab -->
     <string name="ai_passage_default_question">이 본문은 무슨 뜻인가요?</string>
     <string name="ai_passage_remove">%1$s 제거</string>
+    <!-- Accessibility action on the passage shown above a question asked about it (#281) -->
+    <string name="ai_passage_show_whole">구절 전체 보기</string>
+    <string name="ai_passage_show_less">간략히 보기</string>
 </resources>

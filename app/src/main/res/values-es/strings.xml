@@ -482,4 +482,7 @@
     <!-- The question ready to edit when the reader's selected verses open the Ask tab -->
     <string name="ai_passage_default_question">¿Qué significa este pasaje?</string>
     <string name="ai_passage_remove">Quitar %1$s</string>
+    <!-- Accessibility action on the passage shown above a question asked about it (#281) -->
+    <string name="ai_passage_show_whole">Mostrar todo el pasaje</string>
+    <string name="ai_passage_show_less">Mostrar menos</string>
 </resources>

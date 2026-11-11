@@ -443,4 +443,7 @@
     <!-- The question ready to edit when the reader's selected verses open the Ask tab -->
     <string name="ai_passage_default_question">Apa arti perikop ini?</string>
     <string name="ai_passage_remove">Hapus %1$s</string>
+    <!-- Accessibility action on the passage shown above a question asked about it (#281) -->
+    <string name="ai_passage_show_whole">Tampilkan seluruh perikop</string>
+    <string name="ai_passage_show_less">Tampilkan lebih sedikit</string>
 </resources>

@@ -13,7 +13,9 @@ data class AiConversation(
 )
 
 /** One question or answer in an [AiConversation]. [crisis] and [promptVersion] are only set on
- *  answers: the server's crisis flag (#130) and which version of its instructions wrote it. */
+ *  answers: the server's crisis flag (#130) and which version of its instructions wrote it.
+ *  [passage] is only set on questions: the verses "Ask about this verse" sent with it (#132),
+ *  kept so the conversation still shows and sends them when it's reopened (#281). */
 data class AiMessage(
     val id: Long,
     val conversationId: Long,
@@ -21,7 +23,8 @@ data class AiMessage(
     val content: String,
     val crisis: Boolean = false,
     val promptVersion: String? = null,
-    val createdAt: String
+    val createdAt: String,
+    val passage: AiQuestionPassage? = null
 )
 
 /** The only two roles the server accepts, so the app can never send instructions of its own

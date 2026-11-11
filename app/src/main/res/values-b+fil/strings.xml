@@ -455,4 +455,7 @@
     <!-- The question ready to edit when the reader's selected verses open the Ask tab -->
     <string name="ai_passage_default_question">Ano ang ibig sabihin ng talatang ito?</string>
     <string name="ai_passage_remove">Alisin ang %1$s</string>
+    <!-- Accessibility action on the passage shown above a question asked about it (#281) -->
+    <string name="ai_passage_show_whole">Ipakita ang buong talata</string>
+    <string name="ai_passage_show_less">Ipakita nang mas kaunti</string>
 </resources>
