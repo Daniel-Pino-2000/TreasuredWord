@@ -27,6 +27,7 @@ import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.CloudOff
+import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material.icons.outlined.QuestionAnswer
 import androidx.compose.material3.Button
@@ -84,6 +85,7 @@ import com.application.bibleapp.data.repository.AiHelperRepository.Companion.MAX
 import com.application.bibleapp.ui.theme.BibleAppTheme
 import com.application.bibleapp.ui.theme.Spacing
 import com.application.bibleapp.ui.theme.isCompactHeight
+import com.application.bibleapp.ui.theme.isKeyboardOpenOrOpening
 import com.application.bibleapp.ui.theme.ThemePalette
 import com.application.bibleapp.ui.theme.ThemePalettePreviewProvider
 import com.application.bibleapp.utils.AiAnswerPart
@@ -256,8 +258,17 @@ private fun AskChat(
         }
     }
 
+    // While the day's questions are used up (or the service rests), one banner says so in every
+    // conversation (#271), unless the open question's own card already does.
+    val limit = state.limit
+    // Not while typing in landscape, where the field has only ~110dp above the keyboard; Send
+    // already shows it can't go yet.
+    val typingInCompactHeight = isCompactHeight() && isKeyboardOpenOrOpening()
+    val limitBanner = limit != null && !typingInCompactHeight &&
+        state.failure !is AiAskResult.DailyLimit && state.failure !is AiAskResult.Resting
     Column(modifier = modifier.fillMaxSize().imePadding()) {
         AnimatedVisibility(visible = !online) { OfflineBanner() }
+        AnimatedVisibility(visible = online && limitBanner) { limit?.let { LimitBanner(it) } }
         LazyColumn(
             state = listState,
             modifier = Modifier.weight(1f).fillMaxWidth(),
@@ -266,7 +277,9 @@ private fun AskChat(
         ) {
             if (state.messages.isEmpty() && !state.isSending) {
                 // With a passage attached the question is already written; starters would only distract.
-                item(key = "intro") { AskIntro(onStarter = onStarter, enabled = online, showStarters = state.passage == null) }
+                item(key = "intro") {
+                    AskIntro(onStarter = onStarter, enabled = online && limit == null, showStarters = state.passage == null)
+                }
             }
             items(state.messages, key = { it.id }) { message ->
                 if (message.role == AiRole.USER) QuestionBubble(message.content) else answer(message)
@@ -278,8 +291,8 @@ private fun AskChat(
                 }
             }
         }
-        // Not under the daily-limit card, which already says it.
-        state.remainingToday?.takeIf { it <= REMAINING_SHOWN_FROM && state.failure !is AiAskResult.DailyLimit }?.let { remaining ->
+        // Not while the limit's card or banner already says it.
+        state.remainingToday?.takeIf { it <= REMAINING_SHOWN_FROM && limit == null && state.failure !is AiAskResult.DailyLimit }?.let { remaining ->
             Text(
                 text = pluralStringResource(R.plurals.ai_remaining_today, remaining, remaining),
                 style = MaterialTheme.typography.labelMedium,
@@ -300,7 +313,8 @@ private fun AskChat(
         }
         QuestionField(
             draft = draft,
-            canSend = draft.isNotBlank() && !state.isSending && online,
+            // The field stays editable, so a question can wait there for the reset (#271).
+            canSend = draft.isNotBlank() && !state.isSending && online && limit == null,
             onDraftChange = onDraftChange,
             onSend = onSend,
             leading = if (passage != null && compact) {
@@ -518,6 +532,37 @@ private fun FailureCard(failure: AiAskResult.Failure, online: Boolean, onRetry: 
     }
 }
 
+/** The daily limit or the resting service, above every conversation until it resets (#271). The
+ *  same words as the card under a question that hit it. */
+@Composable
+private fun LimitBanner(limit: AiAskResult.Failure) {
+    val message = when (limit) {
+        is AiAskResult.Resting -> stringResource(R.string.ai_failure_resting, resetTimeText(limit.resetsAtMillis))
+        is AiAskResult.DailyLimit -> stringResource(R.string.ai_failure_daily_limit, resetTimeText(limit.resetsAtMillis))
+        else -> return
+    }
+    // primaryContainer like the offline banner: secondaryContainer is the selection color (#244).
+    Surface(color = MaterialTheme.colorScheme.primaryContainer, modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.sm),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Schedule,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.size(20.dp)
+            )
+            Text(
+                text = message,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+        }
+    }
+}
+
 /** When the daily limits reset (00:00 UTC), as a weekday and time in the phone's time zone and
  *  12/24-hour setting: "Tue 7:00 PM". */
 @Composable
@@ -665,6 +710,32 @@ private fun AskChatPreview(@PreviewParameter(ThemePalettePreviewProvider::class)
                         verseCard = {}
                     )
                 }
+            )
+        }
+    }
+}
+
+/** A new conversation while today's questions are used up (#271): the banner, the starters and
+ *  Send disabled, and a draft waiting in the field for the reset. */
+@Preview(name = "Light", widthDp = 360, heightDp = 720)
+@Preview(name = "Dark", widthDp = 360, heightDp = 720, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview(name = "Landscape", widthDp = 780, heightDp = 360)
+@Composable
+private fun AskLimitPreview(@PreviewParameter(ThemePalettePreviewProvider::class) palette: ThemePalette) {
+    BibleAppTheme(palette = palette) {
+        Surface {
+            AskChat(
+                state = AskUiState(limit = AiAskResult.DailyLimit(System.currentTimeMillis() + 3_600_000L)),
+                draft = "What does grace mean?",
+                online = true,
+                modifier = Modifier,
+                onDraftChange = {},
+                onSend = {},
+                onStarter = {},
+                onRetry = {},
+                onSignInClick = {},
+                onRemovePassage = {},
+                answer = {}
             )
         }
     }

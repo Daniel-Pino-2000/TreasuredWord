@@ -40,7 +40,7 @@ fun Application.serverModule(emailSender: EmailSender?, aiProvider: AiProvider? 
     configureMonitoring()
     configureSerialization()
     configureSecurity()
-    configureRateLimiting()
+    configureRateLimiting(clock)
     configureDatabases()
     startRetentionCleanup(clock)
     configureRouting(emailSender, aiProvider, clock)

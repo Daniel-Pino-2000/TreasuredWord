@@ -23,6 +23,12 @@ interface AiConversationStore {
     suspend fun conversations(): List<AiConversation>
     suspend fun messages(conversationId: Long): List<AiMessage>
     suspend fun deleteConversation(conversationId: Long)
+
+    /** Stores why [conversationId]'s last question has no answer, or clears it with null (#271). */
+    suspend fun setFailure(conversationId: Long, failure: AiAskResult.Failure?)
+
+    /** What [setFailure] stored, as it was stored (a daily limit may have reset since). */
+    suspend fun failure(conversationId: Long): AiAskResult.Failure?
 }
 
 class SqliteAiConversationStore(context: Context) : AiConversationStore {
@@ -44,6 +50,43 @@ class SqliteAiConversationStore(context: Context) : AiConversationStore {
 
     override suspend fun deleteConversation(conversationId: Long) =
         withContext(Dispatchers.IO) { BibleDatabaseManager.deleteAiConversation(context, conversationId) }
+
+    override suspend fun setFailure(conversationId: Long, failure: AiAskResult.Failure?) = withContext(Dispatchers.IO) {
+        BibleDatabaseManager.setAiConversationFailure(context, conversationId, failure?.storedKind, failure?.resetsAtMillis)
+    }
+
+    override suspend fun failure(conversationId: Long) = withContext(Dispatchers.IO) {
+        BibleDatabaseManager.getAiConversationFailure(context, conversationId)?.let { (kind, resetsAt) -> failureFromStored(kind, resetsAt) }
+    }
+}
+
+/** How a failure is stored with its conversation (#271): its kind, and for the daily limit and
+ *  the resting service, when it ends. */
+internal val AiAskResult.Failure.storedKind: String
+    get() = when (this) {
+        is AiAskResult.DailyLimit -> "DAILY_LIMIT"
+        is AiAskResult.Resting -> "RESTING"
+        AiAskResult.RateLimited -> "RATE_LIMITED"
+        AiAskResult.Offline -> "OFFLINE"
+        AiAskResult.SignedOut -> "SIGNED_OUT"
+        AiAskResult.Unavailable -> "UNAVAILABLE"
+    }
+
+internal val AiAskResult.Failure.resetsAtMillis: Long?
+    get() = when (this) {
+        is AiAskResult.DailyLimit -> resetsAtMillis
+        is AiAskResult.Resting -> resetsAtMillis
+        else -> null
+    }
+
+/** The failure [storedKind] wrote; an unknown kind reads as [AiAskResult.Unavailable]. */
+internal fun failureFromStored(kind: String, resetsAtMillis: Long?): AiAskResult.Failure = when (kind) {
+    "DAILY_LIMIT" -> resetsAtMillis?.let { AiAskResult.DailyLimit(it) } ?: AiAskResult.Unavailable
+    "RESTING" -> resetsAtMillis?.let { AiAskResult.Resting(it) } ?: AiAskResult.Unavailable
+    "RATE_LIMITED" -> AiAskResult.RateLimited
+    "OFFLINE" -> AiAskResult.Offline
+    "SIGNED_OUT" -> AiAskResult.SignedOut
+    else -> AiAskResult.Unavailable
 }
 
 /**
@@ -82,6 +125,23 @@ class AiHelperRepository(
 
     suspend fun deleteConversation(conversationId: Long) = store.deleteConversation(conversationId)
 
+    /**
+     * Why [conversationId]'s unanswered last question has no answer, to show again when it's
+     * reopened (#271), or null if its last message is an answer. A daily limit or rest that has
+     * reset by [nowMillis], a short wait (too many at once) or a sign-out that's over, or a
+     * reason that was never stored (the app closed while waiting) all read as
+     * [AiAskResult.Unavailable], whose card offers Retry.
+     */
+    suspend fun unansweredFailure(conversationId: Long, nowMillis: Long): AiAskResult.Failure? {
+        if (store.messages(conversationId).lastOrNull()?.role != AiRole.USER) return null
+        return when (val stored = store.failure(conversationId)) {
+            is AiAskResult.DailyLimit -> stored.takeIf { nowMillis < it.resetsAtMillis }
+            is AiAskResult.Resting -> stored.takeIf { nowMillis < it.resetsAtMillis }
+            AiAskResult.Offline -> stored
+            else -> null
+        } ?: AiAskResult.Unavailable
+    }
+
     /** Reports an answer (#130); stored on the server without the user's ID. */
     suspend fun report(request: AiReportRequestDto): AiReportResult = api.report(request)
 
@@ -89,8 +149,12 @@ class AiHelperRepository(
         val history = historyToSend(store.messages(conversationId))
         require(history.lastOrNull()?.role == AiRole.USER.stored) { "Conversation $conversationId has no question to send" }
         val result = api.ask(AiAskRequestDto(history, language, passage))
-        if (result is AiAskResult.Answer) {
-            store.addMessage(conversationId, AiRole.ASSISTANT, result.answer, result.crisis, result.promptVersion)
+        when (result) {
+            is AiAskResult.Answer -> {
+                store.addMessage(conversationId, AiRole.ASSISTANT, result.answer, result.crisis, result.promptVersion)
+                store.setFailure(conversationId, null)
+            }
+            is AiAskResult.Failure -> store.setFailure(conversationId, result)
         }
         return result
     }

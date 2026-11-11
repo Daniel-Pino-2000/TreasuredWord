@@ -27,6 +27,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -58,10 +59,18 @@ class AskViewModelTest {
             conversations.removeAll { it.id == conversationId }
             messages.removeAll { it.conversationId == conversationId }
         }
+
+        val failures = mutableMapOf<Long, AiAskResult.Failure>()
+        override suspend fun setFailure(conversationId: Long, failure: AiAskResult.Failure?) {
+            if (failure == null) failures.remove(conversationId) else failures[conversationId] = failure
+        }
+        override suspend fun failure(conversationId: Long) = failures[conversationId]
     }
 
     private class FakeSettings : AskSettings {
         override var noticeAccepted = false
+        override var limit: AiAskResult.Failure? = null
+        override var remainingToday: RemainingToday? = null
     }
 
     private val store = FakeStore()
@@ -70,12 +79,16 @@ class AskViewModelTest {
     private var body = """{"answer":"Grace [[EPH 2:8]]","crisis":false,"remainingToday":3,"promptVersion":"1"}"""
 
     private val sent = mutableListOf<Pair<String, String>>()
+
+    /** The phone's clock, the same for the API's reset times and the view model (#271). */
+    private var clock = 0L
     private lateinit var viewModel: AskViewModel
+    private lateinit var api: AiHelperApi
 
     @Before
     fun setUp() {
         Dispatchers.setMain(UnconfinedTestDispatcher())
-        val api = AiHelperApi(
+        api = AiHelperApi(
             client = {
                 HttpClient(MockEngine { request ->
                     sent += request.url.encodedPath to (request.body as TextContent).text
@@ -85,10 +98,10 @@ class AskViewModelTest {
                 }
             },
             baseUrl = "https://backend.test/api/v1",
-            now = { 0L },
+            now = { clock },
             log = {}
         )
-        viewModel = AskViewModel(AiHelperRepository(store, api), settings)
+        viewModel = AskViewModel(AiHelperRepository(store, api), settings, now = { clock })
     }
 
     @After
@@ -179,6 +192,126 @@ class AskViewModelTest {
 
         assertEquals(AiAskResult.Unavailable, viewModel.state.value.failure)
         assertEquals(1L, viewModel.state.value.conversationId)
+    }
+
+    private val day = 24 * 60 * 60 * 1000L
+
+    private fun hitDailyLimit() {
+        status = HttpStatusCode.TooManyRequests
+        body = """{"code":"AI_DAILY_LIMIT","message":"x"}"""
+    }
+
+    /** The app restarting: a new view model over the same phone storage. */
+    private fun restart() {
+        viewModel = AskViewModel(AiHelperRepository(store, api), settings, now = { clock })
+    }
+
+    @Test
+    fun `a reopened conversation still says the daily limit, not couldn't answer (#271)`() = runTest {
+        hitDailyLimit()
+        ask("What is the Trinity?")
+        viewModel.newConversation()
+
+        viewModel.openConversation(1L)
+
+        assertEquals(AiAskResult.DailyLimit(day), viewModel.state.value.failure)
+    }
+
+    @Test
+    fun `after a restart the conversation and the tab still know the limit (#271)`() = runTest {
+        hitDailyLimit()
+        ask("What is the Trinity?")
+
+        restart()
+        assertEquals(AiAskResult.DailyLimit(day), viewModel.state.value.limit)
+        viewModel.openConversation(1L)
+        assertEquals(AiAskResult.DailyLimit(day), viewModel.state.value.failure)
+    }
+
+    @Test
+    fun `while the limit lasts a new conversation can't send, and the draft stays (#271)`() = runTest {
+        hitDailyLimit()
+        ask("What is the Trinity?")
+        viewModel.newConversation()
+        assertEquals(AiAskResult.DailyLimit(day), viewModel.state.value.limit)
+        val requests = sent.size
+
+        viewModel.onDraftChange("What is grace?")
+        viewModel.send("en")
+
+        assertEquals(requests, sent.size)
+        assertEquals("What is grace?", viewModel.draft.value)
+        assertTrue(viewModel.state.value.messages.isEmpty())
+    }
+
+    @Test
+    fun `resting is remembered the same way (#271)`() = runTest {
+        status = HttpStatusCode.ServiceUnavailable
+        body = """{"code":"AI_RESTING","message":"x"}"""
+        ask("What is the Trinity?")
+        viewModel.newConversation()
+
+        assertEquals(AiAskResult.Resting(day), viewModel.state.value.limit)
+        viewModel.openConversation(1L)
+        assertEquals(AiAskResult.Resting(day), viewModel.state.value.failure)
+    }
+
+    @Test
+    fun `the stored limit is gone once it resets, and the question offers retry (#271)`() = runTest {
+        hitDailyLimit()
+        ask("What is the Trinity?")
+
+        clock = day
+        restart()
+
+        assertNull(viewModel.state.value.limit)
+        assertNull(settings.limit)
+        viewModel.openConversation(1L)
+        assertEquals(AiAskResult.Unavailable, viewModel.state.value.failure)
+    }
+
+    @Test
+    fun `the limit clears itself at the reset while the app is open (#271)`() = runTest {
+        Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
+        restart()
+        hitDailyLimit()
+        ask("What is the Trinity?")
+        assertEquals(AiAskResult.DailyLimit(day), viewModel.state.value.limit)
+
+        clock = day
+        advanceTimeBy(day + 1)
+
+        val state = viewModel.state.value
+        assertNull(state.limit)
+        assertNull(settings.limit)
+        // The card under the question can be retried now.
+        assertEquals(AiAskResult.Unavailable, state.failure)
+    }
+
+    @Test
+    fun `the questions left survive a restart until the day ends (#271)`() = runTest {
+        ask("How can I be saved?")
+        assertEquals(RemainingToday(3, day), settings.remainingToday)
+
+        restart()
+        assertEquals(3, viewModel.state.value.remainingToday)
+
+        clock = day
+        restart()
+        assertNull(viewModel.state.value.remainingToday)
+    }
+
+    @Test
+    fun `signing out forgets the limit (#271)`() = runTest {
+        viewModel.onSignInChanged(true)
+        hitDailyLimit()
+        ask("What is the Trinity?")
+
+        viewModel.onSignInChanged(false)
+
+        assertNull(viewModel.state.value.limit)
+        assertNull(settings.limit)
+        assertNull(settings.remainingToday)
     }
 
     @Test

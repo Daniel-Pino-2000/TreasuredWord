@@ -10,6 +10,7 @@ import org.junit.runner.RunWith
 
 /**
  * Sign-out, account deletion and switching accounts remove every Bible Helper conversation (#127),
+ * and an older install gains the columns that remember why a question went unanswered (#271),
  * on a real SQLite. Uses a throwaway in-memory database, never the app's own.
  */
 @RunWith(AndroidJUnit4::class)
@@ -53,6 +54,25 @@ class AiConversationTablesTest {
         assertEquals(0, count("ai_messages"))
         // A note made here and never uploaded still goes to the new account (#81).
         assertEquals(1, count("notes"))
+    }
+
+    @Test
+    fun anOlderInstallGainsTheFailureColumnsWithItsConversationsKept() {
+        // ai_conversations as it was before #271, with a conversation in it.
+        val old = SQLiteDatabase.create(null)
+        old.execSQL("CREATE TABLE ai_conversations (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL)")
+        old.execSQL("INSERT INTO ai_conversations (id, title, created_at, updated_at) VALUES (7, 'Q', 't', 't')")
+
+        BibleDatabaseManager.ensureAiHelperTables(old)
+        old.execSQL("UPDATE ai_conversations SET failure = 'DAILY_LIMIT', failure_resets_at = 86400000 WHERE id = 7")
+
+        old.rawQuery("SELECT title, failure, failure_resets_at FROM ai_conversations WHERE id = 7", null).use {
+            it.moveToFirst()
+            assertEquals("Q", it.getString(0))
+            assertEquals("DAILY_LIMIT", it.getString(1))
+            assertEquals(86_400_000L, it.getLong(2))
+        }
+        old.close()
     }
 
     private fun count(table: String): Int =

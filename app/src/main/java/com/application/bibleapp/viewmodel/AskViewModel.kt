@@ -17,6 +17,12 @@ import com.application.bibleapp.data.repository.AiHelperRepository
 import com.application.bibleapp.data.repository.AiHelperRepository.Companion.MAX_ANSWER_CHARS
 import com.application.bibleapp.data.repository.AiHelperRepository.Companion.MAX_QUESTION_CHARS
 import com.application.bibleapp.data.repository.SqliteAiConversationStore
+import com.application.bibleapp.data.repository.failureFromStored
+import com.application.bibleapp.data.repository.resetsAtMillis
+import com.application.bibleapp.data.repository.storedKind
+import com.application.bibleapp.data.remote.nextUtcMidnight
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -29,6 +35,8 @@ import kotlinx.coroutines.launch
  * Retry where trying again can help. [remainingToday] is the day's questions left, from the
  * last answer. [passage] is the one "Ask about this verse" attached (#132): it goes with every
  * question while this conversation is open, so follow-ups keep it, and isn't saved with it.
+ * [limit] is the daily limit or the resting service while it lasts, whichever conversation is
+ * open (#271): nothing can be sent until it resets.
  */
 data class AskUiState(
     val conversationId: Long? = null,
@@ -36,12 +44,23 @@ data class AskUiState(
     val isSending: Boolean = false,
     val failure: AiAskResult.Failure? = null,
     val remainingToday: Int? = null,
-    val passage: AiQuestionPassage? = null
+    val passage: AiQuestionPassage? = null,
+    val limit: AiAskResult.Failure? = null
 )
 
-/** Whether "Got it" was tapped on the one-time notice (#128); [SharedPreferencesAskSettings] in the app. */
+/** The day's questions left, and when that count resets (00:00 UTC). */
+data class RemainingToday(val count: Int, val resetsAtMillis: Long)
+
+/**
+ * The Bible Helper's settings on the phone ([SharedPreferencesAskSettings] in the app): whether
+ * "Got it" was tapped on the one-time notice (#128), and the limit the last question hit and the
+ * questions left, so a restart or a new conversation still knows them until they reset (#271).
+ */
 interface AskSettings {
     var noticeAccepted: Boolean
+    /** An [AiAskResult.DailyLimit] or [AiAskResult.Resting], or null. */
+    var limit: AiAskResult.Failure?
+    var remainingToday: RemainingToday?
 }
 
 class SharedPreferencesAskSettings(context: Context) : AskSettings {
@@ -51,8 +70,44 @@ class SharedPreferencesAskSettings(context: Context) : AskSettings {
         get() = prefs.getBoolean(KEY_NOTICE_ACCEPTED, false)
         set(value) = prefs.edit { putBoolean(KEY_NOTICE_ACCEPTED, value) }
 
+    override var limit: AiAskResult.Failure?
+        get() {
+            val kind = prefs.getString(KEY_LIMIT, null) ?: return null
+            return failureFromStored(kind, prefs.getLong(KEY_LIMIT_RESETS_AT, 0L))
+                .takeIf { it is AiAskResult.DailyLimit || it is AiAskResult.Resting }
+        }
+        set(value) = prefs.edit {
+            if (value == null) {
+                remove(KEY_LIMIT)
+                remove(KEY_LIMIT_RESETS_AT)
+            } else {
+                putString(KEY_LIMIT, value.storedKind)
+                putLong(KEY_LIMIT_RESETS_AT, value.resetsAtMillis ?: 0L)
+            }
+        }
+
+    override var remainingToday: RemainingToday?
+        get() = if (prefs.contains(KEY_REMAINING)) {
+            RemainingToday(prefs.getInt(KEY_REMAINING, 0), prefs.getLong(KEY_REMAINING_RESETS_AT, 0L))
+        } else {
+            null
+        }
+        set(value) = prefs.edit {
+            if (value == null) {
+                remove(KEY_REMAINING)
+                remove(KEY_REMAINING_RESETS_AT)
+            } else {
+                putInt(KEY_REMAINING, value.count)
+                putLong(KEY_REMAINING_RESETS_AT, value.resetsAtMillis)
+            }
+        }
+
     private companion object {
         const val KEY_NOTICE_ACCEPTED = "notice_accepted"
+        const val KEY_LIMIT = "limit"
+        const val KEY_LIMIT_RESETS_AT = "limit_resets_at"
+        const val KEY_REMAINING = "remaining_today"
+        const val KEY_REMAINING_RESETS_AT = "remaining_resets_at"
     }
 }
 
@@ -62,11 +117,21 @@ class SharedPreferencesAskSettings(context: Context) : AskSettings {
  */
 class AskViewModel(
     private val repository: AiHelperRepository,
-    private val settings: AskSettings
+    private val settings: AskSettings,
+    private val now: () -> Long = System::currentTimeMillis
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(AskUiState())
+    private val _state = MutableStateFlow(
+        AskUiState(remainingToday = settings.remainingToday?.takeIf { now() < it.resetsAtMillis }?.count)
+    )
     val state: StateFlow<AskUiState> = _state.asStateFlow()
+
+    /** Clears [AskUiState.limit] when it resets, if the app is still open then. */
+    private var limitReset: Job? = null
+
+    init {
+        settings.limit?.let(::applyLimit)
+    }
 
     private val _draft = MutableStateFlow("")
     val draft: StateFlow<String> = _draft.asStateFlow()
@@ -93,7 +158,8 @@ class AskViewModel(
     /** Sends the draft in [language] (an [com.application.bibleapp.utils.AppLanguage] tag). */
     fun send(language: String) {
         val question = _draft.value.trim()
-        if (question.isEmpty() || _state.value.isSending) return
+        // While the limit lasts the question stays in the field, to send after the reset (#271).
+        if (question.isEmpty() || _state.value.isSending || _state.value.limit != null) return
         _draft.value = ""
         passageQuestion = null
         val conversationId = _state.value.conversationId
@@ -113,7 +179,7 @@ class AskViewModel(
      */
     fun startWithPassage(passage: AiQuestionPassage, question: String) {
         if (_state.value.isSending) return
-        _state.value = AskUiState(remainingToday = _state.value.remainingToday, passage = passage)
+        _state.value = AskUiState(remainingToday = _state.value.remainingToday, passage = passage, limit = _state.value.limit)
         _draft.value = question.take(MAX_QUESTION_CHARS)
         passageQuestion = _draft.value
     }
@@ -135,7 +201,7 @@ class AskViewModel(
     /** Sends the conversation's unanswered last question again. */
     fun retry(language: String) {
         val id = _state.value.conversationId ?: return
-        if (_state.value.isSending) return
+        if (_state.value.isSending || _state.value.limit != null) return
         _state.update { it.copy(isSending = true, failure = null) }
         val passage = _state.value.passage?.dto
         viewModelScope.launch { finish(id, repository.retry(id, language, passage)) }
@@ -143,7 +209,7 @@ class AskViewModel(
 
     fun newConversation() {
         if (_state.value.isSending) return
-        _state.value = AskUiState(remainingToday = _state.value.remainingToday)
+        _state.value = AskUiState(remainingToday = _state.value.remainingToday, limit = _state.value.limit)
         dropPassageQuestion()
     }
 
@@ -155,9 +221,11 @@ class AskViewModel(
             _state.value = AskUiState(
                 conversationId = id,
                 messages = messages,
-                // A question left without an answer (the app closed, or it failed): offer Retry.
-                failure = if (messages.lastOrNull()?.role == AiRole.USER) AiAskResult.Unavailable else null,
-                remainingToday = _state.value.remainingToday
+                // A question left without an answer says why again (#271): the daily limit until
+                // it resets, otherwise Retry.
+                failure = repository.unansweredFailure(id, now()),
+                remainingToday = _state.value.remainingToday,
+                limit = _state.value.limit
             )
         }
     }
@@ -195,6 +263,10 @@ class AskViewModel(
             _state.value = AskUiState()
             _draft.value = ""
             _conversations.value = emptyList()
+            // The limit and the count were the account's: another one may sign in next.
+            limitReset?.cancel()
+            settings.limit = null
+            settings.remainingToday = null
         }
         signedIn = isSignedIn
     }
@@ -207,13 +279,63 @@ class AskViewModel(
         viewModelScope.launch {
             repository.deleteConversation(id)
             if (_state.value.conversationId == id && !_state.value.isSending) {
-                _state.value = AskUiState(remainingToday = _state.value.remainingToday)
+                _state.value = AskUiState(remainingToday = _state.value.remainingToday, limit = _state.value.limit)
             }
             _conversations.value = repository.conversations()
         }
     }
 
+    /** Shows [limit] until it resets, then clears it, here and on the phone (#271). */
+    private fun applyLimit(limit: AiAskResult.Failure) {
+        val resetsAt = limit.resetsAtMillis ?: return
+        limitReset?.cancel()
+        if (now() >= resetsAt) {
+            clearLimit()
+            return
+        }
+        _state.update { it.copy(limit = limit) }
+        limitReset = viewModelScope.launch {
+            delay(resetsAt - now())
+            clearLimit()
+        }
+    }
+
+    private fun clearLimit() {
+        limitReset?.cancel()
+        limitReset = null
+        settings.limit = null
+        _state.update { current ->
+            current.copy(
+                limit = null,
+                // The day's count reset with it; the next answer brings the new one.
+                remainingToday = if (current.limit is AiAskResult.DailyLimit) null else current.remainingToday,
+                // A daily-limit or resting card under the open question can now be retried.
+                failure = when (current.failure) {
+                    is AiAskResult.DailyLimit, is AiAskResult.Resting -> AiAskResult.Unavailable
+                    else -> current.failure
+                }
+            )
+        }
+    }
+
+    /** Remembers what [result] says about the day's questions: the limit it hit, or what's left. */
+    private fun rememberLimits(result: AiAskResult) {
+        when (result) {
+            is AiAskResult.DailyLimit, is AiAskResult.Resting -> {
+                settings.limit = result
+                settings.remainingToday = null
+                applyLimit(result)
+            }
+            is AiAskResult.Answer -> {
+                if (_state.value.limit != null || settings.limit != null) clearLimit()
+                result.remainingToday?.let { settings.remainingToday = RemainingToday(it, nextUtcMidnight(now())) }
+            }
+            else -> Unit
+        }
+    }
+
     private suspend fun finish(conversationId: Long, result: AiAskResult) {
+        rememberLimits(result)
         val messages = repository.messages(conversationId)
         _conversations.value = repository.conversations()
         _state.update { current ->

@@ -360,7 +360,8 @@ object BibleDatabaseManager {
     /**
      * The Bible Helper's conversations (#127), kept only on this phone: there's no sync status or
      * remote id, and sign-out removes them with the highlights and notes ([deleteAllUserContent]).
-     * `crisis` and `prompt_version` are only set on answers. A conversation's messages are deleted
+     * `crisis` and `prompt_version` are only set on answers; a conversation's `failure` is why its
+     * last question went unanswered (#271), cleared by the next answer. A conversation's messages are deleted
      * with it by [deleteAiConversation] itself: SQLite ignores `ON DELETE CASCADE` unless
      * `PRAGMA foreign_keys` is on, which this shared connection never turns on.
      */
@@ -389,6 +390,10 @@ object BibleDatabaseManager {
             """.trimIndent()
         )
         db.execSQL("CREATE INDEX IF NOT EXISTS ai_messages_by_conversation ON ai_messages (conversation_id, id)")
+        // Why the conversation's last question has no answer, and when that reason ends (#271), so
+        // reopening it still says "You've asked all of today's questions" and not a generic failure.
+        addColumnIfMissing(db, "ai_conversations", "failure", "TEXT")
+        addColumnIfMissing(db, "ai_conversations", "failure_resets_at", "INTEGER")
         Log.d("BibleDB", "Bible Helper tables ready")
     }
 
@@ -1454,6 +1459,28 @@ object BibleDatabaseManager {
                     null
                 }
             }.toList()
+        }
+
+    /** Stores why [conversationId]'s last question has no answer ([kind], null once answered) and
+     *  when that reason ends, in epoch milliseconds (#271). */
+    fun setAiConversationFailure(context: Context, conversationId: Long, kind: String?, resetsAtMillis: Long?) {
+        getDatabase(context).execSQL(
+            "UPDATE ai_conversations SET failure = ?, failure_resets_at = ? WHERE id = ?",
+            arrayOf(kind, resetsAtMillis, conversationId)
+        )
+    }
+
+    /** What [setAiConversationFailure] stored: the kind and its end, or null when there's none. */
+    fun getAiConversationFailure(context: Context, conversationId: Long): Pair<String, Long?>? =
+        getDatabase(context).rawQuery(
+            "SELECT failure, failure_resets_at FROM ai_conversations WHERE id = ?",
+            arrayOf(conversationId.toString())
+        ).use { cursor ->
+            if (cursor.moveToFirst() && !cursor.isNull(0)) {
+                cursor.getString(0) to (if (cursor.isNull(1)) null else cursor.getLong(1))
+            } else {
+                null
+            }
         }
 
     fun deleteAiConversation(context: Context, conversationId: Long) {
