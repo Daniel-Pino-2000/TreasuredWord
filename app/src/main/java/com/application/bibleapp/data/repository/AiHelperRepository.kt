@@ -106,18 +106,34 @@ class AiHelperRepository(
 
     /** Saves [question] (at most [MAX_QUESTION_CHARS]; the screen limits the field), sends it
      *  with the conversation so far in [language], and saves the answer. [passage] is the one
-     *  "Ask about this verse" attached (#132); it goes with the request but isn't saved. */
-    suspend fun ask(conversationId: Long?, question: String, language: String, passage: AiPassageDto? = null): Exchange {
+     *  "Ask about this verse" attached (#132); it goes with the request but isn't saved.
+     *  [beforeSend] runs once the question is saved, just before it goes: the time to wake the
+     *  server (#280). */
+    suspend fun ask(
+        conversationId: Long?,
+        question: String,
+        language: String,
+        passage: AiPassageDto? = null,
+        beforeSend: suspend () -> Unit = {}
+    ): Exchange {
         val text = question.trim()
         require(text.isNotEmpty() && text.length <= MAX_QUESTION_CHARS) { "Question must be 1–$MAX_QUESTION_CHARS characters" }
         val id = conversationId ?: store.createConversation(conversationTitle(text)).id
         store.addMessage(id, AiRole.USER, text)
+        beforeSend()
         return Exchange(id, send(id, language, passage))
     }
 
     /** Sends a conversation's last question again, after a failure, without saving it twice. */
-    suspend fun retry(conversationId: Long, language: String, passage: AiPassageDto? = null): AiAskResult =
-        send(conversationId, language, passage)
+    suspend fun retry(
+        conversationId: Long,
+        language: String,
+        passage: AiPassageDto? = null,
+        beforeSend: suspend () -> Unit = {}
+    ): AiAskResult {
+        beforeSend()
+        return send(conversationId, language, passage)
+    }
 
     suspend fun conversations(): List<AiConversation> = store.conversations()
 

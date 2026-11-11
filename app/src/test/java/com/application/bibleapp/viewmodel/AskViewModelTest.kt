@@ -12,6 +12,7 @@ import com.application.bibleapp.data.remote.AiReportReason
 import com.application.bibleapp.data.remote.AiReportRequestDto
 import com.application.bibleapp.data.remote.AiReportResult
 import com.application.bibleapp.data.remote.HttpClientProvider
+import com.application.bibleapp.data.remote.ServerWake
 import com.application.bibleapp.data.repository.AiConversationStore
 import com.application.bibleapp.data.repository.AiHelperRepository
 import io.ktor.client.HttpClient
@@ -133,6 +134,65 @@ class AskViewModelTest {
         assertEquals(3, state.remainingToday)
         assertEquals("", viewModel.draft.value)
         assertEquals(listOf("How can I be saved?"), viewModel.conversations.value.map { it.title })
+    }
+
+    /** A server that's [awake], or asleep until [wake] is called (#280); [log] records the order. */
+    private inner class FakeServerWake(var awake: Boolean) : ServerWake {
+        override fun isAwake() = awake
+        override suspend fun wake() {
+            log += "wake"
+            wakingSeen = viewModel.state.value.isWaking
+            awake = true
+        }
+    }
+
+    private val log = mutableListOf<String>()
+    private var wakingSeen = false
+
+    private fun viewModelWith(wake: ServerWake) {
+        viewModel = AskViewModel(AiHelperRepository(store, api), settings, now = { clock }, serverWake = wake)
+    }
+
+    @Test
+    fun `a sleeping server is woken before the question goes, and the screen says so (#280)`() = runTest {
+        viewModelWith(FakeServerWake(awake = false))
+
+        ask("How should I pray?")
+
+        assertEquals(listOf("wake"), log)
+        assertTrue(wakingSeen)
+        assertFalse(viewModel.state.value.isWaking)
+        // Saved before waking, so a question waiting for the server isn't lost; sent after it.
+        assertEquals(listOf(AiRole.USER, AiRole.ASSISTANT), store.messages.map { it.role })
+        assertEquals("/api/v1/ai/ask", sent.single().first)
+    }
+
+    @Test
+    fun `an awake server isn't woken (#280)`() = runTest {
+        viewModelWith(FakeServerWake(awake = true))
+
+        ask("How should I pray?")
+
+        assertTrue(log.isEmpty())
+        assertEquals(1, sent.size)
+    }
+
+    @Test
+    fun `retry wakes a server that fell asleep (#280)`() = runTest {
+        val wake = FakeServerWake(awake = true)
+        viewModelWith(wake)
+        status = HttpStatusCode.ServiceUnavailable
+        body = """{"code":"AI_UNAVAILABLE","message":"…"}"""
+        ask("Who was Ruth?")
+        wake.awake = false
+        status = HttpStatusCode.OK
+        body = """{"answer":"Grace [[EPH 2:8]]","crisis":false,"remainingToday":3,"promptVersion":"1"}"""
+
+        viewModel.retry("en")
+        awaitAnswer()
+
+        assertEquals(listOf("wake"), log)
+        assertNull(viewModel.state.value.failure)
     }
 
     @Test

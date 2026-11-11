@@ -25,8 +25,12 @@ sealed class AiProviderException(message: String, cause: Throwable? = null) : Ru
 /** The free daily allowance is used up (Cloudflare error 3036, HTTP 429). It comes back at 00:00 UTC. */
 class QuotaExhausted(message: String) : AiProviderException(message)
 
-/** A timeout, a server error, or an answer we couldn't read. Worth trying again later. */
-class Unavailable(message: String, cause: Throwable? = null) : AiProviderException(message, cause)
+/**
+ * A timeout, a server error, or an answer we couldn't read. Worth trying again later.
+ * [transient] marks a hiccup that's usually over in a moment (no connection, a 5xx, Cloudflare's
+ * "capacity temporarily exceeded"), which the provider tries once more by itself (#280).
+ */
+class Unavailable(message: String, cause: Throwable? = null, val transient: Boolean = false) : AiProviderException(message, cause)
 
 /**
  * Sends a conversation to an AI and returns its answer (#123).

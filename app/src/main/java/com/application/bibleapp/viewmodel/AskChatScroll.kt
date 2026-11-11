@@ -27,13 +27,14 @@ class AskChatScroll {
     /**
      * The item to scroll the chat to for [state], or null to leave it where it is: a new question
      * goes down to the "Thinking…" row, or the failure card, right after the messages; an answer
-     * shows from its question, so from its first line; the server-waking hint ([waitingLong]) makes
-     * that row taller, so it scrolls again then (#213); a new conversation starts at the top.
+     * shows from its question, so from its first line; the server-waking hint ([waitingLong], or
+     * [AskUiState.isWaking] ending, #280) changes that row's height, so it scrolls again then
+     * (#213); a new conversation starts at the top.
      * Indexes come from the state, not the list's layout, which hasn't caught up yet when this runs.
      * With messages there's no intro item, so the "Thinking…" row or failure card is right after them.
      */
     fun autoScrollTarget(state: AskUiState, waitingLong: Boolean): Int? {
-        val reason = Reason(state.conversationId, state.messages.size, state.isSending, state.failure, waitingLong)
+        val reason = Reason(state.conversationId, state.messages.size, state.isSending, state.isWaking, state.failure, waitingLong)
         if (reason == scrolledFor) return null
         scrolledFor = reason
         val lastQuestion = state.messages.indexOfLast { it.role == AiRole.USER }
@@ -49,6 +50,7 @@ class AskChatScroll {
         val conversationId: Long?,
         val messages: Int,
         val isSending: Boolean,
+        val isWaking: Boolean,
         val failure: AiAskResult.Failure?,
         val waitingLong: Boolean
     )

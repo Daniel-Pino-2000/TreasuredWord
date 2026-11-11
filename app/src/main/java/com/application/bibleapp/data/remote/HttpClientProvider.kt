@@ -79,6 +79,10 @@ object HttpClientProvider {
                 }
             }
         }
+        // Any answer from our server means it's awake: the Bible Helper skips waking it (#280).
+        onResponse { response ->
+            if (response.call.request.url.host == backendHost) BackendContact.heard()
+        }
     }
 
     private lateinit var tokenStore: TokenStore

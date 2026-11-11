@@ -24,6 +24,9 @@ class AiHelperApiTest {
 
     private val sent = mutableListOf<HttpRequestData>()
 
+    /** What the phone says about its connection; null: the app doesn't know (#280). */
+    private var phoneOnline: Boolean? = null
+
     private fun api(handler: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData): AiHelperApi {
         val client = HttpClient(MockEngine { request ->
             sent += request
@@ -31,7 +34,11 @@ class AiHelperApiTest {
         }) {
             install(ContentNegotiation) { json(HttpClientProvider.json) }
         }
-        return AiHelperApi(client = { client }, baseUrl = "https://backend.test/api/v1", now = { NOW }, log = {})
+        val online = phoneOnline
+        return AiHelperApi(
+            client = { client }, baseUrl = "https://backend.test/api/v1", now = { NOW }, log = {},
+            phoneIsOnline = online?.let { value -> { value } }
+        )
     }
 
     private fun MockRequestHandleScope.json(status: HttpStatusCode, body: String) =
@@ -112,6 +119,18 @@ class AiHelperApiTest {
     @Test
     fun `no connection is offline`() = runTest {
         assertEquals(AiAskResult.Offline, ask { throw IOException("Unable to resolve host") })
+    }
+
+    @Test
+    fun `no connection while the phone is offline is offline`() = runTest {
+        phoneOnline = false
+        assertEquals(AiAskResult.Offline, ask { throw IOException("Unable to resolve host") })
+    }
+
+    @Test
+    fun `a dropped connection while the phone is online is unavailable, not offline (#280)`() = runTest {
+        phoneOnline = true
+        assertEquals(AiAskResult.Unavailable, ask { throw IOException("unexpected end of stream") })
     }
 
     @Test
