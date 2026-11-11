@@ -568,6 +568,63 @@ class AskViewModelTest {
         assertEquals(listOf(passage, null), questions.map { it.passage })
     }
 
+    private fun sentStarters() = sent.filter { it.first.endsWith("/ai/ask") }
+        .map { HttpClientProvider.json.decodeFromString(AiAskRequestDto.serializer(), it.second).starter }
+
+    private fun askStarter(id: String, question: String) {
+        viewModel.onDraftChange(question)
+        viewModel.send("en", starter = id)
+    }
+
+    @Test
+    fun `a starter question is sent as its starter, a typed one isn't (#284)`() = runTest {
+        askStarter("prayer", "How should I pray?")
+        awaitAnswer()
+        ask("And how often?")
+
+        assertEquals(listOf("prayer", null), sentStarters())
+    }
+
+    @Test
+    fun `a starter goes while the day's limit lasts, and its answer leaves the limit in place (#284)`() = runTest {
+        status = HttpStatusCode.TooManyRequests
+        body = """{"code":"AI_DAILY_LIMIT","message":"x"}"""
+        ask("What is the Trinity?")
+        viewModel.newConversation()
+        assertTrue(viewModel.state.value.limit is AiAskResult.DailyLimit)
+
+        status = HttpStatusCode.OK
+        body = """{"answer":"Pray to the Father [[MAT 6:9]]","crisis":false,"remainingToday":0,"promptVersion":"13"}"""
+        askStarter("prayer", "How should I pray?")
+        // Waits without suspending: suspended, runTest would skip ahead in virtual time to the
+        // limit's reset at midnight, which isn't what this test is about.
+        val until = System.currentTimeMillis() + 5_000
+        while (viewModel.state.value.isSending && System.currentTimeMillis() < until) Thread.sleep(10)
+
+        val state = viewModel.state.value
+        assertEquals(listOf(AiRole.USER, AiRole.ASSISTANT), state.messages.map { it.role })
+        assertTrue(state.limit is AiAskResult.DailyLimit)
+        assertTrue(settings.limit is AiAskResult.DailyLimit)
+        // A typed question still waits for the reset.
+        ask("And how often?")
+        assertEquals(2, sent.count { it.first.endsWith("/ai/ask") })
+    }
+
+    @Test
+    fun `a failed starter is retried as its starter (#284)`() = runTest {
+        status = HttpStatusCode.ServiceUnavailable
+        body = """{"code":"AI_UNAVAILABLE","message":"x"}"""
+        askStarter("saved", "How can I be saved?")
+        awaitAnswer()
+        status = HttpStatusCode.OK
+        body = """{"answer":"Grace [[EPH 2:8]]","crisis":false,"remainingToday":3,"promptVersion":"13"}"""
+
+        viewModel.retry("en")
+        awaitAnswer()
+
+        assertEquals(listOf("saved", "saved"), sentStarters())
+    }
+
     /** What the chat scrolls to as the Ask screen shows [viewModel]'s state now (null: stays put). */
     private fun autoScroll() = viewModel.chatScroll.autoScrollTarget(viewModel.state.value, waitingLong = false)
 
