@@ -3,6 +3,7 @@ package com.application.bibleapp.screens
 import android.content.res.Configuration
 import android.text.format.DateFormat
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.interaction.DragInteraction
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
@@ -48,6 +50,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -98,12 +101,17 @@ import com.application.bibleapp.utils.parseAiAnswer
 import com.application.bibleapp.utils.UiText
 import com.application.bibleapp.utils.rememberExternalLinks
 import com.application.bibleapp.utils.rememberIsOnline
+import com.application.bibleapp.viewmodel.AskChatScroll
 import com.application.bibleapp.viewmodel.AskUiState
 import com.application.bibleapp.viewmodel.AskViewModel
 import com.application.bibleapp.viewmodel.BibleViewModel
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
 /** The starter questions a new conversation offers (#128). */
 private val STARTER_QUESTIONS = listOf(
@@ -214,6 +222,7 @@ fun AskView(
         onRetry = { askViewModel.retry(language) },
         onSignInClick = onSignInClick,
         onRemovePassage = askViewModel::removePassage,
+        scroll = askViewModel.chatScroll,
         answer = { message ->
             AiAnswer(
                 message = message,
@@ -241,21 +250,30 @@ private fun AskChat(
     onRetry: () -> Unit,
     onSignInClick: () -> Unit,
     onRemovePassage: () -> Unit,
+    scroll: AskChatScroll = remember { AskChatScroll() },
     answer: @Composable (AiMessage) -> Unit
 ) {
-    val listState = rememberLazyListState()
+    // Starts where the person left it: each tab tap is a new screen, whose list would start at the
+    // top after reading a cited verse (#278).
+    val listState = rememberLazyListState(scroll.firstVisibleItem, scroll.firstVisibleItemOffset)
+    LaunchedEffect(listState, scroll) {
+        snapshotFlow { listState.firstVisibleItemIndex to listState.firstVisibleItemScrollOffset }
+            .collect { (item, offset) -> scroll.savePosition(item, offset) }
+    }
     val waitingLong = rememberWaitingLong(waiting = state.isSending, afterMillis = ASK_SLOW_AFTER_MILLIS)
-    // A new question scrolls down to the "Thinking…" row; its answer then shows from its first line.
-    // Indexes from the state, not the list's layout, which hasn't caught up yet when this runs.
-    // With messages there's no intro item, so the "Thinking…" row or failure card is right after them.
-    // The server-waking hint makes that row taller later, so it scrolls again then (#213).
-    LaunchedEffect(state.messages.size, state.isSending, state.failure, waitingLong) {
-        val lastQuestion = state.messages.indexOfLast { it.role == AiRole.USER }
-        when {
-            state.messages.isEmpty() -> Unit
-            state.isSending || state.failure != null -> listState.animateScrollToItem(state.messages.size)
-            lastQuestion >= 0 -> listState.animateScrollToItem(lastQuestion)
+    // A new question scrolls down to the "Thinking…" row; its answer then shows from its first line
+    // (see AskChatScroll). Coming back to the screen with nothing new leaves the list where it was.
+    LaunchedEffect(state.conversationId, state.messages.size, state.isSending, state.failure, waitingLong) {
+        val target = scroll.autoScrollTarget(state, waitingLong) ?: return@LaunchedEffect
+        // Before the list's first layout an animated scroll does nothing (it has no items yet),
+        // which is what left a returning chat at the top; jump there instead.
+        if (listState.layoutInfo.totalItemsCount > 0) {
+            listState.animateScrollToItem(target)
+        } else {
+            listState.scrollToItem(target)
         }
+        // The "Thinking…" row or failure card is the list's last item.
+        if (target == state.messages.size && target > 0) listState.keepEndInView(target)
     }
 
     // While the day's questions are used up (or the service rests), one banner says so in every
@@ -331,6 +349,26 @@ private fun AskChat(
         )
     }
 }
+
+/**
+ * The answers' verse cards load their text after the chat has scrolled, and grow, which pushed a
+ * failure card at the end back out of view (#278). Follows the end while they settle: until the
+ * person drags the list, or [KEEP_END_MILLIS] have passed.
+ */
+private suspend fun LazyListState.keepEndInView(lastItem: Int) {
+    withTimeoutOrNull(KEEP_END_MILLIS) {
+        coroutineScope {
+            val follow = launch {
+                snapshotFlow { canScrollForward }.collect { below -> if (below) scrollToItem(lastItem) }
+            }
+            interactionSource.interactions.first { it is DragInteraction.Start }
+            follow.cancel()
+        }
+    }
+}
+
+/** Long enough for the verse cards to load after a cold start. */
+private const val KEEP_END_MILLIS = 3_000L
 
 /** "Questions left today" shows once this few remain (#128). */
 private const val REMAINING_SHOWN_FROM = 3
