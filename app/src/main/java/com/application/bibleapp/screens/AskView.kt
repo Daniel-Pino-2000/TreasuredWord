@@ -3,6 +3,7 @@ package com.application.bibleapp.screens
 import android.content.res.Configuration
 import android.text.format.DateFormat
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.interaction.DragInteraction
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
@@ -106,6 +108,10 @@ import com.application.bibleapp.viewmodel.BibleViewModel
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
 /** The starter questions a new conversation offers (#128). */
 private val STARTER_QUESTIONS = listOf(
@@ -266,6 +272,8 @@ private fun AskChat(
         } else {
             listState.scrollToItem(target)
         }
+        // The "Thinking…" row or failure card is the list's last item.
+        if (target == state.messages.size && target > 0) listState.keepEndInView(target)
     }
 
     // While the day's questions are used up (or the service rests), one banner says so in every
@@ -341,6 +349,26 @@ private fun AskChat(
         )
     }
 }
+
+/**
+ * The answers' verse cards load their text after the chat has scrolled, and grow, which pushed a
+ * failure card at the end back out of view (#278). Follows the end while they settle: until the
+ * person drags the list, or [KEEP_END_MILLIS] have passed.
+ */
+private suspend fun LazyListState.keepEndInView(lastItem: Int) {
+    withTimeoutOrNull(KEEP_END_MILLIS) {
+        coroutineScope {
+            val follow = launch {
+                snapshotFlow { canScrollForward }.collect { below -> if (below) scrollToItem(lastItem) }
+            }
+            interactionSource.interactions.first { it is DragInteraction.Start }
+            follow.cancel()
+        }
+    }
+}
+
+/** Long enough for the verse cards to load after a cold start. */
+private const val KEEP_END_MILLIS = 3_000L
 
 /** "Questions left today" shows once this few remain (#128). */
 private const val REMAINING_SHOWN_FROM = 3
