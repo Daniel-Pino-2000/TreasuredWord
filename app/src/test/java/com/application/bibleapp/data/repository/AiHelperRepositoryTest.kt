@@ -2,12 +2,14 @@ package com.application.bibleapp.data.repository
 
 import com.application.bibleapp.data.model.AiConversation
 import com.application.bibleapp.data.model.AiMessage
+import com.application.bibleapp.data.model.AiQuestionPassage
 import com.application.bibleapp.data.model.AiRole
 import com.application.bibleapp.data.model.conversationTitle
 import com.application.bibleapp.data.remote.AiAskRequestDto
 import com.application.bibleapp.data.remote.AiAskResult
 import com.application.bibleapp.data.remote.AiHelperApi
 import com.application.bibleapp.data.remote.AiMessageDto
+import com.application.bibleapp.data.remote.AiPassageDto
 import com.application.bibleapp.data.remote.HttpClientProvider
 import com.application.bibleapp.data.repository.AiHelperRepository.Companion.MAX_ANSWER_CHARS
 import com.application.bibleapp.data.repository.AiHelperRepository.Companion.MAX_HISTORY_CHARS
@@ -24,6 +26,7 @@ import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -37,8 +40,9 @@ class AiHelperRepositoryTest {
         override suspend fun createConversation(title: String) =
             AiConversation(conversations.size + 1L, title, "t", "t").also { conversations += it }
 
-        override suspend fun addMessage(conversationId: Long, role: AiRole, content: String, crisis: Boolean, promptVersion: String?) =
-            AiMessage(messages.size + 1L, conversationId, role, content, crisis, promptVersion, "t").also { messages += it }
+        override suspend fun addMessage(
+            conversationId: Long, role: AiRole, content: String, crisis: Boolean, promptVersion: String?, passage: AiQuestionPassage?
+        ) = AiMessage(messages.size + 1L, conversationId, role, content, crisis, promptVersion, "t", passage).also { messages += it }
 
         override suspend fun conversations() = conversations.toList()
         override suspend fun messages(conversationId: Long) = messages.filter { it.conversationId == conversationId }
@@ -114,6 +118,22 @@ class AiHelperRepositoryTest {
         assertTrue(retried is AiAskResult.Answer)
         assertEquals(listOf(AiRole.USER, AiRole.ASSISTANT), store.messages.map { it.role })
         assertEquals(listOf(AiMessageDto("user", "Why?")), sentBodies.last().messages)
+    }
+
+    private val passage = AiQuestionPassage("John 3:16 (KJV)", AiPassageDto("JHN 3:16", "For God so loved the world"))
+
+    @Test
+    fun `a question asked about a passage keeps it, and retry sends it again (#281)`() = runTest {
+        status = HttpStatusCode.ServiceUnavailable
+        val exchange = repository.ask(null, "What does this passage mean?", "en", passage)
+        assertEquals(passage, store.messages.single().passage)
+        assertEquals(passage.dto, sentBodies.last().passage)
+
+        status = HttpStatusCode.OK
+        repository.retry(exchange.conversationId, "en")
+
+        assertEquals(passage.dto, sentBodies.last().passage)
+        assertNull(store.messages.last().passage) // the answer has none
     }
 
     @Test

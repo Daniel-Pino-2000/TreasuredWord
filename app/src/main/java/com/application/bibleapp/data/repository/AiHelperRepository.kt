@@ -4,13 +4,13 @@ import android.content.Context
 import com.application.bibleapp.data.local.BibleDatabaseManager
 import com.application.bibleapp.data.model.AiConversation
 import com.application.bibleapp.data.model.AiMessage
+import com.application.bibleapp.data.model.AiQuestionPassage
 import com.application.bibleapp.data.model.AiRole
 import com.application.bibleapp.data.model.conversationTitle
 import com.application.bibleapp.data.remote.AiAskRequestDto
 import com.application.bibleapp.data.remote.AiAskResult
 import com.application.bibleapp.data.remote.AiHelperApi
 import com.application.bibleapp.data.remote.AiMessageDto
-import com.application.bibleapp.data.remote.AiPassageDto
 import com.application.bibleapp.data.remote.AiReportRequestDto
 import com.application.bibleapp.data.remote.AiReportResult
 import kotlinx.coroutines.Dispatchers
@@ -19,7 +19,14 @@ import kotlinx.coroutines.withContext
 /** Where conversations are kept: [SqliteAiConversationStore] in the app, a list in tests. */
 interface AiConversationStore {
     suspend fun createConversation(title: String): AiConversation
-    suspend fun addMessage(conversationId: Long, role: AiRole, content: String, crisis: Boolean = false, promptVersion: String? = null): AiMessage
+    suspend fun addMessage(
+        conversationId: Long,
+        role: AiRole,
+        content: String,
+        crisis: Boolean = false,
+        promptVersion: String? = null,
+        passage: AiQuestionPassage? = null
+    ): AiMessage
     suspend fun conversations(): List<AiConversation>
     suspend fun messages(conversationId: Long): List<AiMessage>
     suspend fun deleteConversation(conversationId: Long)
@@ -38,10 +45,16 @@ class SqliteAiConversationStore(context: Context) : AiConversationStore {
         BibleDatabaseManager.insertAiConversation(context, title)
     }
 
-    override suspend fun addMessage(conversationId: Long, role: AiRole, content: String, crisis: Boolean, promptVersion: String?) =
-        withContext(Dispatchers.IO) {
-            BibleDatabaseManager.insertAiMessage(context, conversationId, role, content, crisis, promptVersion)
-        }
+    override suspend fun addMessage(
+        conversationId: Long,
+        role: AiRole,
+        content: String,
+        crisis: Boolean,
+        promptVersion: String?,
+        passage: AiQuestionPassage?
+    ) = withContext(Dispatchers.IO) {
+        BibleDatabaseManager.insertAiMessage(context, conversationId, role, content, crisis, promptVersion, passage)
+    }
 
     override suspend fun conversations() = withContext(Dispatchers.IO) { BibleDatabaseManager.getAiConversations(context) }
 
@@ -106,33 +119,33 @@ class AiHelperRepository(
 
     /** Saves [question] (at most [MAX_QUESTION_CHARS]; the screen limits the field), sends it
      *  with the conversation so far in [language], and saves the answer. [passage] is the one
-     *  "Ask about this verse" attached (#132); it goes with the request but isn't saved.
+     *  "Ask about this verse" attached (#132); it's saved with the question (#281) and sent with it.
      *  [beforeSend] runs once the question is saved, just before it goes: the time to wake the
      *  server (#280). */
     suspend fun ask(
         conversationId: Long?,
         question: String,
         language: String,
-        passage: AiPassageDto? = null,
+        passage: AiQuestionPassage? = null,
         beforeSend: suspend () -> Unit = {}
     ): Exchange {
         val text = question.trim()
         require(text.isNotEmpty() && text.length <= MAX_QUESTION_CHARS) { "Question must be 1–$MAX_QUESTION_CHARS characters" }
         val id = conversationId ?: store.createConversation(conversationTitle(text)).id
-        store.addMessage(id, AiRole.USER, text)
+        store.addMessage(id, AiRole.USER, text, passage = passage)
         beforeSend()
-        return Exchange(id, send(id, language, passage))
+        return Exchange(id, send(id, language))
     }
 
-    /** Sends a conversation's last question again, after a failure, without saving it twice. */
+    /** Sends a conversation's last question again, after a failure, without saving it twice, and
+     *  with the passage it was asked about, even after the conversation was reopened (#281). */
     suspend fun retry(
         conversationId: Long,
         language: String,
-        passage: AiPassageDto? = null,
         beforeSend: suspend () -> Unit = {}
     ): AiAskResult {
         beforeSend()
-        return send(conversationId, language, passage)
+        return send(conversationId, language)
     }
 
     suspend fun conversations(): List<AiConversation> = store.conversations()
@@ -161,9 +174,12 @@ class AiHelperRepository(
     /** Reports an answer (#130); stored on the server without the user's ID. */
     suspend fun report(request: AiReportRequestDto): AiReportResult = api.report(request)
 
-    private suspend fun send(conversationId: Long, language: String, passage: AiPassageDto?): AiAskResult {
-        val history = historyToSend(store.messages(conversationId))
+    /** Sends the conversation's last question, with the passage saved with it (#281). */
+    private suspend fun send(conversationId: Long, language: String): AiAskResult {
+        val messages = store.messages(conversationId)
+        val history = historyToSend(messages)
         require(history.lastOrNull()?.role == AiRole.USER.stored) { "Conversation $conversationId has no question to send" }
+        val passage = messages.lastOrNull { it.role == AiRole.USER }?.passage?.dto
         val result = api.ask(AiAskRequestDto(history, language, passage))
         when (result) {
             is AiAskResult.Answer -> {

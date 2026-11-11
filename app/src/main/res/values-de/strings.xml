@@ -453,4 +453,7 @@
     <!-- The question ready to edit when the reader's selected verses open the Ask tab -->
     <string name="ai_passage_default_question">Was bedeutet dieser Abschnitt?</string>
     <string name="ai_passage_remove">%1$s entfernen</string>
+    <!-- Accessibility action on the passage shown above a question asked about it (#281) -->
+    <string name="ai_passage_show_whole">Ganze Bibelstelle anzeigen</string>
+    <string name="ai_passage_show_less">Weniger anzeigen</string>
 </resources>

@@ -514,4 +514,7 @@
     <string name="ai_passage_default_question">What does this passage mean?</string>
     <!-- Screen reader label of the button that takes the attached verses off. %1$s: the verses, e.g. "John 3:16-18 (KJV)" -->
     <string name="ai_passage_remove">Remove %1$s</string>
+    <!-- Accessibility action on the passage shown above a question asked about it (#281) -->
+    <string name="ai_passage_show_whole">Show the whole passage</string>
+    <string name="ai_passage_show_less">Show less</string>
 </resources>

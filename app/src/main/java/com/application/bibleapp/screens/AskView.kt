@@ -4,7 +4,13 @@ import android.content.res.Configuration
 import android.text.format.DateFormat
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.interaction.DragInteraction
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -36,6 +42,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -63,6 +70,7 @@ import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -304,7 +312,7 @@ private fun AskChat(
                 }
             }
             items(state.messages, key = { it.id }) { message ->
-                if (message.role == AiRole.USER) QuestionBubble(message.content) else answer(message)
+                if (message.role == AiRole.USER) QuestionBubble(message) else answer(message)
             }
             if (state.isSending) item(key = "thinking") { Thinking(waking = state.isWaking || waitingLong) }
             state.failure?.let { failure ->
@@ -430,19 +438,73 @@ private fun AskIntro(onStarter: (String) -> Unit, enabled: Boolean, showStarters
     }
 }
 
+/** A question, with the passage it was asked about above it (#281). */
 @Composable
-private fun QuestionBubble(text: String) {
+private fun QuestionBubble(message: AiMessage) {
     Box(modifier = Modifier.fillMaxWidth().padding(start = Spacing.xxl), contentAlignment = Alignment.CenterEnd) {
-        Surface(color = MaterialTheme.colorScheme.primaryContainer, shape = MaterialTheme.shapes.large) {
+        Surface(
+            color = MaterialTheme.colorScheme.primaryContainer,
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            shape = MaterialTheme.shapes.large
+        ) {
+            Column(
+                modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.md),
+                verticalArrangement = Arrangement.spacedBy(Spacing.sm)
+            ) {
+                message.passage?.let { PassageQuote(it) }
+                Text(text = message.content, style = MaterialTheme.typography.bodyLarge)
+            }
+        }
+    }
+}
+
+/**
+ * The verses a question was asked about (#281), so a reopened conversation still says which: the
+ * reference, and the text cut to a few lines until it's tapped.
+ */
+@Composable
+private fun PassageQuote(passage: AiQuestionPassage) {
+    var expanded by rememberSaveable(passage.dto.reference) { mutableStateOf(false) }
+    var overflows by remember(passage) { mutableStateOf(false) }
+    val toggleLabel = stringResource(if (expanded) R.string.ai_passage_show_less else R.string.ai_passage_show_whole)
+    Row(
+        modifier = Modifier
+            .height(IntrinsicSize.Min)
+            .then(
+                if (overflows || expanded) {
+                    Modifier.clickable(onClickLabel = toggleLabel) { expanded = !expanded }
+                } else {
+                    Modifier
+                }
+            )
+    ) {
+        // A quotation bar, decorative: the bubble's text color, faded.
+        Box(
+            modifier = Modifier
+                .width(PASSAGE_QUOTE_BAR_WIDTH)
+                .fillMaxHeight()
+                .background(LocalContentColor.current.copy(alpha = PASSAGE_QUOTE_BAR_ALPHA), MaterialTheme.shapes.extraSmall)
+        )
+        Column(modifier = Modifier.padding(start = Spacing.sm), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                Icon(Icons.AutoMirrored.Outlined.MenuBook, contentDescription = null, modifier = Modifier.size(16.dp))
+                Text(text = passage.label, style = MaterialTheme.typography.labelLarge)
+            }
             Text(
-                text = text,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.md)
+                text = passage.dto.text,
+                style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Serif),
+                maxLines = if (expanded) Int.MAX_VALUE else PASSAGE_QUOTE_LINES,
+                overflow = TextOverflow.Ellipsis,
+                onTextLayout = { if (!expanded) overflows = it.hasVisualOverflow }
             )
         }
     }
 }
+
+/** How much of an asked-about passage a question shows before it's tapped (#281). */
+private const val PASSAGE_QUOTE_LINES = 3
+private val PASSAGE_QUOTE_BAR_WIDTH = 3.dp
+private const val PASSAGE_QUOTE_BAR_ALPHA = 0.4f
 
 /**
  * One answer: the crisis help card first when the server flagged it (#130), the "AI answer" label
@@ -721,7 +783,13 @@ private fun QuestionField(
 @Composable
 private fun AskChatPreview(@PreviewParameter(ThemePalettePreviewProvider::class) palette: ThemePalette) {
     val messages = listOf(
-        AiMessage(1, 1, AiRole.USER, "What is the Trinity?", createdAt = ""),
+        AiMessage(
+            1, 1, AiRole.USER, "What does this passage mean?", createdAt = "",
+            passage = AiQuestionPassage(
+                "John 3:16-17 (KJV)",
+                AiPassageDto("JHN 3:16-17", "16 For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life. 17 For God sent not his Son into the world to condemn the world; but that the world through him might be saved.")
+            )
+        ),
         AiMessage(2, 1, AiRole.ASSISTANT, "One God in three persons: the Father, the Son and the Holy Spirit [[MAT 28:19]].\n- The [[PSA]] praise him.", createdAt = ""),
         AiMessage(3, 1, AiRole.USER, "How should I pray?", createdAt = "")
     )
