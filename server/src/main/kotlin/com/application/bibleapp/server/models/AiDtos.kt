@@ -14,9 +14,16 @@ data class AiMessageDto(val role: String, val content: String)
 data class AiPassage(val reference: String, val text: String)
 
 /** `POST /api/v1/ai/ask` (#124). `language` is one of the app's tags, e.g. "es" or "pt-BR".
- *  [passage] is only there when the question was asked from the reader (#132). */
+ *  [passage] is only there when the question was asked from the reader (#132). [starter] names
+ *  one of the Ask tab's starter questions (#284), for a new conversation's first question: its
+ *  answer comes ready and doesn't use a daily question. */
 @Serializable
-data class AiAskRequest(val messages: List<AiMessageDto>, val language: String, val passage: AiPassage? = null)
+data class AiAskRequest(
+    val messages: List<AiMessageDto>,
+    val language: String,
+    val passage: AiPassage? = null,
+    val starter: String? = null
+)
 
 /**
  * `POST /api/v1/ai/reports` (#125). `reason` is WRONG_TEACHING, WRONG_VERSE, HARMFUL or OTHER; a
