@@ -123,6 +123,17 @@ android {
             enableSplit = false
         }
     }
+    testOptions {
+        unitTests.all {
+            // CI's log is often all there is (its report upload can fail), so a failing test
+            // prints its whole cause there, e.g. what a coroutine left over from an earlier test
+            // threw (#280).
+            it.testLogging {
+                events("failed")
+                exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+            }
+        }
+    }
 }
 
 // Settings → Open-source licenses (#99). The plugin lists every library in the release build;
