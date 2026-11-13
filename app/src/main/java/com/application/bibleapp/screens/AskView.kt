@@ -130,14 +130,15 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 
-/** The starter questions a new conversation offers (#128). */
+/** The starter questions a new conversation offers (#128), with the ids the server knows them by,
+ *  for their ready answers (#284; the server's StarterQuestions.kt has the same wording). */
 private val STARTER_QUESTIONS = listOf(
-    R.string.ai_starter_saved,
-    R.string.ai_starter_baptism,
-    R.string.ai_starter_trinity,
-    R.string.ai_starter_prayer,
-    R.string.ai_starter_start_reading,
-    R.string.ai_starter_death
+    "saved" to R.string.ai_starter_saved,
+    "baptism" to R.string.ai_starter_baptism,
+    "trinity" to R.string.ai_starter_trinity,
+    "prayer" to R.string.ai_starter_prayer,
+    "start_reading" to R.string.ai_starter_start_reading,
+    "death" to R.string.ai_starter_death
 )
 
 /**
@@ -187,11 +188,14 @@ fun AskView(
     // Before the first question; until "Got it", it comes back at the next one.
     var noticeOpen by rememberSaveable { mutableStateOf(!noticeAccepted) }
     var sendAfterNotice by rememberSaveable { mutableStateOf(false) }
-    val send = {
+    // The starter a question waiting for the notice came from (#284).
+    var starterAfterNotice by rememberSaveable { mutableStateOf<String?>(null) }
+    val send = { starter: String? ->
         if (noticeAccepted) {
-            askViewModel.send(language)
+            askViewModel.send(language, starter)
         } else {
             sendAfterNotice = true
+            starterAfterNotice = starter
             noticeOpen = true
         }
     }
@@ -200,8 +204,9 @@ fun AskView(
             onAccept = {
                 askViewModel.acceptNotice()
                 noticeOpen = false
-                if (sendAfterNotice) askViewModel.send(language)
+                if (sendAfterNotice) askViewModel.send(language, starterAfterNotice)
                 sendAfterNotice = false
+                starterAfterNotice = null
             },
             onDismiss = {
                 noticeOpen = false
@@ -234,10 +239,10 @@ fun AskView(
         online = online,
         modifier = modifier,
         onDraftChange = askViewModel::onDraftChange,
-        onSend = send,
-        onStarter = { question ->
+        onSend = { send(null) },
+        onStarter = { id, question ->
             askViewModel.onDraftChange(question)
-            send()
+            send(id)
         },
         onRetry = { askViewModel.retry(language) },
         onSignInClick = onSignInClick,
@@ -266,7 +271,7 @@ private fun AskChat(
     modifier: Modifier,
     onDraftChange: (String) -> Unit,
     onSend: () -> Unit,
-    onStarter: (String) -> Unit,
+    onStarter: (id: String, question: String) -> Unit,
     onRetry: () -> Unit,
     onSignInClick: () -> Unit,
     onRemovePassage: () -> Unit,
@@ -316,7 +321,9 @@ private fun AskChat(
             if (state.messages.isEmpty() && !state.isSending) {
                 // With a passage attached the question is already written; starters would only distract.
                 item(key = "intro") {
-                    AskIntro(onStarter = onStarter, enabled = online && limit == null, showStarters = state.passage == null)
+                    // Starters have ready answers that don't use a daily question, so they stay on
+                    // while the limit lasts (#284).
+                    AskIntro(onStarter = onStarter, enabled = online, showStarters = state.passage == null)
                 }
             }
             items(state.messages, key = { it.id }) { message ->
@@ -429,7 +436,7 @@ private fun AskSignedOut(onSignInClick: () -> Unit, modifier: Modifier = Modifie
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun AskIntro(onStarter: (String) -> Unit, enabled: Boolean, showStarters: Boolean) {
+private fun AskIntro(onStarter: (id: String, question: String) -> Unit, enabled: Boolean, showStarters: Boolean) {
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
         Text(text = stringResource(R.string.ai_intro_title), style = MaterialTheme.typography.titleLarge)
         Text(
@@ -438,9 +445,9 @@ private fun AskIntro(onStarter: (String) -> Unit, enabled: Boolean, showStarters
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         if (showStarters) FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-            STARTER_QUESTIONS.forEach { res ->
+            STARTER_QUESTIONS.forEach { (id, res) ->
                 val question = stringResource(res)
-                SuggestionChip(onClick = { onStarter(question) }, label = { Text(question) }, enabled = enabled)
+                SuggestionChip(onClick = { onStarter(id, question) }, label = { Text(question) }, enabled = enabled)
             }
         }
     }
@@ -862,7 +869,7 @@ private fun AskChatPreview(@PreviewParameter(ThemePalettePreviewProvider::class)
                 modifier = Modifier,
                 onDraftChange = {},
                 onSend = {},
-                onStarter = {},
+                onStarter = { _, _ -> },
                 onRetry = {},
                 onSignInClick = {},
                 onRemovePassage = {},
@@ -898,7 +905,7 @@ private fun AskLimitPreview(@PreviewParameter(ThemePalettePreviewProvider::class
                 modifier = Modifier,
                 onDraftChange = {},
                 onSend = {},
-                onStarter = {},
+                onStarter = { _, _ -> },
                 onRetry = {},
                 onSignInClick = {},
                 onRemovePassage = {},
@@ -925,7 +932,7 @@ private fun AskWritingPreviewContent(palette: ThemePalette, waking: Boolean) {
                 modifier = Modifier,
                 onDraftChange = {},
                 onSend = {},
-                onStarter = {},
+                onStarter = { _, _ -> },
                 onRetry = {},
                 onSignInClick = {},
                 onRemovePassage = {},
