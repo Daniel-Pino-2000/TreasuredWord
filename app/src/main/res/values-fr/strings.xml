@@ -461,6 +461,8 @@
     <string name="ai_crisis_message">Si tu es en danger ou que tu penses à te faire du mal, contacte quelqu\'un maintenant. Une ligne d\'écoute peut te parler dès aujourd\'hui.</string>
     <string name="ai_crisis_find_helpline">Trouver une ligne d\'écoute</string>
     <string name="ai_crisis_emergency">En cas d\'urgence, appelle le numéro d\'urgence de ton pays.</string>
+    <!-- Heading of the verse of comfort in the crisis help card, after the helpline (#282) -->
+    <string name="ai_crisis_comfort">Une parole de réconfort</string>
     <!-- Bible Helper: "Ask about this verse" from the reader (#132) -->
     <!-- The question ready to edit when the reader's selected verses open the Ask tab -->
     <string name="ai_passage_default_question">Que signifie ce passage ?</string>

@@ -451,6 +451,8 @@
     <string name="ai_crisis_message">Kung nasa panganib ka o iniisip mong saktan ang sarili mo, pakiusap, lumapit sa isang tao ngayon. Puwedeng makipag-usap sa iyo ang isang helpline ngayong araw.</string>
     <string name="ai_crisis_find_helpline">Maghanap ng helpline</string>
     <string name="ai_crisis_emergency">Kapag emergency, tawagan ang lokal na emergency number.</string>
+    <!-- Heading of the verse of comfort in the crisis help card, after the helpline (#282) -->
+    <string name="ai_crisis_comfort">Isang salita ng kaaliwan</string>
     <!-- Bible Helper: "Ask about this verse" from the reader (#132) -->
     <!-- The question ready to edit when the reader's selected verses open the Ask tab -->
     <string name="ai_passage_default_question">Ano ang ibig sabihin ng talatang ito?</string>

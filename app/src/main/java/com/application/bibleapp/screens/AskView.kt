@@ -105,6 +105,7 @@ import com.application.bibleapp.utils.VerseReference
 import com.application.bibleapp.utils.bookNameInVersion
 import com.application.bibleapp.utils.citedReferences
 import com.application.bibleapp.utils.formatVerseReference
+import com.application.bibleapp.utils.crisisComfortVerse
 import com.application.bibleapp.utils.parseAiAnswer
 import com.application.bibleapp.utils.UiText
 import com.application.bibleapp.utils.rememberExternalLinks
@@ -521,8 +522,11 @@ private fun AiAnswer(
     onFindHelpline: () -> Unit,
     verseCard: @Composable (VerseReference) -> Unit
 ) {
+    val cited = parts.citedReferences()
+    // Shown in the help card, so not again under the answer (#282).
+    val comfort = if (message.crisis) crisisComfortVerse(cited) else null
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-        if (message.crisis) AiCrisisCard(onFindHelpline = onFindHelpline)
+        if (comfort != null) AiCrisisCard(onFindHelpline = onFindHelpline) { verseCard(comfort) }
         // A crisis answer can be the help card alone: the server sends no text when the model
         // wrote only the crisis marker (docs/api_contract.md).
         if (message.content.isNotBlank()) {
@@ -531,7 +535,7 @@ private fun AiAnswer(
                 text = answerText(parts, bookName, MaterialTheme.colorScheme.primary, onReference),
                 style = MaterialTheme.typography.bodyLarge
             )
-            AiVerseCardList(parts.citedReferences()) { verseCard(it) }
+            AiVerseCardList(cited.filter { it != comfort }) { verseCard(it) }
             // Inside: a report needs an answer to send.
             TextButton(onClick = onReport, modifier = Modifier.align(Alignment.End)) {
                 Icon(Icons.Outlined.Flag, contentDescription = null, modifier = Modifier.size(18.dp))
