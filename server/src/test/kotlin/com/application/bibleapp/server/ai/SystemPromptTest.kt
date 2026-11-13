@@ -52,15 +52,18 @@ class SystemPromptTest {
 
     @Test
     fun theInstructionsFixWhatV13sRunsKeptMissing() {
-        // v13's two evaluation runs (2026-11-13), and doctrine.md back to v12's (#236).
+        // v13's two evaluation runs (2026-11-13): the positions live in doctrine.md, and the
+        // answer rules stay the few proven ones.
         val prompt = SystemPrompt.forLanguage("en")
         // Alcohol is a position (doctrine.md 19), not one of the open questions.
         assertTrue("abstaining the wise and loving" in prompt)
         assertFalse("alcohol in moderation" in prompt)
         assertTrue("one event together with Christ's return" in prompt && "only the King James Version" in prompt)
         assertTrue("don't end by saying that some churches see it differently" in prompt)
-        assertTrue("not their fault" in prompt && "Honoring parents never means" in prompt)
-        assertTrue("[[ROM 6:1-2]]" in prompt && "[[MAT 6:9-13]]" in prompt && "[[PSA 119:105]]" in prompt && "[[JHN 11:35]]" in prompt)
+        assertTrue("not their fault" in prompt && "No one has to hide abuse" in prompt)
+        assertTrue("never permission to keep" in prompt && "**Suffering, grief and doubt.**" in prompt && "hope of the gospel" in prompt)
+        // No checklist of extra points in the answer rules (it pulled answers every way).
+        assertFalse("[[ROM 6:1-2]]" in prompt || "[[PSA 119:105]]" in prompt || "points a Baptist pastor would make" in prompt)
         assertTrue("don't tell people to call emergency services" in prompt)
         assertTrue("cite no verse for" in prompt)
         // The developer's position on tattoos and piercings (2026-11-13), with grace.
