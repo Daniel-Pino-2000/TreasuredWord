@@ -27,7 +27,8 @@ object SystemPrompt {
      * rapture views, abuse, believer's baptism, positions stated as settled), the rapture and
      * KJV-only views among the open questions, no "some churches differ" ending, a pastor's usual
      * points (grief, repeated sin, safety at home, the Lord's Prayer, Psalm 119:105), "it isn't
-     * your fault", no [[CRISIS]] or emergency line outside a crisis, and no verse for medical points.
+     * your fault", no [[CRISIS]] or emergency line outside a crisis, and no verse for medical points;
+     * and the developer's position on tattoos and piercings (doctrine.md 20).
      */
     const val PROMPT_VERSION = "14"
 

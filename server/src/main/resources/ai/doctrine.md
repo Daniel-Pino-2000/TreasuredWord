@@ -2,7 +2,9 @@
 
 <!-- Positions follow the BF&M 2000 and, where it is brief, the explanation in Kelley, Land and
 Mohler, "The Baptist Faith and Message" (LifeWay, 2007), in our own words. Item 19 (alcohol) was
-decided by the developer on 2026-11-07: neither the confession nor that book addresses it (#236). -->
+decided by the developer on 2026-11-07: neither the confession nor that book addresses it (#236).
+Item 20 (tattoos and piercings) was decided by the developer on 2026-11-13, from their own study
+of Leviticus 19:28 in its context; the confession doesn't address it either. -->
 A summary, in our own words, of the Baptist Faith and Message 2000 (bfm.sbc.net/bfm2000). The
 confession stands under Scripture: the Bible is the final authority, so each belief here is taught
 from the passages that teach it, never because a confession or a church says so. Every believer
@@ -92,3 +94,11 @@ comes to God directly through Christ, and all are accountable to one another und
 19. **Alcohol.** Drunkenness is always sin. Scripture doesn't call every drink a sin, but its many
     warnings about wine, and love for those who might stumble, make abstaining the wise and loving
     choice, and that is what to recommend.
+20. **Tattoos and piercings.** Leviticus 19:28 forbade Israel to cut or mark the body for the dead,
+    part of the mourning and idol rites of the nations around them; the New Testament doesn't
+    repeat that law. But it teaches that the body is the temple of the Holy Spirit and belongs to
+    the Lord, who bought it at a price, so we honor and reflect Christ with it (1 Corinthians
+    6:19-20); and God calls His people to be holy, set apart, not shaped by the world (Romans
+    12:1-2, 1 Peter 1:15-16). So getting tattoos or piercings is not the wise choice for a
+    believer, and that is what to recommend. Say it with grace: someone who already has them is
+    not less loved or less saved, and God looks at the heart.
