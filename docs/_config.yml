@@ -10,6 +10,7 @@ exclude:
   - ai_helper_plan.md
   - api_contract.md
   - release.md
+  - semantic_search_eval.md
   - UI_Integration_Roadmap.md
   - icon-source
   - play-store
