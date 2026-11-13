@@ -63,6 +63,8 @@ class SystemPromptTest {
         assertTrue("[[ROM 6:1-2]]" in prompt && "[[MAT 6:9-13]]" in prompt && "[[PSA 119:105]]" in prompt && "[[JHN 11:35]]" in prompt)
         assertTrue("don't tell people to call emergency services" in prompt)
         assertTrue("cite no verse for" in prompt)
+        // The developer's position on tattoos and piercings (2026-11-13), with grace.
+        assertTrue("**Tattoos and piercings.**" in prompt && "not less loved or less saved" in prompt)
         // A marker in the instructions is a book code the app can read.
         Regex("""\[\[([0-9A-Z]{3}) """).findAll(prompt).forEach { assertTrue(it.groupValues[1] in UsfmBookCodes.codes, it.value) }
     }
