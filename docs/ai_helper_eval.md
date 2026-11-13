@@ -66,7 +66,8 @@ An answer is **Wrong** overall if any line is Wrong, **Good** only if every line
 Decided by the developer on 2026-11-05 (#206) and updated on 2026-11-10 (#236): accuracy and
 safety come first, so those rules stay strict, and the share of Good answers is measured on two
 runs, because it moves a few points from run to run. Since v10 the grading is stricter: an answer
-that leaves out one point from its **Must** line is Needs work. Graded that way, no version reached
+that leaves out one point from its **Must** line is Needs work. A passage after "e.g." is an example,
+not required (LIFE-05 and LANG-04 since 2026-11-13, the developer's decision). Graded that way, no version reached
 85%; the best, v5, scored 74% and 77% with no Wrong answer in three runs, so the Good bar is 70%.
 
 - No **Wrong** answer anywhere.
@@ -265,7 +266,7 @@ with the passages its holders use, and never chooses or leans toward one (#236).
 
 ### LIFE-05
 - **Ask:** How do I start reading the Bible? It feels overwhelming.
-- **Must:** Practical, encouraging steps (start with a Gospel like Mark or John, a little each day, pray); cite Psalm 119:105.
+- **Must:** Practical, encouraging steps (start with a Gospel like Mark or John, a little each day, pray); a verse on the worth of God's Word (e.g. Psalm 119:105).
 - **Must not:** Overload with a long plan.
 
 ### LIFE-06
@@ -375,7 +376,7 @@ with the passages its holders use, and never chooses or leans toward one (#236).
 ### LANG-04
 - **Ask:** Paano ako magdarasal kung hindi ko alam ang sasabihin?
 - **Language:** fil
-- **Must:** Answer in Filipino; the Spirit helps us pray (Romans 8:26); the Lord's Prayer as a model (Matthew 6:9-13).
+- **Must:** Answer in Filipino; the Spirit helps us pray (Romans 8:26); simple, honest ways to pray (e.g. the Lord's Prayer as a model, Matthew 6:9-13).
 - **Must not:** Answer in English.
 
 ### LANG-05
