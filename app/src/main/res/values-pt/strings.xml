@@ -419,12 +419,21 @@
     <string name="ai_question_placeholder">Faça uma pergunta sobre a Bíblia</string>
     <string name="ai_action_send">Enviar</string>
     <string name="ai_answer_label">Resposta de IA</string>
-    <string name="ai_thinking">Pensando…</string>
+    <!-- What the Bible Helper is doing while an answer comes (#283): only true steps -->
+    <string name="ai_stage_waking">Ligando o servidor…</string>
+    <string name="ai_stage_writing">Escrevendo sua resposta…</string>
+    <string name="ai_stage_still_writing">Ainda escrevendo. Respostas mais longas levam um pouco mais de tempo.</string>
+    <string name="ai_waking_detail">O servidor estava em repouso e está ligando. A primeira resposta pode levar até um minuto; as próximas chegam mais rápido.</string>
+    <!-- Short titles above the failure messages under an unanswered question (#283) -->
+    <string name="ai_failure_unavailable_title">Não foi possível obter uma resposta</string>
+    <string name="ai_failure_offline_title">Você está off-line</string>
+    <string name="ai_failure_rate_limited_title">Perguntas demais de uma vez</string>
+    <string name="ai_failure_signed_out_title">Você saiu da sua conta</string>
     <string name="ai_offline_banner">Você está off-line. Suas conversas continuam aqui; para perguntar, é preciso internet.</string>
-    <string name="ai_failure_offline">Não foi possível enviar sua pergunta porque você está off-line.</string>
-    <string name="ai_failure_unavailable">O Ajudante bíblico não conseguiu responder agora.</string>
-    <string name="ai_failure_rate_limited">São muitas perguntas de uma vez. Espere um momento e tente de novo.</string>
-    <string name="ai_failure_signed_out">Você saiu da sua conta. Entre de novo para continuar perguntando.</string>
+    <string name="ai_failure_offline">Sua pergunta está salva. Envie de novo quando estiver on-line.</string>
+    <string name="ai_failure_unavailable">Sua pergunta está salva. Tente de novo daqui a pouco.</string>
+    <string name="ai_failure_rate_limited">Espere um momento e tente de novo.</string>
+    <string name="ai_failure_signed_out">Entre de novo para continuar perguntando.</string>
     <string name="ai_failure_daily_limit">Você já fez todas as perguntas de hoje. Poderá perguntar de novo a partir de: %1$s.</string>
     <string name="ai_failure_resting">O Ajudante bíblico está descansando: o serviço gratuito que ele usa atingiu o limite de hoje. Ele volta a partir de: %1$s.</string>
     <plurals name="ai_remaining_today">

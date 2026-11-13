@@ -409,12 +409,21 @@
     <string name="ai_question_placeholder">Uliza swali kuhusu Biblia</string>
     <string name="ai_action_send">Tuma</string>
     <string name="ai_answer_label">Jibu la AI</string>
-    <string name="ai_thinking">Inafikiri…</string>
+    <!-- What the Bible Helper is doing while an answer comes (#283): only true steps -->
+    <string name="ai_stage_waking">Inaamsha seva…</string>
+    <string name="ai_stage_writing">Inaandika jibu lako…</string>
+    <string name="ai_stage_still_writing">Bado inaandika. Majibu marefu huchukua muda zaidi kidogo.</string>
+    <string name="ai_waking_detail">Seva ilikuwa imepumzika na sasa inaamka. Jibu la kwanza linaweza kuchukua hadi dakika moja; yanayofuata huja haraka zaidi.</string>
+    <!-- Short titles above the failure messages under an unanswered question (#283) -->
+    <string name="ai_failure_unavailable_title">Jibu halikupatikana</string>
+    <string name="ai_failure_offline_title">Uko nje ya mtandao</string>
+    <string name="ai_failure_rate_limited_title">Maswali mengi mno kwa wakati mmoja</string>
+    <string name="ai_failure_signed_out_title">Umetolewa kwenye akaunti</string>
     <string name="ai_offline_banner">Uko nje ya mtandao. Mazungumzo yako bado yapo; kuuliza kunahitaji intaneti.</string>
-    <string name="ai_failure_offline">Swali lako halikutumwa kwa sababu uko nje ya mtandao.</string>
-    <string name="ai_failure_unavailable">Msaidizi wa Biblia hakuweza kujibu sasa hivi.</string>
-    <string name="ai_failure_rate_limited">Hayo ni maswali mengi kwa wakati mmoja. Subiri kidogo, kisha ujaribu tena.</string>
-    <string name="ai_failure_signed_out">Umetolewa kwenye akaunti. Ingia tena ili uendelee kuuliza.</string>
+    <string name="ai_failure_offline">Swali lako limehifadhiwa. Litume tena utakaporudi mtandaoni.</string>
+    <string name="ai_failure_unavailable">Swali lako limehifadhiwa. Jaribu tena baada ya muda mfupi.</string>
+    <string name="ai_failure_rate_limited">Subiri kidogo, kisha ujaribu tena.</string>
+    <string name="ai_failure_signed_out">Ingia tena ili uendelee kuuliza.</string>
     <string name="ai_failure_daily_limit">Umeuliza maswali yote ya leo. Unaweza kuuliza tena kuanzia %1$s.</string>
     <string name="ai_failure_resting">Msaidizi wa Biblia anapumzika: huduma ya bure anayotumia imefikia kikomo chake cha leo. Atarudi kuanzia %1$s.</string>
     <plurals name="ai_remaining_today">

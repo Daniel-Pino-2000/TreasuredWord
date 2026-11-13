@@ -408,12 +408,21 @@
     <string name="ai_question_placeholder">Stell eine Frage zur Bibel</string>
     <string name="ai_action_send">Senden</string>
     <string name="ai_answer_label">KI-Antwort</string>
-    <string name="ai_thinking">Denkt nach…</string>
+    <!-- What the Bible Helper is doing while an answer comes (#283): only true steps -->
+    <string name="ai_stage_waking">Server wird gestartet…</string>
+    <string name="ai_stage_writing">Antwort wird geschrieben…</string>
+    <string name="ai_stage_still_writing">Wird noch geschrieben. Längere Antworten brauchen etwas mehr Zeit.</string>
+    <string name="ai_waking_detail">Der Server hat geruht und startet gerade. Die erste Antwort kann bis zu einer Minute dauern, die nächsten kommen schneller.</string>
+    <!-- Short titles above the failure messages under an unanswered question (#283) -->
+    <string name="ai_failure_unavailable_title">Keine Antwort erhalten</string>
+    <string name="ai_failure_offline_title">Du bist offline</string>
+    <string name="ai_failure_rate_limited_title">Zu viele Fragen auf einmal</string>
+    <string name="ai_failure_signed_out_title">Du wurdest abgemeldet</string>
     <string name="ai_offline_banner">Du bist offline. Deine Gespräche sind noch da; zum Fragen brauchst du Internet.</string>
-    <string name="ai_failure_offline">Deine Frage konnte nicht gesendet werden, weil du offline bist.</string>
-    <string name="ai_failure_unavailable">Der Bibelhelfer konnte gerade nicht antworten.</string>
-    <string name="ai_failure_rate_limited">Das sind viele Fragen auf einmal. Warte kurz und versuch es dann noch einmal.</string>
-    <string name="ai_failure_signed_out">Du wurdest abgemeldet. Melde dich wieder an, um weiter zu fragen.</string>
+    <string name="ai_failure_offline">Deine Frage ist gespeichert. Sende sie noch einmal, sobald du wieder online bist.</string>
+    <string name="ai_failure_unavailable">Deine Frage ist gespeichert. Versuch es gleich noch einmal.</string>
+    <string name="ai_failure_rate_limited">Warte kurz und versuch es dann noch einmal.</string>
+    <string name="ai_failure_signed_out">Melde dich wieder an, um weiter zu fragen.</string>
     <string name="ai_failure_daily_limit">Du hast alle Fragen für heute gestellt. Ab %1$s kannst du wieder fragen.</string>
     <string name="ai_failure_resting">Der Bibelhelfer ruht sich aus: Der kostenlose Dienst, auf dem er läuft, hat sein Limit für heute erreicht. Ab %1$s ist er wieder da.</string>
     <plurals name="ai_remaining_today">
