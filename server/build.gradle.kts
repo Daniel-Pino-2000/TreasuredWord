@@ -46,7 +46,38 @@ tasks.register<JavaExec>("aiEval") {
     )
 }
 
+// Only the search-by-meaning evaluation reads SQLite (the app's bible_default.db), so the driver
+// sits in its own configuration and never reaches server-all.jar (#287).
+val semanticSearchEvalRuntime by configurations.creating
+
+// Search by meaning's evaluation (#287, phase 1): embeds the Bible and every query in
+// docs/semantic_search_eval.md with Cloudflare Workers AI and reports how many queries find an
+// expected verse in their top 10, into build/semantic-search-eval/. Spends real free-plan neurons
+// (~1,200 the first time, then the vectors come from a cache under build/), so it's never part of
+// `test`, `check` or CI. Needs AI_BASE_URL and AI_API_TOKEN. -PembeddingModel picks the model,
+// -Pqueries=TOPIC-01,LANG-KO-01 runs only those, -Pbible=<file.tsv> embeds another translation.
+tasks.register<JavaExec>("semanticSearchEval") {
+    group = "verification"
+    description = "Measures search by meaning against docs/semantic_search_eval.md and writes a report to build/semantic-search-eval."
+    classpath = sourceSets["main"].runtimeClasspath + semanticSearchEvalRuntime
+    mainClass.set("com.application.bibleapp.server.search.eval.SemanticSearchEvalKt")
+    // 31,102 vectors of 1,024 floats are ~130 MB in memory.
+    maxHeapSize = "1g"
+    args(
+        rootProject.file("docs/semantic_search_eval.md").path,
+        layout.buildDirectory.dir("semantic-search-eval").get().asFile.path,
+        rootProject.file("app/src/main/assets/bible_default.db").path,
+        providers.gradleProperty("embeddingModel").getOrElse("@cf/baai/bge-m3"),
+        providers.gradleProperty("queries").getOrElse(""),
+        providers.gradleProperty("bible").map { rootProject.file(it).path }.getOrElse("")
+    )
+}
+
 dependencies {
+    semanticSearchEvalRuntime(libs.sqlite.jdbc)
+    // The tests read the real bible_default.db to check every expected verse exists (#287).
+    testRuntimeOnly(libs.sqlite.jdbc)
+
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.server.netty)
     implementation(libs.ktor.server.content.negotiation)

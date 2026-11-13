@@ -27,6 +27,9 @@ kotlinxSerializationJson = "1.6.3"
 hashing = "0.4"
 # 11.13.3 is the first release that supports PostgreSQL 18, which production runs (#117)
 flyway = "11.13.3"
+# Reads the app's bundled Bible (bible_default.db) for the search-by-meaning evaluation (#287);
+# never in the server jar
+sqliteJdbc = "3.50.3.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -88,6 +91,9 @@ password-hashing = { group = "org.mindrot", name = "jbcrypt", version.ref = "has
 # Migrations
 flyway-core = { group = "org.flywaydb", name = "flyway-core", version.ref = "flyway" }
 flyway-database-postgresql = { group = "org.flywaydb", name = "flyway-database-postgresql", version.ref = "flyway" }
+
+# SQLite, only for :server:semanticSearchEval and its tests (#287)
+sqlite-jdbc = { group = "org.xerial", name = "sqlite-jdbc", version.ref = "sqliteJdbc" }
 
 
 [plugins]
