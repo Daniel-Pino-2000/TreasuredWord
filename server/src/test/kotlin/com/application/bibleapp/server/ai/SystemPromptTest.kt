@@ -40,7 +40,7 @@ class SystemPromptTest {
         // The evaluation runs of #206: the crisis card is drawn above the answer (#130), and the
         // app shows a whole chapter as a card (#190), so the instructions may ask for one.
         val prompt = SystemPrompt.forLanguage("en")
-        assertEquals("13", SystemPrompt.PROMPT_VERSION)
+        assertEquals("14", SystemPrompt.PROMPT_VERSION)
         assertFalse("crisis lines below" in prompt)
         assertTrue("help card above your answer" in prompt)
         assertTrue("[[BOOK C]] for a" in prompt && "[[PSA 23]]" in prompt)
@@ -48,6 +48,23 @@ class SystemPromptTest {
         assertTrue("as undecided" in prompt && "one view among several" in prompt)
         assertTrue("each passage in its own marker" in prompt && "two to four passages" in prompt)
         assertTrue("name books as readers of English" in prompt)
+    }
+
+    @Test
+    fun theInstructionsFixWhatV13sRunsKeptMissing() {
+        // v13's two evaluation runs (2026-11-13), and doctrine.md back to v12's (#236).
+        val prompt = SystemPrompt.forLanguage("en")
+        // Alcohol is a position (doctrine.md 19), not one of the open questions.
+        assertTrue("abstaining the wise and loving" in prompt)
+        assertFalse("alcohol in moderation" in prompt)
+        assertTrue("one event together with Christ's return" in prompt && "only the King James Version" in prompt)
+        assertTrue("don't end by saying that some churches see it differently" in prompt)
+        assertTrue("not their fault" in prompt && "Honoring parents never means" in prompt)
+        assertTrue("[[ROM 6:1-2]]" in prompt && "[[MAT 6:9-13]]" in prompt && "[[PSA 119:105]]" in prompt && "[[JHN 11:35]]" in prompt)
+        assertTrue("don't tell people to call emergency services" in prompt)
+        assertTrue("cite no verse for" in prompt)
+        // A marker in the instructions is a book code the app can read.
+        Regex("""\[\[([0-9A-Z]{3}) """).findAll(prompt).forEach { assertTrue(it.groupValues[1] in UsfmBookCodes.codes, it.value) }
     }
 
     @Test

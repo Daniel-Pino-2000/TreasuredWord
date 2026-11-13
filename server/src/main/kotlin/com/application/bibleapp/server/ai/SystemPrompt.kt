@@ -23,8 +23,13 @@ object SystemPrompt {
      * the files are af7f9e8's again, under v5's number, because answers are the ones v5's runs measured.
      * v13 is v5 plus one verse of comfort from a fixed list in crisis answers, which the app shows
      * in the help card (#282). Its number skips the v6-v12 experiments, so reports can't mix them up.
+     * v14 fixes what v13's two runs (2026-11-13) kept missing: v12's doctrine.md (alcohol, the
+     * rapture views, abuse, believer's baptism, positions stated as settled), the rapture and
+     * KJV-only views among the open questions, no "some churches differ" ending, a pastor's usual
+     * points (grief, repeated sin, safety at home, the Lord's Prayer, Psalm 119:105), "it isn't
+     * your fault", no [[CRISIS]] or emergency line outside a crisis, and no verse for medical points.
      */
-    const val PROMPT_VERSION = "13"
+    const val PROMPT_VERSION = "14"
 
     /** The app's language tags (`AppLanguage.supportedTags`) and the English name the model is told to answer in. */
     val languageNames: Map<String, String> = mapOf(
