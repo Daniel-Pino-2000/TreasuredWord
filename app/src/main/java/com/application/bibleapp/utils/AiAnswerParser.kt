@@ -28,7 +28,9 @@ sealed interface AiAnswerPart {
  * The model gets the codes right most of the time but not always, so the parser forgives (#190):
  * a full name or common abbreviation instead of the code (`JOHN`, `PSALM`, `EZEK`, `PHI`), a space
  * after the number (`1 JHN`), two markers in one (`[[PSA 103:8], [1JN 1:9]]`), a whole book
- * (`[[PSA]]`) and a marker left open before the next one (`[[GEN 2:24], [[ROM 1:26-27]]`, #222). Whatever can't be read shows its inner text: `[[` and `]]` never reach the screen.
+ * (`[[PSA]]`), a marker left open before the next one (`[[GEN 2:24], [[ROM 1:26-27]]`, #222) and
+ * one closed with a single bracket (`[[ROM 8]`, `[[PRO)]`). Whatever can't be read shows its inner
+ * text: `[[` and `]]` never reach the screen.
  */
 fun parseAiAnswer(answer: String, structure: ChapterStructure = emptyMap()): List<AiAnswerPart> {
     val parts = mutableListOf<AiAnswerPart>()
@@ -59,6 +61,9 @@ fun parseAiAnswer(answer: String, structure: ChapterStructure = emptyMap()): Lis
         }
     }
 
+    fun readable(inner: String) = inner.isNotBlank() &&
+        inner.split(SEPARATOR).all { it.cleanPiece().toPart(structure) != null }
+
     var last = 0
     for (match in MARKER.findAll(answer)) {
         addText(answer.substring(last, match.range.first))
@@ -68,14 +73,19 @@ fun parseAiAnswer(answer: String, structure: ChapterStructure = emptyMap()): Lis
             addMarker(closed.value)
             continue
         }
+        // A marker closed with a single "]" or ")" (v13's evaluation: "[[ROM 8] o [[PSA 23]",
+        // "[[PRO)]"). Read when every passage in it is real; otherwise its text shows, as before.
+        val singleClosed = match.groups[2]
+        if (singleClosed != null) {
+            if (readable(singleClosed.value)) addMarker(singleClosed.value) else addText(match.value)
+            continue
+        }
         // A marker the model didn't close before the next one (#222): "GEN 2:24], " in
         // "[[GEN 2:24], [[ROM 1:26-27]]". It's read only when every passage in it is real, so
         // stray text after a "[[" stays text, as before; the "]" it ends with never shows.
-        val unclosed = match.groupValues[2]
+        val unclosed = match.groupValues[3]
         val inner = unclosed.trimEnd { it.isWhitespace() || it in ",;]" }
-        val readable = inner.isNotBlank() &&
-            inner.split(SEPARATOR).all { it.cleanPiece().toPart(structure) != null }
-        if (readable) {
+        if (readable(inner)) {
             addMarker(inner)
             addText(unclosed.substring(inner.length).replace("]", ""))
         } else {
@@ -141,10 +151,14 @@ private fun reference(
 private fun String.cleanPiece(): String = replace("[", "").replace("]", "").trim()
 
 /**
- * `[[`, up to 120 characters on one line without another `[[` or `]]`, then `]]` (group 1) — or,
- * when the model forgot the `]]`, the same text running straight into the next `[[` (group 2, #222).
+ * `[[`, up to 120 characters on one line without another `[[` or `]]`, then `]]` (group 1); or up
+ * to 40 characters without brackets, closed by a single `]` or by `)` (group 2, a `]` after the
+ * `)` is part of it); or, when the model forgot the `]]`, text running straight into the next
+ * `[[` (group 3, #222). Keep in step with the evaluation's `EvalChecks`.
  */
-private val MARKER = Regex("""\[\[((?:(?!\[\[|]]).){1,120})]]|\[\[((?:(?!\[\[|]]).){1,120})(?=\[\[)""")
+private val MARKER = Regex(
+    """\[\[((?:(?!\[\[|]]).){1,120})]]|\[\[([^\[\])\n]{1,40})(?:\)]?|](?!]))|\[\[((?:(?!\[\[|]]).){1,120})(?=\[\[)"""
+)
 
 /** Between two markers written as one: a comma or semicolon, with any brackets around it. */
 private val SEPARATOR = Regex("""[\s\]\[]*([,;])[\s\]\[]*""")

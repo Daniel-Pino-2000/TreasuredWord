@@ -84,8 +84,9 @@ class AiAnswerParserTest {
     @Test
     fun `broken brackets never show on screen`() {
         // The [[JHN]] in the middle is a whole book; the rest loses only its double brackets (#190).
+        // The last one, closed with a single bracket, is read as a reference since v13's evaluation.
         assertEquals(
-            listOf(text("Look at JHN 3:16 and [ROM 8:28] or "), book(43), text(" or ROM 8:28]")),
+            listOf(text("Look at JHN 3:16 and [ROM 8:28] or "), book(43), text(" or "), ref(45, 8, 28)),
             parseAiAnswer("Look at [[JHN 3:16 and [ROM 8:28] or [[JHN]] or [[ROM 8:28]")
         )
         assertEquals(listOf(text("Empty  here")), parseAiAnswer("Empty [[]] here"))
@@ -178,6 +179,21 @@ class AiAnswerParserTest {
         (v2 + v3).filterIsInstance<AiAnswerPart.Text>().forEach { part ->
             assertFalse(part.text, "[" in part.text || "]" in part.text || "GEN" in part.text)
         }
+    }
+
+    @Test
+    fun `a marker closed with one bracket is still a reference`() {
+        // v13's evaluation (2026-11-13): LANG-04 run 1 and LIFE-05 run 2 left raw codes on screen.
+        assertEquals(
+            listOf(text("Basahin ang buong "), ref(45, 8), text(" o "), ref(19, 23), text(" para sa pag-asa.")),
+            parseAiAnswer("Basahin ang buong [[ROM 8] o [[PSA 23] para sa pag-asa.")
+        )
+        assertEquals(listOf(text("Read Proverbs "), book(20), text(".")), parseAiAnswer("Read Proverbs [[PRO)]."))
+        assertEquals(listOf(text("See "), ref(43, 3, 16), text(".")), parseAiAnswer("See [[JHN 3:16)."))
+        // A closed marker is unchanged, and text that isn't a passage stays text.
+        assertEquals(listOf(ref(43, 3, 16)), parseAiAnswer("[[JHN 3:16]]"))
+        assertEquals(listOf(text("See the notes] here.")), parseAiAnswer("See [[the notes] here."))
+        assertEquals(listOf(text("See XYZ 1:1] here.")), parseAiAnswer("See [[XYZ 1:1] here."))
     }
 
     @Test

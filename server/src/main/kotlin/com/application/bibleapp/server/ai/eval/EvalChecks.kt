@@ -14,9 +14,13 @@ object EvalChecks {
     // The app's own rules from `AiAnswerParser.kt` (#190): a marker passes when the app shows it
     // as a link or a book name, and is flagged when it becomes plain text (#207). Keep in step.
     private val marker = Regex("""\[\[((?:(?!\[\[|]]).){1,120})]]""")
-    // A marker left open before the next one, "GEN 2:24], " in "[[GEN 2:24], [[ROM 1:26-27]]":
-    // the app reads it when every passage in it is real (#222).
-    private val openMarker = Regex("""\[\[((?:(?!\[\[|]]).){1,120})(?=\[\[)""")
+    // Every way the app finds a marker, in its order: closed (1), closed with a single "]" or ")"
+    // as in "[[ROM 8]" and "[[PRO)]" (2), or left open before the next one, "GEN 2:24], " in
+    // "[[GEN 2:24], [[ROM 1:26-27]]" (3, #222). The last two are read when every passage in them
+    // is real.
+    private val anyMarker = Regex(
+        """\[\[((?:(?!\[\[|]]).){1,120})]]|\[\[([^\[\])\n]{1,40})(?:\)]?|](?!]))|\[\[((?:(?!\[\[|]]).){1,120})(?=\[\[)"""
+    )
     private val separator = Regex("""[\s\]\[]*[,;][\s\]\[]*""")
     private val piece = Regex(
         """([1-3]?\s*\p{L}[\p{L} .]*?)\.?\s*(?:(\d{1,3})(?:\s*[:.]\s*(\d{1,3})(?:\s*[-–]\s*(\d{1,3}))?)?)?"""
@@ -37,8 +41,14 @@ object EvalChecks {
             if (problem != null) problems += "[[$inside]]: $problem"
         }
         val opened = Regex("""\[\[""").findAll(answer).count()
-        val openButRead = openMarker.findAll(answer).count { openMarkerReads(it.groupValues[1]) }
-        if (opened != markers.size + openButRead) problems += "a [[ marker isn't closed"
+        val read = anyMarker.findAll(answer).count { match ->
+            when {
+                match.groups[1] != null -> true // its own problems are listed above
+                match.groups[2] != null -> openMarkerReads(match.groupValues[2])
+                else -> openMarkerReads(match.groupValues[3])
+            }
+        }
+        if (opened != read) problems += "a [[ marker isn't closed"
 
         val startsWithCrisis = answer.trimStart().startsWith(CRISIS)
         when (question.crisis) {
