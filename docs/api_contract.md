@@ -612,6 +612,34 @@ count** as one of the day's 15 questions, works after they're used up, and `rema
 what's left of them. AI failures answer `AI_RESTING`/`AI_UNAVAILABLE` as usual. A new
 `promptVersion` asks again; older rows are never read (at most 60 per version).
 
+### `POST /api/v1/ai/ask/stream`
+Auth: required (#285)
+Request: `AiAskRequest`, as for `/ai/ask`, with the same rules, limits, rate limit and starters.
+Success: `200 OK` with `Content-Type: text/event-stream`: the answer as the AI writes it, as
+server-sent events. Each event's `data` is one line of JSON:
+
+| Event | `data` | When |
+|---|---|---|
+| `text` | `{"text": "..."}` | The next piece of the answer. Joined, they're the answer so far |
+| `crisis` | `{}` | Once, when the crisis marker is seen, before the text that follows it, so the help card can show first |
+| `done` | `AiAskResponse` | The end. Its `answer` is the one to show and save; the pieces were only a preview |
+| `error` | `ErrorResponse` (`AI_UNAVAILABLE` or `AI_RESTING`) | The AI stopped partway. Not counted |
+
+The stream ends after `done` or `error`. A stream that closes without either also means no answer.
+The crisis marker never appears in `text`: a piece that could be its start is held back until it's
+clear. Verse markers come through as written, so a piece can end inside one (`[[JHN 3:`).
+
+Anything that goes wrong **before** the first piece (validation, sign-in, the daily limit, the
+rate limit, the AI failing or resting) is the same status and JSON `ErrorResponse` as `/ai/ask`.
+A ready starter answer is a single `done` event.
+
+**Counting.** As with `/ai/ask`, the question is counted when it's sent and given back if no
+answer comes: when the AI fails, before or during the answer, and also when the app hangs up
+before `done`. Once the AI has finished, the answer counts even if `done` doesn't reach the app.
+
+`/ai/ask` stays for app versions without streaming (1.7 and earlier); the app falls back to it on a `404` from a server
+without the stream.
+
 ### `POST /api/v1/ai/reports`
 Auth: required
 Request:

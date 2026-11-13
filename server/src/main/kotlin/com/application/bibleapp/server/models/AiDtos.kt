@@ -47,3 +47,7 @@ data class AiAskResponse(
     val remainingToday: Int,
     val promptVersion: String
 )
+
+/** A `text` event of `POST /api/v1/ai/ask/stream` (#285): the next piece of the answer. */
+@Serializable
+data class AiStreamText(val text: String)

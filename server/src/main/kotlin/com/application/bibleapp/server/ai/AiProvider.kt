@@ -42,4 +42,14 @@ class Unavailable(message: String, cause: Throwable? = null, val transient: Bool
 interface AiProvider {
     /** @throws QuotaExhausted or [Unavailable] when there's no answer. */
     suspend fun complete(messages: List<AiMessage>, maxTokens: Int): AiCompletion
+
+    /**
+     * Like [complete], but hands each piece of the answer to [onText] as the AI writes it (#285),
+     * then returns the whole answer. A provider that can't stream gives the whole answer as one
+     * piece, which is what this default does (and what the tests' fake relies on).
+     *
+     * @throws QuotaExhausted or [Unavailable] when there's no answer, also after some pieces came.
+     */
+    suspend fun stream(messages: List<AiMessage>, maxTokens: Int, onText: suspend (String) -> Unit): AiCompletion =
+        complete(messages, maxTokens).also { onText(it.text) }
 }

@@ -4,13 +4,17 @@ import android.util.Log
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.post
+import io.ktor.client.request.preparePost
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.bodyAsChannel
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
+import io.ktor.utils.io.ByteReadChannel
+import io.ktor.utils.io.readUTF8Line
 import kotlinx.coroutines.CancellationException
 
 /**
@@ -46,6 +50,10 @@ sealed interface AiAskResult {
     data object SignedOut : Failure
 }
 
+/** An answer while it's being written (#285): the text so far, and whether the server has said
+ *  it's a crisis answer, whose help card then shows first. */
+data class AiPartialAnswer(val text: String, val crisis: Boolean)
+
 /** How reporting an answer (#130) ended: [Sent], or one of [AiAskResult.Failure]. */
 sealed interface AiReportResult {
     data object Sent : AiReportResult
@@ -79,6 +87,70 @@ class AiHelperApi(
         }
     } catch (e: Exception) {
         failureFor(e, "ask")
+    }
+
+    /**
+     * Like [ask], but through `POST /ai/ask/stream` (#285): [onPartial] gets the answer so far
+     * each time a piece of it arrives, and the result is the same as [ask]'s once it's complete.
+     * A stream that stops partway is [AiAskResult.Unavailable] (or [AiAskResult.Offline]), and the
+     * server gives the daily question back. A server without the endpoint (404) is asked through
+     * [ask]; one that answers all at once is read the same way.
+     */
+    suspend fun askStreaming(request: AiAskRequestDto, onPartial: (AiPartialAnswer) -> Unit): AiAskResult = try {
+        client().preparePost("$baseUrl/ai/ask/stream") {
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }.execute { response ->
+            when {
+                response.status == HttpStatusCode.NotFound -> null
+                !response.status.isSuccess() -> failureFor(response)
+                response.contentType()?.match(ContentType.Text.EventStream) != true -> {
+                    val body = response.body<AiAskResponseDto>()
+                    AiAskResult.Answer(body.answer, body.crisis, body.remainingToday, body.promptVersion)
+                }
+                else -> readStream(response.bodyAsChannel(), onPartial)
+            }
+        } ?: ask(request)
+    } catch (e: Exception) {
+        failureFor(e, "ask")
+    }
+
+    /** Reads `/ai/ask/stream`'s events (docs/api_contract.md) until `done` or `error`. */
+    private suspend fun readStream(channel: ByteReadChannel, onPartial: (AiPartialAnswer) -> Unit): AiAskResult {
+        val text = StringBuilder()
+        var crisis = false
+        var event = ""
+        while (true) {
+            val line = channel.readUTF8Line() ?: break
+            when {
+                line.startsWith("event:") -> event = line.removePrefix("event:").trim()
+                line.startsWith("data:") -> {
+                    val data = line.removePrefix("data:").trim()
+                    when (event) {
+                        "text" -> {
+                            text.append(HttpClientProvider.json.decodeFromString(AiStreamTextDto.serializer(), data).text)
+                            onPartial(AiPartialAnswer(text.toString(), crisis))
+                        }
+                        "crisis" -> {
+                            crisis = true
+                            onPartial(AiPartialAnswer(text.toString(), crisis))
+                        }
+                        "done" -> {
+                            val body = HttpClientProvider.json.decodeFromString(AiAskResponseDto.serializer(), data)
+                            return AiAskResult.Answer(body.answer, body.crisis, body.remainingToday, body.promptVersion)
+                        }
+                        "error" -> {
+                            val code = runCatching { HttpClientProvider.json.decodeFromString(BackendErrorDto.serializer(), data).code }.getOrNull()
+                            log("AI stream stopped: $code")
+                            return if (code == CODE_RESTING) AiAskResult.Resting(nextUtcMidnight()) else AiAskResult.Unavailable
+                        }
+                    }
+                }
+            }
+        }
+        // The connection closed before the end: the server counts it as no answer too.
+        log("AI stream ended without an answer")
+        return AiAskResult.Unavailable
     }
 
     suspend fun report(request: AiReportRequestDto): AiReportResult = try {

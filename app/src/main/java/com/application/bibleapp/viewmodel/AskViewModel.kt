@@ -10,6 +10,7 @@ import com.application.bibleapp.data.model.AiMessage
 import com.application.bibleapp.data.model.AiQuestionPassage
 import com.application.bibleapp.data.model.AiRole
 import com.application.bibleapp.data.remote.AiAskResult
+import com.application.bibleapp.data.remote.AiPartialAnswer
 import com.application.bibleapp.data.remote.AiReportReason
 import com.application.bibleapp.data.remote.AiReportRequestDto
 import com.application.bibleapp.data.remote.AiReportResult
@@ -43,7 +44,8 @@ import kotlinx.coroutines.launch
  * [limit] is the daily limit or the resting service while it lasts, whichever conversation is
  * open (#271): nothing can be sent until it resets. [isWaking] is the part of [isSending] spent
  * waiting for a sleeping server to start, before the question goes (#280). [starter] is the starter
- * question this conversation began with (#284), for retrying it the same way.
+ * question this conversation began with (#284), for retrying it the same way. [partial] is the
+ * answer while it's being written (#285), until the whole one is saved.
  */
 data class AskUiState(
     val conversationId: Long? = null,
@@ -54,7 +56,8 @@ data class AskUiState(
     val remainingToday: Int? = null,
     val passage: AiQuestionPassage? = null,
     val limit: AiAskResult.Failure? = null,
-    val starter: String? = null
+    val starter: String? = null,
+    val partial: AiPartialAnswer? = null
 )
 
 /** The day's questions left, and when that count resets (00:00 UTC). */
@@ -189,7 +192,10 @@ class AskViewModel(
         val pending = AiMessage(PENDING_ID, conversationId ?: PENDING_ID, AiRole.USER, question, createdAt = "", passage = passage)
         _state.update { it.copy(messages = it.messages + pending, isSending = true, failure = null, starter = asStarter ?: it.starter) }
         viewModelScope.launch {
-            val exchange = repository.ask(conversationId, question, language, passage, beforeSend = ::wakeServerIfAsleep, starter = asStarter)
+            val exchange = repository.ask(
+                conversationId, question, language, passage,
+                beforeSend = ::wakeServerIfAsleep, starter = asStarter, onPartial = ::showPartial
+            )
             finish(exchange.conversationId, exchange.result, fromStarter = asStarter != null)
         }
     }
@@ -228,7 +234,8 @@ class AskViewModel(
         if (current.isSending || (current.limit != null && starter == null)) return
         _state.update { it.copy(isSending = true, failure = null) }
         viewModelScope.launch {
-            finish(id, repository.retry(id, language, beforeSend = ::wakeServerIfAsleep, starter = starter), fromStarter = starter != null)
+            val result = repository.retry(id, language, beforeSend = ::wakeServerIfAsleep, starter = starter, onPartial = ::showPartial)
+            finish(id, result, fromStarter = starter != null)
         }
     }
 
@@ -245,6 +252,12 @@ class AskViewModel(
         } finally {
             _state.update { it.copy(isWaking = false) }
         }
+    }
+
+    /** Shows the answer as it's written (#285). Only while it's awaited: nothing else can be
+     *  opened meanwhile, so it's always the open conversation's. */
+    private fun showPartial(partial: AiPartialAnswer) {
+        _state.update { if (it.isSending) it.copy(partial = partial) else it }
     }
 
     fun newConversation() {
@@ -390,13 +403,14 @@ class AskViewModel(
         _state.update { current ->
             // The person may have opened another conversation meanwhile; this one is saved anyway.
             if (current.conversationId != null && current.conversationId != conversationId) {
-                return@update current.copy(isSending = false, isWaking = false)
+                return@update current.copy(isSending = false, isWaking = false, partial = null)
             }
             current.copy(
                 conversationId = conversationId,
                 messages = messages,
                 isSending = false,
                 isWaking = false,
+                partial = null,
                 failure = result as? AiAskResult.Failure,
                 remainingToday = when (result) {
                     is AiAskResult.Answer -> result.remainingToday ?: current.remainingToday
