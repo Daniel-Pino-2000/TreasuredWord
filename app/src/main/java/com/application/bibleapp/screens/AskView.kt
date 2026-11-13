@@ -99,6 +99,7 @@ import com.application.bibleapp.data.model.AiMessage
 import com.application.bibleapp.data.model.AiQuestionPassage
 import com.application.bibleapp.data.model.AiRole
 import com.application.bibleapp.data.remote.AiAskResult
+import com.application.bibleapp.data.remote.AiPartialAnswer
 import com.application.bibleapp.data.remote.AiPassageDto
 import com.application.bibleapp.data.repository.AiHelperRepository.Companion.MAX_QUESTION_CHARS
 import com.application.bibleapp.ui.theme.BibleAppTheme
@@ -115,6 +116,7 @@ import com.application.bibleapp.utils.citedReferences
 import com.application.bibleapp.utils.formatVerseReference
 import com.application.bibleapp.utils.crisisComfortVerse
 import com.application.bibleapp.utils.parseAiAnswer
+import com.application.bibleapp.utils.withoutUnfinishedMarker
 import com.application.bibleapp.utils.UiText
 import com.application.bibleapp.utils.rememberExternalLinks
 import com.application.bibleapp.utils.rememberIsOnline
@@ -248,15 +250,18 @@ fun AskView(
         onSignInClick = onSignInClick,
         onRemovePassage = askViewModel::removePassage,
         scroll = askViewModel.chatScroll,
-        answer = { message ->
+        answer = { message, streaming ->
+            // While it's written, a reference still being typed ("[[JHN 3:") waits until it's whole (#285).
+            val text = if (streaming) withoutUnfinishedMarker(message.content) else message.content
             AiAnswer(
                 message = message,
-                parts = parseAiAnswer(answerWithBullets(message.content), chapterStructure),
+                parts = parseAiAnswer(answerWithBullets(text), chapterStructure),
                 bookName = bookName,
                 onReference = { onReadChapter(it.bookId, it.chapter, it.startVerse ?: 1) },
                 onReport = { reportingId = message.id },
                 onFindHelpline = { links.openPage(FIND_A_HELPLINE_URL) },
-                verseCard = { reference -> AiVerseCard(reference, bibleViewModel, onReadChapter) }
+                verseCard = { reference -> AiVerseCard(reference, bibleViewModel, onReadChapter) },
+                streaming = streaming
             )
         }
     )
@@ -276,7 +281,7 @@ private fun AskChat(
     onSignInClick: () -> Unit,
     onRemovePassage: () -> Unit,
     scroll: AskChatScroll = remember { AskChatScroll() },
-    answer: @Composable (AiMessage) -> Unit
+    answer: @Composable (message: AiMessage, streaming: Boolean) -> Unit
 ) {
     // Starts where the person left it: each tab tap is a new screen, whose list would start at the
     // top after reading a cited verse (#278).
@@ -327,9 +332,19 @@ private fun AskChat(
                 }
             }
             items(state.messages, key = { it.id }) { message ->
-                if (message.role == AiRole.USER) QuestionBubble(message) else answer(message)
+                if (message.role == AiRole.USER) QuestionBubble(message) else answer(message, false)
             }
-            if (state.isSending) item(key = "thinking") { Writing(waking = state.isWaking, stillWriting = stillWriting) }
+            if (state.isSending) {
+                item(key = "thinking") {
+                    // The answer as it's written (#285), in place of the writing state once it starts.
+                    val partial = state.partial
+                    if (partial != null) {
+                        answer(AiMessage(STREAMING_ID, state.conversationId ?: STREAMING_ID, AiRole.ASSISTANT, partial.text, partial.crisis, createdAt = ""), true)
+                    } else {
+                        Writing(waking = state.isWaking, stillWriting = stillWriting)
+                    }
+                }
+            }
             state.failure?.let { failure ->
                 item(key = "failure") {
                     FailureCard(failure = failure, online = online, onRetry = onRetry, onSignInClick = onSignInClick)
@@ -396,6 +411,9 @@ private suspend fun LazyListState.keepEndInView(lastItem: Int) {
 
 /** Long enough for the verse cards to load after a cold start. */
 private const val KEEP_END_MILLIS = 3_000L
+
+/** The id of an answer still being written, which has none yet (#285). */
+private const val STREAMING_ID = -2L
 
 /** "Questions left today" shows once this few remain (#128). */
 private const val REMAINING_SHOWN_FROM = 3
@@ -525,6 +543,10 @@ private const val PASSAGE_QUOTE_BAR_ALPHA = 0.4f
  * One answer: the crisis help card first when the server flagged it (#130), the "AI answer" label
  * (plan section 7), the text with each cited passage as a link, a verse card for each one under it
  * (#129), and the report action (#130). A whole book shows as its name (#190).
+ *
+ * While it's [streaming] (#285), the help card shows without its verse of comfort, which depends
+ * on what the answer cites, and the verse cards and Report wait for the end; typing dots under
+ * the text show more is coming.
  */
 @Composable
 private fun AiAnswer(
@@ -534,13 +556,14 @@ private fun AiAnswer(
     onReference: (VerseReference) -> Unit,
     onReport: () -> Unit,
     onFindHelpline: () -> Unit,
-    verseCard: @Composable (VerseReference) -> Unit
+    verseCard: @Composable (VerseReference) -> Unit,
+    streaming: Boolean = false
 ) {
     val cited = parts.citedReferences()
     // Shown in the help card, so not again under the answer (#282).
-    val comfort = if (message.crisis) crisisComfortVerse(cited) else null
+    val comfort = if (message.crisis && !streaming) crisisComfortVerse(cited) else null
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-        if (comfort != null) AiCrisisCard(onFindHelpline = onFindHelpline) { verseCard(comfort) }
+        if (message.crisis) AiCrisisCard(onFindHelpline = onFindHelpline, verse = comfort?.let { { verseCard(it) } })
         // A crisis answer can be the help card alone: the server sends no text when the model
         // wrote only the crisis marker (docs/api_contract.md).
         if (message.content.isNotBlank()) {
@@ -549,6 +572,10 @@ private fun AiAnswer(
                 text = answerText(parts, bookName, MaterialTheme.colorScheme.primary, onReference),
                 style = MaterialTheme.typography.bodyLarge
             )
+            if (streaming) {
+                AiTypingDots()
+                return@Column
+            }
             AiVerseCardList(cited.filter { it != comfort }) { verseCard(it) }
             // Inside: a report needs an answer to send.
             TextButton(onClick = onReport, modifier = Modifier.align(Alignment.End)) {
@@ -873,7 +900,7 @@ private fun AskChatPreview(@PreviewParameter(ThemePalettePreviewProvider::class)
                 onRetry = {},
                 onSignInClick = {},
                 onRemovePassage = {},
-                answer = { message ->
+                answer = { message, streaming ->
                     AiAnswer(
                         message = message,
                         parts = parseAiAnswer(answerWithBullets(message.content)),
@@ -881,7 +908,8 @@ private fun AskChatPreview(@PreviewParameter(ThemePalettePreviewProvider::class)
                         onReference = {},
                         onReport = {},
                         onFindHelpline = {},
-                        verseCard = {}
+                        verseCard = {},
+                        streaming = streaming
                     )
                 }
             )
@@ -909,15 +937,16 @@ private fun AskLimitPreview(@PreviewParameter(ThemePalettePreviewProvider::class
                 onRetry = {},
                 onSignInClick = {},
                 onRemovePassage = {},
-                answer = {}
+                answer = { _, _ -> }
             )
         }
     }
 }
 
-/** A question on its way (#283): the writing state, or [waking] a sleeping server first (#280). */
+/** A question on its way (#283): the writing state, or [waking] a sleeping server first (#280),
+ *  or the answer as it's written ([partial], #285). */
 @Composable
-private fun AskWritingPreviewContent(palette: ThemePalette, waking: Boolean) {
+private fun AskWritingPreviewContent(palette: ThemePalette, waking: Boolean, partial: AiPartialAnswer? = null) {
     BibleAppTheme(palette = palette) {
         Surface {
             AskChat(
@@ -925,7 +954,8 @@ private fun AskWritingPreviewContent(palette: ThemePalette, waking: Boolean) {
                     conversationId = 1,
                     messages = listOf(AiMessage(1, 1, AiRole.USER, "How should I pray?", createdAt = "")),
                     isSending = true,
-                    isWaking = waking
+                    isWaking = waking,
+                    partial = partial
                 ),
                 draft = "",
                 online = true,
@@ -936,7 +966,18 @@ private fun AskWritingPreviewContent(palette: ThemePalette, waking: Boolean) {
                 onRetry = {},
                 onSignInClick = {},
                 onRemovePassage = {},
-                answer = {}
+                answer = { message, streaming ->
+                    AiAnswer(
+                        message = message,
+                        parts = parseAiAnswer(answerWithBullets(if (streaming) withoutUnfinishedMarker(message.content) else message.content)),
+                        bookName = { "Matthew" },
+                        onReference = {},
+                        onReport = {},
+                        onFindHelpline = {},
+                        verseCard = {},
+                        streaming = streaming
+                    )
+                }
             )
         }
     }
@@ -953,3 +994,21 @@ private fun AskWritingPreview(@PreviewParameter(ThemePalettePreviewProvider::cla
 @Composable
 private fun AskWakingPreview(@PreviewParameter(ThemePalettePreviewProvider::class) palette: ThemePalette) =
     AskWritingPreviewContent(palette, waking = true)
+
+/** An answer halfway written (#285): its reference is a link, the one still being typed waits. */
+@Preview(name = "Light", widthDp = 360, heightDp = 720)
+@Preview(name = "Dark", widthDp = 360, heightDp = 720, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun AskStreamingPreview(@PreviewParameter(ThemePalettePreviewProvider::class) palette: ThemePalette) =
+    AskWritingPreviewContent(
+        palette,
+        waking = false,
+        partial = AiPartialAnswer("Jesus taught us to pray to our Father in heaven [[MAT 6:9-13]]. Pray honestly and often, as [[MAT 7:", crisis = false)
+    )
+
+/** A crisis answer as it's written (#285): the help card first, its verse once the answer is whole. */
+@Preview(name = "Light", widthDp = 360, heightDp = 720)
+@Preview(name = "Dark", widthDp = 360, heightDp = 720, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun AskStreamingCrisisPreview(@PreviewParameter(ThemePalettePreviewProvider::class) palette: ThemePalette) =
+    AskWritingPreviewContent(palette, waking = false, partial = AiPartialAnswer("You matter to God, and you", crisis = true))

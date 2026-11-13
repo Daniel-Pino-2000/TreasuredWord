@@ -254,4 +254,14 @@ class AiAnswerParserTest {
             parseAiAnswer("Los [[PSA]] y [[JHN 3:16-18], [JOHN 5:39]].").plainText(name)
         )
     }
+
+    @Test
+    fun `a marker still being written is left out until it's whole (#285)`() {
+        assertEquals("See ", withoutUnfinishedMarker("See [[JHN 3:"))
+        assertEquals("See ", withoutUnfinishedMarker("See [[JHN 3:16]"))
+        assertEquals("See ", withoutUnfinishedMarker("See ["))
+        assertEquals("See [[JHN 3:16]]", withoutUnfinishedMarker("See [[JHN 3:16]]"))
+        assertEquals("See [[JHN 3:16]] and ", withoutUnfinishedMarker("See [[JHN 3:16]] and [[ROM"))
+        assertEquals("No markers.", withoutUnfinishedMarker("No markers."))
+    }
 }

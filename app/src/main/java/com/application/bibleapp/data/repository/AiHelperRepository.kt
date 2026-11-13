@@ -11,6 +11,7 @@ import com.application.bibleapp.data.remote.AiAskRequestDto
 import com.application.bibleapp.data.remote.AiAskResult
 import com.application.bibleapp.data.remote.AiHelperApi
 import com.application.bibleapp.data.remote.AiMessageDto
+import com.application.bibleapp.data.remote.AiPartialAnswer
 import com.application.bibleapp.data.remote.AiReportRequestDto
 import com.application.bibleapp.data.remote.AiReportResult
 import kotlinx.coroutines.Dispatchers
@@ -121,21 +122,23 @@ class AiHelperRepository(
      *  with the conversation so far in [language], and saves the answer. [passage] is the one
      *  "Ask about this verse" attached (#132); it's saved with the question (#281) and sent with it.
      *  [beforeSend] runs once the question is saved, just before it goes: the time to wake the
-     *  server (#280). */
+     *  server (#280). [onPartial] gets the answer so far while it's written (#285); only the
+     *  complete answer is saved. */
     suspend fun ask(
         conversationId: Long?,
         question: String,
         language: String,
         passage: AiQuestionPassage? = null,
         beforeSend: suspend () -> Unit = {},
-        starter: String? = null
+        starter: String? = null,
+        onPartial: (AiPartialAnswer) -> Unit = {}
     ): Exchange {
         val text = question.trim()
         require(text.isNotEmpty() && text.length <= MAX_QUESTION_CHARS) { "Question must be 1–$MAX_QUESTION_CHARS characters" }
         val id = conversationId ?: store.createConversation(conversationTitle(text)).id
         store.addMessage(id, AiRole.USER, text, passage = passage)
         beforeSend()
-        return Exchange(id, send(id, language, starter))
+        return Exchange(id, send(id, language, starter, onPartial))
     }
 
     /** Sends a conversation's last question again, after a failure, without saving it twice, and
@@ -144,10 +147,11 @@ class AiHelperRepository(
         conversationId: Long,
         language: String,
         beforeSend: suspend () -> Unit = {},
-        starter: String? = null
+        starter: String? = null,
+        onPartial: (AiPartialAnswer) -> Unit = {}
     ): AiAskResult {
         beforeSend()
-        return send(conversationId, language, starter)
+        return send(conversationId, language, starter, onPartial)
     }
 
     suspend fun conversations(): List<AiConversation> = store.conversations()
@@ -178,12 +182,18 @@ class AiHelperRepository(
 
     /** Sends the conversation's last question, with the passage saved with it (#281), and as the
      *  [starter] it came from when it's the conversation's only question (#284). */
-    private suspend fun send(conversationId: Long, language: String, starter: String? = null): AiAskResult {
+    private suspend fun send(
+        conversationId: Long,
+        language: String,
+        starter: String?,
+        onPartial: (AiPartialAnswer) -> Unit
+    ): AiAskResult {
         val messages = store.messages(conversationId)
         val history = historyToSend(messages)
         require(history.lastOrNull()?.role == AiRole.USER.stored) { "Conversation $conversationId has no question to send" }
         val passage = messages.lastOrNull { it.role == AiRole.USER }?.passage?.dto
-        val result = api.ask(AiAskRequestDto(history, language, passage, starter?.takeIf { messages.size == 1 && passage == null }))
+        val request = AiAskRequestDto(history, language, passage, starter?.takeIf { messages.size == 1 && passage == null })
+        val result = api.askStreaming(request, onPartial)
         when (result) {
             is AiAskResult.Answer -> {
                 store.addMessage(conversationId, AiRole.ASSISTANT, result.answer, result.crisis, result.promptVersion)

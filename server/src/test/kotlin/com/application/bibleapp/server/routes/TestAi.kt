@@ -39,6 +39,20 @@ class FakeAiProvider : AiProvider {
         failure?.let { throw it }
         return AiCompletion(text = answer, cutOff = cutOff, neurons = 31.0)
     }
+
+    /** When set, [stream] writes these pieces, which together are the answer, instead of [answer] at once (#285). */
+    @Volatile var pieces: List<String>? = null
+    /** Thrown by [stream] after its pieces, as when the AI stops partway (#285). */
+    @Volatile var failureAfterPieces: AiProviderException? = null
+
+    override suspend fun stream(messages: List<AiMessage>, maxTokens: Int, onText: suspend (String) -> Unit): AiCompletion {
+        val pieces = pieces ?: return super.stream(messages, maxTokens, onText)
+        calls += Call(messages, maxTokens)
+        failure?.let { throw it }
+        pieces.forEach { onText(it) }
+        failureAfterPieces?.let { throw it }
+        return AiCompletion(text = pieces.joinToString(""), cutOff = cutOff, neurons = 31.0)
+    }
 }
 
 /** A clock the test moves by hand, to reach the next UTC day. */

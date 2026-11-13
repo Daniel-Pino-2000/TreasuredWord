@@ -155,3 +155,14 @@ private val SEPARATOR = Regex("""[\s\]\[]*([,;])[\s\]\[]*""")
 private val PIECE = Regex(
     """([1-3]?\s*\p{L}[\p{L} .]*?)\.?\s*(?:(\d{1,3})(?:\s*[:.]\s*(\d{1,3})(?:\s*[-–]\s*(\d{1,3}))?)?)?"""
 )
+
+/**
+ * [answer] without a verse marker it's still in the middle of (#285): while the answer streams in,
+ * "See [[JHN 3:" would show as plain "JHN 3:" until its "]]" arrived and it became a link. A
+ * lone "[" at the end may be the start of one too. The whole answer is parsed as usual.
+ */
+fun withoutUnfinishedMarker(answer: String): String {
+    val open = answer.lastIndexOf("[[")
+    val text = if (open >= 0 && answer.indexOf("]]", open) < 0) answer.substring(0, open) else answer
+    return text.removeSuffix("[")
+}

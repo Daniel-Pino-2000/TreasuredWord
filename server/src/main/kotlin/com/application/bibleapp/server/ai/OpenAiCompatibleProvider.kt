@@ -8,13 +8,16 @@ import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.post
+import io.ktor.client.request.preparePost
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.bodyAsChannel
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
+import io.ktor.utils.io.readUTF8Line
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.config.ApplicationConfig
 import kotlinx.coroutines.CancellationException
@@ -70,7 +73,9 @@ class OpenAiCompatibleProvider(
         @SerialName("max_tokens") val maxTokens: Int,
         val temperature: Double,
         // Left out of the JSON when null (encodeDefaults is off).
-        @SerialName("chat_template_kwargs") val chatTemplateKwargs: ChatTemplateKwargs? = null
+        @SerialName("chat_template_kwargs") val chatTemplateKwargs: ChatTemplateKwargs? = null,
+        // Only sent as true (#285): false is the default, which stays out of the JSON.
+        val stream: Boolean = false
     )
 
     @Serializable
@@ -89,14 +94,27 @@ class OpenAiCompatibleProvider(
     @Serializable
     private data class Usage(val neurons: Double? = null)
 
+    /** One server-sent event of a streamed answer (#285): the next piece in `delta`, OpenAI's shape. */
+    @Serializable
+    private data class StreamChunk(val choices: List<StreamChoice> = emptyList(), val usage: Usage? = null)
+
+    @Serializable
+    private data class StreamChoice(val delta: ChoiceMessage? = null, @SerialName("finish_reason") val finishReason: String? = null)
+
+    /** Wraps a failure of the caller's own `onText`, so it isn't taken for the provider's. */
+    private class CallerFailure(cause: Throwable) : RuntimeException(cause)
+
+    private fun request(messages: List<AiMessage>, maxTokens: Int, stream: Boolean) = ChatRequest(
+        model = model,
+        messages = messages.map { WireMessage(it.role.wireName, it.content) },
+        maxTokens = maxTokens,
+        temperature = TEMPERATURE,
+        chatTemplateKwargs = if (disableThinking) ChatTemplateKwargs(enableThinking = false) else null,
+        stream = stream
+    )
+
     override suspend fun complete(messages: List<AiMessage>, maxTokens: Int): AiCompletion {
-        val request = ChatRequest(
-            model = model,
-            messages = messages.map { WireMessage(it.role.wireName, it.content) },
-            maxTokens = maxTokens,
-            temperature = TEMPERATURE,
-            chatTemplateKwargs = if (disableThinking) ChatTemplateKwargs(enableThinking = false) else null
-        )
+        val request = request(messages, maxTokens, stream = false)
         val started = System.nanoTime()
         return try {
             attempt(request)
@@ -128,6 +146,105 @@ class OpenAiCompatibleProvider(
             throw Unavailable("Couldn't reach the AI provider", e, transient = e !is HttpRequestTimeoutException)
         }
         return read(response, millisSince(started))
+    }
+
+    /**
+     * Asks with `stream: true` (#285): the answer then comes as server-sent events, one
+     * `data: {json}` line per piece and `data: [DONE]` at the end, as with OpenAI. A hiccup is
+     * tried once more as in [complete], but only before any piece reached [onText]: after that the
+     * person has seen part of an answer, and a second one would start again below it.
+     */
+    override suspend fun stream(messages: List<AiMessage>, maxTokens: Int, onText: suspend (String) -> Unit): AiCompletion {
+        val request = request(messages, maxTokens, stream = true)
+        val started = System.nanoTime()
+        var sentAny = false
+        val forward: suspend (String) -> Unit = { sentAny = true; onText(it) }
+        return try {
+            attemptStream(request, forward)
+        } catch (e: Unavailable) {
+            if (sentAny || !e.transient || millisSince(started) > RETRY_IF_FAILED_WITHIN_MILLIS) throw e
+            delay(retryPauseMillis)
+            log.info("AI provider: trying once more")
+            attemptStream(request, forward)
+        }
+    }
+
+    private suspend fun attemptStream(request: ChatRequest, onText: suspend (String) -> Unit): AiCompletion {
+        val started = System.nanoTime()
+        var sentAny = false
+        val forward: suspend (String) -> Unit = { text ->
+            sentAny = true
+            try {
+                onText(text)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                throw CallerFailure(e)
+            }
+        }
+        try {
+            return client.preparePost(url) {
+                bearerAuth(apiToken)
+                contentType(ContentType.Application.Json)
+                setBody(request)
+            }.execute { response ->
+                // An error, or a provider that answered all at once despite `stream: true`: read
+                // it the way complete() does, and pass the answer on as one piece.
+                val isEventStream = response.contentType()?.match(ContentType.Text.EventStream) == true
+                if (!response.status.isSuccess() || !isEventStream) {
+                    read(response, millisSince(started)).also { forward(it.text) }
+                } else {
+                    readStream(response, started, forward)
+                }
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: AiProviderException) {
+            throw e
+        } catch (e: CallerFailure) {
+            throw e.cause!!
+        } catch (e: Exception) {
+            // Timeouts and dropped connections, before or during the answer. The class name only.
+            log.warn("AI provider stream broke after {} ms: {}", millisSince(started), e::class.simpleName)
+            throw Unavailable("The AI provider's answer stopped", e, transient = !sentAny && e !is HttpRequestTimeoutException)
+        }
+    }
+
+    /** Reads a streamed answer's events, passing each piece of `content` to [onPiece]. */
+    private suspend fun readStream(response: HttpResponse, started: Long, onPiece: suspend (String) -> Unit): AiCompletion {
+        val channel = response.bodyAsChannel()
+        val content = StringBuilder()
+        val reasoning = StringBuilder()
+        var finishReason: String? = null
+        var neurons: Double? = null
+        while (true) {
+            val line = channel.readUTF8Line() ?: break
+            // Comments (": keep-alive"), "event:" lines, and the blank line after each event.
+            if (!line.startsWith("data:")) continue
+            val data = line.removePrefix("data:").trim()
+            if (data == "[DONE]") break
+            val chunk = try {
+                json.decodeFromString(StreamChunk.serializer(), data)
+            } catch (e: Exception) {
+                log.warn("AI provider: a streamed piece wasn't in the expected shape")
+                throw Unavailable("The AI provider's answer wasn't in the expected shape", e)
+            }
+            chunk.usage?.neurons?.let { neurons = it }
+            val choice = chunk.choices.firstOrNull() ?: continue
+            choice.finishReason?.let { finishReason = it }
+            choice.delta?.reasoningContent?.let { reasoning.append(it) }
+            // The whole answer is trimmed at the end; its start is trimmed here, so nothing jumps.
+            val piece = choice.delta?.content?.let { if (content.isEmpty()) it.trimStart() else it }
+            if (piece.isNullOrEmpty()) continue
+            content.append(piece)
+            onPiece(piece)
+        }
+        log.info("AI provider: streamed in {} ms, {} neurons, finish {}", millisSince(started), neurons, finishReason)
+        val text = content.toString().takeIf { it.isNotBlank() }
+            // As in read(): Qwen3 answers in reasoning_content, but never with an unfinished thought.
+            ?: reasoning.toString().trim().takeIf { it.isNotEmpty() && finishReason != "length" }?.also { onPiece(it) }
+            ?: throw Unavailable("The AI provider returned no answer")
+        return AiCompletion(text = text.trim(), cutOff = finishReason == "length", neurons = neurons)
     }
 
     private suspend fun read(response: HttpResponse, millis: Long): AiCompletion {

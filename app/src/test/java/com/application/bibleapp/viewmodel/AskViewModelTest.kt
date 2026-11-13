@@ -29,6 +29,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
+import io.ktor.utils.io.ByteChannel
+import io.ktor.utils.io.close
+import io.ktor.utils.io.writeStringUtf8
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.resetMain
@@ -81,6 +84,9 @@ class AskViewModelTest {
     private val settings = FakeSettings()
     private var status = HttpStatusCode.OK
     private var body = """{"answer":"Grace [[EPH 2:8]]","crisis":false,"remainingToday":3,"promptVersion":"1"}"""
+    private var contentType = "application/json"
+    /** When set, the answer's body is read from here as the test writes it, instead of [body] (#285). */
+    private var streamedBody: ByteChannel? = null
 
     private val sent = mutableListOf<Pair<String, String>>()
 
@@ -96,7 +102,12 @@ class AskViewModelTest {
             client = {
                 HttpClient(MockEngine { request ->
                     sent += request.url.encodedPath to (request.body as TextContent).text
-                    respond(body, status, headersOf(HttpHeaders.ContentType, "application/json"))
+                    val streamed = streamedBody
+                    if (streamed != null) {
+                        respond(streamed, status, headersOf(HttpHeaders.ContentType, contentType))
+                    } else {
+                        respond(body, status, headersOf(HttpHeaders.ContentType, contentType))
+                    }
                 }) {
                     install(ContentNegotiation) { json(HttpClientProvider.json) }
                 }
@@ -167,6 +178,46 @@ class AskViewModelTest {
         viewModel = AskViewModel(AiHelperRepository(store, api), settings, now = { clock }, serverWake = wake)
     }
 
+    private fun streamOf(vararg events: Pair<String, String>) =
+        events.joinToString("") { (name, data) -> "event: $name\ndata: $data\n\n" }
+
+    @Test
+    fun `the answer shows as it's written, and only the whole one is saved (#285)`() = runTest {
+        contentType = "text/event-stream"
+        val stream = ByteChannel().also { streamedBody = it }
+
+        viewModel.onDraftChange("What is grace?")
+        viewModel.send("en")
+        stream.writeStringUtf8(streamOf("text" to """{"text":"Grace "}"""))
+        stream.flush()
+        // The first piece shows while the rest is still on its way.
+        assertEquals("Grace ", viewModel.state.first { it.partial != null }.partial?.text)
+        assertTrue(viewModel.state.value.isSending)
+        stream.writeStringUtf8(
+            streamOf(
+                "text" to """{"text":"[[EPH 2:8]]"}""",
+                "done" to """{"answer":"Grace [[EPH 2:8]]","crisis":false,"remainingToday":3,"promptVersion":"1"}"""
+            )
+        )
+        stream.close()
+        awaitAnswer()
+
+        assertNull(viewModel.state.value.partial)
+        assertEquals(listOf("What is grace?", "Grace [[EPH 2:8]]"), store.messages.map { it.content })
+    }
+
+    @Test
+    fun `a stream that stops partway leaves Retry and no half answer (#285)`() = runTest {
+        contentType = "text/event-stream"
+        body = streamOf("text" to """{"text":"Grace "}""", "error" to """{"code":"AI_UNAVAILABLE","message":"…"}""")
+
+        ask("What is grace?")
+
+        assertEquals(AiAskResult.Unavailable, viewModel.state.value.failure)
+        assertNull(viewModel.state.value.partial)
+        assertEquals(listOf(AiRole.USER), store.messages.map { it.role })
+    }
+
     @Test
     fun `a sleeping server is woken before the question goes, and the screen says so (#280)`() = runTest {
         viewModelWith(FakeServerWake(awake = false))
@@ -178,7 +229,7 @@ class AskViewModelTest {
         assertFalse(viewModel.state.value.isWaking)
         // Saved before waking, so a question waiting for the server isn't lost; sent after it.
         assertEquals(listOf(AiRole.USER, AiRole.ASSISTANT), store.messages.map { it.role })
-        assertEquals("/api/v1/ai/ask", sent.single().first)
+        assertEquals("/api/v1/ai/ask/stream", sent.single().first)
     }
 
     @Test
@@ -487,7 +538,7 @@ class AskViewModelTest {
         viewModel.removePassage()
         ask("Who wrote John?")
 
-        val passages = sent.filter { it.first.endsWith("/ai/ask") }
+        val passages = sent.filter { it.first.endsWith("/ai/ask/stream") }
             .map { HttpClientProvider.json.decodeFromString(AiAskRequestDto.serializer(), it.second).passage }
         assertEquals(listOf(passage.dto, passage.dto, null), passages)
     }
@@ -534,7 +585,7 @@ class AskViewModelTest {
         assertEquals(passage, viewModel.state.value.passage)
     }
 
-    private fun sentPassages() = sent.filter { it.first.endsWith("/ai/ask") }
+    private fun sentPassages() = sent.filter { it.first.endsWith("/ai/ask/stream") }
         .map { HttpClientProvider.json.decodeFromString(AiAskRequestDto.serializer(), it.second).passage }
 
     @Test
@@ -584,7 +635,7 @@ class AskViewModelTest {
         assertEquals(listOf(passage, null), questions.map { it.passage })
     }
 
-    private fun sentStarters() = sent.filter { it.first.endsWith("/ai/ask") }
+    private fun sentStarters() = sent.filter { it.first.endsWith("/ai/ask/stream") }
         .map { HttpClientProvider.json.decodeFromString(AiAskRequestDto.serializer(), it.second).starter }
 
     private fun askStarter(id: String, question: String) {
@@ -623,7 +674,7 @@ class AskViewModelTest {
         assertTrue(settings.limit is AiAskResult.DailyLimit)
         // A typed question still waits for the reset.
         ask("And how often?")
-        assertEquals(2, sent.count { it.first.endsWith("/ai/ask") })
+        assertEquals(2, sent.count { it.first.endsWith("/ai/ask/stream") })
     }
 
     @Test

@@ -1,5 +1,6 @@
 package com.application.bibleapp.server.routes
 
+import com.application.bibleapp.server.ai.AiCompletion
 import com.application.bibleapp.server.ai.AiMessage
 import com.application.bibleapp.server.ai.AiProvider
 import com.application.bibleapp.server.ai.AiProviderException
@@ -7,8 +8,8 @@ import com.application.bibleapp.server.ai.AiRole
 import com.application.bibleapp.server.ai.QuotaExhausted
 import com.application.bibleapp.server.ai.StarterQuestions
 import com.application.bibleapp.server.ai.SystemPrompt
-import com.application.bibleapp.server.ai.UsfmBookCodes
 import com.application.bibleapp.server.ai.Unavailable
+import com.application.bibleapp.server.ai.UsfmBookCodes
 import com.application.bibleapp.server.auth.currentUserId
 import com.application.bibleapp.server.db.tables.AiDailyUsage
 import com.application.bibleapp.server.db.tables.AiReports
@@ -19,14 +20,20 @@ import com.application.bibleapp.server.models.AiReportRequest
 import com.application.bibleapp.server.models.ErrorResponse
 import com.application.bibleapp.server.plugins.AI_RATE_LIMIT
 import com.application.bibleapp.server.plugins.AI_REPORT_RATE_LIMIT
+import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
+import io.ktor.server.application.ApplicationCall
 import io.ktor.server.auth.authenticate
 import io.ktor.server.plugins.ratelimit.rateLimit
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
+import io.ktor.server.response.respondBytesWriter
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.post
+import io.ktor.utils.io.writeStringUtf8
 import kotlinx.coroutines.CancellationException
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.greater
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.less
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.minus
@@ -55,7 +62,7 @@ private const val MAX_MESSAGES = 10
 private const val MAX_USER_CHARS = 1_000
 private const val MAX_ASSISTANT_CHARS = 4_000
 private const val MAX_TOTAL_CHARS = 8_000
-private const val CRISIS_MARKER = "[[CRISIS]]"
+internal const val CRISIS_MARKER = "[[CRISIS]]"
 private const val MAX_PASSAGE_CHARS = 2_000
 
 /** A USFM reference within one chapter: "JHN 3", "JHN 3:16", "JHN 3:16-18" or "JHN 3:16,18-20". */
@@ -203,13 +210,140 @@ private fun releaseAnswer(userId: UUID, day: LocalDate) = transaction {
     }
 }
 
+/** The error the app gets when the AI gave no answer: resting until midnight UTC, or try again. */
+internal fun errorFor(e: AiProviderException): ErrorResponse = when (e) {
+    is QuotaExhausted -> ErrorResponse("AI_RESTING", "The Bible Helper is resting until 00:00 UTC")
+    is Unavailable -> ErrorResponse("AI_UNAVAILABLE", "Couldn't get an answer")
+}
+
+private suspend fun ApplicationCall.respondNoAnswer(e: AiProviderException) =
+    respond(HttpStatusCode.ServiceUnavailable, errorFor(e))
+
+/**
+ * Gets the AI's answer to [conversation] and sends [finish]'s response: all at once, or, when
+ * [streaming], piece by piece as it's written (#285, [respondAnswerStream]). [onNoAnswer] runs
+ * when there's no answer, before the error is sent.
+ */
+private suspend fun ApplicationCall.respondAnswer(
+    provider: AiProvider,
+    conversation: List<AiMessage>,
+    streaming: Boolean,
+    onNoAnswer: () -> Unit,
+    finish: (AiCompletion) -> AiAskResponse
+) {
+    if (streaming) {
+        respondAnswerStream(provider, conversation, AI_MAX_TOKENS, onNoAnswer, respondError = { respondNoAnswer(it) }, finish = finish)
+        return
+    }
+    val completion = try {
+        provider.complete(conversation, AI_MAX_TOKENS)
+    } catch (e: Throwable) {
+        onNoAnswer()
+        if (e is AiProviderException) respondNoAnswer(e) else throw e
+        return
+    }
+    respond(HttpStatusCode.OK, finish(completion))
+}
+
+/** A ready answer as a stream (#285): only its `done` event, since there's nothing to wait for. */
+private suspend fun ApplicationCall.respondReady(response: AiAskResponse, streaming: Boolean) {
+    if (!streaming) {
+        respond(HttpStatusCode.OK, response)
+        return
+    }
+    respondBytesWriter(contentType = ContentType.Text.EventStream) {
+        writeStringUtf8("event: done\ndata: ${Json.encodeToString(response)}\n\n")
+        flush()
+    }
+}
+
+/**
+ * `POST /ai/ask`, and with [streaming] `POST /ai/ask/stream` (#285): the same checks, limits and
+ * answer, the second sent as it's written.
+ */
+private suspend fun ApplicationCall.answerQuestion(aiProvider: AiProvider?, clock: Clock, streaming: Boolean) {
+    val userId = currentUserId()
+    val request = try {
+        receive<AiAskRequest>()
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        respond(HttpStatusCode.BadRequest, ErrorResponse("VALIDATION_ERROR", "The request body isn't a valid question"))
+        return
+    }
+    val fieldErrors = validateAsk(request)
+    if (fieldErrors.isNotEmpty()) {
+        respond(HttpStatusCode.BadRequest, ErrorResponse("VALIDATION_ERROR", "Invalid question", fieldErrors))
+        return
+    }
+
+    request.starter?.let { starter ->
+        // A starter question (#284): the same ready answer for everyone, which doesn't use a
+        // daily question, so it works after the day's 15 too.
+        val remaining = AI_DAILY_LIMIT - aiAnswersUsedToday(userId, clock)
+        readyStarterAnswer(starter, request.language)?.let { ready ->
+            respondReady(AiAskResponse(ready, crisis = false, remainingToday = remaining, promptVersion = SystemPrompt.PROMPT_VERSION), streaming)
+            return
+        }
+        if (aiProvider == null) {
+            respond(HttpStatusCode.ServiceUnavailable, ErrorResponse("AI_UNAVAILABLE", "The Bible Helper isn't set up on this server"))
+            return
+        }
+        // Asked in the server's own words, so only these questions are ever stored.
+        val question = StarterQuestions.question(starter, request.language)!!
+        val instructions = SystemPrompt.forLanguage(request.language)
+        val conversation = listOf(AiMessage(AiRole.SYSTEM, instructions), AiMessage(AiRole.USER, question))
+        respondAnswer(aiProvider, conversation, streaming, onNoAnswer = {}) { completion ->
+            val (text, crisis) = splitCrisis(completion.text)
+            // Only a whole, ordinary answer is kept for everyone.
+            if (!crisis && !completion.cutOff && text.isNotBlank()) {
+                storeStarterAnswer(starter, request.language, text, clock.instant())
+            }
+            val answer = if (completion.cutOff) "$text …" else text
+            AiAskResponse(answer, crisis, remaining, SystemPrompt.PROMPT_VERSION)
+        }
+        return
+    }
+
+    if (aiProvider == null) {
+        respond(HttpStatusCode.ServiceUnavailable, ErrorResponse("AI_UNAVAILABLE", "The Bible Helper isn't set up on this server"))
+        return
+    }
+    val today = LocalDate.ofInstant(clock.instant(), ZoneOffset.UTC)
+    val used = reserveAnswer(userId, today)
+    if (used == null) {
+        respond(HttpStatusCode.TooManyRequests, ErrorResponse("AI_DAILY_LIMIT", "Today's $AI_DAILY_LIMIT questions are used up"))
+        return
+    }
+
+    val instructions = SystemPrompt.forLanguage(request.language, request.passage?.reference, request.passage?.text)
+    val conversation = listOf(AiMessage(AiRole.SYSTEM, instructions)) +
+        request.messages.map { AiMessage(if (it.role == "user") AiRole.USER else AiRole.ASSISTANT, it.content) }
+    // No answer, no count: every failure gives the reserved answer back, and so does a stream
+    // that broke partway (#285).
+    respondAnswer(aiProvider, conversation, streaming, onNoAnswer = { releaseAnswer(userId, today) }) { completion ->
+        var (answer, crisis) = splitCrisis(completion.text)
+        var counted = used
+        if (answer.isBlank()) {
+            // Only the crisis marker came back: the help card still shows, and it isn't counted.
+            releaseAnswer(userId, today)
+            counted -= 1
+        } else if (completion.cutOff) {
+            // It ran out of tokens mid-sentence; the ellipsis shows the person it's unfinished.
+            answer = "$answer …"
+        }
+        AiAskResponse(answer = answer, crisis = crisis, remainingToday = AI_DAILY_LIMIT - counted, promptVersion = SystemPrompt.PROMPT_VERSION)
+    }
+}
+
 /**
  * The Bible Helper (#124). Signed in only, 5 questions a minute per user (the `ai` rate-limit
  * zone, which doesn't count someone whose day is used up, #271) and [AI_DAILY_LIMIT] answers
  * per UTC day. Reports of bad answers (#125) are stored
  * without the user's ID, 10 an hour per user, and kept [REPORT_RETENTION]. [aiProvider] is null when the AI_* settings
  * aren't set, and every question then answers AI_UNAVAILABLE. [clock] decides the day; tests
- * move it forward.
+ * move it forward. `/ai/ask/stream` sends the answer as it's written (#285); `/ai/ask` stays for
+ * app versions before it.
  *
  * Question and answer text is never logged, here or in the provider (#124).
  */
@@ -220,102 +354,8 @@ fun Route.aiRoutes(aiProvider: AiProvider?, clock: Clock) {
 
     authenticate("auth-jwt") {
         rateLimit(AI_RATE_LIMIT) {
-            post("/ai/ask") {
-                val userId = call.currentUserId()
-                val request = try {
-                    call.receive<AiAskRequest>()
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    call.respond(HttpStatusCode.BadRequest, ErrorResponse("VALIDATION_ERROR", "The request body isn't a valid question"))
-                    return@post
-                }
-                val fieldErrors = validateAsk(request)
-                if (fieldErrors.isNotEmpty()) {
-                    call.respond(HttpStatusCode.BadRequest, ErrorResponse("VALIDATION_ERROR", "Invalid question", fieldErrors))
-                    return@post
-                }
-
-                request.starter?.let { starter ->
-                    // A starter question (#284): the same ready answer for everyone, which doesn't
-                    // use a daily question, so it works after the day's 15 too.
-                    val remaining = AI_DAILY_LIMIT - aiAnswersUsedToday(userId, clock)
-                    readyStarterAnswer(starter, request.language)?.let { ready ->
-                        call.respond(HttpStatusCode.OK, AiAskResponse(ready, crisis = false, remainingToday = remaining, promptVersion = SystemPrompt.PROMPT_VERSION))
-                        return@post
-                    }
-                    if (aiProvider == null) {
-                        call.respond(HttpStatusCode.ServiceUnavailable, ErrorResponse("AI_UNAVAILABLE", "The Bible Helper isn't set up on this server"))
-                        return@post
-                    }
-                    // Asked in the server's own words, so only these questions are ever stored.
-                    val question = StarterQuestions.question(starter, request.language)!!
-                    val instructions = SystemPrompt.forLanguage(request.language)
-                    val completion = try {
-                        aiProvider.complete(listOf(AiMessage(AiRole.SYSTEM, instructions), AiMessage(AiRole.USER, question)), AI_MAX_TOKENS)
-                    } catch (e: AiProviderException) {
-                        when (e) {
-                            is QuotaExhausted -> call.respond(HttpStatusCode.ServiceUnavailable, ErrorResponse("AI_RESTING", "The Bible Helper is resting until 00:00 UTC"))
-                            is Unavailable -> call.respond(HttpStatusCode.ServiceUnavailable, ErrorResponse("AI_UNAVAILABLE", "Couldn't get an answer"))
-                        }
-                        return@post
-                    }
-                    val (text, crisis) = splitCrisis(completion.text)
-                    // Only a whole, ordinary answer is kept for everyone.
-                    if (!crisis && !completion.cutOff && text.isNotBlank()) {
-                        storeStarterAnswer(starter, request.language, text, clock.instant())
-                    }
-                    val answer = if (completion.cutOff) "$text …" else text
-                    call.respond(HttpStatusCode.OK, AiAskResponse(answer, crisis, remaining, SystemPrompt.PROMPT_VERSION))
-                    return@post
-                }
-
-                if (aiProvider == null) {
-                    call.respond(HttpStatusCode.ServiceUnavailable, ErrorResponse("AI_UNAVAILABLE", "The Bible Helper isn't set up on this server"))
-                    return@post
-                }
-                val today = LocalDate.ofInstant(clock.instant(), ZoneOffset.UTC)
-                var used = reserveAnswer(userId, today)
-                if (used == null) {
-                    call.respond(HttpStatusCode.TooManyRequests, ErrorResponse("AI_DAILY_LIMIT", "Today's $AI_DAILY_LIMIT questions are used up"))
-                    return@post
-                }
-
-                val instructions = SystemPrompt.forLanguage(request.language, request.passage?.reference, request.passage?.text)
-                val conversation = listOf(AiMessage(AiRole.SYSTEM, instructions)) +
-                    request.messages.map { AiMessage(if (it.role == "user") AiRole.USER else AiRole.ASSISTANT, it.content) }
-                // No answer, no count: every failure gives the reserved answer back.
-                val completion = try {
-                    aiProvider.complete(conversation, AI_MAX_TOKENS)
-                } catch (e: Throwable) {
-                    releaseAnswer(userId, today)
-                    when (e) {
-                        is QuotaExhausted -> call.respond(HttpStatusCode.ServiceUnavailable, ErrorResponse("AI_RESTING", "The Bible Helper is resting until 00:00 UTC"))
-                        is Unavailable -> call.respond(HttpStatusCode.ServiceUnavailable, ErrorResponse("AI_UNAVAILABLE", "Couldn't get an answer"))
-                        else -> throw e
-                    }
-                    return@post
-                }
-
-                var (answer, crisis) = splitCrisis(completion.text)
-                if (answer.isBlank()) {
-                    // Only the crisis marker came back: the help card still shows, and it isn't counted.
-                    releaseAnswer(userId, today)
-                    used -= 1
-                } else if (completion.cutOff) {
-                    // It ran out of tokens mid-sentence; the ellipsis shows the person it's unfinished.
-                    answer = "$answer …"
-                }
-                call.respond(
-                    HttpStatusCode.OK,
-                    AiAskResponse(
-                        answer = answer,
-                        crisis = crisis,
-                        remainingToday = AI_DAILY_LIMIT - used,
-                        promptVersion = SystemPrompt.PROMPT_VERSION
-                    )
-                )
-            }
+            post("/ai/ask") { call.answerQuestion(aiProvider, clock, streaming = false) }
+            post("/ai/ask/stream") { call.answerQuestion(aiProvider, clock, streaming = true) }
         }
 
         rateLimit(AI_REPORT_RATE_LIMIT) {
