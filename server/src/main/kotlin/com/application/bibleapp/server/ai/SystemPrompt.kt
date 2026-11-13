@@ -23,12 +23,12 @@ object SystemPrompt {
      * the files are af7f9e8's again, under v5's number, because answers are the ones v5's runs measured.
      * v13 is v5 plus one verse of comfort from a fixed list in crisis answers, which the app shows
      * in the help card (#282). Its number skips the v6-v12 experiments, so reports can't mix them up.
-     * v14 fixes what v13's two runs (2026-11-13) kept missing: v12's doctrine.md (alcohol, the
-     * rapture views, abuse, believer's baptism, positions stated as settled), the rapture and
-     * KJV-only views among the open questions, no "some churches differ" ending, a pastor's usual
-     * points (grief, repeated sin, safety at home, the Lord's Prayer, Psalm 119:105), "it isn't
-     * your fault", no [[CRISIS]] or emergency line outside a crisis, and no verse for medical points;
-     * and the developer's position on tattoos and piercings (doctrine.md 20).
+     * v14 fixes what v13's two runs (2026-11-13) kept missing, with the positions in doctrine.md
+     * and only the proven answer rules in system_prompt.md (more answer rules made v6-v12 worse):
+     * v12's doctrine.md tightened, plus repeated sin, abuse at home, grief and doubt, and the
+     * developer's position on tattoos and piercings (items 5, 18, 20, 21); the rapture and KJV-only
+     * views among the open questions; no "some churches differ" ending; "it isn't your fault"; no
+     * [[CRISIS]] or emergency line outside a crisis; no verse for medical or church-practice points.
      */
     const val PROMPT_VERSION = "14"
 
