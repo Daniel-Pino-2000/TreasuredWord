@@ -62,3 +62,7 @@ data class BackendErrorDto(
     val message: String? = null,
     val fieldErrors: Map<String, String>? = null
 )
+
+/** A `text` event of `POST /api/v1/ai/ask/stream` (#285): the next piece of the answer. */
+@Serializable
+data class AiStreamTextDto(val text: String)
