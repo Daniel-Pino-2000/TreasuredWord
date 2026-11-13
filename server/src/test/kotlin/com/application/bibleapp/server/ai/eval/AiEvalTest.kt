@@ -96,6 +96,17 @@ class AiEvalTest {
     }
 
     @Test
+    fun aMarkerClosedWithOneBracketIsReadLikeTheApp() {
+        // v13's evaluation (2026-11-13): LANG-04 run 1 and LIFE-05 run 2. The app reads these now.
+        assertEquals(emptyList(), EvalChecks.check(plain, "Basahin ang buong [[ROM 8] o [[PSA 23] para sa pag-asa."))
+        assertEquals(emptyList(), EvalChecks.check(plain, "Read Proverbs for wisdom [[PRO)]."))
+        assertEquals(emptyList(), EvalChecks.check(plain, "See [[JHN 3:16)."))
+        // Still text in the app: not a passage, or no closing bracket at all.
+        assertEquals(listOf("a [[ marker isn't closed"), EvalChecks.check(plain, "See [[the notes] here."))
+        assertEquals(listOf("a [[ marker isn't closed"), EvalChecks.check(plain, "See [[XYZ 1:1] here."))
+    }
+
+    @Test
     fun aMarkerLeftOpenThatTheAppShowsAsTextIsFlagged() {
         // Text that isn't a passage, an unknown book, a passage with a bare verse, or a "[[" at
         // the end with no marker after it: the app shows these as plain text (#222).
