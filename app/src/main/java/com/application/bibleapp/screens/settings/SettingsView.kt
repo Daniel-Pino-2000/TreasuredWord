@@ -23,6 +23,7 @@ import com.application.bibleapp.R
 import androidx.compose.ui.res.stringResource
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.PrivacyTip
@@ -48,10 +49,12 @@ fun SettingsView(
     modifier: Modifier = Modifier,
     onSignInClick: () -> Unit,
     onLanguageClick: () -> Unit,
+    onBibleVersionClick: () -> Unit,
     onLicensesClick: () -> Unit
 ) {
     val context = LocalContext.current
     val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
+    val versionLabel by bibleViewModel.currentVersionLabel.collectAsState()
     val links = rememberExternalLinks { bibleViewModel.showMessage(it) }
 
     Column(
@@ -68,6 +71,16 @@ fun SettingsView(
                 value = AppLanguage.currentTag()?.let { AppLanguage.displayName(it) }
                     ?: stringResource(R.string.language_system_default),
                 onClick = onLanguageClick
+            )
+            GroupedDivider()
+            // Also here, not only behind the reader's "KJV" button: a tester asked for "more
+            // versions" without finding the 200+ the picker offers (#304).
+            GroupedRow(
+                title = stringResource(R.string.settings_bible_version),
+                icon = Icons.AutoMirrored.Outlined.MenuBook,
+                subtitle = stringResource(R.string.settings_bible_version_subtitle),
+                value = versionLabel,
+                onClick = onBibleVersionClick
             )
         }
         AppearanceSettings(bibleViewModel)

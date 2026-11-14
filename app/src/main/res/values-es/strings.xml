@@ -86,6 +86,11 @@
     <string name="title_note">Nota</string>
     <string name="title_highlight">Resaltado</string>
     <string name="title_language">Idioma</string>
+    <!-- Settings row that opens the Bible version picker (#304) -->
+    <string name="settings_bible_version">Versión de la Biblia</string>
+    <string name="settings_bible_version_subtitle">Descarga versiones gratuitas en muchos idiomas</string>
+    <!-- Screen reader label of the reader's version button. %1$s: the current version's short name, e.g. KJV -->
+    <string name="reader_change_version">Cambiar versión de la Biblia, %1$s</string>
 
     <!-- Shared labels -->
     <string name="label_bookmark">Marcador</string>

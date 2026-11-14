@@ -360,6 +360,11 @@
     <string name="settings_open_source_licenses">Open-source licenses</string>
     <string name="settings_section_general">General</string>
     <string name="title_language">Language</string>
+    <!-- Settings row that opens the Bible version picker (#304) -->
+    <string name="settings_bible_version">Bible version</string>
+    <string name="settings_bible_version_subtitle">Download free versions in many languages</string>
+    <!-- Screen reader label of the reader's version button. %1$s: the current version's short name, e.g. KJV -->
+    <string name="reader_change_version">Change Bible version, %1$s</string>
     <!-- Follow the phone's language instead of choosing one for the app -->
     <string name="language_system_default">System default</string>
     <string name="settings_section_appearance">Appearance</string>
