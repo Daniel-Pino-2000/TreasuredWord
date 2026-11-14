@@ -10,7 +10,7 @@ in Play Console together, so the repo matches what users see.
 
 **Short description** (80 max):
 
-> Read the Bible offline. Highlight verses, write notes, sync across devices.
+> Read the Bible offline, highlight and take notes, and ask the Bible Helper.
 
 **Full description** (4000 max):
 
@@ -21,17 +21,27 @@ READ
 • Download free Bible translations in many languages and read them offline.
 • Pick up where you left off, and keep a bookmark in your place.
 • Search the Bible.
-• A verse of the day, with an optional daily reminder.
+• A verse of the day, with an optional daily reminder and a home screen widget.
 
 STUDY
 • Highlight verses in five colors.
 • Write notes on one verse or several.
 • "About this book" links each book to its GotQuestions.org summary and its BibleProject overview video.
 
+ASK
+• The Bible Helper answers questions about the Bible and the Christian faith, in the Ask tab. Each answer cites the verses it rests on, and shows them in your translation.
+• It answers in line with the Baptist Faith and Message 2000.
+• The Bible Helper is an AI and can be wrong. Check what it says against Scripture.
+• It needs a free account and an internet connection, and there's a daily limit of questions. You can report an answer from inside the app.
+
+SHARE
+• Share a verse as an image, in the style and size you choose, or on your own photo.
+• Save it to your photos or set it as your wallpaper, with an optional new verse wallpaper every day.
+
 YOURS
-• No account needed: without one, everything you create stays on your phone.
+• No account needed to read, highlight and write notes: without one, everything you create stays on your phone.
 • Or create a free account to sync your highlights, notes and reading position between devices. You can delete it at any time from inside the app.
-• Light and dark themes, adjustable text size, and a layout that works in landscape.
+• Six color themes, each in light and dark, adjustable text size, and a layout that works in landscape.
 • Available in English, Spanish, Portuguese, French, German, Indonesian, Filipino, Swahili, Korean and Simplified Chinese.
 
 Bible translations come from bible.helloao.org and the verse of the day from OurManna. GotQuestions.org and BibleProject content opens on their own sites and apps; TreasuredWord isn't affiliated with either.

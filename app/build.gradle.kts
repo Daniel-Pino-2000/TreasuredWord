@@ -56,8 +56,9 @@ android {
         // 1.5: asks to update when a newer version is on Google Play (#202).
         // 1.6: landscape keyboard and rotation fixes (#234).
         // 1.7: color themes, daily verse widget, verse images, Android 7–11 crash fix (#264).
-        versionCode = 8
-        versionName = "1.7"
+        // 1.8: daily verse never repeats, Library undo, Bible Helper fixes; first production release.
+        versionCode = 9
+        versionName = "1.8"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
