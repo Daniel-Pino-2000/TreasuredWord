@@ -126,3 +126,55 @@ class VectorCache(val file: File, private val model: String, private val transla
         fun slug(text: String) = text.lowercase().replace(Regex("[^a-z0-9.]+"), "-").trim('-')
     }
 }
+
+/**
+ * The queries' vectors for one model, keyed by the query's text, so a rerun (or trying ranking
+ * variants on cached verse vectors) needs no token and no neurons (#287). Changing a query's
+ * wording embeds it again. Small (43 vectors), so it's rewritten whole each time.
+ */
+class QueryVectorCache(val file: File, private val model: String) {
+
+    fun load(): MutableMap<String, FloatArray> {
+        val vectors = LinkedHashMap<String, FloatArray>()
+        if (!file.isFile) return vectors
+        try {
+            DataInputStream(BufferedInputStream(file.inputStream())).use { input ->
+                if (input.readInt() != MAGIC || input.readInt() != VERSION || input.readUTF() != model) return vectors
+                repeat(input.readInt()) {
+                    val text = input.readUTF()
+                    vectors[text] = FloatArray(input.readInt()) { input.readFloat() }
+                }
+            }
+        } catch (e: EOFException) {
+            // Cut off mid-write: embed the queries again (under a neuron).
+            return LinkedHashMap()
+        }
+        return vectors
+    }
+
+    fun save(vectors: Map<String, FloatArray>) {
+        file.parentFile?.mkdirs()
+        val temporary = File(file.path + ".tmp")
+        DataOutputStream(BufferedOutputStream(FileOutputStream(temporary))).use { output ->
+            output.writeInt(MAGIC)
+            output.writeInt(VERSION)
+            output.writeUTF(model)
+            output.writeInt(vectors.size)
+            for ((text, vector) in vectors) {
+                output.writeUTF(text)
+                output.writeInt(vector.size)
+                vector.forEach { output.writeFloat(it) }
+            }
+        }
+        if (file.exists()) file.delete()
+        check(temporary.renameTo(file)) { "Couldn't save ${file.name}" }
+    }
+
+    companion object {
+        private const val MAGIC = 0x54575143 // "TWQC": TreasuredWord query cache
+        private const val VERSION = 1
+
+        /** `bge-m3.queries` for `@cf/baai/bge-m3`; not a `.vec`, so it's never taken for a translation. */
+        fun fileName(model: String) = "${VectorCache.slug(model.substringAfterLast('/'))}.queries"
+    }
+}
