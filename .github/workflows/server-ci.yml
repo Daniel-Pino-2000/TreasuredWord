@@ -35,10 +35,12 @@ jobs:
     # The test suite (see server/src/test/.../TestSupport.kt) registers real users and hits
     # real routes against a real Postgres via testApplication — no H2/mocked DB — so CI needs
     # an actual Postgres to talk to, same as local dev's Docker container. Keep the major version
-    # in step with production's database, so CI tests what actually runs there (#117).
+    # in step with production's database, so CI tests what actually runs there (#117). The
+    # pgvector image is Postgres 18 plus the vector extension search by meaning needs (#287);
+    # Neon includes it too.
     services:
       postgres:
-        image: postgres:18
+        image: pgvector/pgvector:pg18
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres

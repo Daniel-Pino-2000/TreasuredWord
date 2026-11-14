@@ -73,6 +73,27 @@ tasks.register<JavaExec>("semanticSearchEval") {
     )
 }
 
+// Search by meaning (#287, phase 2): fills search_verses and verse_embeddings (migration V9) in the
+// database DATABASE_URL points at (default: the local Docker Postgres). Vectors come from the
+// evaluation's cache under build/semantic-search-eval/cache/ first, so verses it already embedded
+// cost no neurons; only missing ones are embedded (needs AI_BASE_URL and AI_API_TOKEN then).
+// -Pbible=<file.tsv> is required; -Plimit=100 loads only the first 100 verses to try it.
+// Never part of `test`, `check` or CI: against Neon it writes production data.
+tasks.register<JavaExec>("loadVerseSearch") {
+    group = "application"
+    description = "Loads the search-by-meaning verses and vectors into the database (#287)."
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("com.application.bibleapp.server.search.VerseSearchLoaderKt")
+    // The cache's 31,086 vectors of 1,024 floats are ~130 MB in memory.
+    maxHeapSize = "1g"
+    args(
+        providers.gradleProperty("bible").map { rootProject.file(it).path }.getOrElse(""),
+        layout.buildDirectory.dir("semantic-search-eval/cache").get().asFile.path,
+        providers.gradleProperty("embeddingModel").getOrElse("@cf/baai/bge-m3"),
+        providers.gradleProperty("limit").getOrElse("")
+    )
+}
+
 dependencies {
     semanticSearchEvalRuntime(libs.sqlite.jdbc)
     // The tests read the real bible_default.db to check every expected verse exists (#287).
