@@ -57,12 +57,14 @@ the graphics; Play's metadata policy rejects them.
 |---|---|---|
 | App icon | `../icon-source/playstore-icon-512.png` | 512×512 |
 | Feature graphic | `feature-graphic.png` | 1024×500 |
-| Phone screenshots | `screenshots/1-home.png` … `7-dark-theme.png`, uploaded in that order | 1080×1920 |
+| Phone screenshots | `screenshots/1-home.png` … `8-ask.png`, uploaded in that order | 1080×1920 |
 
 Play only accepts phone screenshots in a 16:9 or 9:16 ratio, so the full-height S23 size
 (1080×2340) is rejected. The screenshots were taken in October 2026 on an emulator set to
 `wm size 1080x1920` with the status bar in demo mode (`sysui_demo_allowed`, clock 9:00). They
-use the KJV with sample highlights and a sample note in Psalm 23. At least four screenshots of
+use the KJV with sample highlights and a sample note in Psalm 23. `8-ask.png` (November 2026, for
+1.8) is a real Bible Helper answer to the starter "How should I pray?", taken the same way while
+signed in; it's a screenshot, so it isn't labeled as AI-generated in Play's AI asset declaration. At least four screenshots of
 1080 px or more on each side keep the app eligible for Play's promotions.
 
 The feature graphic is the app icon's open Bible on the icon's espresso background, with the name
