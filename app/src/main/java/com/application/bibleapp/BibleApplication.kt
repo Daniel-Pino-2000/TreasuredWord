@@ -33,7 +33,7 @@ class BibleApplication : Application() {
         ensureDailyVerseJobsScheduled(this)
         SyncScheduler.schedulePeriodicSync(this)
         // A no-op if signed out (SyncWorker checks first thing) — otherwise syncs promptly on
-        // launch instead of waiting up to 15 minutes for the periodic job's next run.
+        // launch instead of waiting up to 12 hours for the periodic job's next run (#305).
         SyncScheduler.triggerImmediateSync(this)
     }
 }
