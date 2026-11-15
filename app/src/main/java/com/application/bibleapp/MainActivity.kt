@@ -126,6 +126,7 @@ import androidx.compose.ui.res.stringResource
 import com.application.bibleapp.utils.InAppUpdates
 import com.application.bibleapp.utils.UiText
 import com.application.bibleapp.utils.isSpanishUi
+import com.application.bibleapp.widget.DailyVerseWidgetUpdates
 
 /** Cumulative scroll distance, in one sustained direction, required before the reading
  *  chrome commits to hiding or showing — see the effect in [MainActivity.onCreate]. */
@@ -187,7 +188,11 @@ class MainActivity : AppCompatActivity() {
         }
         // An app left open overnight shows the new day's verse when it comes back (#183).
         lifecycle.addObserver(LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_START) startupViewModel.refreshVerseOfTheDayIfStale()
+            if (event == Lifecycle.Event.ON_START) {
+                startupViewModel.refreshVerseOfTheDayIfStale()
+                // And the widget and daily wallpaper, if their midnight job was held back (#298).
+                DailyVerseWidgetUpdates.refreshIfStale(applicationContext)
+            }
         })
         // Asks to update when Play has a newer version (#202); registers a result launcher, so here.
         val inAppUpdates = InAppUpdates(this)
