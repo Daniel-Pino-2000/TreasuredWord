@@ -317,6 +317,11 @@
     <string name="settings_open_source_licenses">Leseni za programu huria</string>
     <string name="settings_section_general">Jumla</string>
     <string name="title_language">Lugha</string>
+    <!-- Settings row that opens the Bible version picker (#304) -->
+    <string name="settings_bible_version">Tafsiri ya Biblia</string>
+    <string name="settings_bible_version_subtitle">Pakua tafsiri za bure katika lugha nyingi</string>
+    <!-- Screen reader label of the reader's version button. %1$s: the current version's short name, e.g. KJV -->
+    <string name="reader_change_version">Badilisha tafsiri ya Biblia, %1$s</string>
     <string name="language_system_default">Chaguomsingi la mfumo</string>
     <string name="settings_section_appearance">Mwonekano</string>
     <string name="settings_theme">Mandhari</string>

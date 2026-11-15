@@ -326,6 +326,11 @@
     <string name="settings_open_source_licenses">Licences open source</string>
     <string name="settings_section_general">Général</string>
     <string name="title_language">Langue</string>
+    <!-- Settings row that opens the Bible version picker (#304) -->
+    <string name="settings_bible_version">Version de la Bible</string>
+    <string name="settings_bible_version_subtitle">Téléchargez des versions gratuites dans de nombreuses langues</string>
+    <!-- Screen reader label of the reader's version button. %1$s: the current version's short name, e.g. KJV -->
+    <string name="reader_change_version">Changer de version de la Bible, %1$s</string>
     <string name="language_system_default">Langue du système</string>
     <string name="settings_section_appearance">Apparence</string>
     <string name="settings_theme">Thème</string>

@@ -307,6 +307,11 @@
     <string name="settings_open_source_licenses">开源许可</string>
     <string name="settings_section_general">通用</string>
     <string name="title_language">语言</string>
+    <!-- Settings row that opens the Bible version picker (#304) -->
+    <string name="settings_bible_version">圣经译本</string>
+    <string name="settings_bible_version_subtitle">下载多种语言的免费译本</string>
+    <!-- Screen reader label of the reader's version button. %1$s: the current version's short name, e.g. KJV -->
+    <string name="reader_change_version">更换圣经译本，%1$s</string>
     <string name="language_system_default">跟随系统</string>
     <string name="settings_section_appearance">外观</string>
     <string name="settings_theme">主题</string>

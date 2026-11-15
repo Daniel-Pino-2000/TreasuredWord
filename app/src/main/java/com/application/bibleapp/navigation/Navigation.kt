@@ -195,6 +195,10 @@ fun Navigation(
                 modifier = screenModifier,
                 onSignInClick = { navController.navigate(Screen.Login.route) },
                 onLanguageClick = { navController.navigate(Screen.LanguagePicker.route) },
+                onBibleVersionClick = {
+                    bibleViewModel.clearDownloadMessages()
+                    navController.navigate(Screen.VersionPicker.route)
+                },
                 onLicensesClick = { navController.navigate(Screen.Licenses.route) }
             )
         }
