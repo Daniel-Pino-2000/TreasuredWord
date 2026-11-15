@@ -126,6 +126,7 @@ import androidx.compose.ui.res.stringResource
 import com.application.bibleapp.utils.InAppUpdates
 import com.application.bibleapp.utils.UiText
 import com.application.bibleapp.utils.isSpanishUi
+import com.application.bibleapp.widget.DailyVerseWidgetUpdates
 import com.application.bibleapp.worker.SyncScheduler
 
 /** Cumulative scroll distance, in one sustained direction, required before the reading
@@ -188,7 +189,11 @@ class MainActivity : AppCompatActivity() {
         }
         // An app left open overnight shows the new day's verse when it comes back (#183).
         lifecycle.addObserver(LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_START) startupViewModel.refreshVerseOfTheDayIfStale()
+            if (event == Lifecycle.Event.ON_START) {
+                startupViewModel.refreshVerseOfTheDayIfStale()
+                // And the widget and daily wallpaper, if their midnight job was held back (#298).
+                DailyVerseWidgetUpdates.refreshIfStale(applicationContext)
+            }
             // Sends what changed this session (highlights, notes, reading position) as the app
             // leaves the screen; the background sync only runs every 12 hours now (#305). A no-op
             // signed out. Rotation doesn't stop the activity (configChanges in the manifest).

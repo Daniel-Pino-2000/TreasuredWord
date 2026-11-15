@@ -55,9 +55,28 @@ import com.application.bibleapp.widget.DailyVerseWidgetUpdates
 internal fun dailyVerseDateKey(now: Calendar = Calendar.getInstance()): String =
     "${now.get(Calendar.YEAR)}-${now.get(Calendar.DAY_OF_YEAR)}"
 
+/** Yesterday's [dailyVerseDateKey], to compare a newly fetched verse with yesterday's (#298). */
+internal fun previousDailyVerseDateKey(now: Calendar = Calendar.getInstance()): String =
+    dailyVerseDateKey((now.clone() as Calendar).apply { add(Calendar.DAY_OF_YEAR, -1) })
+
 /** [cached]'s reference if it was fetched for [todayKey], else null. */
 internal fun CachedDailyVerse?.refFor(todayKey: String): DailyVerseRef? =
     this?.takeIf { it.dateKey == todayKey }?.ref
+
+/**
+ * The verse to keep as today's once OurManna returned [fetched] (#298). OurManna changes its verse
+ * on its own clock, not the phone's, so a fetch made before its switchover returns the verse it
+ * was already serving yesterday. When yesterday's fetch came after the switchover (the job was
+ * delayed, or the app was opened late in the day) and today's comes before it, that is the same
+ * verse two days running. Then today gets the [curated] verse (never yesterday's), for the whole
+ * day: waiting for OurManna's switchover instead would change the verse in the middle of the day,
+ * and every following day too for phones ahead of OurManna's clock.
+ */
+internal fun verseToKeepForToday(
+    fetched: DailyVerseRef,
+    yesterdays: DailyVerseRef?,
+    curated: (avoid: DailyVerseRef?) -> DailyVerseRef
+): DailyVerseRef = if (fetched == yesterdays) curated(yesterdays) else fetched
 
 /**
  * Today's daily verse: [cached] if it's from [todayKey], else a fresh [refresh]; if that fails
@@ -259,9 +278,14 @@ class BibleRepository(
             cached = BibleDatabaseManager.getCachedDailyVerse(context),
             todayKey = dailyVerseDateKey(),
             refresh = { refreshDailyVerse() },
-            curated = { VerseOfTheDay.forToday() }
+            curated = { curatedDailyVerse() }
         )
     }
+
+    /** Today's curated verse, never the one cached for yesterday (#298) — the offline fallback. */
+    fun curatedDailyVerse(): DailyVerseRef = VerseOfTheDay.forToday(
+        avoid = BibleDatabaseManager.getCachedDailyVerse(context).refFor(previousDailyVerseDateKey())
+    )
 
     /** The cached daily-verse reference if it's today's, else null — a plain read, no network. */
     suspend fun getTodaysCachedDailyVerse(): DailyVerseRef? = withContext(Dispatchers.IO) {
@@ -269,19 +293,27 @@ class BibleRepository(
     }
 
     /**
-     * Always fetches fresh from [daily] and overwrites the cached row — this is what
-     * the daily background worker calls to replace the previous day's verse. Skips the
-     * network call entirely when there's no connectivity rather than waiting on a
-     * request that's bound to time out.
+     * Fetches today's verse from [daily] and caches it — what the daily background worker calls to
+     * replace the previous day's verse. Once today has a cached verse it's kept, with no network
+     * call (#298): a second fetch later in the day could land after OurManna's switchover and
+     * change the verse mid-day. A fetched verse that is yesterday's again is replaced by the
+     * curated one ([verseToKeepForToday]). Skips the network call entirely when there's no
+     * connectivity rather than waiting on a request that's bound to time out.
      */
     suspend fun refreshDailyVerse(): DailyVerseRef = withContext(Dispatchers.IO) {
+        val todayKey = dailyVerseDateKey()
+        val cached = BibleDatabaseManager.getCachedDailyVerse(context)
+        cached.refFor(todayKey)?.let { return@withContext it }
         if (!NetworkUtils.isOnline(context)) {
             throw IOException("No internet connection — skipping daily verse fetch")
         }
-        val fetched = daily.getDailyVerse()
-        BibleDatabaseManager.saveCachedDailyVerse(context, dailyVerseDateKey(), fetched)
+        val kept = verseToKeepForToday(
+            fetched = daily.getDailyVerse(),
+            yesterdays = cached.refFor(previousDailyVerseDateKey())
+        ) { avoid -> VerseOfTheDay.forToday(avoid) }
+        BibleDatabaseManager.saveCachedDailyVerse(context, todayKey, kept)
         DailyVerseWidgetUpdates.refreshNow(context) // the widget shows the cached verse (#245)
-        fetched
+        kept
     }
 
     fun isNotificationEnabled(): Boolean = prefs.getBoolean(KEY_NOTIFICATION_ENABLED, false)

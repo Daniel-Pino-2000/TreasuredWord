@@ -12,6 +12,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
+import com.application.bibleapp.data.repository.dailyVerseDateKey
 import com.application.bibleapp.verseimage.DailyWallpaper
 import com.application.bibleapp.worker.DailyVerseScheduler
 import java.util.concurrent.TimeUnit
@@ -21,7 +22,8 @@ import java.util.concurrent.TimeUnit
  * periodic updates and no network: only
  * - just after midnight, so it never shows yesterday's verse (works offline);
  * - when the day's verse is fetched (BibleRepository.refreshDailyVerse);
- * - when the translation or the app language changes, or the phone's language.
+ * - when the translation or the app language changes, or the phone's language;
+ * - when the app opens on a day they haven't been updated yet (#298).
  * All of it goes through WorkManager, and only while a widget is placed or the daily wallpaper is
  * on: when neither is, the midnight job is cancelled, so nothing keeps running in the background.
  */
@@ -62,6 +64,26 @@ object DailyVerseWidgetUpdates {
         WorkManager.getInstance(context).enqueueUniqueWork(MIDNIGHT_WORK_NAME, policy, request)
     }
 
+    /**
+     * Redraws them when the app comes to the foreground and they haven't been updated yet today
+     * (#298): Doze or a phone maker's battery saving can hold the midnight job back for hours, and
+     * offline the app has no fetch to trigger [refreshNow]. A cheap check otherwise.
+     */
+    fun refreshIfStale(context: Context) {
+        if (lastUpdatedDay(context) != dailyVerseDateKey() && isNeeded(context)) refreshNow(context)
+    }
+
+    internal fun markUpdatedToday(context: Context) {
+        prefs(context).edit().putString(KEY_LAST_UPDATED_DAY, dailyVerseDateKey()).apply()
+    }
+
+    private fun lastUpdatedDay(context: Context): String? = prefs(context).getString(KEY_LAST_UPDATED_DAY, null)
+
+    private fun prefs(context: Context) = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+
+    private const val PREFS_NAME = "daily_verse_widget"
+    private const val KEY_LAST_UPDATED_DAY = "last_updated_day"
+
     fun cancel(context: Context) {
         WorkManager.getInstance(context).apply {
             cancelUniqueWork(MIDNIGHT_WORK_NAME)
@@ -79,6 +101,7 @@ class DailyVerseWidgetWorker(context: Context, params: WorkerParameters) : Corou
         if (!DailyVerseWidgetUpdates.isNeeded(applicationContext)) return Result.success()
         DailyVerseWidget.refreshAll(applicationContext)
         DailyWallpaper.update(applicationContext)
+        DailyVerseWidgetUpdates.markUpdatedToday(applicationContext)
         // Last, like DailyVerseNotificationWorker: REPLACE cancels this running instance.
         if (inputData.getBoolean(DailyVerseWidgetUpdates.KEY_REARM_MIDNIGHT, false)) {
             DailyVerseWidgetUpdates.scheduleMidnight(applicationContext, ExistingWorkPolicy.REPLACE)

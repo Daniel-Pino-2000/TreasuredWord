@@ -15,6 +15,12 @@ import java.io.IOException
  * daily verse. Returns a [DailyVerseRef] (not verse text): the reference is resolved
  * against whatever translation the user has selected, via [BibleBooks], so the daily
  * verse always shows in the user's own language/version rather than OurManna's NIV.
+ *
+ * `order=daily` changes at about **00:00 UTC**, not at the phone's midnight (measured by logging
+ * it every 5 minutes on 2026-11-14/15: Ecclesiastes 5:15 until 23:57 UTC, Psalm 119:165 from
+ * then on). So a phone east of UTC fetching just after its own midnight still gets the verse it
+ * was served the day before; [com.application.bibleapp.data.repository.verseToKeepForToday]
+ * keeps that from showing two days running (#298).
  */
 class OurMannaBibleDataSource(
     private val baseUrl: String = "https://beta.ourmanna.com/api/v1/get",

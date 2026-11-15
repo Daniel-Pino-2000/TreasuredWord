@@ -1,6 +1,7 @@
 package com.application.bibleapp.data.model
 
 import java.util.Calendar
+import java.util.TimeZone
 
 /**
  * A book/chapter/verse reference, resolved against whatever translation is active.
@@ -20,7 +21,7 @@ data class DailyVerseRef(
 data class CachedDailyVerse(val dateKey: String, val ref: DailyVerseRef)
 
 /**
- * A small curated set of well-known verses, picked deterministically by day-of-year
+ * A small curated set of well-known verses, picked deterministically by date
  * so the Home screen shows the same verse all day and a different one tomorrow.
  * Used as a fallback when the remote daily-verse API is unreachable or returns a
  * reference this app can't resolve — see
@@ -39,10 +40,25 @@ object VerseOfTheDay {
         DailyVerseRef(bookId = 23, chapter = 41, startVerse = 10), // Isaiah 41:10
     )
 
-    fun forToday(): DailyVerseRef {
-        val dayOfYear = Calendar.getInstance().get(Calendar.DAY_OF_YEAR)
-        return refs[dayOfYear % refs.size]
+    /** Today's curated verse; never [avoid] (yesterday's verse, so a day doesn't repeat it, #298). */
+    fun forToday(avoid: DailyVerseRef? = null): DailyVerseRef = forDay(Calendar.getInstance(), avoid)
+
+    /**
+     * Picked by days since 1970 for [day]'s local date, not by day-of-year: with day-of-year,
+     * Dec 31 (day 365) and Jan 1 (day 1) landed on the same verse (#298). Consecutive days always
+     * differ this way. If the pick is [avoid], the next one in the list instead.
+     */
+    internal fun forDay(day: Calendar, avoid: DailyVerseRef? = null): DailyVerseRef {
+        val localDateAsUtc = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
+            clear()
+            set(day.get(Calendar.YEAR), day.get(Calendar.MONTH), day.get(Calendar.DAY_OF_MONTH))
+        }
+        val index = Math.floorMod(localDateAsUtc.timeInMillis / MILLIS_PER_DAY, refs.size.toLong()).toInt()
+        val pick = refs[index]
+        return if (pick == avoid) refs[(index + 1) % refs.size] else pick
     }
+
+    private const val MILLIS_PER_DAY = 24L * 60 * 60 * 1000
 }
 
 /** One verse of the daily verse — its number and its text. */
