@@ -318,6 +318,11 @@
     <string name="settings_open_source_licenses">Mga lisensya ng open source</string>
     <string name="settings_section_general">Pangkalahatan</string>
     <string name="title_language">Wika</string>
+    <!-- Settings row that opens the Bible version picker (#304) -->
+    <string name="settings_bible_version">Bersyon ng Bibliya</string>
+    <string name="settings_bible_version_subtitle">Mag-download ng libreng bersyon sa maraming wika</string>
+    <!-- Screen reader label of the reader's version button. %1$s: the current version's short name, e.g. KJV -->
+    <string name="reader_change_version">Palitan ang bersyon ng Bibliya, %1$s</string>
     <string name="language_system_default">Default ng system</string>
     <string name="settings_section_appearance">Hitsura</string>
     <string name="settings_theme">Tema</string>

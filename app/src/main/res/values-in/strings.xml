@@ -308,6 +308,11 @@
     <string name="settings_open_source_licenses">Lisensi open source</string>
     <string name="settings_section_general">Umum</string>
     <string name="title_language">Bahasa</string>
+    <!-- Settings row that opens the Bible version picker (#304) -->
+    <string name="settings_bible_version">Versi Alkitab</string>
+    <string name="settings_bible_version_subtitle">Unduh versi gratis dalam banyak bahasa</string>
+    <!-- Screen reader label of the reader's version button. %1$s: the current version's short name, e.g. KJV -->
+    <string name="reader_change_version">Ganti versi Alkitab, %1$s</string>
     <string name="language_system_default">Default sistem</string>
     <string name="settings_section_appearance">Tampilan</string>
     <string name="settings_theme">Tema</string>

@@ -18,8 +18,15 @@ import java.util.concurrent.TimeUnit
 /**
  * Schedules [SyncWorker] — see docs/UI_Integration_Roadmap.md Phase E/G. Unlike the daily-verse
  * jobs (wall-clock-anchored one-time requests that re-enqueue themselves), sync just needs to
- * happen regularly while there's a network connection; a [androidx.work.PeriodicWorkRequest] at
- * WorkManager's minimum interval (15 minutes — there's no way to go shorter) fits that directly.
+ * happen regularly while there's a network connection, so it's a [androidx.work.PeriodicWorkRequest].
+ *
+ * Every 12 hours, not WorkManager's minimum of 15 minutes (#305): each run queries the database,
+ * and Neon's free plan has 100 compute-hours a month. Each query keeps it awake 5 minutes, so a
+ * few phones syncing every 15 minutes kept it up most of the day (34 hours used in two weeks of
+ * closed testing), and once they run out the database is suspended until the next month. The
+ * periodic run is only there to pull other devices' changes in the background: the app syncs on
+ * start, and when it goes to the background ([MainActivity][com.application.bibleapp.MainActivity]),
+ * which sends new highlights, notes and the reading position right away.
  *
  * Both [schedulePeriodicSync] and [triggerImmediateSync] read the Wi-Fi-only preference (Settings'
  * Sync section, Phase G) themselves rather than taking it as a parameter, so every call site
@@ -29,7 +36,7 @@ import java.util.concurrent.TimeUnit
 object SyncScheduler {
     private const val PERIODIC_WORK_NAME = "content_sync_periodic"
     private const val IMMEDIATE_WORK_NAME = "content_sync_immediate"
-    private const val PERIODIC_INTERVAL_MINUTES = 15L
+    private const val PERIODIC_INTERVAL_HOURS = 12L
 
     private fun currentConstraints(context: Context): Constraints {
         val repository = BibleRepository(context, HelloAoBibleDataSource(), OurMannaBibleDataSource())
@@ -48,7 +55,7 @@ object SyncScheduler {
             cancelPeriodicSync(context)
             return
         }
-        val request = PeriodicWorkRequestBuilder<SyncWorker>(PERIODIC_INTERVAL_MINUTES, TimeUnit.MINUTES)
+        val request = PeriodicWorkRequestBuilder<SyncWorker>(PERIODIC_INTERVAL_HOURS, TimeUnit.HOURS)
             .setConstraints(currentConstraints(context))
             .build()
         WorkManager.getInstance(context)
