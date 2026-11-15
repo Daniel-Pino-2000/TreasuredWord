@@ -302,6 +302,56 @@ class SyncEngineTest {
         assertFalse(serverPositionWins("not a time", null))
     }
 
+    // ---- #308: the 12-hour job only runs when there's something to send ----
+
+    @Test
+    fun `an idle phone has nothing for a background pass`() = runTest {
+        assertFalse(engine(idleLocal()).hasWorkForBackgroundPass())
+    }
+
+    @Test
+    fun `an unsent highlight or note needs a background pass`() = runTest {
+        assertTrue(engine(idleLocal().apply { addHighlight(color = 2) }).hasWorkForBackgroundPass())
+        assertTrue(engine(idleLocal().apply { addNote("unsent") }).hasWorkForBackgroundPass())
+        assertTrue(engine(idleLocal().apply { addHighlight(color = 2, remoteId = "r1", deleted = true) }).hasWorkForBackgroundPass())
+    }
+
+    @Test
+    fun `an unsent reading position needs a background pass`() = runTest {
+        val local = idleLocal().apply { reading = reading.copy(changedAt = "2026-10-23T09:30:00.000Z") }
+
+        assertTrue(engine(local).hasWorkForBackgroundPass())
+    }
+
+    @Test
+    fun `a resource never pulled since sign-in needs a background pass`() = runTest {
+        assertTrue(engine(idleLocal().apply { highlightsWatermark = null }).hasWorkForBackgroundPass())
+        assertTrue(engine(idleLocal().apply { notesWatermark = null }).hasWorkForBackgroundPass())
+    }
+
+    @Test
+    fun `a full pass leaves nothing for the background pass`() = runTest {
+        val local = FakeLocalStore().apply {
+            reading = reading.copy(changedAt = "2026-10-23T09:30:00.000Z", hasLocalPosition = true)
+        }
+        val highlights = FakeHighlightApi().apply { createResult = { Result.success(serverHighlight("r1", it)) } }
+        val notes = FakeNoteApi().apply { createResult = { Result.success(serverNote("n1", it)) } }
+        local.addHighlight(color = 4)
+        local.addNote("new")
+        val engine = engine(local, highlights = highlights, notes = notes)
+
+        engine.runPass()
+
+        assertFalse(engine.hasWorkForBackgroundPass())
+    }
+
+    /** Pulled before, everything sent, the position pushed: what most phones look like at night. */
+    private fun idleLocal() = FakeLocalStore().apply {
+        highlightsWatermark = "2026-10-23T08:59:00.000Z"
+        notesWatermark = "2026-10-23T08:59:00.000Z"
+        reading = reading.copy(changedAt = "2026-10-20T08:00:00.000Z", pushedAt = "2026-10-20T08:00:00.000Z", hasLocalPosition = true)
+    }
+
     // ---- helpers ----
 
     private fun engine(
