@@ -49,7 +49,10 @@ data class LocalReadingProgress(
     val changedAt: String?,
     val pushedAt: String?,
     val hasLocalPosition: Boolean
-)
+) {
+    /** A move on this device the server hasn't accepted yet (#82). */
+    val hasUnpushedMove: Boolean get() = changedAt != null && changedAt != pushedAt
+}
 
 /**
  * This device's side of a sync pass — implemented by BibleRepository. Every "mark"/"purge" takes
@@ -163,6 +166,21 @@ class SyncEngine(
         return Outcome(highlightsChanged || notesChanged, restored)
     }
 
+    /**
+     * Whether a background pass has anything to do (#308): rows or a reading position this
+     * device hasn't sent, or a resource never pulled since sign-in (its first sync failed). An
+     * idle phone answers false and makes no request, so neither Render nor Neon wakes for it:
+     * every background sync used to cost a token refresh and at least 5 minutes of Neon's
+     * 100-compute-hour month. Other devices' changes still arrive, since the app syncs on every
+     * start and when it's left.
+     */
+    suspend fun hasWorkForBackgroundPass(): Boolean =
+        local.loadHighlightsSyncWatermark() == null ||
+            local.loadNotesSyncWatermark() == null ||
+            local.loadReadingProgress().hasUnpushedMove ||
+            local.getPendingHighlights().isNotEmpty() ||
+            local.getPendingNotes().isNotEmpty()
+
     /** Just the pushes — sign-out uses this to upload what it can before removing it (#81).
      *  Throws [SyncFailedException] if the server can't be reached. */
     suspend fun pushPending() {
@@ -248,7 +266,7 @@ class SyncEngine(
     private suspend fun syncReadingProgress(): ReadingPosition? {
         val before = local.loadReadingProgress()
         val changedAt = before.changedAt
-        if (changedAt != null && changedAt != before.pushedAt) {
+        if (changedAt != null && before.hasUnpushedMove) {
             val position = before.position
             readingProgress.updateProgress(before.versionId, position.bookId, position.chapter, position.verse, readAt = changedAt)
                 .handleItem(
