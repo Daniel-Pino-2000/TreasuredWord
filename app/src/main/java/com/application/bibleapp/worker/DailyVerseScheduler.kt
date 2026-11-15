@@ -33,7 +33,9 @@ object DailyVerseScheduler {
 
     // A few minutes after midnight, not exactly 00:00 — gives the day boundary a
     // moment to settle, and comfortably precedes the earliest notification time any
-    // user would realistically pick.
+    // user would realistically pick. Local midnight, although OurManna switches its verse
+    // at about 00:00 UTC (#298): a verse fetched before its switchover that repeats
+    // yesterday's is replaced by the curated one (BibleRepository.verseToKeepForToday).
     private const val FETCH_HOUR = 0
     private const val FETCH_MINUTE = 5
 
