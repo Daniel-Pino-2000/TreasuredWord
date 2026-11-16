@@ -159,6 +159,100 @@ class AiHelperApiTest {
         assertEquals(AiAskResult.RateLimited, api.report(AiReportRequestDto("Q", "A", AiReportReason.OTHER, language = "en")))
     }
 
+    // ---- Streaming (#285) ----
+
+    private fun MockRequestHandleScope.events(vararg events: Pair<String, String>) = respond(
+        events.joinToString("") { (name, data) -> "event: $name\ndata: $data\n\n" },
+        HttpStatusCode.OK,
+        headersOf(HttpHeaders.ContentType, "text/event-stream")
+    )
+
+    private val partials = mutableListOf<AiPartialAnswer>()
+
+    private suspend fun askStreaming(handler: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData) =
+        api(handler).askStreaming(QUESTION) { partials += it }
+
+    @Test
+    fun `a streamed answer reports each step and ends with the whole answer`() = runTest {
+        val result = askStreaming {
+            events(
+                "text" to """{"text":"Grace is "}""",
+                "text" to """{"text":"a gift [[EPH 2:8]]"}""",
+                "done" to """{"answer":"Grace is a gift [[EPH 2:8]]","crisis":false,"remainingToday":9,"promptVersion":"13"}"""
+            )
+        }
+
+        assertEquals("https://backend.test/api/v1/ai/ask/stream", sent.single().url.toString())
+        assertEquals(
+            listOf(AiPartialAnswer("Grace is ", false), AiPartialAnswer("Grace is a gift [[EPH 2:8]]", false)),
+            partials
+        )
+        assertEquals(AiAskResult.Answer("Grace is a gift [[EPH 2:8]]", crisis = false, remainingToday = 9, promptVersion = "13"), result)
+    }
+
+    @Test
+    fun `the crisis event comes before the text`() = runTest {
+        askStreaming {
+            events(
+                "crisis" to "{}",
+                "text" to """{"text":"You matter."}""",
+                "done" to """{"answer":"You matter.","crisis":true,"remainingToday":9,"promptVersion":"13"}"""
+            )
+        }
+
+        assertEquals(listOf(AiPartialAnswer("", true), AiPartialAnswer("You matter.", true)), partials)
+    }
+
+    @Test
+    fun `a stream that stops partway is unavailable`() = runTest {
+        val result = askStreaming {
+            events("text" to """{"text":"Grace is "}""", "error" to """{"code":"AI_UNAVAILABLE","message":"…"}""")
+        }
+
+        assertEquals(AiAskResult.Unavailable, result)
+    }
+
+    @Test
+    fun `the free allowance running out partway is resting`() = runTest {
+        val result = askStreaming { events("error" to """{"code":"AI_RESTING","message":"…"}""") }
+
+        assertEquals(AiAskResult.Resting(NEXT_MIDNIGHT_UTC), result)
+    }
+
+    @Test
+    fun `a stream that closes without its end is unavailable`() = runTest {
+        assertEquals(AiAskResult.Unavailable, askStreaming { events("text" to """{"text":"Grace is "}""") })
+    }
+
+    @Test
+    fun `a failure before the stream is the usual error`() = runTest {
+        val result = askStreaming { json(HttpStatusCode.TooManyRequests, """{"code":"AI_DAILY_LIMIT","message":"…"}""") }
+
+        assertEquals(AiAskResult.DailyLimit(NEXT_MIDNIGHT_UTC), result)
+        assertTrue(partials.isEmpty())
+    }
+
+    @Test
+    fun `a server without the stream asks the usual way`() = runTest {
+        val result = askStreaming { request ->
+            if (request.url.encodedPath.endsWith("/stream")) {
+                json(HttpStatusCode.NotFound, "")
+            } else {
+                json(HttpStatusCode.OK, """{"answer":"Yes.","crisis":false,"remainingToday":3,"promptVersion":"5"}""")
+            }
+        }
+
+        assertEquals(listOf("/api/v1/ai/ask/stream", "/api/v1/ai/ask"), sent.map { it.url.encodedPath })
+        assertEquals(AiAskResult.Answer("Yes.", crisis = false, remainingToday = 3, promptVersion = "5"), result)
+    }
+
+    @Test
+    fun `an answer sent all at once is read as one`() = runTest {
+        val result = askStreaming { json(HttpStatusCode.OK, """{"answer":"Yes.","crisis":false,"remainingToday":3,"promptVersion":"5"}""") }
+
+        assertEquals(AiAskResult.Answer("Yes.", crisis = false, remainingToday = 3, promptVersion = "5"), result)
+    }
+
     private companion object {
         val QUESTION = AiAskRequestDto(listOf(AiMessageDto("user", "What does it mean to be born again?")), "es")
 
