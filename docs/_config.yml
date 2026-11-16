@@ -7,7 +7,9 @@ description: A free Bible reading app
 exclude:
   - "*.pdf"
   - ai_helper_eval.md
+  - ai_helper_eval_heldout.md
   - ai_helper_plan.md
+  - ai_quality_audit.md
   - api_contract.md
   - release.md
   - semantic_search_eval.md
