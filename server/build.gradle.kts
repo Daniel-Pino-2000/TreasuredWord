@@ -40,9 +40,25 @@ tasks.register<JavaExec>("aiEval") {
     classpath = sourceSets["main"].runtimeClasspath
     mainClass.set("com.application.bibleapp.server.ai.eval.AiEvalKt")
     args(
-        rootProject.file("docs/ai_helper_eval.md").path,
+        rootProject.file(providers.gradleProperty("questionsFile").getOrElse("docs/ai_helper_eval.md")).path,
         layout.buildDirectory.dir("ai-eval").get().asFile.path,
         providers.gradleProperty("questions").getOrElse("")
+    )
+}
+
+// Topic guides pilot: which guide each evaluation question and search query matches, at several
+// thresholds, and what the guides add to search's hits. Embeds ~300 short texts (~3 neurons) and
+// reads the verse tables in DATABASE_URL; never part of `test` or CI.
+tasks.register<JavaExec>("topicRoutingEval") {
+    group = "verification"
+    description = "Matches the evaluation questions and search queries to topic guides and reports the routing."
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("com.application.bibleapp.server.ai.eval.TopicRoutingEvalKt")
+    args(
+        rootProject.file("docs/ai_helper_eval.md").path,
+        rootProject.file("docs/ai_helper_eval_heldout.md").path,
+        rootProject.file("docs/semantic_search_eval.md").path,
+        layout.buildDirectory.dir("ai-eval").get().asFile.path
     )
 }
 

@@ -1,0 +1,172 @@
+package com.application.bibleapp.server.ai.eval
+
+import com.application.bibleapp.server.ai.TopicGuides
+import com.application.bibleapp.server.ai.TopicRouter
+import com.application.bibleapp.server.ai.UsfmBookCodes
+import com.application.bibleapp.server.search.EmbeddingKind
+import com.application.bibleapp.server.search.VerseSearch
+import com.application.bibleapp.server.search.WorkersAiEmbeddingProvider
+import com.application.bibleapp.server.search.eval.SearchEvalQueries
+import com.application.bibleapp.server.search.eval.VerseRef
+import io.ktor.server.config.MapApplicationConfig
+import kotlinx.coroutines.runBlocking
+import java.io.File
+import java.sql.DriverManager
+import kotlin.system.exitProcess
+
+/**
+ * The guide a person would pick for each question and search query, written before the routing
+ * was run (2026-11-16), so the routing is graded against it. A set means any of them is right;
+ * an empty set means no guide fits and none should be sent. Questions missing here expect none.
+ */
+private val expectedGuides: Map<String, Set<String>> = mapOf(
+    // docs/ai_helper_eval.md
+    "CORE-04" to setOf("jesus", "cross"), "CORE-05" to setOf("cross"), "CORE-06" to setOf("salvation"),
+    "CORE-07" to setOf("security"), "CORE-09" to setOf("hell"), "CORE-10" to setOf("return", "endtimes"),
+    "BAP-01" to setOf("baptism"), "BAP-02" to setOf("baptism"), "BAP-03" to setOf("baptism", "salvation"),
+    "BAP-05" to setOf("women-pastors"), "BAP-06" to setOf("church"), "BAP-07" to setOf("government"),
+    "DIS-02" to setOf("endtimes"), "DIS-05" to setOf("translations"), "DIS-06" to setOf("alcohol"),
+    "TRAD-05" to setOf("islam"), "LIFE-01" to setOf("grief"), "LIFE-02" to setOf("doubt"),
+    "LIFE-03" to setOf("repeated-sin"), "LIFE-04" to setOf("marriage"), "LIFE-05" to setOf("bible-reading"),
+    "LIFE-06" to setOf("same-sex"), "CRISIS-01" to setOf("despair"), "CRISIS-02" to setOf("abuse"),
+    "CRISIS-03" to setOf("despair", "failure"), "CRISIS-05" to setOf("judas-peter"), "TRICK-05" to setOf("return"),
+    "TRICK-07" to setOf("government"), "TRICK-08" to setOf("despair", "anxiety"),
+    "LANG-02" to setOf("loneliness", "prayer"), "LANG-03" to setOf("baptism"), "LANG-04" to setOf("prayer"),
+    "LANG-06" to setOf("anxiety"), "LANG-08" to setOf("salvation"), "LANG-09" to setOf("security"),
+    // docs/ai_helper_eval_heldout.md
+    "HO-01" to setOf("baptism"), "HO-02" to setOf("baptism"), "HO-03" to setOf("endtimes"),
+    "HO-04" to setOf("translations"), "HO-05" to setOf("alcohol"), "HO-06" to setOf("grief"),
+    "HO-07" to setOf("repeated-sin", "temptation"), "HO-08" to setOf("marriage"), "HO-09" to setOf("bible-reading"),
+    "HO-10" to setOf("prayer"), "HO-11" to setOf("judas-peter"), "HO-12" to setOf("government"),
+    "HO-13" to setOf("security"), "HO-14" to setOf("anxiety"), "HO-15" to setOf("islam"),
+    "HO-16" to setOf("cross", "jesus"), "HO-17" to setOf("abuse"), "HO-18" to setOf("women-pastors"),
+    // docs/semantic_search_eval.md
+    "TOPIC-01" to setOf("anxiety"), "TOPIC-02" to setOf("forgiving"), "TOPIC-03" to setOf("enemies"),
+    "TOPIC-04" to setOf("salvation"), "TOPIC-05" to setOf("gossip"), "TOPIC-06" to setOf("temptation"),
+    "TOPIC-07" to setOf("heaven"), "TOPIC-08" to setOf("giving"),
+    "MOD-01" to setOf("anxiety"), "MOD-02" to setOf("rest"), "MOD-03" to setOf("god-far"),
+    "MOD-04" to setOf("god-love"), "MOD-05" to setOf("forgiving"), "MOD-06" to setOf("comparison"),
+    "MOD-07" to setOf("failure", "repeated-sin"), "MOD-08" to setOf("work"), "MOD-09" to setOf("illness"),
+    "MOD-10" to setOf("loneliness"), "MOD-11" to setOf("despair"), "MOD-12" to setOf("guidance"),
+    "LANG-DE-01" to setOf("anxiety", "fear"), "LANG-DE-02" to setOf("pride"), "LANG-ES-01" to setOf("forgiving"),
+    "LANG-ES-02" to setOf("grief"), "LANG-FR-01" to setOf("loneliness"), "LANG-FR-02" to setOf("money"),
+    "LANG-PT-01" to setOf("anxiety"), "LANG-PT-02" to setOf("prayer"), "LANG-ID-01" to setOf("enemies"),
+    "LANG-ID-02" to setOf("salvation"), "LANG-FIL-01" to setOf("fear"), "LANG-FIL-02" to setOf("waiting"),
+    "LANG-SW-01" to setOf("grief"), "LANG-SW-02" to setOf("work"), "LANG-KO-01" to setOf("creation"),
+    "LANG-KO-02" to setOf("marriage"), "LANG-ZH-01" to setOf("anger"), "LANG-ZH-02" to setOf("parents")
+)
+
+private val thresholds = listOf(0.45, 0.50, 0.55, 0.60, 0.65, 0.70, 0.75)
+
+private class Item(val id: String, val text: String, val set: String, val expected: Set<VerseRef> = emptySet())
+
+/** The verses a guide passage covers; a whole chapter ("PSA 73") covers its chapter. */
+private fun covers(passage: String, verse: VerseRef): Boolean {
+    val match = Regex("""^([1-3]?[A-Z]{2,3}) (\d+)(?::(\d+)(?:-(\d+))?)?$""").matchEntire(passage) ?: return false
+    val book = UsfmBookCodes.codes.indexOf(match.groupValues[1]) + 1
+    if (book != verse.book || match.groupValues[2].toInt() != verse.chapter) return false
+    val first = match.groupValues[3].toIntOrNull() ?: return true
+    val last = match.groupValues[4].toIntOrNull() ?: first
+    return verse.verse in first..last
+}
+
+/**
+ * `./gradlew :server:topicRoutingEval` (topic guides pilot). Embeds every guide phrase, question
+ * and search query once (~3 neurons), then, with no more neurons: how often the right guide is
+ * picked at each threshold, and how many search queries find an expected verse in the top 10
+ * with search alone and with the matching guide's passages shown first.
+ */
+fun main(args: Array<String>) {
+    require(args.size == 4) { "Usage: TopicRoutingEval <ai_helper_eval.md> <heldout.md> <semantic_search_eval.md> <report folder>" }
+    val config = MapApplicationConfig().apply {
+        for ((setting, variable) in listOf("baseUrl" to "AI_BASE_URL", "apiToken" to "AI_API_TOKEN")) {
+            System.getenv(variable)?.let { put("ai.$setting", it) }
+        }
+    }
+    val embeddings = WorkersAiEmbeddingProvider.fromConfig(config, VerseSearch.MODEL)
+    if (embeddings == null) {
+        System.err.println("Set AI_BASE_URL and AI_API_TOKEN first.")
+        exitProcess(1)
+    }
+
+    val items = EvalQuestions.parse(File(args[0]).readText()).map { Item(it.id, it.ask, "main") } +
+        EvalQuestions.parse(File(args[1]).readText()).map { Item(it.id, it.ask, "heldout") } +
+        SearchEvalQueries.parse(File(args[2]).readText()).map { Item(it.id, it.query, "search", it.expected) }
+    val guides = TopicGuides.load()
+    val router = TopicRouter(guides, embeddings, threshold = 0.0)
+
+    val raw = mutableMapOf<String, FloatArray>()
+    val scored = runBlocking {
+        router.prepare()
+        for (batch in items.chunked(embeddings.maxBatch)) {
+            embeddings.embed(batch.map { it.text }, EmbeddingKind.QUERY).vectors.forEachIndexed { i, v -> raw[batch[i].id] = v }
+        }
+        items.associate { it.id to router.scoresFor(TopicRouter.normalized(raw.getValue(it.id))) }
+    }
+
+    val out = StringBuilder()
+    fun line(text: String = "") { println(text); out.appendLine(text) }
+    line("# Topic routing, ${guides.size} guides, ${items.size} questions and queries")
+    line()
+    line("Right: the expected guide is first. Wrong: another guide is sent. Missed: one was expected, none sent. Quiet: none expected, none sent.")
+    line()
+    line("| Threshold | Set | Right | Wrong | Missed | Quiet |")
+    line("|---|---|---|---|---|---|")
+    for (threshold in thresholds) {
+        val picker = TopicRouter(guides, embeddings, threshold)
+        for (set in listOf("main", "heldout", "search")) {
+            var right = 0; var wrong = 0; var missed = 0; var quiet = 0
+            for (item in items.filter { it.set == set }) {
+                val expected = expectedGuides[item.id].orEmpty()
+                val picked = picker.pick(scored.getValue(item.id))
+                when {
+                    picked.isEmpty() && expected.isEmpty() -> quiet++
+                    picked.isEmpty() -> missed++
+                    picked.first().guide.id in expected -> right++
+                    else -> wrong++
+                }
+            }
+            line("| %.2f | $set | $right | $wrong | $missed | $quiet |".format(threshold))
+        }
+    }
+
+    // Search: does an expected verse reach the top 10, with search alone and with the guide first?
+    val jdbcUrl = System.getenv("DATABASE_URL") ?: "jdbc:postgresql://localhost:5433/bibleapp"
+    DriverManager.getConnection(jdbcUrl, System.getenv("DATABASE_USER") ?: "postgres", System.getenv("DATABASE_PASSWORD") ?: "postgres").use { connection ->
+        connection.isReadOnly = true
+        val searchItems = items.filter { it.set == "search" }
+        val ranked = searchItems.associate { item ->
+            item.id to VerseSearch.rankVerses(connection, VerseSearch.MODEL, VerseSearch.TRANSLATION, raw.getValue(item.id), item.text, 10)
+                .map { VerseRef(it.book, it.chapter, it.verse) }
+        }
+        line()
+        line("| Threshold | Search alone | Guide first, then search | Groups (TOPIC, MOD, KJV, LANG) |")
+        line("|---|---|---|---|")
+        for (threshold in thresholds) {
+            val picker = TopicRouter(guides, embeddings, threshold)
+            var alone = 0; var withGuide = 0
+            val byGroup = mutableMapOf<String, Int>()
+            for (item in searchItems) {
+                val passages = picker.pick(scored.getValue(item.id)).flatMap { it.guide.passages.map { p -> p.first } }
+                val searchHit = ranked.getValue(item.id).any { it in item.expected }
+                val guideHit = passages.any { passage -> item.expected.any { covers(passage, it) } }
+                val combinedHit = guideHit || ranked.getValue(item.id).take((10 - passages.size).coerceAtLeast(0)).any { it in item.expected }
+                if (searchHit) alone++
+                if (combinedHit) { withGuide++; byGroup.merge(item.id.substringBefore('-'), 1, Int::plus) }
+            }
+            line("| %.2f | $alone of ${searchItems.size} | $withGuide of ${searchItems.size} | ${listOf("TOPIC", "MOD", "KJV", "LANG").joinToString(", ") { "${byGroup[it] ?: 0}" }} |".format(threshold))
+        }
+    }
+
+    line()
+    line("| Id | Set | Expected | Top 3 (score) |")
+    line("|---|---|---|---|")
+    for (item in items) {
+        val top = scored.getValue(item.id).take(3).joinToString(", ") { "${it.guide.id} %.3f".format(it.score) }
+        line("| ${item.id} | ${item.set} | ${expectedGuides[item.id].orEmpty().joinToString("/").ifEmpty { "–" }} | $top |")
+    }
+    val file = File(args[3]).apply { mkdirs() }.resolve("topic-routing.md")
+    file.writeText(out.toString())
+    println("Report: ${file.absolutePath}")
+    exitProcess(0)
+}
