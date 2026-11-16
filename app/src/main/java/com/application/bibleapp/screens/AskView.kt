@@ -114,6 +114,7 @@ import com.application.bibleapp.utils.VerseReference
 import com.application.bibleapp.utils.bookNameInVersion
 import com.application.bibleapp.utils.citedReferences
 import com.application.bibleapp.utils.formatVerseReference
+import com.application.bibleapp.utils.crisisComfortVerse
 import com.application.bibleapp.utils.parseAiAnswer
 import com.application.bibleapp.utils.withoutUnfinishedMarker
 import com.application.bibleapp.utils.UiText
@@ -543,8 +544,9 @@ private const val PASSAGE_QUOTE_BAR_ALPHA = 0.4f
  * (plan section 7), the text with each cited passage as a link, a verse card for each one under it
  * (#129), and the report action (#130). A whole book shows as its name (#190).
  *
- * While it's [streaming] (#285), the verse cards and Report wait for the end; typing dots under
- * the text show more is coming.
+ * While it's [streaming] (#285), the help card shows without its verse of comfort (#282), which
+ * depends on what the answer cites, and the verse cards and Report wait for the end; typing dots
+ * under the text show more is coming.
  */
 @Composable
 private fun AiAnswer(
@@ -557,8 +559,12 @@ private fun AiAnswer(
     verseCard: @Composable (VerseReference) -> Unit,
     streaming: Boolean = false
 ) {
+    val cited = parts.citedReferences()
+    // Shown in the help card, so not again under the answer (#282). Chosen once the answer is
+    // complete, since it depends on what the answer cites.
+    val comfort = if (message.crisis && !streaming) crisisComfortVerse(cited) else null
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-        if (message.crisis) AiCrisisCard(onFindHelpline = onFindHelpline)
+        if (message.crisis) AiCrisisCard(onFindHelpline = onFindHelpline, verse = comfort?.let { { verseCard(it) } })
         // A crisis answer can be the help card alone: the server sends no text when the model
         // wrote only the crisis marker (docs/api_contract.md).
         if (message.content.isNotBlank()) {
@@ -571,7 +577,7 @@ private fun AiAnswer(
                 AiTypingDots()
                 return@Column
             }
-            AiVerseCardList(parts.citedReferences()) { verseCard(it) }
+            AiVerseCardList(cited.filter { it != comfort }) { verseCard(it) }
             // Inside: a report needs an answer to send.
             TextButton(onClick = onReport, modifier = Modifier.align(Alignment.End)) {
                 Icon(Icons.Outlined.Flag, contentDescription = null, modifier = Modifier.size(18.dp))
