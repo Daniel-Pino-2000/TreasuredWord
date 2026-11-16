@@ -5,7 +5,7 @@ permalink: /privacy/
 
 # TreasuredWord privacy policy
 
-**Effective date:** November 10, 2026
+**Effective date:** November 16, 2026
 
 TreasuredWord is a free Bible reading app made by Daniel Pino, an independent developer. In this policy, "we" and "us" mean Daniel Pino, the developer of TreasuredWord. It explains what information the app uses, where it goes, and the choices you have. If you have questions, email [pinoponedaniel@gmail.com](mailto:pinoponedaniel@gmail.com).
 
@@ -16,6 +16,7 @@ TreasuredWord is a free Bible reading app made by Daniel Pino, an independent de
 - If you create an account, we store your email address, a scrambled form of your password (or, if you sign in with Google, your Google account ID instead), and your highlights, notes and reading position so they sync between your devices. You can delete the account and all of it from inside the app, or by emailing us.
 - We email you only when you ask for it: to check that your email address is yours, or to reset a forgotten password. Those emails are sent through Gmail, from TreasuredWord's own Gmail account.
 - If you ask the Bible Helper a question, it's sent with the recent conversation to our server and to Cloudflare, whose AI writes the answer. Cloudflare doesn't keep it or train on it.
+- When you search the Bible and press the search button, what you typed is also sent, without your account, to our server and to Cloudflare to find verses related by meaning. Neither keeps it.
 - Some content comes from other websites, and some links open other services. Those services see that visit.
 
 ## Using the app without an account
@@ -72,6 +73,14 @@ When you ask a question:
 If you **report an answer**, the app sends us the question, the answer, the reason you chose, an optional comment and the app's language. We store the report **without your account or any other way to tell who sent it**, read it to improve the Bible Helper's instructions, and delete it after 90 days.
 
 Answers are written by AI and can be wrong; check them against Scripture. Please don't include personal details, such as names, addresses or health information, in your questions.
+
+## Search by meaning
+
+The **Search** tab finds verses in two ways. Verses that contain the words you typed are found on your phone, and that search works without internet. When you press the search button (or Enter), the app also looks for verses **related by meaning**, which needs our server:
+
+- **The app sends** what you typed (up to 200 characters) to our server, and nothing else: not your account, even if you're signed in. Nothing is sent while you're still typing, or when you search for a verse reference (like "John 3:16") or a phrase in quotation marks.
+- **Our server sends** that text to [Cloudflare Workers AI](https://developers.cloudflare.com/workers-ai/platform/data-usage/), which turns it into numbers that describe its meaning and sends them back. The server compares them with the Bible's verses and sends the app a list of verse references, which the app shows in your own Bible translation. Cloudflare acts as our service provider: it doesn't use what we send to train AI models and doesn't keep it, except where the law requires it. Your IP address isn't sent to Cloudflare.
+- **Our server doesn't store** your searches and never writes them to its logs. To stay within its free limits it counts searches (how many today, and how many from each IP address in the last minute), never what was searched; the counts are kept only in memory.
 
 ## Deleting your account
 

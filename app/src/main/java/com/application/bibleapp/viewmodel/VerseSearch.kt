@@ -170,5 +170,5 @@ class VerseSearch(
 }
 
 /** A single Chinese character is a whole word ("爱", love), so it's searched as typed too (#90). */
-private fun String.isIdeograph(): Boolean =
+internal fun String.isIdeograph(): Boolean =
     codePointCount(0, length) == 1 && Character.isIdeographic(codePointAt(0))

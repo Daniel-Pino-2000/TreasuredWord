@@ -24,6 +24,8 @@ import com.application.bibleapp.data.model.VerseUI
 import com.application.bibleapp.data.model.chapterCount
 import com.application.bibleapp.data.model.resolveDailyVerseUI
 import com.application.bibleapp.data.remote.LanguageGroup
+import com.application.bibleapp.data.remote.SemanticSearchApi
+import com.application.bibleapp.data.remote.ServerWake
 import com.application.bibleapp.data.remote.VerseLocationDto
 import com.application.bibleapp.data.remote.groupVersionsByLanguage
 import com.application.bibleapp.data.remote.withBundledTranslation
@@ -68,6 +70,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 import com.application.bibleapp.R
 import com.application.bibleapp.utils.UiText
 import com.application.bibleapp.utils.VerseReference
+import com.application.bibleapp.utils.parseVerseReference
 import com.application.bibleapp.data.local.NoContentException
 import com.application.bibleapp.data.local.NoInternetException
 
@@ -189,7 +192,10 @@ fun translationCreditFor(
 class BibleViewModel(
     private val repository: BibleRepository,
     private val authRepository: AuthRepository,
-    private val readingProgressRepository: ReadingProgressRepository
+    private val readingProgressRepository: ReadingProgressRepository,
+    semanticSearchApi: SemanticSearchApi = SemanticSearchApi(),
+    phoneIsOnline: () -> Boolean = { true },
+    serverWake: ServerWake? = null
 ) : ViewModel() {
 
     private val _verses = MutableStateFlow<List<VerseUI>>(emptyList())
@@ -364,6 +370,27 @@ class BibleViewModel(
     )
     val searchQuery: StateFlow<String> = verseSearch.query
     val searchState: StateFlow<SearchUiState> = verseSearch.state
+
+    // Search by meaning (#287): only on submit, from our server, below the word results.
+    private val meaningSearch = MeaningSearch(
+        scope = viewModelScope,
+        search = semanticSearchApi::search,
+        resolve = { refs ->
+            resolveMeaningVerses(refs, _selectedVersion.value.id) { versionId, bookId, chapter ->
+                repository.getChapter(bookId, chapter, versionId)
+            }
+        },
+        isEligible = ::offersMeaningSearch,
+        phoneIsOnline = phoneIsOnline,
+        serverWake = serverWake
+    )
+
+    /** The "Related by meaning" section, without the verses the word results already show. */
+    val meaningSearchState: StateFlow<MeaningSearchState> =
+        combine(meaningSearch.state, verseSearch.state) { meaning, words ->
+            if (meaning.query != words.query) meaning
+            else meaning.copy(results = meaning.results.withoutWordResults(words.results))
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, MeaningSearchState())
 
     // Derived from availableVersions + the search query — recomputed locally, no re-fetch.
     // Includes the bundled KJV, which the catalog doesn't list (#56).
@@ -1267,10 +1294,22 @@ class BibleViewModel(
         loadChapter(_currentBook.value, chapterId)
     }
 
-    fun onSearchQueryChange(newQuery: String) = verseSearch.onQueryChange(newQuery)
+    fun onSearchQueryChange(newQuery: String) {
+        verseSearch.onQueryChange(newQuery)
+        meaningSearch.onQueryChange(newQuery)
+    }
 
-    /** Search now, without waiting for typing to pause (keyboard Search key, a suggestion, Retry). */
-    fun onSearchSubmit() = verseSearch.submit()
+    /** Search now, without waiting for typing to pause (keyboard Search key, a suggestion, Retry),
+     *  and by meaning too (#287): the only time that one runs. */
+    fun onSearchSubmit() {
+        verseSearch.submit()
+        meaningSearch.submit(verseSearch.query.value)
+    }
+
+    /** Whether [query] gets a "Related by meaning" section: not a verse reference or a quoted
+     *  phrase (#287). The screen offers the search only for these. */
+    fun offersMeaningSearch(query: String): Boolean =
+        isMeaningSearchEligible(query) { parseVerseReference(it, _bookNames.value) != null }
 
     fun onVersionSearchQueryChange(query: String) {
         _versionSearchQuery.value = query
@@ -1435,6 +1474,7 @@ class BibleViewModel(
         _chapterStructure.value = repository.getChapterStructure(versionId)
         loadChapter(_currentBook.value, _currentChapter.value)
         verseSearch.onVersionChange()
+        meaningSearch.onVersionChange()
         prepareSearch(versionId)
         // Re-resolve (not re-fetch) so the card matches the newly selected translation
         // right away — the reference is usually already cached for today, so this is just a

@@ -179,6 +179,14 @@
     <string name="search_suggestions_title">Subukan ang isa sa mga ito</string>
     <string name="search_no_results">Walang resulta para sa \"%1$s\"</string>
     <string name="search_error">Hindi makapaghanap ngayon. Pakisubukan ulit.</string>
+    <string name="search_section_words">Mga talatang may mga salitang ito</string>
+    <string name="search_section_meaning">Kaugnay ayon sa kahulugan</string>
+    <string name="search_words_none">Walang talatang may mga salitang ito.</string>
+    <string name="search_meaning_start">Maghanap ng mga talatang kaugnay ayon sa kahulugan</string>
+    <string name="search_meaning_loading">Naghahanap ng mga talatang kaugnay ayon sa kahulugan…</string>
+    <string name="search_meaning_none">Wala nang ibang talatang nahanap ayon sa kahulugan.</string>
+    <string name="search_meaning_offline">Kailangan ng internet connection para maghanap ayon sa kahulugan.</string>
+    <string name="search_meaning_unavailable">Hindi available ngayon ang paghahanap ayon sa kahulugan.</string>
     <string name="search_clear">I-clear ang paghahanap</string>
 
     <string name="version_remove_title">Alisin ang %1$s?</string>

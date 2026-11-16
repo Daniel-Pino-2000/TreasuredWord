@@ -7,9 +7,12 @@ import com.application.bibleapp.data.model.BibleSourceType
 import com.application.bibleapp.data.model.SelectedBibleVersion
 import com.application.bibleapp.data.remote.HelloAoBibleDataSource
 import com.application.bibleapp.data.remote.OurMannaBibleDataSource
+import com.application.bibleapp.data.remote.RenderServerWake
+import com.application.bibleapp.data.remote.SemanticSearchApi
 import com.application.bibleapp.data.repository.AuthRepository
 import com.application.bibleapp.data.repository.BibleRepository
 import com.application.bibleapp.data.repository.ReadingProgressRepository
+import com.application.bibleapp.utils.NetworkUtils
 
 class BibleViewModelFactory(private val context: Context) : ViewModelProvider.Factory {
 
@@ -22,10 +25,15 @@ class BibleViewModelFactory(private val context: Context) : ViewModelProvider.Fa
                 daily = OurMannaBibleDataSource()
             )
 
+            val appContext = context.applicationContext
+            val phoneIsOnline = { NetworkUtils.isOnline(appContext) }
             val viewModel = BibleViewModel(
                 repository = repository,
                 authRepository = AuthRepository(context),
-                readingProgressRepository = ReadingProgressRepository()
+                readingProgressRepository = ReadingProgressRepository(),
+                semanticSearchApi = SemanticSearchApi(phoneIsOnline = phoneIsOnline),
+                phoneIsOnline = phoneIsOnline,
+                serverWake = RenderServerWake
             )
 
             @Suppress("UNCHECKED_CAST")

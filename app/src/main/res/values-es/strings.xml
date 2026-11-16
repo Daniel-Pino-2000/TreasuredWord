@@ -196,6 +196,14 @@
     <string name="search_suggestions_title">Prueba con una de estas</string>
     <string name="search_no_results">Sin resultados para «%1$s»</string>
     <string name="search_error">No se pudo buscar en este momento. Inténtalo de nuevo.</string>
+    <string name="search_section_words">Versículos con estas palabras</string>
+    <string name="search_section_meaning">Relacionados por significado</string>
+    <string name="search_words_none">Ningún versículo contiene estas palabras.</string>
+    <string name="search_meaning_start">Buscar versículos relacionados por significado</string>
+    <string name="search_meaning_loading">Buscando versículos relacionados por significado…</string>
+    <string name="search_meaning_none">No se encontraron más versículos por significado.</string>
+    <string name="search_meaning_offline">La búsqueda por significado necesita conexión a internet.</string>
+    <string name="search_meaning_unavailable">La búsqueda por significado no está disponible ahora.</string>
     <string name="search_clear">Borrar búsqueda</string>
 
     <!-- Version picker -->
