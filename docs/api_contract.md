@@ -548,7 +548,7 @@ data class AiAskResponse(
     val answer: String,          // verses marked as [[JHN 3:16]], [[ROM 8:28-30]] or [[PSA 23]], USFM book codes (see below)
     val crisis: Boolean,         // the person may be in danger: show the help card
     val remainingToday: Int,     // questions left today (UTC) after this one
-    val promptVersion: String    // which instructions answered; send it back with a report
+    val promptVersion: String    // which instructions answered ("5", or "16" when topic guides were sent, #319); send it back with a report
 )
 ```
 
@@ -603,6 +603,13 @@ so questions sent at the same moment can't go past 15.
 
 The server never logs question or answer text.
 
+**Topic guides (#319).** With the server's `AI_TOPIC_GUIDES` setting on (off by default), a
+question without a `passage` is matched by meaning to hand-checked guides
+(`server/src/main/resources/ai/topics.md`): one embedding of the latest user message, counted
+against search by meaning's daily cap, given up after 2 seconds. The guides it matches follow the
+instructions, and the answer's `promptVersion` is `"16"`. With no match, a failure or no neurons
+left, the instructions are exactly v5's and `promptVersion` is `"5"`. Nothing changes for the app.
+
 **Starter questions (#284).** With `starter`, the server answers its own wording of that starter in
 `language` (the app's `ai_starter_*` strings, kept in `StarterQuestions.kt`), never the message's
 text. It keeps one answer per starter, language and `promptVersion` in `ai_starter_answers`: the
@@ -610,7 +617,9 @@ first request in a language asks the AI and stores the answer (unless it's a cri
 off, or failed); every later one gets the stored answer straight away. Either way it **doesn't
 count** as one of the day's 15 questions, works after they're used up, and `remainingToday` is
 what's left of them. AI failures answer `AI_RESTING`/`AI_UNAVAILABLE` as usual. A new
-`promptVersion` asks again; older rows are never read (at most 60 per version).
+`promptVersion` asks again; older rows are never read (at most 60 per version). With topic guides
+on, a starter that matches a guide is stored and read under `"16"`, so switching the setting
+never serves an answer the other instructions wrote.
 
 ### `POST /api/v1/ai/ask/stream`
 Auth: required (#285)

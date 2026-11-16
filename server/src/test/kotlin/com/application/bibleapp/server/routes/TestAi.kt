@@ -4,6 +4,8 @@ import com.application.bibleapp.server.ai.AiCompletion
 import com.application.bibleapp.server.ai.AiMessage
 import com.application.bibleapp.server.ai.AiProvider
 import com.application.bibleapp.server.ai.AiProviderException
+import com.application.bibleapp.server.ai.TopicRouter
+import com.application.bibleapp.server.search.EmbeddingProvider
 import com.application.bibleapp.server.serverModule
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -65,16 +67,23 @@ class MutableClock(@Volatile var now: Instant = Instant.now()) : Clock() {
 /**
  * Starts the server with [ai] in place of Cloudflare (null: no AI configured) and [clock], and
  * returns a JSON client. Like [startWithFakeEmail], application.conf's module list is emptied so
- * its module(), which would read the real AI_* settings, doesn't start too.
+ * its module(), which would read the real AI_* settings, doesn't start too. [embeddings] and
+ * [topicRouter] turn the topic guides on (#319), as AI_TOPIC_GUIDES does. The server is started
+ * before this returns, so the database is connected for a test's own `transaction { }`.
  */
-fun ApplicationTestBuilder.startWithFakeAi(
+suspend fun ApplicationTestBuilder.startWithFakeAi(
     ai: AiProvider? = FakeAiProvider(),
-    clock: Clock = MutableClock()
+    clock: Clock = MutableClock(),
+    embeddings: EmbeddingProvider? = null,
+    topicRouter: TopicRouter? = null
 ): HttpClient {
     environment {
         config = ApplicationConfig("application.conf")
             .mergeWith(MapApplicationConfig().apply { put("ktor.application.modules", emptyList()) })
     }
-    application { serverModule(emailSender = FakeEmailSender(), aiProvider = ai, clock = clock) }
+    application {
+        serverModule(emailSender = FakeEmailSender(), aiProvider = ai, clock = clock, embeddingProvider = embeddings, topicRouter = topicRouter)
+    }
+    startApplication()
     return createClient { install(ContentNegotiation) { json() } }
 }

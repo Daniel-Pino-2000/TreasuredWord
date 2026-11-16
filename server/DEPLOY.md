@@ -73,6 +73,14 @@ only needed when a secret changes.
      320 answers) can't bill: past them Cloudflare refuses with error 3036 and `/ai/ask` answers
      `AI_RESTING` until 00:00 UTC. Each answer's neurons are in the log (`AI provider: HTTP 200
      in … ms, … neurons`), never the question or answer.
+   - `AI_TOPIC_GUIDES` — `true` sends each Bible Helper question the topic guides it matches
+     (#319, instructions version 16); unset or `false` (the default) keeps v5's instructions for
+     every question. Not a secret. Needs the AI settings above. Matching costs one embedding
+     (~0.01 neurons) a question, counted against search by meaning's daily cap of 20,000; a guided
+     answer costs ~4–6 more neurons than v5's. If an embedding fails or the neurons run out, the
+     question is answered with v5's instructions. The log shows `Topic guides: <count> in … ms`,
+     never the question or which guides matched. Turn it on only after the developer has
+     reviewed every guide in `server/src/main/resources/ai/topics.md`.
 
    Saving env var changes triggers a redeploy automatically.
 
@@ -244,8 +252,8 @@ passed the last evaluation) and deploy the same way.
 The same path is covered by tests: `AiRoutesTest` (no provider → `AI_UNAVAILABLE`) and the app's
 `AiHelperApiTest` (`AI_UNAVAILABLE` → `AiAskResult.Unavailable`).
 
-**Rule for every later change:** a change to `system_prompt.md`, `doctrine.md` or `AI_MODEL`
-reaches users as soon as the server deploys, with no Play review in between. Run the full
+**Rule for every later change:** a change to `system_prompt.md`, `doctrine.md`, `topics.md`,
+`AI_TOPIC_GUIDES` or `AI_MODEL` reaches users as soon as the server deploys, with no Play review in between. Run the full
 evaluation (`docs/ai_helper_eval.md`) on the change and meet the release bar before merging or
 changing the variable. Run it soon after 00:00 UTC: it uses about 1,700 of the same 10,000 free
 neurons a day that users share.

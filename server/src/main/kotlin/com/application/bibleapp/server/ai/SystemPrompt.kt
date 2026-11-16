@@ -24,6 +24,13 @@ object SystemPrompt {
      */
     const val PROMPT_VERSION = "5"
 
+    /**
+     * An answer whose instructions were [PROMPT_VERSION]'s plus section 9, the topic guides the
+     * question matched (#319, [withGuides]). Questions with no guide report [PROMPT_VERSION], since
+     * their instructions are exactly v5's.
+     */
+    const val GUIDES_VERSION = "16"
+
     /** The app's language tags (`AppLanguage.supportedTags`) and the English name the model is told to answer in. */
     val languageNames: Map<String, String> = mapOf(
         "en" to "English",
@@ -64,6 +71,16 @@ object SystemPrompt {
         val passage = passageTemplate.replace("{reference}", passageReference).replace("{text}", quoted)
         return "$instructions\n\n$passage"
     }
+
+    /**
+     * The instructions for a question without a passage that matched [guides] (#319): v5's,
+     * then section 9 with the guides; v5's exactly when there are none.
+     */
+    fun withGuides(languageTag: String, guides: List<RoutedGuide>): String =
+        forLanguage(languageTag) + (TopicGuides.section(guides)?.let { "\n\n$it" } ?: "")
+
+    /** The version an answer with [guides] reports and is stored under. */
+    fun versionFor(guides: List<RoutedGuide>): String = if (guides.isEmpty()) PROMPT_VERSION else GUIDES_VERSION
 
     private fun load(path: String): String {
         val stream = SystemPrompt::class.java.classLoader.getResourceAsStream(path)

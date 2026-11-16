@@ -25,9 +25,11 @@ those (a `-partial` report). The whole set costs about 2,000 of the free 10,000 
 they run out, the runner stops and the report says where. It never runs in `:server:test` or CI.
 
 `-PquestionsFile=docs/ai_helper_eval_heldout.md` runs the held-out questions instead (a
-`-heldout` report). With `AI_TOPIC_GUIDES=true` and `AI_TOPIC_THRESHOLD=0.70`, each question gets
-the topic guides it matches (the pilot in [`ai_quality_audit.md`](ai_quality_audit.md), version
-16), and `AI_ONLY_GUIDED=true` asks only the questions with a guide.
+`-heldout` report). With `AI_TOPIC_GUIDES=true`, each question gets the topic guides it matches,
+exactly as the server does with the same setting (#319, version 16: the stored phrase vectors, one
+embedding per question, threshold 0.70 unless `AI_TOPIC_THRESHOLD` says otherwise), and the report
+names each question's guides. `AI_ONLY_GUIDED=true` asks only the questions with a guide, since
+the others get v5's instructions unchanged; a full run for the release bar asks them all.
 
 ## How a question is written
 

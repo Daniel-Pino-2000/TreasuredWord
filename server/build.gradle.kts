@@ -46,9 +46,26 @@ tasks.register<JavaExec>("aiEval") {
     )
 }
 
-// Topic guides pilot: which guide each evaluation question and search query matches, at several
-// thresholds, and what the guides add to search's hits. Embeds ~300 short texts (~3 neurons) and
-// reads the verse tables in DATABASE_URL; never part of `test` or CI.
+// Topic guides (#319): the bge-m3 vector of every "Asks" phrase in resources/ai/topics.md, into
+// resources/ai/topic_vectors.tsv, which the server reads so it never embeds them. Run it after
+// changing a guide's Asks line (TopicVectorsTest fails until then) and commit the file; phrases
+// already in the file keep their vectors, so it embeds only new ones (~0.01 neurons for all 189).
+// Needs AI_BASE_URL and AI_API_TOKEN; never part of `test` or CI.
+tasks.register<JavaExec>("embedTopicGuides") {
+    group = "build"
+    description = "Embeds the topic guides' phrases into resources/ai/topic_vectors.tsv."
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("com.application.bibleapp.server.ai.eval.EmbedTopicGuidesKt")
+    args(
+        file("src/main/resources/ai/topics.md").path,
+        file("src/main/resources/ai/topic_vectors.tsv").path
+    )
+}
+
+// Topic guides: which guide each evaluation question and search query matches, at several
+// thresholds, and what the guides add to search's hits. Embeds the ~120 questions and queries
+// (~1 neuron; the phrases' vectors come from topic_vectors.tsv) and reads the verse tables in
+// DATABASE_URL; never part of `test` or CI.
 tasks.register<JavaExec>("topicRoutingEval") {
     group = "verification"
     description = "Matches the evaluation questions and search queries to topic guides and reports the routing."

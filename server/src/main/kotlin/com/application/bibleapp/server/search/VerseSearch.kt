@@ -25,7 +25,8 @@ data class VerseHit(val book: Int, val chapter: Int, val verse: Int, val score: 
  * ([WorkersAiEmbeddingProvider] logs only status, time and neurons).
  *
  * [dailyCap] protects the Bible Helper's share of the free 10,000 neurons a day: past it, every
- * search answers [QuotaExhausted] until 00:00 UTC. It's counted in memory, so a restart (Render's
+ * search (and the Bible Helper's topic guide matching, [embedQuery]) answers [QuotaExhausted]
+ * until 00:00 UTC. It's counted in memory, so a restart (Render's
  * sleep) starts it again; that only makes it looser, never stricter.
  */
 class VerseSearch(
@@ -39,14 +40,25 @@ class VerseSearch(
 
     /** @throws com.application.bibleapp.server.ai.AiProviderException when the query can't be embedded. */
     suspend fun search(query: String, limit: Int = RESULTS): List<VerseHit> {
-        countSearch()
-        val vector = provider.embed(listOf(query), EmbeddingKind.QUERY).vectors.single()
+        val vector = embedQuery(query)
         val started = System.nanoTime()
         val hits = newSuspendedTransaction(Dispatchers.IO) {
             rankVerses(TransactionManager.current().connection.connection as Connection, provider.model, translation, vector, query, limit)
         }
         log.info("Search: ${hits.size} results in ${(System.nanoTime() - started) / 1_000_000} ms")
         return hits
+    }
+
+    /**
+     * [text]'s vector, counted against [dailyCap] like a search: also how the Bible Helper matches
+     * a question to its topic guides (#319), so both share one cap on embeddings.
+     *
+     * @throws com.application.bibleapp.server.ai.AiProviderException when it can't be embedded,
+     *   or [QuotaExhausted] past the cap.
+     */
+    suspend fun embedQuery(text: String): FloatArray {
+        countSearch()
+        return provider.embed(listOf(text), EmbeddingKind.QUERY).vectors.single()
     }
 
     private fun countSearch() {
