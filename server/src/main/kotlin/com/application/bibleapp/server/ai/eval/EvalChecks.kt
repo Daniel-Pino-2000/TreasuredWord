@@ -92,6 +92,56 @@ object EvalChecks {
         }
     }
 
+    /**
+     * Every passage [answer] shows as a verse card, in order (#321): the markers [check] accepts,
+     * read the same way. A whole book (`[[JHN]]`), `[[CRISIS]]` and what the app shows as text are
+     * left out. A bare verse after a passage, the "14" of `[[JHN 1:1, 14]]`, is a verse of that
+     * chapter, as the reader understands it.
+     */
+    internal fun passagesIn(answer: String): List<Passage> =
+        anyMarker.findAll(answer).flatMap { match ->
+            when {
+                match.groups[1] != null -> passagesInside(match.groupValues[1])
+                match.groups[2] != null -> match.groupValues[2].takeIf(::openMarkerReads)?.let(::passagesInside).orEmpty()
+                else -> match.groupValues[3].takeIf(::openMarkerReads)?.let(::passagesInside).orEmpty()
+            }
+        }.toList()
+
+    private fun passagesInside(inside: String): List<Passage> {
+        val passages = mutableListOf<Passage>()
+        var last: Passage? = null
+        for (raw in inside.trimEnd { it.isWhitespace() || it in ",;]" }.split(separator)) {
+            val text = raw.replace("[", "").replace("]", "").trim()
+            val previous = last
+            val passage = if (previous != null && verseOnly.matches(text)) {
+                verseAfter(previous, text)
+            } else {
+                piece.matchEntire(text)?.destructured?.let { (book, chapter, from, to) ->
+                    val id = EvalBookNames.find(book)
+                    if (id == null || chapter.isEmpty()) null // not a book, or a whole book
+                    else Passage(id, chapter.toInt(), from.toIntOrNull(), chapter.toInt(), to.toIntOrNull() ?: from.toIntOrNull())
+                }
+            }
+            if (passage != null && passage.isValid) {
+                passages += passage
+                last = passage
+            }
+        }
+        return passages
+    }
+
+    // "14", "14-16" or "2:3" after a passage: a verse of its chapter, or a chapter and verse of
+    // its book. After a whole chapter, "24" is another chapter.
+    private fun verseAfter(previous: Passage, text: String): Passage? {
+        val numbers = Regex("""\d{1,3}""").findAll(text).map { it.value.toInt() }.toList()
+        val hasChapter = Regex("""\d\s*[:.]\s*\d""").containsMatchIn(text)
+        return when {
+            hasChapter -> Passage(previous.book, numbers[0], numbers[1], numbers[0], numbers.getOrNull(2) ?: numbers[1])
+            previous.startVerse == null -> Passage(previous.book, numbers[0], null, numbers.getOrNull(1) ?: numbers[0], null)
+            else -> Passage(previous.book, previous.endChapter, numbers[0], previous.endChapter, numbers.getOrNull(1) ?: numbers[0])
+        }
+    }
+
     private fun pieceProblem(text: String): String? {
         val match = piece.matchEntire(text) ?: return "\"$text\" shows as plain text"
         val (book, chapter, from, to) = match.destructured

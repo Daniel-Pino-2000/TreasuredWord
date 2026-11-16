@@ -32,6 +32,11 @@ data class EvalResult(
     val guides: List<RoutedGuide>? = null
 ) {
     val passed: Boolean get() = error == null && problems.isEmpty()
+
+    /** The grading-free numbers (#321), or null without an answer. */
+    val citations: CitationCount? by lazy {
+        answer?.let { EvalCitations.count(question.must, it, guides?.map { routed -> routed.guide }) }
+    }
 }
 
 /**
@@ -70,10 +75,16 @@ suspend fun evaluate(
     return results
 }
 
-/** The report people read and grade: a summary table, then each question with its answer. */
+/**
+ * The report people read and grade: a summary with the grading-free numbers (#321), a table, then
+ * each question with its answer.
+ */
 fun report(results: List<EvalResult>, model: String, date: LocalDate, total: Int, version: String = SystemPrompt.PROMPT_VERSION): String = buildString {
     val answered = results.count { it.answer != null }
     val neurons = results.mapNotNull { it.neurons }.sum()
+    val counts = results.mapNotNull { it.citations }
+    val guided = results.any { it.guides != null }
+    val cited = counts.sumOf { it.cited.size }
     appendLine("# Bible Helper evaluation, $date")
     appendLine()
     appendLine("- **Model:** `$model`")
@@ -81,18 +92,31 @@ fun report(results: List<EvalResult>, model: String, date: LocalDate, total: Int
     appendLine("- **Answered:** $answered of $total questions")
     appendLine("- **Automatic checks passed:** ${results.count { it.passed }} of ${results.size}")
     appendLine("- **Neurons used:** ${"%.0f".format(neurons)} of the free 10,000 a day")
+    appendLine("- **Must-named passages cited:** ${EvalCitations.share(counts.sumOf { it.namedCited.size }, counts.sumOf { it.named.size })}")
+    if (guided) appendLine("- **Citations from the question's guide:** ${EvalCitations.share(counts.sumOf { it.fromGuide.orEmpty().size }, cited)}")
+    appendLine("- **Other citations, to check by hand:** ${EvalCitations.share(counts.sumOf { it.toCheck.size }, cited)}")
     appendLine()
     appendLine("Grade each answer with the rubric in `docs/ai_helper_eval.md` (Good, Needs work or Wrong) and summarize in the PR.")
+    appendLine("The citation numbers need no grading (\"Comparing two versions\" there): check that each passage in")
+    appendLine("**To check**, which is on neither the Must line nor ${if (guided) "the guide" else "a guide"}, makes the point it's cited for.")
     appendLine()
-    appendLine("| Question | Language | Checks | Neurons |")
-    appendLine("|---|---|---|---|")
+    appendLine("| Question | Language | Checks | Must cited |${if (guided) " From guide |" else ""} To check | Neurons |")
+    appendLine("|---|---|---|---|${if (guided) "---|" else ""}---|---|")
     for (result in results) {
         val checks = when {
             result.error != null -> "no answer"
             result.problems.isEmpty() -> "ok"
             else -> result.problems.joinToString("; ").replace("|", "\\|")
         }
-        appendLine("| ${result.question.id} | ${result.question.language} | $checks | ${result.neurons?.let { "%.1f".format(it) } ?: "–"} |")
+        val count = result.citations
+        val mustCited = when {
+            count == null || count.named.isEmpty() -> "–"
+            else -> "${count.namedCited.size} of ${count.named.size}" +
+                (count.named - count.namedCited.toSet()).takeIf { it.isNotEmpty() }?.let { missing -> " (not ${missing.joinToString(", ")})" }.orEmpty()
+        }
+        val fromGuide = if (guided) " ${count?.let { "${it.fromGuide.orEmpty().size} of ${it.cited.size}" } ?: "–"} |" else ""
+        val toCheck = count?.toCheck?.takeIf { it.isNotEmpty() }?.joinToString(", ") ?: "–"
+        appendLine("| ${result.question.id} | ${result.question.language} | $checks | $mustCited |$fromGuide $toCheck | ${result.neurons?.let { "%.1f".format(it) } ?: "–"} |")
     }
     for (result in results) {
         val question = result.question
@@ -171,9 +195,18 @@ fun main(args: Array<String>) {
     val folder = File(args[1]).apply { mkdirs() }
     // Another question set (-PquestionsFile) is named in the report's file name, like "-heldout".
     val set = File(args[0]).nameWithoutExtension.removePrefix("ai_helper_eval").removePrefix("_").let { if (it.isEmpty()) "" else "-$it" }
-    val name = "$date-${model.substringAfterLast('/')}-v$version$set${if (only.isEmpty() && asked.size == questions.size) "" else "-partial"}.md"
-    val file = File(folder, name)
+    val name = "$date-${model.substringAfterLast('/')}-v$version$set${if (only.isEmpty() && asked.size == questions.size) "" else "-partial"}"
+    val file = reportFile(folder, name)
     file.writeText(report(results, model, date, asked.size, version))
     println("Report: ${file.absolutePath}")
     exitProcess(0)
 }
+
+/**
+ * `<name>.md`, or `<name>-run2.md`, `-run3` and so on when it's taken: a version is compared on
+ * two runs (#321), and a second run the same day mustn't overwrite the first.
+ */
+fun reportFile(folder: File, name: String): File =
+    generateSequence(1) { it + 1 }
+        .map { run -> File(folder, if (run == 1) "$name.md" else "$name-run$run.md") }
+        .first { !it.exists() }
