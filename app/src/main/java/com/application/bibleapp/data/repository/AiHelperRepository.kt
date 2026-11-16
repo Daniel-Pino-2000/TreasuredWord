@@ -127,14 +127,15 @@ class AiHelperRepository(
         question: String,
         language: String,
         passage: AiQuestionPassage? = null,
-        beforeSend: suspend () -> Unit = {}
+        beforeSend: suspend () -> Unit = {},
+        starter: String? = null
     ): Exchange {
         val text = question.trim()
         require(text.isNotEmpty() && text.length <= MAX_QUESTION_CHARS) { "Question must be 1–$MAX_QUESTION_CHARS characters" }
         val id = conversationId ?: store.createConversation(conversationTitle(text)).id
         store.addMessage(id, AiRole.USER, text, passage = passage)
         beforeSend()
-        return Exchange(id, send(id, language))
+        return Exchange(id, send(id, language, starter))
     }
 
     /** Sends a conversation's last question again, after a failure, without saving it twice, and
@@ -142,10 +143,11 @@ class AiHelperRepository(
     suspend fun retry(
         conversationId: Long,
         language: String,
-        beforeSend: suspend () -> Unit = {}
+        beforeSend: suspend () -> Unit = {},
+        starter: String? = null
     ): AiAskResult {
         beforeSend()
-        return send(conversationId, language)
+        return send(conversationId, language, starter)
     }
 
     suspend fun conversations(): List<AiConversation> = store.conversations()
@@ -174,13 +176,14 @@ class AiHelperRepository(
     /** Reports an answer (#130); stored on the server without the user's ID. */
     suspend fun report(request: AiReportRequestDto): AiReportResult = api.report(request)
 
-    /** Sends the conversation's last question, with the passage saved with it (#281). */
-    private suspend fun send(conversationId: Long, language: String): AiAskResult {
+    /** Sends the conversation's last question, with the passage saved with it (#281), and as the
+     *  [starter] it came from when it's the conversation's only question (#284). */
+    private suspend fun send(conversationId: Long, language: String, starter: String? = null): AiAskResult {
         val messages = store.messages(conversationId)
         val history = historyToSend(messages)
         require(history.lastOrNull()?.role == AiRole.USER.stored) { "Conversation $conversationId has no question to send" }
         val passage = messages.lastOrNull { it.role == AiRole.USER }?.passage?.dto
-        val result = api.ask(AiAskRequestDto(history, language, passage))
+        val result = api.ask(AiAskRequestDto(history, language, passage, starter?.takeIf { messages.size == 1 && passage == null }))
         when (result) {
             is AiAskResult.Answer -> {
                 store.addMessage(conversationId, AiRole.ASSISTANT, result.answer, result.crisis, result.promptVersion)

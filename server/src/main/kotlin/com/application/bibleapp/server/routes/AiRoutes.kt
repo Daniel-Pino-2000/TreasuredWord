@@ -2,14 +2,17 @@ package com.application.bibleapp.server.routes
 
 import com.application.bibleapp.server.ai.AiMessage
 import com.application.bibleapp.server.ai.AiProvider
+import com.application.bibleapp.server.ai.AiProviderException
 import com.application.bibleapp.server.ai.AiRole
 import com.application.bibleapp.server.ai.QuotaExhausted
+import com.application.bibleapp.server.ai.StarterQuestions
 import com.application.bibleapp.server.ai.SystemPrompt
 import com.application.bibleapp.server.ai.UsfmBookCodes
 import com.application.bibleapp.server.ai.Unavailable
 import com.application.bibleapp.server.auth.currentUserId
 import com.application.bibleapp.server.db.tables.AiDailyUsage
 import com.application.bibleapp.server.db.tables.AiReports
+import com.application.bibleapp.server.db.tables.AiStarterAnswers
 import com.application.bibleapp.server.models.AiAskRequest
 import com.application.bibleapp.server.models.AiAskResponse
 import com.application.bibleapp.server.models.AiReportRequest
@@ -31,6 +34,7 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.plus
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.insertIgnore
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
@@ -101,7 +105,37 @@ internal fun validateAsk(request: AiAskRequest): Map<String, String> {
     if (request.language !in SystemPrompt.languageNames) {
         errors["language"] = "language must be one of ${SystemPrompt.languageNames.keys.joinToString(", ")}"
     }
+    request.starter?.let { starter ->
+        val starterError = when {
+            starter !in StarterQuestions.ids -> "starter must be one of ${StarterQuestions.ids.joinToString(", ")}"
+            request.messages.size != 1 -> "a starter is only the first question of a conversation"
+            request.passage != null -> "a starter has no passage"
+            else -> null
+        }
+        if (starterError != null) errors["starter"] = starterError
+    }
     return errors
+}
+
+/** The stored answer to [starter] in [language] for the current instructions (#284), or null. */
+private fun readyStarterAnswer(starter: String, language: String): String? = transaction {
+    AiStarterAnswers.selectAll()
+        .where {
+            (AiStarterAnswers.starter eq starter) and (AiStarterAnswers.language eq language) and
+                (AiStarterAnswers.promptVersion eq SystemPrompt.PROMPT_VERSION)
+        }
+        .singleOrNull()?.get(AiStarterAnswers.answer)
+}
+
+/** Stores [answer] as the ready one; when two people asked at once, the first stored stays. */
+private fun storeStarterAnswer(starter: String, language: String, answer: String, now: java.time.Instant) = transaction {
+    AiStarterAnswers.insertIgnore {
+        it[AiStarterAnswers.starter] = starter
+        it[AiStarterAnswers.language] = language
+        it[promptVersion] = SystemPrompt.PROMPT_VERSION
+        it[AiStarterAnswers.answer] = answer
+        it[createdAt] = now
+    }
 }
 
 /** #125's rules for a report: which fields are wrong and why, or an empty map. */
@@ -199,6 +233,40 @@ fun Route.aiRoutes(aiProvider: AiProvider?, clock: Clock) {
                 val fieldErrors = validateAsk(request)
                 if (fieldErrors.isNotEmpty()) {
                     call.respond(HttpStatusCode.BadRequest, ErrorResponse("VALIDATION_ERROR", "Invalid question", fieldErrors))
+                    return@post
+                }
+
+                request.starter?.let { starter ->
+                    // A starter question (#284): the same ready answer for everyone, which doesn't
+                    // use a daily question, so it works after the day's 15 too.
+                    val remaining = AI_DAILY_LIMIT - aiAnswersUsedToday(userId, clock)
+                    readyStarterAnswer(starter, request.language)?.let { ready ->
+                        call.respond(HttpStatusCode.OK, AiAskResponse(ready, crisis = false, remainingToday = remaining, promptVersion = SystemPrompt.PROMPT_VERSION))
+                        return@post
+                    }
+                    if (aiProvider == null) {
+                        call.respond(HttpStatusCode.ServiceUnavailable, ErrorResponse("AI_UNAVAILABLE", "The Bible Helper isn't set up on this server"))
+                        return@post
+                    }
+                    // Asked in the server's own words, so only these questions are ever stored.
+                    val question = StarterQuestions.question(starter, request.language)!!
+                    val instructions = SystemPrompt.forLanguage(request.language)
+                    val completion = try {
+                        aiProvider.complete(listOf(AiMessage(AiRole.SYSTEM, instructions), AiMessage(AiRole.USER, question)), AI_MAX_TOKENS)
+                    } catch (e: AiProviderException) {
+                        when (e) {
+                            is QuotaExhausted -> call.respond(HttpStatusCode.ServiceUnavailable, ErrorResponse("AI_RESTING", "The Bible Helper is resting until 00:00 UTC"))
+                            is Unavailable -> call.respond(HttpStatusCode.ServiceUnavailable, ErrorResponse("AI_UNAVAILABLE", "Couldn't get an answer"))
+                        }
+                        return@post
+                    }
+                    val (text, crisis) = splitCrisis(completion.text)
+                    // Only a whole, ordinary answer is kept for everyone.
+                    if (!crisis && !completion.cutOff && text.isNotBlank()) {
+                        storeStarterAnswer(starter, request.language, text, clock.instant())
+                    }
+                    val answer = if (completion.cutOff) "$text …" else text
+                    call.respond(HttpStatusCode.OK, AiAskResponse(answer, crisis, remaining, SystemPrompt.PROMPT_VERSION))
                     return@post
                 }
 
