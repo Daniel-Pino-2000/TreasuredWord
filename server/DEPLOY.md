@@ -185,6 +185,15 @@ Remove the old container first (`docker ps -a` shows its name, then `docker rm -
 docker run --name bibleapp-postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=bibleapp -p 5433:5432 -d pgvector/pgvector:pg18
 ```
 
+To keep the local data instead, give the new container the old one's volume
+(`docker inspect <name> --format '{{json .Mounts}}'` shows it) and use the `-trixie` image:
+`postgres:18` is built on Debian trixie and `pgvector:pg18` on bookworm, whose older collation
+library makes Postgres warn of a "collation version mismatch" (text indexes can sort wrongly).
+
+```bash
+docker run --name bibleapp-postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=bibleapp -p 5433:5432 -v <volume>:/var/lib/postgresql -d pgvector/pgvector:pg18-trixie
+```
+
 **Filling the tables** (once, after the deploy that ran V9). This is a one-off writing to the
 production database, so only the developer runs it. It reads the vectors the evaluation already
 paid for, in `server/build/semantic-search-eval/cache/bge-m3-bsb.vec`, so it spends **no neurons**
