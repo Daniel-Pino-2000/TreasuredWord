@@ -308,6 +308,11 @@
     <string name="settings_open_source_licenses">Lisensi open source</string>
     <string name="settings_section_general">Umum</string>
     <string name="title_language">Bahasa</string>
+    <!-- Settings row that opens the Bible version picker (#304) -->
+    <string name="settings_bible_version">Versi Alkitab</string>
+    <string name="settings_bible_version_subtitle">Unduh versi gratis dalam banyak bahasa</string>
+    <!-- Screen reader label of the reader's version button. %1$s: the current version's short name, e.g. KJV -->
+    <string name="reader_change_version">Ganti versi Alkitab, %1$s</string>
     <string name="language_system_default">Default sistem</string>
     <string name="settings_section_appearance">Tampilan</string>
     <string name="settings_theme">Tema</string>
@@ -399,12 +404,21 @@
     <string name="ai_question_placeholder">Ajukan pertanyaan tentang Alkitab</string>
     <string name="ai_action_send">Kirim</string>
     <string name="ai_answer_label">Jawaban AI</string>
-    <string name="ai_thinking">Sedang berpikir…</string>
+    <!-- What the Bible Helper is doing while an answer comes (#283): only true steps -->
+    <string name="ai_stage_waking">Membangunkan server…</string>
+    <string name="ai_stage_writing">Menulis jawaban Anda…</string>
+    <string name="ai_stage_still_writing">Masih menulis. Jawaban yang lebih panjang butuh sedikit waktu lagi.</string>
+    <string name="ai_waking_detail">Server sedang beristirahat dan kini dinyalakan. Jawaban pertama bisa memakan waktu hingga satu menit; jawaban berikutnya lebih cepat.</string>
+    <!-- Short titles above the failure messages under an unanswered question (#283) -->
+    <string name="ai_failure_unavailable_title">Tidak bisa mendapatkan jawaban</string>
+    <string name="ai_failure_offline_title">Anda sedang offline</string>
+    <string name="ai_failure_rate_limited_title">Terlalu banyak pertanyaan sekaligus</string>
+    <string name="ai_failure_signed_out_title">Anda telah keluar</string>
     <string name="ai_offline_banner">Anda sedang offline. Percakapan Anda masih ada; untuk bertanya perlu internet.</string>
-    <string name="ai_failure_offline">Pertanyaan Anda tidak dapat dikirim karena Anda sedang offline.</string>
-    <string name="ai_failure_unavailable">Asisten Alkitab tidak dapat menjawab saat ini.</string>
-    <string name="ai_failure_rate_limited">Terlalu banyak pertanyaan sekaligus. Tunggu sebentar, lalu coba lagi.</string>
-    <string name="ai_failure_signed_out">Anda telah keluar. Masuk lagi untuk terus bertanya.</string>
+    <string name="ai_failure_offline">Pertanyaan Anda tersimpan. Kirim lagi saat Anda kembali online.</string>
+    <string name="ai_failure_unavailable">Pertanyaan Anda tersimpan. Coba lagi sebentar lagi.</string>
+    <string name="ai_failure_rate_limited">Tunggu sebentar, lalu coba lagi.</string>
+    <string name="ai_failure_signed_out">Masuk lagi untuk terus bertanya.</string>
     <string name="ai_failure_daily_limit">Anda sudah mengajukan semua pertanyaan hari ini. Anda bisa bertanya lagi mulai %1$s.</string>
     <string name="ai_failure_resting">Asisten Alkitab sedang beristirahat: layanan gratis yang digunakannya sudah mencapai batas hari ini. Asisten kembali mulai %1$s.</string>
     <plurals name="ai_remaining_today">

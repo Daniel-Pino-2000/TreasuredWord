@@ -56,6 +56,12 @@ class SyncWorker(
             // Installs from before the content owner was recorded (#81) adopt the signed-in account.
             bibleRepository.adoptContentOwnerIfUnknown(authRepository.currentUserId)
             val engine = SyncEngine(bibleRepository, HighlightRepository(), NoteRepository(), ReadingProgressRepository())
+            // The 12-hour job only sends what this device hasn't (#308). Not a "Synced" pass:
+            // nothing reached the server, so Settings' status line and open screens stay as they are.
+            if (inputData.getBoolean(KEY_ONLY_WITH_LOCAL_CHANGES, false) && !engine.hasWorkForBackgroundPass()) {
+                Log.i(TAG, "Background sync skipped: nothing to send")
+                return@withLock Result.success()
+            }
 
             SyncEvents.passStarted()
             var outcome: SyncEngine.Outcome? = null
@@ -93,6 +99,8 @@ class SyncWorker(
     internal companion object {
         private const val TAG = "SyncWorker"
         private const val MAX_RETRY_ATTEMPTS = 3
+        /** Set on [SyncScheduler]'s periodic job: run the pass only if [SyncEngine.hasWorkForBackgroundPass]. */
+        const val KEY_ONLY_WITH_LOCAL_CHANGES = "only_with_local_changes"
         val syncMutex = Mutex()
     }
 }

@@ -246,6 +246,117 @@ class OpenAiCompatibleProviderTest {
         }
     }
 
+    private fun MockRequestHandleScope.events(vararg data: String) =
+        respond(
+            // A comment line (": keep-alive") goes as it is.
+            data.joinToString("") { if (it.startsWith(":")) "$it\n\n" else "data: $it\n\n" },
+            HttpStatusCode.OK,
+            headersOf(HttpHeaders.ContentType, "text/event-stream")
+        )
+
+    private fun piece(content: String?, finishReason: String? = null, neurons: Double? = null) = buildString {
+        append("""{"choices":[{"index":0,"delta":{"content":${content?.let { JsonPrimitive(it) } ?: "null"}}""")
+        append(""","finish_reason":${finishReason?.let { "\"$it\"" } ?: "null"}}]""")
+        if (neurons != null) append(""","usage":{"neurons":$neurons}""")
+        append("}")
+    }
+
+    @Test
+    fun aStreamedAnswerArrivesPieceByPieceAndWhole() = runBlocking {
+        val pieces = mutableListOf<String>()
+        val completion = provider {
+            events(piece("\n Grace is "), ": keep-alive", piece("a gift [[EPH 2:8]]."), piece(null, "stop", neurons = 12.5), "[DONE]")
+        }.stream(conversation, maxTokens = 700) { pieces += it }
+
+        // The start is trimmed, so the first word comes first.
+        assertEquals(listOf("Grace is ", "a gift [[EPH 2:8]]."), pieces)
+        assertEquals("Grace is a gift [[EPH 2:8]].", completion.text)
+        assertFalse(completion.cutOff)
+        assertEquals(12.5, completion.neurons)
+        assertTrue(sentBody()["stream"]!!.jsonPrimitive.boolean)
+    }
+
+    @Test
+    fun aQuestionThatIsntStreamedLeavesStreamOutOfTheRequest() = runBlocking {
+        provider { json(answer(content = "Yes.")) }.complete(conversation, maxTokens = 700)
+
+        assertNull(sentBody()["stream"])
+    }
+
+    @Test
+    fun aStreamThatRunsOutOfTokensIsCutOff() = runBlocking {
+        val completion = provider { events(piece("The first point is"), piece(null, "length"), "[DONE]") }
+            .stream(conversation, maxTokens = 700) { }
+
+        assertTrue(completion.cutOff)
+    }
+
+    @Test
+    fun anAnswerSentAllAtOnceIsPassedOnAsOnePiece() = runBlocking {
+        val pieces = mutableListOf<String>()
+        val completion = provider { json(answer(content = ANSWER)) }.stream(conversation, maxTokens = 700) { pieces += it }
+
+        assertEquals(listOf(ANSWER), pieces)
+        assertEquals(ANSWER, completion.text)
+    }
+
+    @Test
+    fun theDailyLimitBeforeAStreamThrowsQuotaExhausted() {
+        val provider = provider { json("""{"errors":[{"message":"used up","code":3036}]}""", HttpStatusCode.TooManyRequests) }
+
+        assertFailsWith<QuotaExhausted> { runBlocking { provider.stream(conversation, maxTokens = 700) { } } }
+    }
+
+    @Test
+    fun aHiccupBeforeAnyPieceIsTriedOnceMore() = runBlocking {
+        var calls = 0
+        val completion = provider {
+            calls++
+            if (calls == 1) json("{}", HttpStatusCode.BadGateway) else events(piece(ANSWER, "stop"), "[DONE]")
+        }.stream(conversation, maxTokens = 700) { }
+
+        assertEquals(2, calls)
+        assertEquals(ANSWER, completion.text)
+    }
+
+    @Test
+    fun aStreamThatBreaksAfterAPieceIsNotTriedAgain() {
+        var calls = 0
+        val pieces = mutableListOf<String>()
+        val provider = provider {
+            calls++
+            events(piece("Grace is "), "{not json")
+        }
+
+        assertFailsWith<Unavailable> { runBlocking { provider.stream(conversation, maxTokens = 700) { pieces += it } } }
+        assertEquals(1, calls)
+        assertEquals(listOf("Grace is "), pieces)
+    }
+
+    @Test
+    fun aStreamWithNoAnswerThrowsUnavailable() {
+        val provider = provider { events(piece(null, "stop"), "[DONE]") }
+
+        assertFailsWith<Unavailable> { runBlocking { provider.stream(conversation, maxTokens = 700) { } } }
+    }
+
+    @Test
+    fun aFailureOfTheCallersOwnIsntTakenForTheProviders() {
+        class Hung : RuntimeException()
+        val provider = provider { events(piece(ANSWER), "[DONE]") }
+
+        assertFailsWith<Hung> { runBlocking { provider.stream(conversation, maxTokens = 700) { throw Hung() } } }
+    }
+
+    @Test
+    fun aStreamedAnswerIsNeverLogged() = runBlocking {
+        provider { events(piece(ANSWER, "stop"), "[DONE]") }.stream(conversation, maxTokens = 700) { }
+
+        assertFalse(ANSWER in logText)
+        assertFalse(QUESTION in logText)
+        assertFalse(TOKEN in logText)
+    }
+
     private companion object {
         const val TOKEN = "test-token-not-real"
         const val QUESTION = "What does the Bible say about grace?"

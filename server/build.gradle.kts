@@ -61,8 +61,9 @@ tasks.register<JavaExec>("semanticSearchEval") {
     description = "Measures search by meaning against docs/semantic_search_eval.md and writes a report to build/semantic-search-eval."
     classpath = sourceSets["main"].runtimeClasspath + semanticSearchEvalRuntime
     mainClass.set("com.application.bibleapp.server.search.eval.SemanticSearchEvalKt")
-    // 31,102 vectors of 1,024 floats are ~130 MB in memory.
-    maxHeapSize = "1g"
+    // 31,102 vectors of 1,024 floats are ~130 MB in memory, and the ranking variants hold a few
+    // copies at once (blended, centred, a second translation).
+    maxHeapSize = "3g"
     args(
         rootProject.file("docs/semantic_search_eval.md").path,
         layout.buildDirectory.dir("semantic-search-eval").get().asFile.path,

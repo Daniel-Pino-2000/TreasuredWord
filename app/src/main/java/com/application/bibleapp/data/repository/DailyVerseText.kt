@@ -6,6 +6,8 @@ import com.application.bibleapp.data.model.DailyVerseRef
 import com.application.bibleapp.data.model.DailyVerseUI
 import com.application.bibleapp.data.model.VerseOfTheDay
 import com.application.bibleapp.data.model.resolveDailyVerseUI
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /** A daily verse's text and the translation it was read from. */
 data class ResolvedDailyVerse(val verse: DailyVerseUI, val versionId: String)
@@ -30,7 +32,7 @@ suspend fun BibleRepository.resolveDailyVerseText(ref: DailyVerseRef, versionId:
  *  [DailyVerseFetchWorker][com.application.bibleapp.worker.DailyVerseFetchWorker] or Home), else
  *  today's curated verse. What the widget shows (#245), which never makes network calls. */
 suspend fun BibleRepository.todaysDailyVerseOffline(): DailyVerseRef =
-    getTodaysCachedDailyVerse() ?: VerseOfTheDay.forToday()
+    getTodaysCachedDailyVerse() ?: withContext(Dispatchers.IO) { curatedDailyVerse() }
 
 private suspend fun BibleRepository.resolveIn(ref: DailyVerseRef, versionId: String): DailyVerseUI? {
     val bookName = getBookNames(versionId)[ref.bookId]

@@ -19,9 +19,15 @@ data class AiPassageDto(val reference: String, val text: String)
 
 /** `messages`: 1–10, oldest first, alternating, the last one from the user. `language` is one of
  *  [com.application.bibleapp.utils.AppLanguage.supportedTags]. [passage] is left out of the JSON
- *  when null, so a server without it still reads the request. */
+ *  when null, so a server without it still reads the request; so is [starter], the id of the Ask
+ *  tab's starter question this first question came from (#284), which gets a ready answer. */
 @Serializable
-data class AiAskRequestDto(val messages: List<AiMessageDto>, val language: String, val passage: AiPassageDto? = null)
+data class AiAskRequestDto(
+    val messages: List<AiMessageDto>,
+    val language: String,
+    val passage: AiPassageDto? = null,
+    val starter: String? = null
+)
 
 /** The answer marks the verses it cites as `[[JHN 3:16]]` (#129). `remainingToday` is how many of
  *  the day's questions are left after this one. */
@@ -56,3 +62,7 @@ data class BackendErrorDto(
     val message: String? = null,
     val fieldErrors: Map<String, String>? = null
 )
+
+/** A `text` event of `POST /api/v1/ai/ask/stream` (#285): the next piece of the answer. */
+@Serializable
+data class AiStreamTextDto(val text: String)

@@ -539,7 +539,8 @@ data class AiPassage(
 data class AiAskRequest(
     val messages: List<AiMessageDto>,
     val language: String,
-    val passage: AiPassage? = null // only when asked with "Ask about this verse" (#132)
+    val passage: AiPassage? = null, // only when asked with "Ask about this verse" (#132)
+    val starter: String? = null     // one of the Ask tab's starter questions (#284)
 )
 
 @Serializable
@@ -566,6 +567,9 @@ Rules for `AiAskRequest` (any broken one is `400 VALIDATION_ERROR`, with `fieldE
   passage the question is about, quoted, with `"""` and `[[`/`]]` in the text flattened so it can't
   close its quotes or write a marker. The app sends it with each question of a conversation that
   started from the reader, so follow-ups keep it; it isn't part of `messages` or their size limits.
+- `starter` (optional, #284): `saved`, `baptism`, `trinity`, `prayer`, `start_reading` or `death`,
+  only with a single message and no `passage` (a new conversation's first question, from a starter
+  chip). Its errors are keyed `starter`. See "Starter questions" below.
 
 A rate limit that's hit answers `429` with no body: the `ai` zone, 5 questions a minute per
 account. An account that has already had today's 15 answers isn't counted against it, so however
@@ -584,7 +588,7 @@ Errors:
 | 429 | `AI_DAILY_LIMIT` | This account already got 15 answers today (UTC); more at 00:00 UTC | No |
 | 429 | (no body) | More than 5 questions in a minute (`ai` zone), while some of today's 15 are left | No |
 | 503 | `AI_RESTING` | Cloudflare's free daily allowance is used up (its error `3036`); back at 00:00 UTC | No |
-| 503 | `AI_UNAVAILABLE` | The AI failed, took longer than 30 s, or isn't set up on this server | No |
+| 503 | `AI_UNAVAILABLE` | The AI failed, took longer than 45 s, or isn't set up on this server | No |
 
 The instructions ask for `[[BOOK C:V]]`, `[[BOOK C:V-V]]` or a whole chapter `[[PSA 23]]` (a card,
 allowed since instructions v2, #206) with the USFM code. The app also reads a whole book `[[JHN]]` (its name, no card), a space
@@ -598,6 +602,43 @@ The daily count is taken atomically before the AI is asked and given back if no 
 so questions sent at the same moment can't go past 15.
 
 The server never logs question or answer text.
+
+**Starter questions (#284).** With `starter`, the server answers its own wording of that starter in
+`language` (the app's `ai_starter_*` strings, kept in `StarterQuestions.kt`), never the message's
+text. It keeps one answer per starter, language and `promptVersion` in `ai_starter_answers`: the
+first request in a language asks the AI and stores the answer (unless it's a crisis answer, cut
+off, or failed); every later one gets the stored answer straight away. Either way it **doesn't
+count** as one of the day's 15 questions, works after they're used up, and `remainingToday` is
+what's left of them. AI failures answer `AI_RESTING`/`AI_UNAVAILABLE` as usual. A new
+`promptVersion` asks again; older rows are never read (at most 60 per version).
+
+### `POST /api/v1/ai/ask/stream`
+Auth: required (#285)
+Request: `AiAskRequest`, as for `/ai/ask`, with the same rules, limits, rate limit and starters.
+Success: `200 OK` with `Content-Type: text/event-stream`: the answer as the AI writes it, as
+server-sent events. Each event's `data` is one line of JSON:
+
+| Event | `data` | When |
+|---|---|---|
+| `text` | `{"text": "..."}` | The next piece of the answer. Joined, they're the answer so far |
+| `crisis` | `{}` | Once, when the crisis marker is seen, before the text that follows it, so the help card can show first |
+| `done` | `AiAskResponse` | The end. Its `answer` is the one to show and save; the pieces were only a preview |
+| `error` | `ErrorResponse` (`AI_UNAVAILABLE` or `AI_RESTING`) | The AI stopped partway. Not counted |
+
+The stream ends after `done` or `error`. A stream that closes without either also means no answer.
+The crisis marker never appears in `text`: a piece that could be its start is held back until it's
+clear. Verse markers come through as written, so a piece can end inside one (`[[JHN 3:`).
+
+Anything that goes wrong **before** the first piece (validation, sign-in, the daily limit, the
+rate limit, the AI failing or resting) is the same status and JSON `ErrorResponse` as `/ai/ask`.
+A ready starter answer is a single `done` event.
+
+**Counting.** As with `/ai/ask`, the question is counted when it's sent and given back if no
+answer comes: when the AI fails, before or during the answer, and also when the app hangs up
+before `done`. Once the AI has finished, the answer counts even if `done` doesn't reach the app.
+
+`/ai/ask` stays for app versions without streaming (1.7 and earlier); the app falls back to it on a `404` from a server
+without the stream.
 
 ### `POST /api/v1/ai/reports`
 Auth: required

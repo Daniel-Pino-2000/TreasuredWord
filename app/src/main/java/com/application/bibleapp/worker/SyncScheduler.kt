@@ -10,6 +10,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.OutOfQuotaPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
+import androidx.work.workDataOf
 import com.application.bibleapp.data.remote.HelloAoBibleDataSource
 import com.application.bibleapp.data.remote.OurMannaBibleDataSource
 import com.application.bibleapp.data.repository.BibleRepository
@@ -18,8 +19,20 @@ import java.util.concurrent.TimeUnit
 /**
  * Schedules [SyncWorker] — see docs/UI_Integration_Roadmap.md Phase E/G. Unlike the daily-verse
  * jobs (wall-clock-anchored one-time requests that re-enqueue themselves), sync just needs to
- * happen regularly while there's a network connection; a [androidx.work.PeriodicWorkRequest] at
- * WorkManager's minimum interval (15 minutes — there's no way to go shorter) fits that directly.
+ * happen regularly while there's a network connection, so it's a [androidx.work.PeriodicWorkRequest].
+ *
+ * Every 12 hours, not WorkManager's minimum of 15 minutes (#305): each run queries the database,
+ * and Neon's free plan has 100 compute-hours a month. Each query keeps it awake 5 minutes, so a
+ * few phones syncing every 15 minutes kept it up most of the day (34 hours used in two weeks of
+ * closed testing), and once they run out the database is suspended until the next month. The
+ * app syncs on start, and when it goes to the background ([MainActivity][com.application.bibleapp.MainActivity]),
+ * which sends new highlights, notes and the reading position right away.
+ *
+ * And the periodic run only syncs when this device has something to send (#308): a change whose
+ * own sync failed (offline when the app was left), or a first pull that never went through.
+ * Pulling other devices' changes in the background couldn't be made free on the server: after
+ * 12 hours the access token has expired, and refreshing it writes to the database. Those changes
+ * arrive the next time the app is opened instead.
  *
  * Both [schedulePeriodicSync] and [triggerImmediateSync] read the Wi-Fi-only preference (Settings'
  * Sync section, Phase G) themselves rather than taking it as a parameter, so every call site
@@ -29,7 +42,7 @@ import java.util.concurrent.TimeUnit
 object SyncScheduler {
     private const val PERIODIC_WORK_NAME = "content_sync_periodic"
     private const val IMMEDIATE_WORK_NAME = "content_sync_immediate"
-    private const val PERIODIC_INTERVAL_MINUTES = 15L
+    private const val PERIODIC_INTERVAL_HOURS = 12L
 
     private fun currentConstraints(context: Context): Constraints {
         val repository = BibleRepository(context, HelloAoBibleDataSource(), OurMannaBibleDataSource())
@@ -48,8 +61,10 @@ object SyncScheduler {
             cancelPeriodicSync(context)
             return
         }
-        val request = PeriodicWorkRequestBuilder<SyncWorker>(PERIODIC_INTERVAL_MINUTES, TimeUnit.MINUTES)
+        val request = PeriodicWorkRequestBuilder<SyncWorker>(PERIODIC_INTERVAL_HOURS, TimeUnit.HOURS)
             .setConstraints(currentConstraints(context))
+            // UPDATE (below) also gives an already-scheduled job from an older version this flag.
+            .setInputData(workDataOf(SyncWorker.KEY_ONLY_WITH_LOCAL_CHANGES to true))
             .build()
         WorkManager.getInstance(context)
             .enqueueUniquePeriodicWork(PERIODIC_WORK_NAME, ExistingPeriodicWorkPolicy.UPDATE, request)

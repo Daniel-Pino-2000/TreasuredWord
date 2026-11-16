@@ -307,6 +307,11 @@
     <string name="settings_open_source_licenses">开源许可</string>
     <string name="settings_section_general">通用</string>
     <string name="title_language">语言</string>
+    <!-- Settings row that opens the Bible version picker (#304) -->
+    <string name="settings_bible_version">圣经译本</string>
+    <string name="settings_bible_version_subtitle">下载多种语言的免费译本</string>
+    <!-- Screen reader label of the reader's version button. %1$s: the current version's short name, e.g. KJV -->
+    <string name="reader_change_version">更换圣经译本，%1$s</string>
     <string name="language_system_default">跟随系统</string>
     <string name="settings_section_appearance">外观</string>
     <string name="settings_theme">主题</string>
@@ -398,12 +403,21 @@
     <string name="ai_question_placeholder">问一个关于圣经的问题</string>
     <string name="ai_action_send">发送</string>
     <string name="ai_answer_label">AI 回答</string>
-    <string name="ai_thinking">正在思考…</string>
+    <!-- What the Bible Helper is doing while an answer comes (#283): only true steps -->
+    <string name="ai_stage_waking">正在唤醒服务器…</string>
+    <string name="ai_stage_writing">正在撰写回答…</string>
+    <string name="ai_stage_still_writing">仍在撰写。较长的回答需要多一点时间。</string>
+    <string name="ai_waking_detail">服务器刚才处于休眠状态，正在唤醒。第一个回答最多可能需要一分钟，之后会更快。</string>
+    <!-- Short titles above the failure messages under an unanswered question (#283) -->
+    <string name="ai_failure_unavailable_title">未能获得回答</string>
+    <string name="ai_failure_offline_title">你已离线</string>
+    <string name="ai_failure_rate_limited_title">一次提问太多</string>
+    <string name="ai_failure_signed_out_title">你已退出登录</string>
     <string name="ai_offline_banner">你已离线。对话仍可查看，但提问需要联网。</string>
-    <string name="ai_failure_offline">你已离线，问题未能发送。</string>
-    <string name="ai_failure_unavailable">圣经助手暂时无法回答。</string>
-    <string name="ai_failure_rate_limited">一次提问太多了。请稍等片刻再试。</string>
-    <string name="ai_failure_signed_out">你已退出登录。请重新登录以继续提问。</string>
+    <string name="ai_failure_offline">你的问题已保存。恢复联网后再发送。</string>
+    <string name="ai_failure_unavailable">你的问题已保存。请稍后再试。</string>
+    <string name="ai_failure_rate_limited">请稍等片刻再试。</string>
+    <string name="ai_failure_signed_out">请重新登录以继续提问。</string>
     <string name="ai_failure_daily_limit">你今天的提问次数已用完。%1$s起可以再次提问。</string>
     <string name="ai_failure_resting">圣经助手正在休息：它使用的免费服务今天已达到上限。%1$s起恢复。</string>
     <plurals name="ai_remaining_today">

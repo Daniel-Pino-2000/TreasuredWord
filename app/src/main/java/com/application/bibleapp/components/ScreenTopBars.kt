@@ -29,6 +29,8 @@ import androidx.compose.ui.Modifier
 import com.application.bibleapp.ui.theme.Spacing
 import com.application.bibleapp.R
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 
 /** [versionLabel] is the active translation's short code (e.g. "KJV", "ESV") — see
  *  [com.application.bibleapp.viewmodel.BibleViewModel.currentVersionLabel].
@@ -57,7 +59,14 @@ fun BibleTopBar(
             }
             BookmarkButton(bookmark)
             // Without the end margin the pill sits flush against the screen edge.
-            Button(onClick = onVersionClick, modifier = Modifier.padding(end = Spacing.sm)) {
+            // Read out as what it does, not just "KJV" (#304).
+            val versionDescription = stringResource(R.string.reader_change_version, versionLabel)
+            Button(
+                onClick = onVersionClick,
+                modifier = Modifier
+                    .padding(end = Spacing.sm)
+                    .semantics { contentDescription = versionDescription }
+            ) {
                 Text(versionLabel)
             }
         },

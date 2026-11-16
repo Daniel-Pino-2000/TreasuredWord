@@ -25,20 +25,34 @@ data class Scored(val ref: VerseRef, val score: Float)
  * all 31,102 in a few milliseconds by plain dot products (#287). Phase 3 does this in Postgres
  * with pgvector instead; here it only has to be right.
  */
-class VectorIndex(vectors: Map<VerseRef, FloatArray>) {
-    val refs: List<VerseRef> = vectors.keys.sorted()
-    val dimensions: Int = vectors.values.firstOrNull()?.size ?: 0
-    private val data = FloatArray(refs.size * dimensions)
-
-    init {
-        refs.forEachIndexed { row, ref ->
-            val vector = normalized(vectors.getValue(ref))
-            require(vector.size == dimensions) { "$ref has ${vector.size} numbers, not $dimensions" }
-            vector.copyInto(data, row * dimensions)
-        }
-    }
+class VectorIndex private constructor(
+    val refs: List<VerseRef>,
+    val dimensions: Int,
+    /** Row r is verse refs[r]'s vector, length 1, at r * dimensions. */
+    internal val data: FloatArray
+) {
+    constructor(vectors: Map<VerseRef, FloatArray>) : this(
+        vectors.keys.sorted(),
+        vectors.values.firstOrNull()?.size ?: 0,
+        pack(vectors)
+    )
 
     val size: Int get() = refs.size
+
+    /** Where each verse's row is, for looking one up by reference. */
+    val rows: Map<VerseRef, Int> by lazy { refs.withIndex().associate { (row, ref) -> ref to row } }
+
+    /** A new index over the same verses with every row replaced by [transform]'s (then scaled to length 1). */
+    internal fun mapRows(transform: (row: Int, source: FloatArray, out: FloatArray) -> Unit): VectorIndex {
+        val out = FloatArray(data.size)
+        val buffer = FloatArray(dimensions)
+        for (row in refs.indices) {
+            buffer.fill(0f)
+            transform(row, data, buffer)
+            normalized(buffer).copyInto(out, row * dimensions)
+        }
+        return VectorIndex(refs, dimensions, out)
+    }
 
     /** Every verse's similarity to [query], in [refs] order. */
     fun scores(query: FloatArray): FloatArray {
@@ -59,6 +73,18 @@ class VectorIndex(vectors: Map<VerseRef, FloatArray>) {
             .map { Scored(refs[it], scores[it]) }
 
     companion object {
+        private fun pack(vectors: Map<VerseRef, FloatArray>): FloatArray {
+            val refs = vectors.keys.sorted()
+            val dimensions = vectors.values.firstOrNull()?.size ?: 0
+            val data = FloatArray(refs.size * dimensions)
+            refs.forEachIndexed { row, ref ->
+                val vector = normalized(vectors.getValue(ref))
+                require(vector.size == dimensions) { "$ref has ${vector.size} numbers, not $dimensions" }
+                vector.copyInto(data, row * dimensions)
+            }
+            return data
+        }
+
         fun normalized(vector: FloatArray): FloatArray {
             var sum = 0.0
             for (x in vector) sum += x.toDouble() * x
@@ -79,8 +105,11 @@ data class QueryResult(
 }
 
 /** Ranks every verse for [vector] and notes where the expected ones came. */
-fun score(query: SearchEvalQuery, vector: FloatArray, index: VectorIndex): QueryResult {
-    val scores = index.scores(vector)
+fun score(query: SearchEvalQuery, vector: FloatArray, index: VectorIndex): QueryResult =
+    rank(query, index.scores(vector), index)
+
+/** Like [score], for [scores] some other way (in [index]'s verse order): higher is closer. */
+fun rank(query: SearchEvalQuery, scores: FloatArray, index: VectorIndex): QueryResult {
     val bestRank = index.refs.indices
         .filter { index.refs[it] in query.expected }
         .minOfOrNull { row -> 1 + scores.indices.count { other -> scores[other] > scores[row] || (scores[other] == scores[row] && other < row) } }
@@ -261,13 +290,16 @@ fun main(args: Array<String>) {
     require(args.size == 6) { "Usage: SemanticSearchEval <queries.md> <report folder> <bible_default.db> <model> <ID,ID,…> <translation.tsv>" }
     val (queriesPath, reportPath, kjvPath, model, onlyArg) = args
     val biblePath = args[5]
-    val baseUrl = System.getenv("AI_BASE_URL")?.takeIf { it.isNotBlank() }
-    val token = System.getenv("AI_API_TOKEN")?.takeIf { it.isNotBlank() }
-    if (baseUrl == null || token == null) {
-        System.err.println("Set AI_BASE_URL and AI_API_TOKEN first (docs/semantic_search_eval.md, \"Running it\").")
-        exitProcess(1)
+    // Only needed when something isn't cached yet: trying variants on cached vectors needs no token.
+    val provider by lazy {
+        val baseUrl = System.getenv("AI_BASE_URL")?.takeIf { it.isNotBlank() }
+        val token = System.getenv("AI_API_TOKEN")?.takeIf { it.isNotBlank() }
+        if (baseUrl == null || token == null) {
+            System.err.println("Some vectors aren't cached yet: set AI_BASE_URL and AI_API_TOKEN first (docs/semantic_search_eval.md, \"Running it\").")
+            exitProcess(1)
+        }
+        WorkersAiEmbeddingProvider(WorkersAiEmbeddingProvider.accountAiUrl(baseUrl), token, model)
     }
-    val provider = WorkersAiEmbeddingProvider(WorkersAiEmbeddingProvider.accountAiUrl(baseUrl), token, model)
 
     val all = SearchEvalQueries.parse(File(queriesPath).readText())
     val only = onlyArg.split(',').map { it.trim() }.filter { it.isNotEmpty() }
@@ -317,8 +349,11 @@ fun main(args: Array<String>) {
         exitProcess(if (bible.quotaExhausted) 0 else 1)
     }
 
-    val queryVectors = try {
-        runBlocking { embedQueries(queries, provider) }
+    val queryCache = QueryVectorCache(File(reportFolder, "cache/${QueryVectorCache.fileName(model)}"), model)
+    val cachedQueries = queryCache.load()
+    val newQueries = queries.filter { it.query !in cachedQueries }
+    val embedded = try {
+        if (newQueries.isEmpty()) QueryVectors(emptyMap(), 0.0, false) else runBlocking { embedQueries(newQueries, provider) }
     } catch (e: QuotaExhausted) {
         println("Every verse is embedded and saved, but the allowance ran out before the queries. Run again after 00:00 UTC.")
         exitProcess(0)
@@ -326,16 +361,80 @@ fun main(args: Array<String>) {
         println("Every verse is embedded and saved, but Workers AI kept failing on the queries (${e.message}). Run again.")
         exitProcess(1)
     }
+    newQueries.forEach { cachedQueries[it.query] = embedded.vectors.getValue(it.id) }
+    if (newQueries.isNotEmpty()) queryCache.save(cachedQueries)
+    val queryVectors = QueryVectors(queries.associate { it.id to cachedQueries.getValue(it.query) }, embedded.neurons, embedded.neuronsEstimated)
 
     val index = VectorIndex(vectors.filterKeys { it in verseText })
+    vectors.clear() // ~130 MB that the variants below can use instead
     val results = queries.map { score(it, queryVectors.vectors.getValue(it.id), index) }
     val date = LocalDate.now(ZoneOffset.UTC)
-    val name = "$date-${VectorCache.slug(model.substringAfterLast('/'))}-$translation${if (only.isEmpty()) "" else "-partial"}.md"
-    val file = File(reportFolder.apply { mkdirs() }, name)
+    val suffix = if (only.isEmpty()) "" else "-partial"
+    val name = "$date-${VectorCache.slug(model.substringAfterLast('/'))}-$translation$suffix"
+    val file = File(reportFolder.apply { mkdirs() }, "$name.md")
     file.writeText(report(results, model, translation, date, index, verseText, bible, queryVectors))
 
     val hits = results.count { it.hit }
     println("Hit rate: $hits of ${results.size} (${percent(hits, results.size)}); missed: ${results.filterNot { it.hit }.joinToString(", ") { it.query.id }.ifEmpty { "none" }}")
     println("Report: ${file.absolutePath}")
+
+    val variants = runVariants(model, translation, kjvPath, reportFolder, index, verses, queries, queryVectors)
+    val variantsFile = File(reportFolder, "$name-variants.md")
+    variantsFile.writeText(variantsReport(model, translation, date, variants))
+    variants.forEach { println("  ${it.results.count { r -> r.hit }} of ${it.results.size}  ${it.name}") }
+    println("Variants: ${variantsFile.absolutePath}")
     exitProcess(0)
+}
+
+/**
+ * Tries the ranking variants of SearchVariants.kt on this run's vectors, plus, when this run is
+ * another translation and this model's KJV vectors are cached too, both translations together.
+ * Free: nothing is embedded here.
+ */
+private fun runVariants(
+    model: String,
+    translation: String,
+    kjvPath: String,
+    reportFolder: File,
+    index: VectorIndex,
+    verses: List<Verse>,
+    queries: List<SearchEvalQuery>,
+    queryVectors: QueryVectors
+): List<VariantResult> {
+    fun evaluate(variant: Variant) =
+        VariantResult(variant.name, queries.map { q -> rank(q, variant.scores(q, queryVectors.vectors.getValue(q.id)), index) })
+    val texts = verses.associate { it.ref to it.text }
+    val keywords = KeywordIndex(index.refs, index.refs.map { texts.getValue(it) })
+    fun hybrid(name: String, vectorScores: (SearchEvalQuery, FloatArray) -> FloatArray, words: KeywordIndex = keywords) =
+        Variant(name) { q, v -> reciprocalRankFusion(vectorScores(q, v), words.scores(q.query)) }
+
+    val out = mutableListOf<VariantResult>()
+    out += evaluate(Variant("plain cosine ($translation)") { _, v -> index.scores(v) })
+    out += evaluate(Variant("keywords only (BM25, $translation)") { q, _ -> keywords.scores(q.query) })
+    out += evaluate(hybrid("plain + keywords (RRF)", { _, v -> index.scores(v) }))
+    val centred = index.centred()
+    out += evaluate(Variant("centred") { _, v -> centred.scores(v) })
+    for (weight in listOf(0.3f, 0.5f, 1f)) {
+        val blended = index.withNeighbours(weight)
+        out += evaluate(Variant("verse + neighbours ×$weight") { _, v -> blended.scores(v) })
+        if (weight == 0.5f) {
+            out += evaluate(hybrid("verse + neighbours ×0.5, + keywords (RRF)", { _, v -> blended.scores(v) }))
+            val blendedCentred = blended.centred()
+            out += evaluate(Variant("verse + neighbours ×0.5, centred") { _, v -> blendedCentred.scores(v) })
+        }
+    }
+
+    val kjvCache = File(reportFolder, "cache/${VectorCache.fileName(model, "kjv")}")
+    if (translation != "kjv" && kjvCache.isFile) {
+        val kjvTexts = BibleText.readKjv(File(kjvPath)).associate { it.ref to it.text }
+        val kjv = VectorIndex(VectorCache(kjvCache, model, "kjv").load())
+        val both = KeywordIndex(index.refs, index.refs.map { "${texts.getValue(it)} ${kjvTexts[it].orEmpty()}" })
+        out += evaluate(Variant("$translation + kjv vectors (average)") { _, v -> averageScores(v, index, listOf(index, kjv)) })
+        val blended = index.withNeighbours(0.5f)
+        val kjvBlended = kjv.withNeighbours(0.5f)
+        val bothBlended: (SearchEvalQuery, FloatArray) -> FloatArray = { _, v -> averageScores(v, blended, listOf(blended, kjvBlended)) }
+        out += evaluate(Variant("$translation + kjv, neighbours ×0.5", bothBlended))
+        out += evaluate(hybrid("$translation + kjv, neighbours ×0.5, + keywords of both (RRF)", bothBlended, both))
+    }
+    return out
 }

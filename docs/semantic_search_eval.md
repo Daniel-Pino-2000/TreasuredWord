@@ -28,13 +28,21 @@ $env:AI_API_TOKEN = Read-Host -MaskInput "Workers AI token"
   download). That's about 1.1 million tokens, **about 1,200 of the free 10,000 neurons a day**,
   and roughly 10–20 minutes in batches of 32. The vectors are saved as they arrive in
   `server/build/semantic-search-eval/cache/`.
-- **Later runs** read the vectors from that cache and only embed the queries (well under 1
-  neuron). `./gradlew clean` deletes the cache, and the next run pays the ~1,200 neurons again.
+- **Later runs** read the vectors from that cache. The queries' vectors are cached too
+  (`<model>.queries`, keyed by the query's wording), so a run with everything cached needs no
+  token and no neurons, and only a new or reworded query is embedded. `./gradlew clean` deletes
+  the cache, and the next run pays the ~1,200 neurons again.
 - **If the neurons run out** (Cloudflare error 3036), the runner stops, keeps what it embedded,
   and says which verse it stopped at. Run the same command after 00:00 UTC and it carries on from
   there.
 - **Report:** `server/build/semantic-search-eval/<date>-<model>-<translation>.md`, with the hit
   rate and a table of every query, then each query's top 10.
+- **Variants:** `<date>-<model>-<translation>-variants.md` ranks the same cached vectors other
+  ways, for free: BM25 keywords alone, vectors + keywords (reciprocal rank fusion), each verse
+  blended with its neighbours in the chapter (×0.3, ×0.5, ×1), centred vectors, and, on a run of
+  another translation when this model's KJV vectors are cached, both translations averaged. It
+  shows the hit rate per variant and every query's best expected rank under each, so phases 2–3
+  build the ranking that measured best, not a guess.
 - **Options:** `-PembeddingModel=@cf/qwen/qwen3-embedding-0.6b` for the comparison run (it has
   its own cache, so its first run also costs ~1,200 neurons); `-Pqueries=TOPIC-01,LANG-KO-01` runs
   only those (a `-partial` report); `-Pbible=<file.tsv>` embeds another translation instead of the
@@ -56,6 +64,13 @@ GEN	1	1	In the beginning God created the heavens and the earth.
 
 and run with `-Pbible=path/to/bsb.tsv`. The file's name (`bsb`) names the cache and the report.
 References are the same in every translation, so the expected verses below don't change.
+
+The BSB is dedicated to the public domain; its publisher's own download is
+https://bereanbible.com/bsb.txt (`Genesis 1:1<tab>text`, 31,102 lines, 16 of them empty: the
+later additions it leaves out, like Matthew 17:21). Converting it is one line per verse with the
+book name swapped for its USFM code in order (Genesis = GEN … Revelation = REV), empty verses
+skipped. The file isn't committed (4 MB); where its text lives later depends on whether the
+chosen ranking uses keywords.
 
 ## How a query is written
 
