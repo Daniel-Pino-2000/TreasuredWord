@@ -80,6 +80,18 @@ tasks.register<JavaExec>("semanticSearchEval") {
 // cost no neurons; only missing ones are embedded (needs AI_BASE_URL and AI_API_TOKEN then).
 // -Pbible=<file.tsv> is required; -Plimit=100 loads only the first 100 verses to try it.
 // Never part of `test`, `check` or CI: against Neon it writes production data.
+tasks.register<JavaExec>("semanticSearchEvalDb") {
+    group = "verification"
+    description = "Runs the search evaluation's queries through the search endpoint's SQL in DATABASE_URL (#287, phase 3); reads only, no neurons."
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("com.application.bibleapp.server.search.eval.DatabaseSearchEvalKt")
+    args(
+        rootProject.file("docs/semantic_search_eval.md").path,
+        layout.buildDirectory.dir("semantic-search-eval/cache").get().asFile.path,
+        providers.gradleProperty("embeddingModel").getOrElse("@cf/baai/bge-m3")
+    )
+}
+
 tasks.register<JavaExec>("loadVerseSearch") {
     group = "application"
     description = "Loads the search-by-meaning verses and vectors into the database (#287)."

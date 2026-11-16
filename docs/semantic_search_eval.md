@@ -72,6 +72,16 @@ book name swapped for its USFM code in order (Genesis = GEN … Revelation = REV
 skipped. The file isn't committed (4 MB); where its text lives later depends on whether the
 chosen ranking uses keywords.
 
+### Through the database (phase 3)
+
+`./gradlew :server:semanticSearchEvalDb --configure-on-demand` runs the same queries through the
+search endpoint's own SQL (`VerseSearch.rankVerses`) in whatever `DATABASE_URL` points at, after
+`loadVerseSearch`. It reads only and uses the cached query vectors, so it costs no neurons. It
+prints hits, mean reciprocal rank, the misses' ids and the time per query. On 2026-11-16, on a
+local pgvector Postgres 18: **27 of 43, MRR 0.47**, the same as phase 1's in-memory ranking
+(27 of 43, 0.46), so Postgres's full-text ranking does as well as the BM25 measured here. The
+median query took 48 ms with no vector index.
+
 ## How a query is written
 
 The runner reads every `###` heading after "## Queries" as one query:
