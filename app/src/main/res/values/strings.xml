@@ -199,6 +199,15 @@
     <string name="search_suggestions_title">Try one of these</string>
     <string name="search_no_results">No results for \"%1$s\"</string>
     <string name="search_error">Couldn\'t search right now. Please try again.</string>
+    <!-- Search by meaning (#287): the Search screen's two sections, word results first, then verses from the server. -->
+    <string name="search_section_words">Verses with these words</string>
+    <string name="search_section_meaning">Related by meaning</string>
+    <string name="search_words_none">No verses contain these words.</string>
+    <string name="search_meaning_start">Find verses related by meaning</string>
+    <string name="search_meaning_loading">Looking for verses related by meaning…</string>
+    <string name="search_meaning_none">No more verses found by meaning.</string>
+    <string name="search_meaning_offline">Search by meaning needs an internet connection.</string>
+    <string name="search_meaning_unavailable">Search by meaning isn\'t available right now.</string>
     <string name="search_clear">Clear search</string>
 
     <!-- Version picker. %1$s is always a Bible translation's name. -->

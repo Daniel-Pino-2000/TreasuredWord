@@ -175,6 +175,14 @@
     <string name="search_suggestions_title">试试这些</string>
     <string name="search_no_results">没有找到“%1$s”的结果</string>
     <string name="search_error">暂时无法搜索，请重试。</string>
+    <string name="search_section_words">含有这些词的经文</string>
+    <string name="search_section_meaning">意思相关</string>
+    <string name="search_words_none">没有经文包含这些词。</string>
+    <string name="search_meaning_start">查找意思相关的经文</string>
+    <string name="search_meaning_loading">正在查找意思相关的经文…</string>
+    <string name="search_meaning_none">没有找到其他意思相关的经文。</string>
+    <string name="search_meaning_offline">按意思搜索需要联网。</string>
+    <string name="search_meaning_unavailable">按意思搜索暂时不可用。</string>
     <string name="search_clear">清除搜索</string>
 
     <string name="version_remove_title">移除 %1$s？</string>

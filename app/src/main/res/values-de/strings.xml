@@ -177,6 +177,14 @@
     <string name="search_suggestions_title">Probier eins davon</string>
     <string name="search_no_results">Keine Ergebnisse für „%1$s“</string>
     <string name="search_error">Die Suche hat gerade nicht geklappt. Bitte versuch es noch einmal.</string>
+    <string name="search_section_words">Verse mit diesen Wörtern</string>
+    <string name="search_section_meaning">Inhaltlich verwandt</string>
+    <string name="search_words_none">Kein Vers enthält diese Wörter.</string>
+    <string name="search_meaning_start">Inhaltlich verwandte Verse finden</string>
+    <string name="search_meaning_loading">Suche nach inhaltlich verwandten Versen…</string>
+    <string name="search_meaning_none">Keine weiteren inhaltlich verwandten Verse gefunden.</string>
+    <string name="search_meaning_offline">Die Suche nach Bedeutung braucht eine Internetverbindung.</string>
+    <string name="search_meaning_unavailable">Die Suche nach Bedeutung ist gerade nicht verfügbar.</string>
     <string name="search_clear">Suche löschen</string>
 
     <string name="version_remove_title">%1$s entfernen?</string>

@@ -178,6 +178,14 @@
     <string name="search_suggestions_title">Jaribu mojawapo ya haya</string>
     <string name="search_no_results">Hakuna matokeo ya \"%1$s\"</string>
     <string name="search_error">Imeshindwa kutafuta kwa sasa. Tafadhali jaribu tena.</string>
+    <string name="search_section_words">Mistari yenye maneno haya</string>
+    <string name="search_section_meaning">Inayohusiana kwa maana</string>
+    <string name="search_words_none">Hakuna mstari wenye maneno haya.</string>
+    <string name="search_meaning_start">Tafuta mistari inayohusiana kwa maana</string>
+    <string name="search_meaning_loading">Inatafuta mistari inayohusiana kwa maana…</string>
+    <string name="search_meaning_none">Hakuna mistari mingine iliyopatikana kwa maana.</string>
+    <string name="search_meaning_offline">Kutafuta kwa maana kunahitaji muunganisho wa intaneti.</string>
+    <string name="search_meaning_unavailable">Kutafuta kwa maana hakupatikani kwa sasa.</string>
     <string name="search_clear">Futa utafutaji</string>
 
     <string name="version_remove_title">Ondoa %1$s?</string>

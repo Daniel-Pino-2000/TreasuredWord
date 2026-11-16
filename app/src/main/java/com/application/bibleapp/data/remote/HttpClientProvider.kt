@@ -14,6 +14,7 @@ import io.ktor.client.plugins.auth.providers.BearerTokens
 import io.ktor.client.plugins.auth.providers.RefreshTokensParams
 import io.ktor.client.plugins.auth.providers.bearer
 import io.ktor.client.plugins.pluginOrNull
+import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
@@ -22,6 +23,7 @@ import io.ktor.http.Url
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import io.ktor.serialization.kotlinx.json.json
+import io.ktor.util.AttributeKey
 import kotlinx.serialization.json.Json
 
 /**
@@ -205,6 +207,7 @@ object HttpClientProvider {
  * Only requests to [backendHost] carry the token: by default the Auth plugin attaches it to EVERY
  * request through the shared client, including the third-party Bible/verse APIs
  * (bible.helloao.org, OurManna), which would leak the user's access token to unrelated services.
+ * Requests marked [anonymousBackendRequest] don't carry it either.
  * Kept outside [HttpClientProvider] so a test can build a client with it (#86).
  */
 internal fun Auth.backendBearer(
@@ -213,10 +216,23 @@ internal fun Auth.backendBearer(
     refresh: suspend RefreshTokensParams.() -> BearerTokens?
 ) {
     bearer {
-        sendWithoutRequest { request -> request.url.host == backendHost }
+        sendWithoutRequest { request ->
+            request.url.host == backendHost && !request.attributes.contains(AnonymousBackendRequest)
+        }
         loadTokens { storedTokens() }
         refreshTokens { refresh() }
     }
+}
+
+private val AnonymousBackendRequest = AttributeKey<Unit>("AnonymousBackendRequest")
+
+/**
+ * Sends this request to our backend without the signed-in account's token, for endpoints that
+ * need no account, so what they receive isn't linked to who sent it: search by meaning (#287).
+ * Such an endpoint never answers 401, so the Auth plugin never adds the token on a retry either.
+ */
+fun HttpRequestBuilder.anonymousBackendRequest() {
+    attributes.put(AnonymousBackendRequest, Unit)
 }
 
 /** Drops the bearer tokens Ktor cached, so the next request loads the current ones (#86). */

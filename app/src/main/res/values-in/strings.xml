@@ -176,6 +176,14 @@
     <string name="search_suggestions_title">Coba salah satu ini</string>
     <string name="search_no_results">Tidak ada hasil untuk \"%1$s\"</string>
     <string name="search_error">Tidak dapat mencari saat ini. Coba lagi.</string>
+    <string name="search_section_words">Ayat dengan kata-kata ini</string>
+    <string name="search_section_meaning">Terkait menurut makna</string>
+    <string name="search_words_none">Tidak ada ayat yang berisi kata-kata ini.</string>
+    <string name="search_meaning_start">Cari ayat yang terkait menurut makna</string>
+    <string name="search_meaning_loading">Mencari ayat yang terkait menurut makna…</string>
+    <string name="search_meaning_none">Tidak ada ayat lain yang ditemukan menurut makna.</string>
+    <string name="search_meaning_offline">Pencarian menurut makna memerlukan koneksi internet.</string>
+    <string name="search_meaning_unavailable">Pencarian menurut makna sedang tidak tersedia.</string>
     <string name="search_clear">Hapus pencarian</string>
 
     <string name="version_remove_title">Hapus %1$s?</string>

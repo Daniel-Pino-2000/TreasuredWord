@@ -49,6 +49,15 @@ import com.application.bibleapp.viewmodel.BibleViewModel
 import androidx.compose.foundation.lazy.items
 import com.application.bibleapp.R
 import androidx.compose.ui.res.stringResource
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.runtime.remember
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import com.application.bibleapp.components.ServerWakeHint
+import com.application.bibleapp.components.rememberWaitingLong
+import com.application.bibleapp.viewmodel.MeaningSearchState
+import com.application.bibleapp.viewmodel.MeaningSearchStatus
 
 @Composable
 fun SearchView(
@@ -61,6 +70,14 @@ fun SearchView(
     val searchState by bibleViewModel.searchState.collectAsState()
     val bookNames by bibleViewModel.bookNames.collectAsState()
     val suggestions by bibleViewModel.searchSuggestions.collectAsState()
+    val meaningState by bibleViewModel.meaningSearchState.collectAsState()
+    val selectedVersion by bibleViewModel.selectedVersion.collectAsState()
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    // Not for a verse reference or a quoted phrase (#287): those keep the plain list of results.
+    val offersMeaning = remember(searchState.query, bookNames) {
+        searchState.query.isNotEmpty() && bibleViewModel.offersMeaningSearch(searchState.query)
+    }
 
     // The window resizes for the keyboard (manifest): only the results get shorter (#228).
     Column(
@@ -83,6 +100,24 @@ fun SearchView(
 
         // Driven only by searchState (what was actually searched), never by the live text.
         when {
+            offersMeaning -> SearchResultsList(
+                query = searchState.query,
+                searchedVerses = searchState.results,
+                bookNames = bookNames,
+                onVerseClicked = onVerseClicked,
+                meaning = MeaningSection(
+                    // A section for another query (typing moved on) offers to search this one.
+                    state = meaningState.takeIf { it.query == searchState.query } ?: MeaningSearchState(),
+                    wordsSearching = searchState.isSearching,
+                    wordsFailed = searchState.hasError,
+                    selectedVersionId = selectedVersion.id,
+                    versionLabel = bibleViewModel::versionLabel,
+                    onSearch = {
+                        keyboardController?.hide()
+                        bibleViewModel.onSearchSubmit()
+                    }
+                )
+            )
             searchState.results.isNotEmpty() ->
                 SearchResultsList(searchState.query, searchState.results, bookNames, onVerseClicked)
             searchState.isSearching -> Unit
@@ -204,12 +239,30 @@ private fun SearchErrorState(onRetry: () -> Unit) {
     }
 }
 
+/** What the "Related by meaning" part of the results needs (#287). [onSearch] submits the search:
+ *  the section's own button, Retry, and Retry for the word search all do the same. */
+private class MeaningSection(
+    val state: MeaningSearchState,
+    val wordsSearching: Boolean,
+    val wordsFailed: Boolean,
+    val selectedVersionId: String,
+    val versionLabel: (String) -> String,
+    val onSearch: () -> Unit
+)
+
+/**
+ * The results. With [meaning], two sections (#287): "Verses with these words" (the word search,
+ * instant and offline) first, then "Related by meaning" from the server, whose loading row sits
+ * below the word results so they never wait for it or move. Without it (a verse reference), the
+ * word results alone.
+ */
 @Composable
 private fun SearchResultsList(
     query: String,
     searchedVerses: List<VerseUI>,
     bookNames: Map<Int, String>,
-    onVerseClicked: (bookId: Int, chapter: Int, verse: Int) -> Unit
+    onVerseClicked: (bookId: Int, chapter: Int, verse: Int) -> Unit,
+    meaning: MeaningSection? = null
 ) {
     // A fresh scroll position per query: new results start at the top, while Back from a verse
     // still restores where the user was in these results.
@@ -219,38 +272,140 @@ private fun SearchResultsList(
         LaunchedEffect(listState.isScrollInProgress) {
             if (listState.isScrollInProgress) keyboardController?.hide()
         }
+        val meaningSlow = rememberWaitingLong(meaning?.state?.isLoading == true)
 
         LazyColumn(
             state = listState,
             modifier = Modifier
                 .fillMaxSize()
         ) {
+            if (meaning != null) {
+                item(key = "words_header") { SectionHeader(stringResource(R.string.search_section_words)) }
+                if (searchedVerses.isEmpty()) {
+                    when {
+                        meaning.wordsSearching -> Unit
+                        meaning.wordsFailed -> item(key = "words_error") {
+                            SectionNote(stringResource(R.string.search_error), onRetry = meaning.onSearch)
+                        }
+                        else -> item(key = "words_none") { SectionNote(stringResource(R.string.search_words_none)) }
+                    }
+                }
+            }
             // GROUP BY book/chapter/verse makes this unique, unlike VerseUI.id's string hash.
             items(searchedVerses, key = { "${it.bookId}_${it.chapter}_${it.verse}" }) { verse ->
                 val bookName = bookNames[verse.bookId ?: 0] ?: BibleBooks.getBookById(verse.bookId ?: 0)?.name ?: "Unknown"
+                SearchResultRow(
+                    reference = "$bookName ${verse.chapter}:${verse.verse}",
+                    text = verse.text,
+                    onClick = { onVerseClicked(verse.bookId!!, verse.chapter!!, verse.verse!!) }
+                )
+            }
+            if (meaning != null) meaningSection(meaning, meaningSlow, bookNames, onVerseClicked)
+        }
+    }
+}
 
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            onVerseClicked(verse.bookId!!, verse.chapter!!, verse.verse!!)
-                        }
-                        .padding(horizontal = Spacing.lg, vertical = Spacing.md)
-                ) {
+private fun LazyListScope.meaningSection(
+    meaning: MeaningSection,
+    slow: Boolean,
+    bookNames: Map<Int, String>,
+    onVerseClicked: (bookId: Int, chapter: Int, verse: Int) -> Unit
+) {
+    item(key = "meaning_header") { SectionHeader(stringResource(R.string.search_section_meaning)) }
+    val state = meaning.state
+    when (state.status) {
+        MeaningSearchStatus.IDLE -> item(key = "meaning_start") {
+            TextButton(onClick = meaning.onSearch, modifier = Modifier.padding(horizontal = Spacing.sm)) {
+                Icon(Icons.Outlined.Search, contentDescription = null, modifier = Modifier.size(18.dp))
+                Text(stringResource(R.string.search_meaning_start), modifier = Modifier.padding(start = Spacing.sm))
+            }
+        }
+        MeaningSearchStatus.WAKING, MeaningSearchStatus.SEARCHING -> item(key = "meaning_loading") {
+            Column(modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.lg, vertical = Spacing.md)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
                     Text(
-                        text = "$bookName ${verse.chapter}:${verse.verse}",
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Text(
-                        text = verse.text,
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.padding(top = Spacing.xs)
+                        text = stringResource(R.string.search_meaning_loading),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(start = Spacing.md)
                     )
                 }
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                // The first search after Render's server slept waits up to a minute (#280).
+                if (slow) ServerWakeHint(modifier = Modifier.padding(top = Spacing.sm))
+            }
+        }
+        MeaningSearchStatus.OFFLINE -> item(key = "meaning_offline") {
+            SectionNote(stringResource(R.string.search_meaning_offline), onRetry = meaning.onSearch)
+        }
+        MeaningSearchStatus.UNAVAILABLE -> item(key = "meaning_unavailable") {
+            SectionNote(stringResource(R.string.search_meaning_unavailable), onRetry = meaning.onSearch)
+        }
+        MeaningSearchStatus.DONE -> {
+            if (state.results.isEmpty()) {
+                item(key = "meaning_none") { SectionNote(stringResource(R.string.search_meaning_none)) }
+            }
+            items(state.results, key = { "meaning_${it.bookId}_${it.chapter}_${it.verse}" }) { verse ->
+                val bookName = bookNames[verse.bookId] ?: BibleBooks.getBookById(verse.bookId)?.name ?: "Unknown"
+                // From the bundled KJV when the selected translation lacks the verse: say so.
+                val label = if (verse.versionId == meaning.selectedVersionId) "" else " · ${meaning.versionLabel(verse.versionId)}"
+                SearchResultRow(
+                    reference = "$bookName ${verse.chapter}:${verse.verse}$label",
+                    text = verse.text,
+                    onClick = { onVerseClicked(verse.bookId, verse.chapter, verse.verse) }
+                )
             }
         }
     }
+}
+
+@Composable
+private fun SectionHeader(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.titleSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier
+            .fillMaxWidth()
+            .semantics { heading() }
+            .padding(start = Spacing.lg, end = Spacing.lg, top = Spacing.lg, bottom = Spacing.xs)
+    )
+}
+
+/** One quiet line in place of a section's results, with Retry when trying again may help. */
+@Composable
+private fun SectionNote(text: String, onRetry: (() -> Unit)? = null) {
+    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.lg, vertical = Spacing.sm)) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        if (onRetry != null) {
+            TextButton(onClick = onRetry) { Text(stringResource(R.string.action_retry)) }
+        }
+    }
+}
+
+@Composable
+private fun SearchResultRow(reference: String, text: String, onClick: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = Spacing.lg, vertical = Spacing.md)
+    ) {
+        Text(
+            text = reference,
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.primary
+        )
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(top = Spacing.xs)
+        )
+    }
+    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 }
