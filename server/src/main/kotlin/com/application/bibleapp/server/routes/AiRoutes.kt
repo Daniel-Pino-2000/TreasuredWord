@@ -5,6 +5,7 @@ import com.application.bibleapp.server.ai.AiMessage
 import com.application.bibleapp.server.ai.AiProvider
 import com.application.bibleapp.server.ai.AiProviderException
 import com.application.bibleapp.server.ai.AiRole
+import com.application.bibleapp.server.ai.HelperVerses
 import com.application.bibleapp.server.ai.QuotaExhausted
 import com.application.bibleapp.server.ai.StarterQuestions
 import com.application.bibleapp.server.ai.SystemPrompt
@@ -124,22 +125,22 @@ internal fun validateAsk(request: AiAskRequest): Map<String, String> {
     return errors
 }
 
-/** The stored answer to [starter] in [language] for the current instructions (#284), or null. */
-private fun readyStarterAnswer(starter: String, language: String): String? = transaction {
+/** The stored answer to [starter] in [language] for the instructions [promptVersion] (#284), or null. */
+private fun readyStarterAnswer(starter: String, language: String, promptVersion: String): String? = transaction {
     AiStarterAnswers.selectAll()
         .where {
             (AiStarterAnswers.starter eq starter) and (AiStarterAnswers.language eq language) and
-                (AiStarterAnswers.promptVersion eq SystemPrompt.PROMPT_VERSION)
+                (AiStarterAnswers.promptVersion eq promptVersion)
         }
         .singleOrNull()?.get(AiStarterAnswers.answer)
 }
 
 /** Stores [answer] as the ready one; when two people asked at once, the first stored stays. */
-private fun storeStarterAnswer(starter: String, language: String, answer: String, now: java.time.Instant) = transaction {
+private fun storeStarterAnswer(starter: String, language: String, promptVersion: String, answer: String, now: java.time.Instant) = transaction {
     AiStarterAnswers.insertIgnore {
         it[AiStarterAnswers.starter] = starter
         it[AiStarterAnswers.language] = language
-        it[promptVersion] = SystemPrompt.PROMPT_VERSION
+        it[AiStarterAnswers.promptVersion] = promptVersion
         it[AiStarterAnswers.answer] = answer
         it[createdAt] = now
     }
@@ -261,7 +262,7 @@ private suspend fun ApplicationCall.respondReady(response: AiAskResponse, stream
  * `POST /ai/ask`, and with [streaming] `POST /ai/ask/stream` (#285): the same checks, limits and
  * answer, the second sent as it's written.
  */
-private suspend fun ApplicationCall.answerQuestion(aiProvider: AiProvider?, clock: Clock, streaming: Boolean) {
+private suspend fun ApplicationCall.answerQuestion(aiProvider: AiProvider?, helperVerses: HelperVerses?, clock: Clock, streaming: Boolean) {
     val userId = currentUserId()
     val request = try {
         receive<AiAskRequest>()
@@ -281,8 +282,10 @@ private suspend fun ApplicationCall.answerQuestion(aiProvider: AiProvider?, cloc
         // A starter question (#284): the same ready answer for everyone, which doesn't use a
         // daily question, so it works after the day's 15 too.
         val remaining = AI_DAILY_LIMIT - aiAnswersUsedToday(userId, clock)
-        readyStarterAnswer(starter, request.language)?.let { ready ->
-            respondReady(AiAskResponse(ready, crisis = false, remainingToday = remaining, promptVersion = SystemPrompt.PROMPT_VERSION), streaming)
+        // The version this server answers with: the other version's ready answers don't count.
+        val servedVersion = if (helperVerses != null) SystemPrompt.VERSES_PROMPT_VERSION else SystemPrompt.PROMPT_VERSION
+        readyStarterAnswer(starter, request.language, servedVersion)?.let { ready ->
+            respondReady(AiAskResponse(ready, crisis = false, remainingToday = remaining, promptVersion = servedVersion), streaming)
             return
         }
         if (aiProvider == null) {
@@ -291,16 +294,18 @@ private suspend fun ApplicationCall.answerQuestion(aiProvider: AiProvider?, cloc
         }
         // Asked in the server's own words, so only these questions are ever stored.
         val question = StarterQuestions.question(starter, request.language)!!
-        val instructions = SystemPrompt.forLanguage(request.language)
+        val verses = helperVerses?.find(question).orEmpty()
+        val version = SystemPrompt.versionFor(verses)
+        val instructions = SystemPrompt.withVerses(request.language, verses)
         val conversation = listOf(AiMessage(AiRole.SYSTEM, instructions), AiMessage(AiRole.USER, question))
         respondAnswer(aiProvider, conversation, streaming, onNoAnswer = {}) { completion ->
             val (text, crisis) = splitCrisis(completion.text)
-            // Only a whole, ordinary answer is kept for everyone.
+            // Only a whole, ordinary answer is kept for everyone, under the version it was made with.
             if (!crisis && !completion.cutOff && text.isNotBlank()) {
-                storeStarterAnswer(starter, request.language, text, clock.instant())
+                storeStarterAnswer(starter, request.language, version, text, clock.instant())
             }
             val answer = if (completion.cutOff) "$text …" else text
-            AiAskResponse(answer, crisis, remaining, SystemPrompt.PROMPT_VERSION)
+            AiAskResponse(answer, crisis, remaining, version)
         }
         return
     }
@@ -316,7 +321,16 @@ private suspend fun ApplicationCall.answerQuestion(aiProvider: AiProvider?, cloc
         return
     }
 
-    val instructions = SystemPrompt.forLanguage(request.language, request.passage?.reference, request.passage?.text)
+    // Verses for the latest question (#287, phase 5), unless it's about a passage the person
+    // selected: that passage is its Scripture, and search would only add noise beside it.
+    val passage = request.passage
+    val verses = if (passage == null) helperVerses?.find(request.messages.last().content).orEmpty() else emptyList()
+    val version = SystemPrompt.versionFor(verses)
+    val instructions = if (passage != null) {
+        SystemPrompt.forLanguage(request.language, passage.reference, passage.text)
+    } else {
+        SystemPrompt.withVerses(request.language, verses)
+    }
     val conversation = listOf(AiMessage(AiRole.SYSTEM, instructions)) +
         request.messages.map { AiMessage(if (it.role == "user") AiRole.USER else AiRole.ASSISTANT, it.content) }
     // No answer, no count: every failure gives the reserved answer back, and so does a stream
@@ -332,7 +346,7 @@ private suspend fun ApplicationCall.answerQuestion(aiProvider: AiProvider?, cloc
             // It ran out of tokens mid-sentence; the ellipsis shows the person it's unfinished.
             answer = "$answer …"
         }
-        AiAskResponse(answer = answer, crisis = crisis, remainingToday = AI_DAILY_LIMIT - counted, promptVersion = SystemPrompt.PROMPT_VERSION)
+        AiAskResponse(answer = answer, crisis = crisis, remainingToday = AI_DAILY_LIMIT - counted, promptVersion = version)
     }
 }
 
@@ -345,17 +359,22 @@ private suspend fun ApplicationCall.answerQuestion(aiProvider: AiProvider?, cloc
  * move it forward. `/ai/ask/stream` sends the answer as it's written (#285); `/ai/ask` stays for
  * app versions before it.
  *
+ * With [helperVerses] (the AI_HELPER_VERSES setting, #287 phase 5), a question that isn't about
+ * a selected passage first gets the verses search by meaning finds for it, and its answer says
+ * instructions v15; without them, or when search finds none, v5 as before.
+ *
  * Question and answer text is never logged, here or in the provider (#124).
  */
-fun Route.aiRoutes(aiProvider: AiProvider?, clock: Clock) {
+fun Route.aiRoutes(aiProvider: AiProvider?, clock: Clock, helperVerses: HelperVerses? = null) {
     // Reads the instruction files now, so a missing one stops the server from starting instead
     // of failing every question after a deploy that looked healthy.
     SystemPrompt.forLanguage("en")
+    SystemPrompt.withVerses("en", emptyList())
 
     authenticate("auth-jwt") {
         rateLimit(AI_RATE_LIMIT) {
-            post("/ai/ask") { call.answerQuestion(aiProvider, clock, streaming = false) }
-            post("/ai/ask/stream") { call.answerQuestion(aiProvider, clock, streaming = true) }
+            post("/ai/ask") { call.answerQuestion(aiProvider, helperVerses, clock, streaming = false) }
+            post("/ai/ask/stream") { call.answerQuestion(aiProvider, helperVerses, clock, streaming = true) }
         }
 
         rateLimit(AI_REPORT_RATE_LIMIT) {

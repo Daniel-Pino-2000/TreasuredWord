@@ -14,6 +14,9 @@ import java.util.concurrent.atomic.AtomicReference
 /** One verse a search found, best first. [score] is its reciprocal-rank-fusion score: higher is closer. */
 data class VerseHit(val book: Int, val chapter: Int, val verse: Int, val score: Double)
 
+/** A verse a search found, with its text in the searched translation: what the Bible Helper is given (#287, phase 5). */
+data class FoundVerse(val book: Int, val chapter: Int, val verse: Int, val text: String)
+
 /**
  * Search by meaning (#287, phase 3), ranked the way phase 1's evaluation chose: the query's
  * vector against every verse's bge-m3 vector of the BSB, and Postgres full-text search on the
@@ -38,15 +41,30 @@ class VerseSearch(
     private val searchesToday = AtomicInteger(0)
 
     /** @throws com.application.bibleapp.server.ai.AiProviderException when the query can't be embedded. */
-    suspend fun search(query: String, limit: Int = RESULTS): List<VerseHit> {
+    suspend fun search(query: String, limit: Int = RESULTS): List<VerseHit> =
+        ranked(query, limit) { _, hits -> hits }
+
+    /**
+     * The same search, with each verse's text from [translation] (the BSB): the Bible Helper
+     * reads it (#287, phase 5). Counted against the same [dailyCap] as the endpoint, since it
+     * spends the same neurons.
+     *
+     * @throws com.application.bibleapp.server.ai.AiProviderException when the query can't be embedded.
+     */
+    suspend fun searchWithText(query: String, limit: Int): List<FoundVerse> =
+        ranked(query, limit) { connection, hits -> verseTexts(connection, translation, hits) }
+
+    /** Embeds [query], ranks, and runs [then] on the same connection: one transaction, one trip to Neon. */
+    private suspend fun <T> ranked(query: String, limit: Int, then: (Connection, List<VerseHit>) -> List<T>): List<T> {
         countSearch()
         val vector = provider.embed(listOf(query), EmbeddingKind.QUERY).vectors.single()
         val started = System.nanoTime()
-        val hits = newSuspendedTransaction(Dispatchers.IO) {
-            rankVerses(TransactionManager.current().connection.connection as Connection, provider.model, translation, vector, query, limit)
+        val results = newSuspendedTransaction(Dispatchers.IO) {
+            val connection = TransactionManager.current().connection.connection as Connection
+            then(connection, rankVerses(connection, provider.model, translation, vector, query, limit))
         }
-        log.info("Search: ${hits.size} results in ${(System.nanoTime() - started) / 1_000_000} ms")
-        return hits
+        log.info("Search: ${results.size} results in ${(System.nanoTime() - started) / 1_000_000} ms")
+        return results
     }
 
     private fun countSearch() {
@@ -68,6 +86,33 @@ class VerseSearch(
         private const val RRF_K = 60
         /** ~0.01 neurons each, so 20,000 searches are ~200 of the 10,000 a day. */
         const val DAILY_CAP = 20_000
+
+        /** [hits]' text in [translation], in [hits]' order; a verse without a stored text is left out. */
+        fun verseTexts(connection: Connection, translation: String, hits: List<VerseHit>): List<FoundVerse> {
+            if (hits.isEmpty()) return emptyList()
+            val texts = connection.prepareStatement(
+                """
+                SELECT s.book, s.chapter, s.verse, s.text
+                FROM search_verses s
+                JOIN unnest(?::int[], ?::int[], ?::int[]) AS h(book, chapter, verse)
+                    ON s.book = h.book AND s.chapter = h.chapter AND s.verse = h.verse
+                WHERE s.translation = ?
+                """.trimIndent()
+            ).use { statement ->
+                statement.setArray(1, connection.createArrayOf("int4", hits.map { it.book }.toTypedArray()))
+                statement.setArray(2, connection.createArrayOf("int4", hits.map { it.chapter }.toTypedArray()))
+                statement.setArray(3, connection.createArrayOf("int4", hits.map { it.verse }.toTypedArray()))
+                statement.setString(4, translation)
+                statement.executeQuery().use { rows ->
+                    buildMap {
+                        while (rows.next()) put(Triple(rows.getInt(1), rows.getInt(2), rows.getInt(3)), rows.getString(4))
+                    }
+                }
+            }
+            return hits.mapNotNull { hit ->
+                texts[Triple(hit.book, hit.chapter, hit.verse)]?.let { FoundVerse(hit.book, hit.chapter, hit.verse, it) }
+            }
+        }
 
         /**
          * Both rankings in one round trip (Neon is a few hundred ms away). Each half keeps its best

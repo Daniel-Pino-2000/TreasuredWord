@@ -96,6 +96,25 @@ class VerseSearchTest {
     }
 
     @Test
+    fun `with text, each verse comes with its stored text, best first`() = runBlocking {
+        val found = search().searchWithText("worry about tomorrow", limit = 3)
+        assertEquals(3, found.size)
+        assertEquals(FoundVerse(40, 6, 34, verses.first().text), found.first())
+        val hits = search().search("worry about tomorrow", limit = 3)
+        assertEquals(hits.map { Triple(it.book, it.chapter, it.verse) }, found.map { Triple(it.book, it.chapter, it.verse) })
+    }
+
+    @Test
+    fun `searches with text count against the same daily cap`() = runBlocking {
+        val search = search(cap = 2)
+        search.search("worry")
+        search.searchWithText("worry", limit = 5)
+        assertFailsWith<QuotaExhausted> { search.searchWithText("worry", limit = 5) }
+        assertFailsWith<QuotaExhausted> { search.search("worry") }
+        Unit
+    }
+
+    @Test
     fun `past the daily cap every search is refused until the next UTC day`() = runBlocking {
         val clock = MutableClock()
         val search = search(clock, cap = 2)

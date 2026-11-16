@@ -1,6 +1,7 @@
 package com.application.bibleapp.server.plugins
 
 import com.application.bibleapp.server.ai.AiProvider
+import com.application.bibleapp.server.ai.HelperVerses
 import com.application.bibleapp.server.auth.EmailCodeStore
 import com.application.bibleapp.server.auth.GoogleIdTokenVerifier
 import com.application.bibleapp.server.auth.getJwtConfig
@@ -23,7 +24,7 @@ import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
 import java.time.Clock
 
-fun Application.configureRouting(emailSender: EmailSender?, aiProvider: AiProvider?, search: VerseSearch?, clock: Clock) {
+fun Application.configureRouting(emailSender: EmailSender?, aiProvider: AiProvider?, search: VerseSearch?, helperVerses: HelperVerses?, clock: Clock) {
     install(StatusPages) {
         exception<Throwable> { call, cause ->
             call.respond(HttpStatusCode.InternalServerError, ErrorResponse(
@@ -47,7 +48,7 @@ fun Application.configureRouting(emailSender: EmailSender?, aiProvider: AiProvid
             emailRoutes(emailSender, emailCodes)
             userRoutes(googleVerifier)
             syncRoutes()
-            aiRoutes(aiProvider, clock)
+            aiRoutes(aiProvider, clock, helperVerses)
             searchRoutes(search)
         }
     }
