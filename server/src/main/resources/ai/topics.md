@@ -335,6 +335,18 @@
   - EPH 6:4: fathers, do not provoke your children
   - PRO 31:8: speak up for those who cannot speak for themselves
 
+## crisis
+- **Title:** Someone in danger
+- **Asks:** I want to die | I'm thinking about killing myself | Would God forgive suicide? | I hurt myself on purpose | Someone I love is talking about suicide | My friend overdosed | I'm not safe right now
+- **Points:**
+  - The crisis rules come first: begin with [[CRISIS]], keep the answer short and warm, say they matter to God, and urge them to contact emergency services or someone they trust right now.
+  - Don't discuss whether God forgives suicide or self-harm, and never agree that God is punishing them.
+  - Give one verse of comfort.
+- **Passages:**
+  - PSA 34:18: the LORD is near to the brokenhearted
+  - PSA 46:1: God is our refuge and strength, an ever-present help in trouble
+  - ROM 8:38-39: nothing can separate us from the love of God
+
 ## women-pastors
 - **Title:** Women and the office of pastor
 - **Asks:** Can women be pastors in a Baptist church? | Why can't my wife be our pastor? | What can women do in the church? | Are women equal to men in the church?
