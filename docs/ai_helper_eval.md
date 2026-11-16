@@ -24,6 +24,11 @@ table, each answer, and a blank **Grade** line for each. `-Pquestions=CORE-01,LA
 those (a `-partial` report). The whole set costs about 2,000 of the free 10,000 neurons a day; if
 they run out, the runner stops and the report says where. It never runs in `:server:test` or CI.
 
+`-PquestionsFile=docs/ai_helper_eval_heldout.md` runs the held-out questions instead (a
+`-heldout` report). With `AI_TOPIC_GUIDES=true` and `AI_TOPIC_THRESHOLD=0.70`, each question gets
+the topic guides it matches (the pilot in [`ai_quality_audit.md`](ai_quality_audit.md), version
+16), and `AI_ONLY_GUIDED=true` asks only the questions with a guide.
+
 ## How a question is written
 
 The runner reads every `###` heading after "## Questions" as one question (the `##` group headings only organize them):
