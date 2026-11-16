@@ -78,6 +78,40 @@ that leaves out one point from its **Must** line is Needs work. Graded that way,
   instructions, model and temperature.
 - A Baptist pastor has reviewed `doctrine.md` and a sample of answers, if one is available.
 
+## Tried and not used: verses from search (#287, phase 5)
+
+On 2026-11-16 the Bible Helper was given the 8 verses search by meaning (#287) found for each
+question, with their BSB text, after v5's instructions (instructions v15). The answers got worse,
+so production keeps v5 and the code isn't merged. It's kept on the branch
+`feature/semantic-search-rag` (commit 75c711d), behind a setting that was off by default.
+
+| | v5 run 1 (11-09) | v5 run 2 (11-09) | v15 run 1 (11-16) |
+|---|---|---|---|
+| Good | 42 of 57 (74%) | 44 of 57 (77%) | 32 of 55 (58%) |
+| Wrong | 0 | 0 | 1 (BAP-02) |
+| Citations that don't make their point | 4 borderline | 3 borderline | 1 misattributed, 8 borderline |
+| Passages named on the Must lines, cited | 41 of 65 (63%) | 44 of 65 (68%) | 32 of 65 (49%) |
+| Neurons per answer | 29.7 | 28.1 | 36.8 |
+
+- **Search rarely finds the passage a question needs.** Only 7 of the 65 passages named on the
+  Must lines were among the 8 verses. A whole question ("How can I be saved?") ranks verses by
+  shared words: that one got Genesis 19:20 and five Psalms, and "Is drinking alcohol a sin?" got
+  offerings in Numbers. Phase 1 saw the same: life-situation queries were what search missed.
+- **The model cites the listed verses anyway.** 8 of the 9 weak or wrong citations came from the
+  list, despite the instructions to leave out verses that don't fit: Matthew 3:14 (John
+  protesting) for "baptism follows the new birth" (BAP-02, Wrong), Romans 10:4 for "faith can't be
+  forced by law", 1 Corinthians 10:16 for "proclaim His death until He comes" (11:26).
+- **It crowds out the best-known passages.** Fewer Must-named passages were cited than in either
+  v5 run.
+- **Cost:** about 8 more neurons per answer (+27%), so about 250 answers a day instead of 320.
+- Graded by Claude, as strictly as the v5 control runs. TRAD-03 and TRAD-04 timed out on
+  Cloudflare's side. A second run wasn't made: at 58% Good with a Wrong answer against 74% and
+  77%, it couldn't change the decision.
+
+**What could work instead:** search with the AI's short English search terms, not the whole
+question, and give the model only verses above a score threshold. Both need their own
+evaluation, and #297 (sending only the matching doctrine items) changes the same prompt first.
+
 ## Questions
 
 ## Group 1: core doctrine
