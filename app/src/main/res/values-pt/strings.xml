@@ -181,6 +181,7 @@
     <string name="search_no_results">Nenhum resultado para \"%1$s\"</string>
     <string name="search_error">Não foi possível pesquisar agora. Tente novamente.</string>
     <string name="search_section_words">Versículos com estas palavras</string>
+    <string name="search_section_key_passages">Passagens-chave</string>
     <string name="search_section_meaning">Relacionados pelo significado</string>
     <string name="search_words_none">Nenhum versículo contém estas palavras.</string>
     <string name="search_meaning_start">Encontrar versículos relacionados pelo significado</string>

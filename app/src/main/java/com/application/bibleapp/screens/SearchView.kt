@@ -56,6 +56,11 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import com.application.bibleapp.components.ServerWakeHint
 import com.application.bibleapp.components.rememberWaitingLong
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.style.TextOverflow
+import com.application.bibleapp.components.passageText
+import com.application.bibleapp.utils.formatVerseReference
+import com.application.bibleapp.viewmodel.KeyPassage
 import com.application.bibleapp.viewmodel.MeaningSearchState
 import com.application.bibleapp.viewmodel.MeaningSearchStatus
 
@@ -253,8 +258,9 @@ private class MeaningSection(
 /**
  * The results. With [meaning], two sections (#287): "Verses with these words" (the word search,
  * instant and offline) first, then "Related by meaning" from the server, whose loading row sits
- * below the word results so they never wait for it or move. Without it (a verse reference), the
- * word results alone.
+ * below the word results so they never wait for it or move. When the query matched a topic guide,
+ * its "Key passages" come between them, with the server's answer (#320). Without [meaning] (a
+ * verse reference), the word results alone.
  */
 @Composable
 private fun SearchResultsList(
@@ -311,8 +317,16 @@ private fun LazyListScope.meaningSection(
     bookNames: Map<Int, String>,
     onVerseClicked: (bookId: Int, chapter: Int, verse: Int) -> Unit
 ) {
-    item(key = "meaning_header") { SectionHeader(stringResource(R.string.search_section_meaning)) }
     val state = meaning.state
+    // A matching topic guide's passages (#320): the ones that answer the query, above the verses
+    // that are only close to it. They arrive with the results, so they never move the loading row.
+    if (state.status == MeaningSearchStatus.DONE && state.keyPassages.isNotEmpty()) {
+        item(key = "key_header") { SectionHeader(stringResource(R.string.search_section_key_passages)) }
+        items(state.keyPassages, key = { "key_${it.reference}" }) { passage ->
+            KeyPassageRow(passage, meaning, bookNames, onVerseClicked)
+        }
+    }
+    item(key = "meaning_header") { SectionHeader(stringResource(R.string.search_section_meaning)) }
     when (state.status) {
         MeaningSearchStatus.IDLE -> item(key = "meaning_start") {
             TextButton(onClick = meaning.onSearch, modifier = Modifier.padding(horizontal = Spacing.sm)) {
@@ -359,6 +373,29 @@ private fun LazyListScope.meaningSection(
     }
 }
 
+/** One key passage (#320): a verse, or a range or whole chapter with its verses numbered, cut short when long. */
+@Composable
+private fun KeyPassageRow(
+    passage: KeyPassage,
+    meaning: MeaningSection,
+    bookNames: Map<Int, String>,
+    onVerseClicked: (bookId: Int, chapter: Int, verse: Int) -> Unit
+) {
+    val reference = formatVerseReference(passage.reference) { bookNames[it] ?: BibleBooks.getBookById(it)?.name ?: "Unknown" }
+    // From the bundled KJV when the selected translation lacks part of it: say so.
+    val label = if (passage.versionId == meaning.selectedVersionId) "" else " · ${meaning.versionLabel(passage.versionId)}"
+    SearchResultRow(
+        reference = reference + label,
+        text = passageText(passage.verses, MaterialTheme.colorScheme.onSurfaceVariant),
+        // A whole chapter (Psalm 73) or a long range (Ephesians 5:21-33) would push everything else
+        // off the screen; the reader is a tap away. 8 lines, like the Bible Helper's verse cards.
+        maxLines = KEY_PASSAGE_MAX_LINES,
+        onClick = { onVerseClicked(passage.reference.bookId, passage.reference.chapter, passage.reference.startVerse ?: 1) }
+    )
+}
+
+private const val KEY_PASSAGE_MAX_LINES = 8
+
 @Composable
 private fun SectionHeader(text: String) {
     Text(
@@ -388,7 +425,11 @@ private fun SectionNote(text: String, onRetry: (() -> Unit)? = null) {
 }
 
 @Composable
-private fun SearchResultRow(reference: String, text: String, onClick: () -> Unit) {
+private fun SearchResultRow(reference: String, text: String, onClick: () -> Unit) =
+    SearchResultRow(reference, AnnotatedString(text), onClick = onClick)
+
+@Composable
+private fun SearchResultRow(reference: String, text: AnnotatedString, maxLines: Int = Int.MAX_VALUE, onClick: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -404,6 +445,8 @@ private fun SearchResultRow(reference: String, text: String, onClick: () -> Unit
             text = text,
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurface,
+            maxLines = maxLines,
+            overflow = TextOverflow.Ellipsis,
             modifier = Modifier.padding(top = Spacing.xs)
         )
     }

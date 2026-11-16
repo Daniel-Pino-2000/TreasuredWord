@@ -1,6 +1,8 @@
 package com.application.bibleapp.data.remote
 
 import android.util.Log
+import com.application.bibleapp.data.model.UsfmBookCodes
+import com.application.bibleapp.utils.VerseReference
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.post
@@ -17,16 +19,18 @@ data class SemanticSearchRequestDto(val q: String)
 @Serializable
 data class SemanticSearchResultDto(val bookId: Int, val chapter: Int, val verse: Int, val score: Double)
 
+/** [keyPassages] (#320): a matching topic guide's passages as USFM references; absent when none matched. */
 @Serializable
-data class SemanticSearchResponseDto(val results: List<SemanticSearchResultDto>)
+data class SemanticSearchResponseDto(val results: List<SemanticSearchResultDto>, val keyPassages: List<String>? = null)
 
 /** One verse search by meaning found; [bookId] is 1–66, as everywhere in the app. */
 data class VerseRef(val bookId: Int, val chapter: Int, val verse: Int)
 
 /** Every way a search by meaning can end (#287), so the Search screen has one line per case. */
 sealed interface SemanticSearchResult {
-    /** Best first; empty when nothing matched (or the server's verses aren't loaded yet). */
-    data class Found(val verses: List<VerseRef>) : SemanticSearchResult
+    /** Best first; empty when nothing matched (or the server's verses aren't loaded yet).
+     *  [keyPassages] (#320): the passages of the topic guide the query matched, to show first. */
+    data class Found(val verses: List<VerseRef>, val keyPassages: List<VerseReference> = emptyList()) : SemanticSearchResult
 
     /** The phone couldn't reach the server. */
     data object Offline : SemanticSearchResult
@@ -59,8 +63,11 @@ class SemanticSearchApi(
             setBody(SemanticSearchRequestDto(q))
         }
         if (response.status.isSuccess()) {
+            val body = response.body<SemanticSearchResponseDto>()
             SemanticSearchResult.Found(
-                response.body<SemanticSearchResponseDto>().results.map { VerseRef(it.bookId, it.chapter, it.verse) }
+                verses = body.results.map { VerseRef(it.bookId, it.chapter, it.verse) },
+                // One the app can't read (a newer server's format) is left out, never an error.
+                keyPassages = body.keyPassages.orEmpty().mapNotNull(UsfmBookCodes::parseReference).distinct()
             )
         } else {
             // 503 and 429 are expected on a busy day; a 400 would be our own bug (the query is

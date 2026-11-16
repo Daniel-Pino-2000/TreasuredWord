@@ -178,6 +178,7 @@
     <string name="search_no_results">Keine Ergebnisse für „%1$s“</string>
     <string name="search_error">Die Suche hat gerade nicht geklappt. Bitte versuch es noch einmal.</string>
     <string name="search_section_words">Verse mit diesen Wörtern</string>
+    <string name="search_section_key_passages">Wichtige Bibelstellen</string>
     <string name="search_section_meaning">Inhaltlich verwandt</string>
     <string name="search_words_none">Kein Vers enthält diese Wörter.</string>
     <string name="search_meaning_start">Inhaltlich verwandte Verse finden</string>

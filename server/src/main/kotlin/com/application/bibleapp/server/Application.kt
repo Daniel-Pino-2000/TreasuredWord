@@ -14,9 +14,11 @@ import com.application.bibleapp.server.plugins.configureRouting
 import com.application.bibleapp.server.plugins.configureSecurity
 import com.application.bibleapp.server.plugins.configureSerialization
 import com.application.bibleapp.server.search.EmbeddingProvider
+import com.application.bibleapp.server.search.KeyPassages
 import com.application.bibleapp.server.search.VerseSearch
 import com.application.bibleapp.server.search.WorkersAiEmbeddingProvider
 import io.ktor.server.application.Application
+import io.ktor.server.application.log
 import io.ktor.server.netty.EngineMain
 import java.time.Clock
 
@@ -28,14 +30,26 @@ fun main(args: Array<String>) {
  *  GMAIL_* settings and EMAIL_FROM are set (#154), and asking Cloudflare Workers AI when the AI_*
  *  settings are (#124), for answers and for search by meaning's query vectors (#287). With
  *  AI_TOPIC_GUIDES on (off by default, #319), the Bible Helper also sends the topic guides a
- *  question matches; the guides and their vectors are read now, so a bad build fails to start. */
+ *  question matches; the guides and their vectors are read now, so a bad build fails to start.
+ *  Search shows the matching guide's key passages either way (#320): they don't change what the
+ *  Bible Helper answers, only which verses a search lists first. */
 fun Application.module() {
     val topicGuides = environment.config.propertyOrNull("ai.topicGuides")?.getString()?.toBoolean() == true
+    val router = try {
+        TopicRouter.fromResources(VerseSearch.MODEL)
+    } catch (e: Exception) {
+        // With the guides on, a bad build must not start (#319); search alone only loses its key
+        // passages, never sign-in or sync.
+        if (topicGuides) throw e
+        log.warn("Key passages off: {}", e.message)
+        null
+    }
     serverModule(
         emailSender = GmailEmailSender.fromConfig(environment.config),
         aiProvider = OpenAiCompatibleProvider.fromConfig(environment.config),
         embeddingProvider = WorkersAiEmbeddingProvider.fromConfig(environment.config, VerseSearch.MODEL),
-        topicRouter = if (topicGuides) TopicRouter.fromResources(VerseSearch.MODEL) else null
+        topicRouter = router?.takeIf { topicGuides },
+        keyPassagesRouter = router
     )
 }
 
@@ -47,13 +61,15 @@ fun Application.module() {
  * makes search by meaning answer SEARCH_UNAVAILABLE (#287). Tests pass a [clock] to move the daily
  * limits to the next day. A [topicRouter] turns the Bible Helper's topic guides on (#319); they
  * need [embeddingProvider] too, and without either every question gets v5's instructions.
+ * [keyPassagesRouter] gives search its key passages (#320); null leaves them out.
  */
 fun Application.serverModule(
     emailSender: EmailSender?,
     aiProvider: AiProvider? = null,
     clock: Clock = Clock.systemUTC(),
     embeddingProvider: EmbeddingProvider? = null,
-    topicRouter: TopicRouter? = null
+    topicRouter: TopicRouter? = null,
+    keyPassagesRouter: TopicRouter? = null
 ) {
     configureMonitoring()
     configureSerialization()
@@ -61,7 +77,7 @@ fun Application.serverModule(
     configureRateLimiting(clock)
     configureDatabases()
     startRetentionCleanup(clock)
-    val search = embeddingProvider?.let { VerseSearch(it, clock = clock) }
+    val search = embeddingProvider?.let { VerseSearch(it, clock = clock, keyPassages = keyPassagesRouter?.let(::KeyPassages)) }
     // Matching a question spends one embedding from search's daily cap (#319).
     val guides = topicRouter?.let { router -> search?.let { TopicGuideMatcher(router, it::embedQuery) } }
     configureRouting(emailSender, aiProvider, search, clock, guides)

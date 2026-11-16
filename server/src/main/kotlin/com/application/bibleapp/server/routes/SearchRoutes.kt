@@ -47,7 +47,7 @@ fun Route.searchRoutes(search: VerseSearch?) {
                 call.respond(HttpStatusCode.ServiceUnavailable, ErrorResponse("SEARCH_UNAVAILABLE", "Search by meaning isn't set up on this server"))
                 return@post
             }
-            val hits = try {
+            val found = try {
                 search.search(query)
             } catch (e: AiProviderException) {
                 // Out of neurons (the AI's or the daily cap) or Workers AI failing: the app keeps
@@ -55,7 +55,13 @@ fun Route.searchRoutes(search: VerseSearch?) {
                 call.respond(HttpStatusCode.ServiceUnavailable, ErrorResponse("SEARCH_UNAVAILABLE", "Search by meaning isn't available right now"))
                 return@post
             }
-            call.respond(SemanticSearchResponse(hits.map { SemanticSearchResult(it.book, it.chapter, it.verse, it.score) }))
+            call.respond(
+                SemanticSearchResponse(
+                    results = found.verses.map { SemanticSearchResult(it.book, it.chapter, it.verse, it.score) },
+                    // Left out when no guide matched, so the answer is exactly what it was before #320.
+                    keyPassages = found.keyPassages.ifEmpty { null }
+                )
+            )
         }
     }
 }

@@ -371,7 +371,8 @@ class BibleViewModel(
     val searchQuery: StateFlow<String> = verseSearch.query
     val searchState: StateFlow<SearchUiState> = verseSearch.state
 
-    // Search by meaning (#287): only on submit, from our server, below the word results.
+    // Search by meaning (#287): only on submit, from our server, below the word results, with a
+    // matching topic guide's key passages first (#320).
     private val meaningSearch = MeaningSearch(
         scope = viewModelScope,
         search = semanticSearchApi::search,
@@ -382,7 +383,12 @@ class BibleViewModel(
         },
         isEligible = ::offersMeaningSearch,
         phoneIsOnline = phoneIsOnline,
-        serverWake = serverWake
+        serverWake = serverWake,
+        resolvePassages = { refs ->
+            resolveKeyPassages(refs, _selectedVersion.value.id) { versionId, bookId, chapter ->
+                repository.getChapter(bookId, chapter, versionId)
+            }
+        }
     )
 
     /** The "Related by meaning" section, without the verses the word results already show. */

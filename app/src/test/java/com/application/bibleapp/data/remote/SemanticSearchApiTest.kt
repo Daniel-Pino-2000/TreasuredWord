@@ -19,6 +19,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
+import com.application.bibleapp.utils.VerseReference
 import java.io.IOException
 
 /** Every server answer and network failure maps to one [SemanticSearchResult] (#287), on Ktor's MockEngine. */
@@ -60,6 +61,24 @@ class SemanticSearchApiTest {
         }.search("worry about tomorrow")
 
         assertEquals(SemanticSearchResult.Found(listOf(VerseRef(40, 6, 34), VerseRef(20, 27, 1))), result)
+    }
+
+    @Test
+    fun `a matching topic guide's key passages come with them, the unreadable left out`() = runTest {
+        val result = api {
+            json(
+                HttpStatusCode.OK,
+                """{"results":[{"bookId":19,"chapter":42,"verse":5,"score":0.03}],"keyPassages":["MAT 11:28-30","PSA 73","XYZ 1:1","PSA 147:3","MAT 11:28-30"]}"""
+            )
+        }.search("burned out and exhausted")
+
+        assertEquals(
+            SemanticSearchResult.Found(
+                listOf(VerseRef(19, 42, 5)),
+                listOf(VerseReference(40, 11, 28, 30), VerseReference(19, 73), VerseReference(19, 147, 3))
+            ),
+            result
+        )
     }
 
     @Test

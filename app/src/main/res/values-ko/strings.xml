@@ -177,6 +177,7 @@
     <string name="search_no_results">\'%1$s\'에 대한 결과가 없어요</string>
     <string name="search_error">지금은 검색할 수 없어요. 다시 시도해 주세요.</string>
     <string name="search_section_words">이 단어가 있는 구절</string>
+    <string name="search_section_key_passages">핵심 구절</string>
     <string name="search_section_meaning">의미가 비슷한 구절</string>
     <string name="search_words_none">이 단어가 들어 있는 구절이 없어요.</string>
     <string name="search_meaning_start">의미가 비슷한 구절 찾기</string>

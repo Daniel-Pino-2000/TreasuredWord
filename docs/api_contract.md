@@ -698,11 +698,26 @@ Success: `200 OK`
 data class SemanticSearchResult(val bookId: Int, val chapter: Int, val verse: Int, val score: Double)
 
 @Serializable
-data class SemanticSearchResponse(val results: List<SemanticSearchResult>)  // up to 20, best first
+data class SemanticSearchResponse(
+    val results: List<SemanticSearchResult>,   // up to 20, best first
+    val keyPassages: List<String>? = null      // #320: absent when no topic guide matches
+)
 ```
 
 `bookId` is 1–66 as in `VerseLocation`; `score` only orders the results. `results` is empty
 until the verses are loaded (`server/DEPLOY.md`).
+
+`keyPassages` (#320): when the query matches one of the hand-checked topic guides
+(`server/src/main/resources/ai/topics.md`, the Bible Helper's), the guide's passages as USFM
+references, in the guide's order: `"MAT 11:28-30"`, `"PSA 147:3"`, or a whole chapter, `"PSA 73"`.
+The app shows them first, under "Key passages", in the reader's own translation; `results` may
+repeat verses inside them. The query's vector is compared with the guides' phrase vectors, stored
+in the server's resources (`ai/topic_vectors.tsv`, `./gradlew :server:embedTopicGuides`), by the
+Bible Helper's rule (#319): a guide matches at a cosine similarity of 0.70 or more, a second one
+within 0.03 of the first adds its passages too (duplicates once), and a crisis guide among them
+is shown alone. No extra neurons, and whatever the Bible Helper's `AI_TOPIC_GUIDES` setting. The
+field is left out, not empty, when nothing matches, so apps from before #320 get the same answer
+as ever.
 POST, not GET, so the query never sits in a URL or a request log.
 Errors: `400 VALIDATION_ERROR` (`fieldErrors` keyed `q`), `503 SEARCH_UNAVAILABLE` (the AI_*
 settings aren't set, today's free neurons or the server's 20,000 searches a day are used up, or

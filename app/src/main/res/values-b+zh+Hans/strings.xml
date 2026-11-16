@@ -176,6 +176,7 @@
     <string name="search_no_results">没有找到“%1$s”的结果</string>
     <string name="search_error">暂时无法搜索，请重试。</string>
     <string name="search_section_words">含有这些词的经文</string>
+    <string name="search_section_key_passages">重点经文</string>
     <string name="search_section_meaning">意思相关</string>
     <string name="search_words_none">没有经文包含这些词。</string>
     <string name="search_meaning_start">查找意思相关的经文</string>

@@ -181,6 +181,7 @@
     <string name="search_no_results">Aucun résultat pour « %1$s »</string>
     <string name="search_error">Impossible de lancer la recherche pour le moment. Réessaie.</string>
     <string name="search_section_words">Versets contenant ces mots</string>
+    <string name="search_section_key_passages">Passages clés</string>
     <string name="search_section_meaning">Liés par le sens</string>
     <string name="search_words_none">Aucun verset ne contient ces mots.</string>
     <string name="search_meaning_start">Trouver des versets liés par le sens</string>

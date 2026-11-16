@@ -10,6 +10,10 @@ data class SemanticSearchRequest(val q: String)
 @Serializable
 data class SemanticSearchResult(val bookId: Int, val chapter: Int, val verse: Int, val score: Double)
 
-/** Up to 20 verses, best first; empty when nothing is stored yet. */
+/**
+ * Up to 20 verses, best first; empty when nothing is stored yet. [keyPassages] (#320): when the
+ * query matches a topic guide, its passages as USFM references ("MAT 11:28-30", "PSA 73"), to show
+ * first; absent otherwise, so apps from before it see the same answer as ever.
+ */
 @Serializable
-data class SemanticSearchResponse(val results: List<SemanticSearchResult>)
+data class SemanticSearchResponse(val results: List<SemanticSearchResult>, val keyPassages: List<String>? = null)
