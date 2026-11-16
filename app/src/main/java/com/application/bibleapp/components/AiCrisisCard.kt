@@ -24,6 +24,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import com.application.bibleapp.R
+import com.application.bibleapp.data.model.AiVersePassage
+import com.application.bibleapp.data.model.PassageVerse
 import com.application.bibleapp.ui.theme.BibleAppTheme
 import com.application.bibleapp.ui.theme.Spacing
 import com.application.bibleapp.ui.theme.ThemePalette
@@ -36,10 +38,12 @@ const val FIND_A_HELPLINE_URL = "https://findahelpline.com/"
 /**
  * Shown above an answer the server flagged `crisis` (#130): someone may be in danger, so before
  * anything else, a kind word and a way to real help now. [onFindHelpline] opens [FIND_A_HELPLINE_URL]
- * through [com.application.bibleapp.utils.ExternalLinks].
+ * through [com.application.bibleapp.utils.ExternalLinks]. [verse], after the help and never
+ * instead of it, is a verse of comfort that fits what they're going through (#282), normally an
+ * [AiVerseCard] in the reader's translation.
  */
 @Composable
-fun AiCrisisCard(onFindHelpline: () -> Unit, modifier: Modifier = Modifier) {
+fun AiCrisisCard(onFindHelpline: () -> Unit, modifier: Modifier = Modifier, verse: (@Composable () -> Unit)? = null) {
     Surface(
         color = MaterialTheme.colorScheme.tertiaryContainer,
         contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
@@ -71,6 +75,14 @@ fun AiCrisisCard(onFindHelpline: () -> Unit, modifier: Modifier = Modifier) {
                 style = MaterialTheme.typography.labelSmall
             )
             Text(text = stringResource(R.string.ai_crisis_emergency), style = MaterialTheme.typography.bodyMedium)
+            if (verse != null) {
+                Text(
+                    text = stringResource(R.string.ai_crisis_comfort),
+                    style = MaterialTheme.typography.titleSmall,
+                    modifier = Modifier.padding(top = Spacing.sm)
+                )
+                verse()
+            }
         }
     }
 }
@@ -80,6 +92,20 @@ fun AiCrisisCard(onFindHelpline: () -> Unit, modifier: Modifier = Modifier) {
 @Composable
 private fun AiCrisisCardPreview(@PreviewParameter(ThemePalettePreviewProvider::class) palette: ThemePalette) {
     BibleAppTheme(palette = palette) {
-        Surface { AiCrisisCard(onFindHelpline = {}, modifier = Modifier.padding(Spacing.lg)) }
+        Surface {
+            AiCrisisCard(onFindHelpline = {}, modifier = Modifier.padding(Spacing.lg)) {
+                AiVerseCardContent(
+                    reference = "Psalm 34:18",
+                    text = AiVerseCardText.Loaded(
+                        AiVersePassage(
+                            "kjv",
+                            listOf(PassageVerse(18, "The LORD is nigh unto them that are of a broken heart; and saveth such as be of a contrite spirit."))
+                        ),
+                        "KJV"
+                    ),
+                    onReadChapter = {}
+                )
+            }
+        }
     }
 }
