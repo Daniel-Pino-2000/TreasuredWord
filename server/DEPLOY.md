@@ -165,6 +165,49 @@ Once a report has been read and acted on (an instructions change, an evaluation 
 to `docs/ai_helper_eval.md`), it can be deleted early:
 `DELETE FROM ai_reports WHERE id = '<id>';`
 
+## Search by meaning: the verse tables (#287)
+
+Migration V9 creates `search_verses` (the BSB text, with a full-text index) and
+`verse_embeddings` (one bge-m3 vector per verse), and enables the `vector` extension.
+
+**Before the first deploy with V9**, check in Neon's **SQL Editor** that pgvector is there and
+new enough for `halfvec` (0.7 or later). A failed migration stops the server from starting:
+
+```sql
+SELECT name, default_version FROM pg_available_extensions WHERE name = 'vector';
+```
+
+**Local Postgres** needs pgvector too, like CI. The `postgres:18` container can't load it, so
+replace it with the pgvector image (same port, user and database; the local data starts empty).
+Remove the old container first (`docker ps -a` shows its name, then `docker rm -f <name>`):
+
+```bash
+docker run --name bibleapp-postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=bibleapp -p 5433:5432 -d pgvector/pgvector:pg18
+```
+
+**Filling the tables** (once, after the deploy that ran V9). This is a one-off writing to the
+production database, so only the developer runs it. It reads the vectors the evaluation already
+paid for, in `server/build/semantic-search-eval/cache/bge-m3-bsb.vec`, so it spends **no neurons**
+unless verses are missing from that cache. Neon's connection details go in the same three
+variables the server uses (Neon → **Connect** → JDBC); type the password in, never save it:
+
+```powershell
+$env:DATABASE_URL = "jdbc:postgresql://<neon host>/neondb?sslmode=require"
+$env:DATABASE_USER = "<neon user>"
+$env:DATABASE_PASSWORD = Read-Host -MaskInput "Neon password"
+./gradlew :server:loadVerseSearch --configure-on-demand -Pbible=server/build/semantic-search-eval/bsb.tsv -Plimit=100
+./gradlew :server:loadVerseSearch --configure-on-demand -Pbible=server/build/semantic-search-eval/bsb.tsv
+```
+
+The first command tries 100 verses; the second loads the rest (it skips what's stored). Each prints
+the tables' and the database's size before and after: expect about 87 MB for the vectors and
+15 MB for the text and its index, ~10% of the free 1 GB (measured on a local pgvector
+Postgres 18; the whole load took 15 s there, longer to Neon). `bsb.tsv` is made from
+https://bereanbible.com/bsb.txt as `docs/semantic_search_eval.md` describes. Without the cache
+(after `./gradlew clean`), the same command embeds the missing verses with Workers AI (~1,040
+neurons for the BSB) if `AI_BASE_URL` and `AI_API_TOKEN` are set, and stops at the daily limit to
+carry on after 00:00 UTC.
+
 ## Switching the Bible Helper off in an emergency (#131)
 
 If the Bible Helper starts giving harmful or badly wrong answers, or Cloudflare changes its free
