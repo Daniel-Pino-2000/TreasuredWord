@@ -543,8 +543,7 @@ private const val PASSAGE_QUOTE_BAR_ALPHA = 0.4f
  * (plan section 7), the text with each cited passage as a link, a verse card for each one under it
  * (#129), and the report action (#130). A whole book shows as its name (#190).
  *
- * While it's [streaming] (#285), the help card shows without its verse of comfort, which depends
- * on what the answer cites, and the verse cards and Report wait for the end; typing dots under
+ * While it's [streaming] (#285), the verse cards and Report wait for the end; typing dots under
  * the text show more is coming.
  */
 @Composable
