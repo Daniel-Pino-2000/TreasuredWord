@@ -217,6 +217,12 @@ https://bereanbible.com/bsb.txt as `docs/semantic_search_eval.md` describes. Wit
 neurons for the BSB) if `AI_BASE_URL` and `AI_API_TOKEN` are set, and stops at the daily limit to
 carry on after 00:00 UTC.
 
+**Checking it on Neon:** with the same three variables still set,
+`./gradlew :server:semanticSearchEvalDb --configure-on-demand` runs the search evaluation's 43
+queries through the endpoint's SQL there. It reads only and spends no neurons; it prints the hit
+rate (27 of 43 locally) and the time per query, which decides whether the vectors need an HNSW
+index (#287, phase 3).
+
 ## Switching the Bible Helper off in an emergency (#131)
 
 If the Bible Helper starts giving harmful or badly wrong answers, or Cloudflare changes its free

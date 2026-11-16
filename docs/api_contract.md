@@ -664,6 +664,44 @@ Errors: `400 VALIDATION_ERROR` (with `fieldErrors`), `401 UNAUTHORIZED`, `429` w
 
 ---
 
+## Search by meaning
+
+Finds verses *about* an idea, not only verses with its words (#287). The server turns the query
+into a vector with Cloudflare Workers AI (`@cf/baai/bge-m3`, the Bible Helper's account and free
+neurons, ~0.01 a search) and ranks the BSB's verses by that vector and by Postgres full-text search
+together (reciprocal rank fusion, k = 60), as `docs/semantic_search_eval.md` measured. Only
+references come back: the app shows each verse in the reader's own translation. The query is
+never stored or logged.
+
+### `POST /api/v1/search/semantic`
+Auth: none
+Request:
+
+```kotlin
+@Serializable
+data class SemanticSearchRequest(val q: String)   // 1–200 characters after trimming, any language
+```
+
+Success: `200 OK`
+
+```kotlin
+@Serializable
+data class SemanticSearchResult(val bookId: Int, val chapter: Int, val verse: Int, val score: Double)
+
+@Serializable
+data class SemanticSearchResponse(val results: List<SemanticSearchResult>)  // up to 20, best first
+```
+
+`bookId` is 1–66 as in `VerseLocation`; `score` only orders the results. `results` is empty
+until the verses are loaded (`server/DEPLOY.md`).
+POST, not GET, so the query never sits in a URL or a request log.
+Errors: `400 VALIDATION_ERROR` (`fieldErrors` keyed `q`), `503 SEARCH_UNAVAILABLE` (the AI_*
+settings aren't set, today's free neurons or the server's 20,000 searches a day are used up, or
+Workers AI failed: keep word search and say this part isn't available right now), `429` with no
+body (the `search` zone, 20 searches a minute per IP)
+
+---
+
 ## Deliberately deferred (not in v1)
 
 - **Change password / change email** — straightforward additions once the account exists, but no

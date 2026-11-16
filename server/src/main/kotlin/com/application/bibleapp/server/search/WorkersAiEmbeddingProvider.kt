@@ -172,5 +172,20 @@ class WorkersAiEmbeddingProvider(
          * models' own endpoint is next to it at `…/accounts/<id>/ai/run/<model>`.
          */
         fun accountAiUrl(aiBaseUrl: String): String = aiBaseUrl.trimEnd('/').removeSuffix("/v1")
+
+        /**
+         * The server's provider for search by meaning (#287): the same account and token as the
+         * Bible Helper (application.conf's `ai` block, AI_BASE_URL and AI_API_TOKEN), with
+         * [model]. Null when either is missing, as for the Bible Helper.
+         */
+        fun fromConfig(config: io.ktor.server.config.ApplicationConfig, model: String): WorkersAiEmbeddingProvider? {
+            fun setting(name: String) = config.propertyOrNull("ai.$name")?.getString()?.takeIf { it.isNotBlank() }
+            val baseUrl = setting("baseUrl") ?: return null
+            val token = setting("apiToken") ?: return null
+            return WorkersAiEmbeddingProvider(accountAiUrl(baseUrl), token, model, timeoutMillis = SEARCH_TIMEOUT_MILLIS)
+        }
+
+        /** A search waits on the person; a slow embedding is better given up than waited for. */
+        private const val SEARCH_TIMEOUT_MILLIS = 15_000L
     }
 }
