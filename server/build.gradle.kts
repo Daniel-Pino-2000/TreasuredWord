@@ -46,6 +46,38 @@ tasks.register<JavaExec>("aiEval") {
     )
 }
 
+// Blind A/B grading of two aiEval reports (#321), local files only (no network, no neurons):
+// aiEvalBlind writes a sheet with each question's answers shuffled as A and B, its key and a
+// grades template to build/ai-eval (-Pfirst, -Psecond, -Psheet=blind1, -Pseed); after grading,
+// aiEvalBlindScore -Psheets=blind1,blind2 lists each question's change and each report's totals.
+tasks.register<JavaExec>("aiEvalBlind") {
+    group = "verification"
+    description = "Turns two aiEval reports (-Pfirst, -Psecond) into a blind A/B grading sheet, a key and a grades template."
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("com.application.bibleapp.server.ai.eval.BlindGradingKt")
+    args(
+        "sheet",
+        rootProject.projectDir.path,
+        layout.buildDirectory.dir("ai-eval").get().asFile.path,
+        providers.gradleProperty("first").getOrElse(""),
+        providers.gradleProperty("second").getOrElse(""),
+        providers.gradleProperty("sheet").getOrElse("blind"),
+        providers.gradleProperty("seed").getOrElse("")
+    )
+}
+
+tasks.register<JavaExec>("aiEvalBlindScore") {
+    group = "verification"
+    description = "Reads graded blind sheets (-Psheets=blind1,blind2) with their keys and prints each question's change and each report's totals."
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("com.application.bibleapp.server.ai.eval.BlindGradingKt")
+    args(
+        "score",
+        layout.buildDirectory.dir("ai-eval").get().asFile.path,
+        providers.gradleProperty("sheets").getOrElse("blind")
+    )
+}
+
 // Topic guides (#319): the bge-m3 vector of every "Asks" phrase in resources/ai/topics.md, into
 // resources/ai/topic_vectors.tsv, which the server reads so it never embeds them. Run it after
 // changing a guide's Asks line (TopicVectorsTest fails until then) and commit the file; phrases
@@ -75,7 +107,9 @@ tasks.register<JavaExec>("topicRoutingEval") {
         rootProject.file("docs/ai_helper_eval.md").path,
         rootProject.file("docs/ai_helper_eval_heldout.md").path,
         rootProject.file("docs/semantic_search_eval.md").path,
-        layout.buildDirectory.dir("ai-eval").get().asFile.path
+        layout.buildDirectory.dir("ai-eval").get().asFile.path,
+        // -Pprobes=<file>: extra questions, "expected guide (or none) | question" a line.
+        providers.gradleProperty("probes").map { rootProject.file(it).path }.getOrElse("")
     )
 }
 

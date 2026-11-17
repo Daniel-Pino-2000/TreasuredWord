@@ -175,16 +175,18 @@ class TopicRouter(
 
     /**
      * The guides to send with a question: the best at [threshold] or above, and a close second.
-     * When one of those is an [TopicGuide.alone] guide, it goes by itself: in the pilot, "Will God
-     * forgive me if I end it?" scored 0.79 on the guide about repeated sin and forgiveness and
-     * 0.77 on the crisis guide, and both were sent. A crisis guide further behind isn't sent, so
-     * "Does God still forgive me?" keeps its own guide.
+     * An [TopicGuide.alone] guide (crisis) at [threshold] or above and within [ALONE_MARGIN] of
+     * the best goes by itself instead: "I don't want to live anymore. Will God forgive me if I
+     * end it?" scores 0.795 on the guide about repeated sin and forgiveness and 0.766 on the
+     * crisis guide, and the pilot sent both. One further behind isn't sent, so "Does God forgive
+     * me if I keep looking at porn?" (0.789 against 0.701) keeps its own guide.
      */
     fun pick(scored: List<RoutedGuide>): List<RoutedGuide> {
         val first = scored.firstOrNull()?.takeIf { it.score >= threshold } ?: return emptyList()
+        scored.firstOrNull { it.guide.alone && it.score >= threshold && first.score - it.score <= ALONE_MARGIN }
+            ?.let { return listOf(it) }
         val second = scored.getOrNull(1)?.takeIf { it.score >= threshold && first.score - it.score <= secondMargin }
-        val picked = listOfNotNull(first, second)
-        return picked.firstOrNull { it.guide.alone }?.let { listOf(it) } ?: picked
+        return listOfNotNull(first, second)
     }
 
     /** [pick] on [scoresFor]. */
@@ -194,6 +196,11 @@ class TopicRouter(
         /** The pilot's threshold (`docs/ai_quality_audit.md`, section 2): no wrong guide on held-out questions. */
         const val THRESHOLD = 0.70
         const val SECOND_MARGIN = 0.03
+        /**
+         * How far behind the best an alone guide may be and still be sent instead (2026-11-17's
+         * routing report): CRISIS-01 is 0.029 behind, the closest non-crisis question 0.088.
+         */
+        const val ALONE_MARGIN = 0.06
 
         /**
          * The live router: `topics.md` and the vectors made at build time. Fails when a phrase

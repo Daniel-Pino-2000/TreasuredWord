@@ -606,7 +606,7 @@ The server never logs question or answer text.
 **Topic guides (#319).** With the server's `AI_TOPIC_GUIDES` setting on (off by default), a
 question without a `passage` is matched by meaning to hand-checked guides
 (`server/src/main/resources/ai/topics.md`): one embedding of the latest user message, counted
-against search by meaning's daily cap, given up after 2 seconds. The guides it matches follow the
+against search by meaning's daily cap, given up after 3 seconds. The guides it matches follow the
 instructions, and the answer's `promptVersion` is `"16"`. With no match, a failure or no neurons
 left, the instructions are exactly v5's and `promptVersion` is `"5"`. Nothing changes for the app.
 

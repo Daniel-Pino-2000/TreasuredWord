@@ -53,10 +53,11 @@ class TopicGuideMatcher(
 
     companion object {
         /**
-         * An embedding answers in ~0.1–0.5 s; past this the person would wait longer for guides
-         * than they help, so the answer goes ahead with v5's instructions.
+         * One embedding took ~0.9 s from a home connection on 2026-11-17 (Render's log line shows
+         * the server's own time); past this the person would wait longer for guides than they
+         * help, so the answer goes ahead with v5's instructions.
          */
-        const val TIMEOUT_MILLIS = 2_000L
+        const val TIMEOUT_MILLIS = 3_000L
         private val log = LoggerFactory.getLogger(TopicGuideMatcher::class.java)
 
         private fun millisSince(started: Long) = (System.nanoTime() - started) / 1_000_000

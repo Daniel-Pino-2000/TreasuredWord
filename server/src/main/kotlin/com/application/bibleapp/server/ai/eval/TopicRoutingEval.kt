@@ -76,10 +76,13 @@ private fun covers(passage: String, verse: VerseRef): Boolean {
  * `./gradlew :server:topicRoutingEval` (#319). Embeds every question and search query once
  * (~1 neuron; the phrases come from topic_vectors.tsv), then: how often the right guide is
  * picked at each threshold, and how many search queries find an expected verse in the top 10
- * with search alone and with the matching guide's passages shown first.
+ * with search alone and with the matching guide's passages shown first. An optional fifth file
+ * (`-Pprobes=`, or probes.txt in the report folder) holds extra questions, one a line as
+ * `expected guide (or none) | question`, to check a guide change for false matches before any
+ * answer is paid for.
  */
 fun main(args: Array<String>) {
-    require(args.size == 4) { "Usage: TopicRoutingEval <ai_helper_eval.md> <heldout.md> <semantic_search_eval.md> <report folder>" }
+    require(args.size in 4..5) { "Usage: TopicRoutingEval <ai_helper_eval.md> <heldout.md> <semantic_search_eval.md> <report folder> [probes.txt]" }
     val config = MapApplicationConfig().apply {
         for ((setting, variable) in listOf("baseUrl" to "AI_BASE_URL", "apiToken" to "AI_API_TOKEN")) {
             System.getenv(variable)?.let { put("ai.$setting", it) }
@@ -94,15 +97,21 @@ fun main(args: Array<String>) {
     val items = EvalQuestions.parse(File(args[0]).readText()).map { Item(it.id, it.ask, "main") } +
         EvalQuestions.parse(File(args[1]).readText()).map { Item(it.id, it.ask, "heldout") } +
         SearchEvalQueries.parse(File(args[2]).readText()).map { Item(it.id, it.query, "search", it.expected) }
+    val probeFile = args.getOrNull(4)?.takeIf { it.isNotBlank() }?.let(::File) ?: File(args[3], "probes.txt").takeIf { it.exists() }
+    val probes = probeFile?.readLines().orEmpty()
+        .filter { it.isNotBlank() && !it.startsWith("#") }
+        .mapIndexed { index, line -> "PROBE-${index + 1}" to line.split(" | ", limit = 2).map { it.trim() } }
+    val expected = expectedGuides + probes.associate { (id, parts) -> id to setOf(parts[0]).filter { it != "none" }.toSet() }
+    val allItems = items + probes.map { (id, parts) -> Item(id, parts[1], "probe") }
     val guides = TopicGuides.load()
     val router = TopicRouter.fromResources(VerseSearch.MODEL, threshold = 0.0)
 
     val raw = mutableMapOf<String, FloatArray>()
     val scored = runBlocking {
-        for (batch in items.chunked(embeddings.maxBatch)) {
+        for (batch in allItems.chunked(embeddings.maxBatch)) {
             embeddings.embed(batch.map { it.text }, EmbeddingKind.QUERY).vectors.forEachIndexed { i, v -> raw[batch[i].id] = v }
         }
-        items.associate { it.id to router.scoresFor(raw.getValue(it.id)) }
+        allItems.associate { it.id to router.scoresFor(raw.getValue(it.id)) }
     }
 
     val out = StringBuilder()
@@ -115,15 +124,15 @@ fun main(args: Array<String>) {
     line("|---|---|---|---|---|---|")
     for (threshold in thresholds) {
         val picker = TopicRouter.fromResources(VerseSearch.MODEL, threshold)
-        for (set in listOf("main", "heldout", "search")) {
+        for (set in listOf("main", "heldout", "search", "probe").filter { set -> allItems.any { it.set == set } }) {
             var right = 0; var wrong = 0; var missed = 0; var quiet = 0
-            for (item in items.filter { it.set == set }) {
-                val expected = expectedGuides[item.id].orEmpty()
+            for (item in allItems.filter { it.set == set }) {
+                val wanted = expected[item.id].orEmpty()
                 val picked = picker.pick(scored.getValue(item.id))
                 when {
-                    picked.isEmpty() && expected.isEmpty() -> quiet++
+                    picked.isEmpty() && wanted.isEmpty() -> quiet++
                     picked.isEmpty() -> missed++
-                    picked.first().guide.id in expected -> right++
+                    picked.first().guide.id in wanted -> right++
                     else -> wrong++
                 }
             }
@@ -160,11 +169,14 @@ fun main(args: Array<String>) {
     }
 
     line()
-    line("| Id | Set | Expected | Top 3 (score) |")
-    line("|---|---|---|---|")
-    for (item in items) {
+    val live = TopicRouter.fromResources(VerseSearch.MODEL)
+    line("| Id | Set | Expected | Sent at %.2f | Top 3 (score) |".format(TopicRouter.THRESHOLD))
+    line("|---|---|---|---|---|")
+    for (item in allItems) {
         val top = scored.getValue(item.id).take(3).joinToString(", ") { "${it.guide.id} %.3f".format(it.score) }
-        line("| ${item.id} | ${item.set} | ${expectedGuides[item.id].orEmpty().joinToString("/").ifEmpty { "–" }} | $top |")
+        val sent = live.pick(scored.getValue(item.id)).joinToString(", ") { it.guide.id }.ifEmpty { "–" }
+        val label = if (item.set == "probe") "${item.id}: ${item.text}" else item.id
+        line("| $label | ${item.set} | ${expected[item.id].orEmpty().joinToString("/").ifEmpty { "–" }} | $sent | $top |")
     }
     val file = File(args[3]).apply { mkdirs() }.resolve("topic-routing.md")
     file.writeText(out.toString())
