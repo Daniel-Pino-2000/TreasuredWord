@@ -107,7 +107,9 @@ tasks.register<JavaExec>("topicRoutingEval") {
         rootProject.file("docs/ai_helper_eval.md").path,
         rootProject.file("docs/ai_helper_eval_heldout.md").path,
         rootProject.file("docs/semantic_search_eval.md").path,
-        layout.buildDirectory.dir("ai-eval").get().asFile.path
+        layout.buildDirectory.dir("ai-eval").get().asFile.path,
+        // -Pprobes=<file>: extra questions, "expected guide (or none) | question" a line.
+        providers.gradleProperty("probes").map { rootProject.file(it).path }.getOrElse("")
     )
 }
 

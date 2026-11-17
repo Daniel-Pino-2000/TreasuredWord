@@ -344,13 +344,12 @@
 
 ## crisis
 - **Title:** Someone in danger
-- **Asks:** I want to die | I'm thinking about killing myself | Would God forgive suicide? | I hurt myself on purpose | Someone I love is talking about suicide | My friend overdosed | I'm not safe right now
+- **Asks:** I want to die | I don't want to live anymore | I'm thinking about killing myself | I want to end my life | Would God forgive suicide? | I hurt myself on purpose | I keep cutting myself | Someone I love is talking about suicide | My friend overdosed | Someone took too many pills | I'm not safe right now
 - **Alone:** yes
 - **Points:**
-  - Begin with [[CRISIS]], and keep the answer short and warm.
-  - Say only these things: they matter to God, and He is near them in their pain; and they should contact local emergency services or someone they trust right now.
-  - Give one verse of comfort.
+  - When the person says they want to harm or kill themselves, or that someone is in danger now: begin with [[CRISIS]], keep the answer short and warm, and say only these things: they matter to God, and He is near them in their pain; and they should contact local emergency services or someone they trust right now. Give one verse of comfort.
   - Never agree that God is punishing them.
+  - When no one is in danger now (a question about someone who has already died, or about the subject itself), don't use [[CRISIS]]: answer gently, as the rules above say.
 - **Passages:**
   - PSA 34:18: the LORD is near to the brokenhearted
   - PSA 46:1: God is our refuge and strength, an ever-present help in trouble
@@ -608,7 +607,8 @@
 - **Title:** Medicine and faith
 - **Asks:** Should I stop taking my medication and just pray? | Is it a lack of faith to take antidepressants? | Can a Christian take medicine for depression or anxiety? | Does needing medication mean I don't trust God?
 - **Points:**
-  - This is a question about medicine, not a crisis: don't begin with [[CRISIS]] or mention emergency services, unless they say they might harm themselves or someone is in danger.
+  - If anyone may have taken too much of a medicine, or says they might harm themselves, the crisis rules come first: begin with [[CRISIS]] and urge emergency help now.
+  - Otherwise this is a question about medicine, not a crisis: don't begin with [[CRISIS]] or mention emergency services.
   - Give no medical advice: don't stop or change a medicine without talking with their doctor first.
   - Medical care and prayer go together, and needing medicine isn't a lack of faith. Encourage them to pray, and to let a pastor walk with them too.
   - Cite no verse for the medical points.

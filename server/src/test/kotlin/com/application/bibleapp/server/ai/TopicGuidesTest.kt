@@ -63,7 +63,11 @@ class TopicGuidesTest {
         // The pilot's CRISIS-01: repeated sin 0.79, crisis 0.77, and both were sent.
         assertEquals(listOf(crisis), router.pick(listOf(RoutedGuide(forgiveness, 0.79), RoutedGuide(crisis, 0.77))).map { it.guide })
         assertEquals(listOf(crisis), router.pick(listOf(RoutedGuide(crisis, 0.80), RoutedGuide(forgiveness, 0.79))).map { it.guide })
-        // Far behind ("Does God still forgive me?"), or below the threshold, it isn't sent.
+        // Further behind than a second guide may be, but within ALONE_MARGIN, it still wins.
+        assertEquals(listOf(crisis), router.pick(listOf(RoutedGuide(forgiveness, 0.80), RoutedGuide(crisis, 0.745))).map { it.guide })
+        // Far behind ("Does God forgive me if I keep looking at porn?": 0.789 and 0.701), or below
+        // the threshold, it isn't sent.
+        assertEquals(listOf(forgiveness), router.pick(listOf(RoutedGuide(forgiveness, 0.789), RoutedGuide(crisis, 0.701))).map { it.guide })
         assertEquals(listOf(forgiveness), router.pick(listOf(RoutedGuide(forgiveness, 0.99), RoutedGuide(crisis, 0.72))).map { it.guide })
         assertEquals(listOf(forgiveness), router.pick(listOf(RoutedGuide(forgiveness, 0.71), RoutedGuide(crisis, 0.69))).map { it.guide })
     }
