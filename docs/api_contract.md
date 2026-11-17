@@ -714,8 +714,8 @@ The app shows them first, under "Key passages", in the reader's own translation;
 repeat verses inside them. The query's vector is compared with the guides' phrase vectors, stored
 in the server's resources (`ai/topic_vectors.tsv`, `./gradlew :server:embedTopicGuides`), by the
 Bible Helper's rule (#319): a guide matches at a cosine similarity of 0.70 or more, a second one
-within 0.03 of the first adds its passages too (duplicates once), and a crisis guide among them
-is shown alone. No extra neurons, and whatever the Bible Helper's `AI_TOPIC_GUIDES` setting. The
+within 0.03 of the first adds its passages too (duplicates once), and the crisis guide, when it's
+at 0.70 or more and within 0.06 of the best, is shown alone. No extra neurons, and whatever the Bible Helper's `AI_TOPIC_GUIDES` setting. The
 field is left out, not empty, when nothing matches, so apps from before #320 get the same answer
 as ever.
 POST, not GET, so the query never sits in a URL or a request log.
