@@ -110,6 +110,14 @@ class WorkersAiEmbeddingProviderTest {
     }
 
     @Test
+    fun error4006IsTheDailyLimitToo() = runBlocking<Unit> {
+        // #326: what Workers AI answered after the day's neurons ran out on 2026-11-17.
+        val provider = provider { json("""{"errors":[{"code":4006}],"success":false}""", HttpStatusCode.TooManyRequests) }
+
+        assertFailsWith<QuotaExhausted> { provider.embed(listOf(VERSE), EmbeddingKind.DOCUMENT) }
+    }
+
+    @Test
     fun capacityAndServerErrorsArePassingButABadRequestIsNot() = runBlocking<Unit> {
         val busy = provider { json("""{"errors":[{"code":3040}]}""", HttpStatusCode.TooManyRequests) }
         assertTrue(assertFailsWith<Unavailable> { busy.embed(listOf(VERSE), EmbeddingKind.DOCUMENT) }.transient)
