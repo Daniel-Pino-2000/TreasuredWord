@@ -39,13 +39,15 @@ data class KeyPassage(val reference: VerseReference, val verses: List<PassageVer
 /**
  * The "Related by meaning" section, and the "Key passages" above it when the query matched a topic
  * guide (#320). [query] is the submitted query [results] and [keyPassages] belong to; [results]
- * leaves out the verses [keyPassages] show.
+ * leaves out the verses [keyPassages] show. [crisis] (#324): the query matched the crisis guide, so
+ * the Bible Helper's help card comes first; kept even when the verses couldn't be read.
  */
 data class MeaningSearchState(
     val query: String = "",
     val status: MeaningSearchStatus = MeaningSearchStatus.IDLE,
     val results: List<MeaningVerse> = emptyList(),
-    val keyPassages: List<KeyPassage> = emptyList()
+    val keyPassages: List<KeyPassage> = emptyList(),
+    val crisis: Boolean = false
 ) {
     val isLoading: Boolean get() = status == MeaningSearchStatus.WAKING || status == MeaningSearchStatus.SEARCHING
 }
@@ -96,6 +98,7 @@ class MeaningSearch(
         val query = current.query
         job?.cancel()
         job = scope.launch {
+            // copy() keeps the help card (#324).
             val done = doneOrNull(query, found) ?: return@launch _state.update { it.copy(status = MeaningSearchStatus.UNAVAILABLE) }
             _state.value = done
         }
@@ -124,7 +127,8 @@ class MeaningSearch(
             _state.value = when (val result = search(query)) {
                 is SemanticSearchResult.Found -> {
                     found = result
-                    doneOrNull(query, result) ?: MeaningSearchState(query, MeaningSearchStatus.UNAVAILABLE)
+                    // The help card never depends on reading the verses (#324).
+                    doneOrNull(query, result) ?: MeaningSearchState(query, MeaningSearchStatus.UNAVAILABLE, crisis = result.crisis)
                 }
                 SemanticSearchResult.Offline -> MeaningSearchState(query, MeaningSearchStatus.OFFLINE)
                 SemanticSearchResult.Unavailable -> MeaningSearchState(query, MeaningSearchStatus.UNAVAILABLE)
@@ -136,7 +140,7 @@ class MeaningSearch(
     private suspend fun doneOrNull(query: String, found: SemanticSearchResult.Found): MeaningSearchState? = try {
         val passages = if (found.keyPassages.isEmpty()) emptyList() else resolvePassages(found.keyPassages)
         val verses = resolve(found.verses).withoutKeyPassages(passages)
-        MeaningSearchState(query, MeaningSearchStatus.DONE, verses, passages)
+        MeaningSearchState(query, MeaningSearchStatus.DONE, verses, passages, found.crisis)
     } catch (e: CancellationException) {
         throw e
     } catch (_: Exception) {

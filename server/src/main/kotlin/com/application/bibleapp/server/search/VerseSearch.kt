@@ -14,8 +14,11 @@ import java.util.concurrent.atomic.AtomicReference
 /** One verse a search found, best first. [score] is its reciprocal-rank-fusion score: higher is closer. */
 data class VerseHit(val book: Int, val chapter: Int, val verse: Int, val score: Double)
 
-/** What a search found: the ranked [verses], and a matching topic guide's [keyPassages] (#320), if any. */
-data class SearchFound(val verses: List<VerseHit>, val keyPassages: List<String> = emptyList())
+/**
+ * What a search found: the ranked [verses], a matching topic guide's [keyPassages] (#320), if any,
+ * and [crisis] when that guide is the crisis guide (#324).
+ */
+data class SearchFound(val verses: List<VerseHit>, val keyPassages: List<String> = emptyList(), val crisis: Boolean = false)
 
 /**
  * Search by meaning (#287, phase 3), ranked the way phase 1's evaluation chose: the query's
@@ -54,15 +57,16 @@ class VerseSearch(
         }
         log.info("Search: ${hits.size} results in ${(System.nanoTime() - started) / 1_000_000} ms")
         // Not logged, not even as a count: which guide matched would hint at what was asked.
-        return SearchFound(hits, keyPassagesFor(vector))
+        val match = keyPassagesFor(vector)
+        return SearchFound(hits, match.passages, match.crisis)
     }
 
     /** Key passages never cost the search itself: if matching fails, the verses still come back. */
-    private fun keyPassagesFor(vector: FloatArray): List<String> = try {
-        keyPassages?.forQuery(vector).orEmpty()
+    private fun keyPassagesFor(vector: FloatArray): KeyPassages.Match = try {
+        keyPassages?.match(vector) ?: KeyPassages.Match.NONE
     } catch (e: Exception) {
         log.warn("Key passages failed: {}", e::class.simpleName)
-        emptyList()
+        KeyPassages.Match.NONE
     }
 
     /**

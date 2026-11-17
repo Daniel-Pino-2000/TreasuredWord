@@ -25,6 +25,7 @@ class MeaningSearchTest {
     private var answer: SemanticSearchResult = SemanticSearchResult.Found(listOf(VerseRef(40, 6, 34), VerseRef(20, 27, 1)))
     private var version = "kjv"
     private var online = true
+    private var passagesFail = false
 
     /** Reads each reference as "<version> b:c:v", the way the phone's Bibles would. */
     private suspend fun resolve(refs: List<VerseRef>): List<MeaningVerse> =
@@ -32,7 +33,7 @@ class MeaningSearchTest {
 
     /** Reads each key passage as one verse, "<version> <reference>". */
     private suspend fun resolvePassages(refs: List<VerseReference>): List<KeyPassage> =
-        refs.map { KeyPassage(it, listOf(PassageVerse(it.startVerse ?: 1, "$version $it")), version) }
+        if (passagesFail) error("Bible not readable") else refs.map { KeyPassage(it, listOf(PassageVerse(it.startVerse ?: 1, "$version $it")), version) }
 
     private fun TestScope.meaningSearch(serverWake: ServerWake? = null) = MeaningSearch(
         scope = this,
@@ -233,6 +234,39 @@ class MeaningSearchTest {
 
         assertEquals(MeaningSearchStatus.DONE, search.state.value.status)
         assertTrue(search.state.value.keyPassages.isEmpty())
+        assertFalse(search.state.value.crisis)
+    }
+
+    @Test
+    fun `a crisis match brings the help card with its key passages, also after a version change`() = runTest {
+        val comfort = VerseReference(19, 34, 18)
+        answer = SemanticSearchResult.Found(listOf(VerseRef(19, 42, 5)), listOf(comfort), crisis = true)
+        val search = meaningSearch()
+
+        search.submit("I want to die")
+        advanceUntilIdle()
+
+        assertTrue(search.state.value.crisis)
+        assertEquals(listOf(comfort), search.state.value.keyPassages.map { it.reference })
+
+        version = "spa"
+        search.onVersionChange()
+        advanceUntilIdle()
+        assertTrue(search.state.value.crisis)
+    }
+
+    @Test
+    fun `the help card stays even when the verses can't be read`() = runTest {
+        // #324: the card must never depend on the phone's Bibles.
+        answer = SemanticSearchResult.Found(emptyList(), listOf(VerseReference(19, 34, 18)), crisis = true)
+        passagesFail = true
+        val search = meaningSearch()
+
+        search.submit("I want to die")
+        advanceUntilIdle()
+
+        assertEquals(MeaningSearchStatus.UNAVAILABLE, search.state.value.status)
+        assertTrue(search.state.value.crisis)
     }
 
     @Test

@@ -17,7 +17,27 @@ import com.application.bibleapp.server.ai.TopicRouter
  */
 class KeyPassages(private val router: TopicRouter) {
 
-    /** The matching guides' passages as USFM references ("MAT 11:28-30", "PSA 73"), or none. */
-    fun forQuery(queryVector: FloatArray): List<String> =
-        router.route(queryVector).flatMap { routed -> routed.guide.passages.map { it.first } }.distinct()
+    /**
+     * What a query matched: the guides' [passages] as USFM references ("MAT 11:28-30", "PSA 73"),
+     * and [crisis] when the guide is an `Alone` one (the crisis guide), so the app shows its help
+     * card above them, as the Bible Helper does (#324).
+     */
+    data class Match(val passages: List<String>, val crisis: Boolean) {
+        companion object {
+            val NONE = Match(emptyList(), crisis = false)
+        }
+    }
+
+    fun match(queryVector: FloatArray): Match {
+        val routed = router.route(queryVector)
+        if (routed.isEmpty()) return Match.NONE
+        return Match(
+            passages = routed.flatMap { it.guide.passages.map { passage -> passage.first } }.distinct(),
+            // route() sends an alone guide by itself, so any() is that one guide.
+            crisis = routed.any { it.guide.alone }
+        )
+    }
+
+    /** The matching guides' passages, or none. */
+    fun forQuery(queryVector: FloatArray): List<String> = match(queryVector).passages
 }

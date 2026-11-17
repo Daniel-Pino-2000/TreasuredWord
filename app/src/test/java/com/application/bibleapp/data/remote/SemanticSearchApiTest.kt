@@ -82,6 +82,18 @@ class SemanticSearchApiTest {
     }
 
     @Test
+    fun `a crisis match is read, and its absence means no crisis`() = runTest {
+        // #324
+        val crisis = api {
+            json(HttpStatusCode.OK, """{"results":[],"keyPassages":["PSA 34:18"],"crisis":true}""")
+        }.search("I want to die")
+        assertEquals(SemanticSearchResult.Found(emptyList(), listOf(VerseReference(19, 34, 18)), crisis = true), crisis)
+
+        val none = api { json(HttpStatusCode.OK, """{"results":[],"keyPassages":["PSA 34:18"]}""") }.search("grief")
+        assertEquals(false, (none as SemanticSearchResult.Found).crisis)
+    }
+
+    @Test
     fun `the query goes trimmed and cut to the contract's size, without the account's token`() = runTest {
         api { json(HttpStatusCode.OK, """{"results":[]}""") }.search("  " + "a".repeat(250) + "  ")
 

@@ -59,7 +59,9 @@ fun Route.searchRoutes(search: VerseSearch?) {
                 SemanticSearchResponse(
                     results = found.verses.map { SemanticSearchResult(it.book, it.chapter, it.verse, it.score) },
                     // Left out when no guide matched, so the answer is exactly what it was before #320.
-                    keyPassages = found.keyPassages.ifEmpty { null }
+                    keyPassages = found.keyPassages.ifEmpty { null },
+                    // Same: only `true` is ever sent (#324).
+                    crisis = true.takeIf { found.crisis }
                 )
             )
         }
