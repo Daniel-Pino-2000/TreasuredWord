@@ -57,6 +57,17 @@ internal object EvalBookNames {
         return keys.filter { it.first.startsWith(key) }.map { it.second }.distinct().singleOrNull()
     }
 
+    /**
+     * The book id of a full English name or one of the app's abbreviations ("1 Corinthians",
+     * "Psalm", "Phil"), without [find]'s prefixes: for reading names in prose, the Must lines
+     * (#321), where "Is 1" isn't Isaiah.
+     */
+    fun exact(text: String): Int? {
+        val key = key(text)
+        if (key == "psalm") return 19
+        return keys.firstOrNull { it.first == key }?.second
+    }
+
     /** Lowercase, accents and spaces/punctuation removed: "1 Corinthians" → "1corinthians". */
     private fun key(text: String): String =
         Normalizer.normalize(text, Normalizer.Form.NFD)

@@ -46,6 +46,38 @@ tasks.register<JavaExec>("aiEval") {
     )
 }
 
+// Blind A/B grading of two aiEval reports (#321), local files only (no network, no neurons):
+// aiEvalBlind writes a sheet with each question's answers shuffled as A and B, its key and a
+// grades template to build/ai-eval (-Pfirst, -Psecond, -Psheet=blind1, -Pseed); after grading,
+// aiEvalBlindScore -Psheets=blind1,blind2 lists each question's change and each report's totals.
+tasks.register<JavaExec>("aiEvalBlind") {
+    group = "verification"
+    description = "Turns two aiEval reports (-Pfirst, -Psecond) into a blind A/B grading sheet, a key and a grades template."
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("com.application.bibleapp.server.ai.eval.BlindGradingKt")
+    args(
+        "sheet",
+        rootProject.projectDir.path,
+        layout.buildDirectory.dir("ai-eval").get().asFile.path,
+        providers.gradleProperty("first").getOrElse(""),
+        providers.gradleProperty("second").getOrElse(""),
+        providers.gradleProperty("sheet").getOrElse("blind"),
+        providers.gradleProperty("seed").getOrElse("")
+    )
+}
+
+tasks.register<JavaExec>("aiEvalBlindScore") {
+    group = "verification"
+    description = "Reads graded blind sheets (-Psheets=blind1,blind2) with their keys and prints each question's change and each report's totals."
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("com.application.bibleapp.server.ai.eval.BlindGradingKt")
+    args(
+        "score",
+        layout.buildDirectory.dir("ai-eval").get().asFile.path,
+        providers.gradleProperty("sheets").getOrElse("blind")
+    )
+}
+
 // Topic guides pilot: which guide each evaluation question and search query matches, at several
 // thresholds, and what the guides add to search's hits. Embeds ~300 short texts (~3 neurons) and
 // reads the verse tables in DATABASE_URL; never part of `test` or CI.

@@ -6,7 +6,8 @@ section 8 · Not published by GitHub Pages (`_config.yml`).
 Run every question before each change to the instructions (`server/src/main/resources/ai/`) or
 the model, and before release (#131). The runner (#126, `./gradlew :server:aiEval`) sends each one
 through the same instructions as the live route and writes a report; people then grade each
-answer with the rubric below and summarize the result in the PR.
+answer with the rubric below and summarize the result in the PR. To decide whether a change is
+better, compare it as "Comparing two versions" says: one run's score can't tell.
 
 ## Running it
 
@@ -19,15 +20,74 @@ $env:AI_API_TOKEN = Read-Host -MaskInput "Workers AI token"
 ./gradlew :server:aiEval --configure-on-demand
 ```
 
-The report lands in `server/build/ai-eval/<date>-<model>-v<promptVersion>.md`, with a summary
-table, each answer, and a blank **Grade** line for each. `-Pquestions=CORE-01,LANG-02` runs only
-those (a `-partial` report). The whole set costs about 2,000 of the free 10,000 neurons a day; if
-they run out, the runner stops and the report says where. It never runs in `:server:test` or CI.
+The report lands in `server/build/ai-eval/<date>-<model>-v<promptVersion>.md` (a second run the
+same day is `…-run2.md`), with a summary, a table, each answer, and a blank **Grade** line for
+each. `-Pquestions=CORE-01,LANG-02` runs only those (a `-partial` report). The whole set costs
+about 2,000 of the free 10,000 neurons a day; if they run out, the runner stops and the report
+says where. It never runs in `:server:test` or CI.
 
 `-PquestionsFile=docs/ai_helper_eval_heldout.md` runs the held-out questions instead (a
 `-heldout` report). With `AI_TOPIC_GUIDES=true` and `AI_TOPIC_THRESHOLD=0.70`, each question gets
 the topic guides it matches (the pilot in [`ai_quality_audit.md`](ai_quality_audit.md), version
 16), and `AI_ONLY_GUIDED=true` asks only the questions with a guide.
+
+## Comparing two versions
+
+One run's share of Good answers can't show a change. The same v5 instructions scored 89%, 74% and
+77% Good depending on who graded, and two runs of v14 were 10 points apart
+([`ai_quality_audit.md`](ai_quality_audit.md), section 1.1). So a change to the instructions, the
+guides or the model is compared with the version it would replace like this (#321):
+
+1. **The same questions.** Run both versions on the same set: the main questions, and the
+   held-out ones (`-PquestionsFile=docs/ai_helper_eval_heldout.md`). The blind sheet below pairs
+   only questions both reports answered and says which it left out, for example when
+   `AI_ONLY_GUIDED` asked fewer.
+2. **Two runs each**, with the same model and temperature.
+3. **The grading-free numbers** in each report's summary. They're counted the same way in every
+   run, so they don't move with who grades:
+   - **Must-named passages cited:** of the passages a Must line names (an English name such as
+     "Romans 6:1-2" or "1 Corinthians 12–14", or a marker), how many the answers cite. A citation
+     counts when it's the same book and chapter with a verse in common, or the whole chapter.
+   - **Citations from the question's guide** (guided runs only).
+   - **Other citations, to check by hand:** every other passage an answer cites, listed per
+     question in the table's **To check** column. They come from the model's memory, so check each
+     makes the point it's cited for: a misattributed one fails the release bar.
+
+   The audit's and phase 5's tables were counted by a script that missed a few names (65 passages
+   on the main set, where the runner finds 68), so compare the runner's numbers with each other.
+4. **Graded blind.** Make one sheet from run 1 of each version and one from run 2, always with
+   the current version first:
+
+   ```powershell
+   ./gradlew :server:aiEvalBlind --configure-on-demand -Pfirst=<current, run 1>.md -Psecond=<new, run 1>.md -Psheet=blind1
+   ./gradlew :server:aiEvalBlind --configure-on-demand -Pfirst=<current, run 2>.md -Psecond=<new, run 2>.md -Psheet=blind2
+   ```
+
+   A report is named by its path from the repo root, or by its file name in
+   `server/build/ai-eval/`, where the sheets go too (gitignored). A sheet (`blind1.md`) shows
+   each question once, with its Must line, and its two answers as A and B: which version is A is
+   drawn at random for each question, half each way (`-Pseed=…` repeats a draw). Grade both
+   answers in `blind1-grades.txt`, as `CORE-01 A=Good B=Needs work (no Romans 6:1-2)`, without
+   opening `blind1-key.txt`. Then:
+
+   ```powershell
+   ./gradlew :server:aiEvalBlindScore --configure-on-demand -Psheets=blind1,blind2
+   ```
+
+   It prints each report's totals and each question's change from the first report to the
+   second over both sheets ("better in 2 of 2", "worse in 1 of 2", "mixed" or "same"), and saves
+   them as `blind1+blind2-results.md`. An existing sheet is never overwritten, so its grades are
+   safe: a new sheet needs a new `-Psheet`.
+5. **In the PR:** each run's totals, the per-question changes and the grading-free numbers. A
+   question better in both runs has changed; better in one may be noise. Decide on those
+   changes, the Wrong answers and the citations, not on a few points of the Good share.
+
+**Held-out questions** ([`ai_helper_eval_heldout.md`](ai_helper_eval_heldout.md)) show whether a
+change helps questions it wasn't written for, so they're never written in the same sitting as the
+instructions or guides they test. They grow from what people really ask: when reported answers
+(#125) show a topic the questions miss, add a held-out question on that topic. Take only the
+topic and write the question in new words: the repo is public, and a report's question, answer
+and comment are never copied into it (reports are deleted after 90 days anyway).
 
 ## How a question is written
 
