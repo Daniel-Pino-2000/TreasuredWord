@@ -180,6 +180,7 @@
     <string name="search_no_results">Walang resulta para sa \"%1$s\"</string>
     <string name="search_error">Hindi makapaghanap ngayon. Pakisubukan ulit.</string>
     <string name="search_section_words">Mga talatang may mga salitang ito</string>
+    <string name="search_section_key_passages">Mga pangunahing talata</string>
     <string name="search_section_meaning">Kaugnay ayon sa kahulugan</string>
     <string name="search_words_none">Walang talatang may mga salitang ito.</string>
     <string name="search_meaning_start">Maghanap ng mga talatang kaugnay ayon sa kahulugan</string>

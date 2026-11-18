@@ -1,5 +1,7 @@
 package com.application.bibleapp.data.model
 
+import com.application.bibleapp.utils.VerseReference
+
 /**
  * The 66 books' USFM codes ("GEN"…"REV"), the standard three-character IDs Bible software uses.
  * The Bible Helper's answers name verses with them, as `[[JHN 3:16]]` (#129), so a book never
@@ -26,4 +28,22 @@ object UsfmBookCodes {
 
     /** The code for [bookId] 1–66, or null. */
     fun code(bookId: Int): String? = codes.getOrNull(bookId - 1)
+
+    private val REFERENCE = Regex("""^([1-3]?[A-Za-z]{2,3}) (\d+)(?::(\d+)(?:-(\d+))?)?$""")
+
+    /**
+     * A reference our server sends, such as search's key passages (#320): `MAT 11:28-30`,
+     * `PSA 147:3` or a whole chapter, `PSA 73`. Null for anything else: an unknown code, a zero,
+     * a range that ends before it starts. Whether the verses exist is up to the Bible that shows them.
+     */
+    fun parseReference(text: String): VerseReference? {
+        val match = REFERENCE.matchEntire(text.trim()) ?: return null
+        val (codeText, chapterText, startText, endText) = match.destructured
+        val bookId = bookId(codeText) ?: return null
+        val chapter = chapterText.toIntOrNull()?.takeIf { it > 0 } ?: return null
+        if (startText.isEmpty()) return VerseReference(bookId, chapter)
+        val start = startText.toIntOrNull()?.takeIf { it > 0 } ?: return null
+        val end = if (endText.isEmpty()) null else endText.toIntOrNull()?.takeIf { it >= start } ?: return null
+        return VerseReference(bookId, chapter, start, end)
+    }
 }

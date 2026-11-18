@@ -179,6 +179,7 @@
     <string name="search_no_results">Hakuna matokeo ya \"%1$s\"</string>
     <string name="search_error">Imeshindwa kutafuta kwa sasa. Tafadhali jaribu tena.</string>
     <string name="search_section_words">Mistari yenye maneno haya</string>
+    <string name="search_section_key_passages">Vifungu muhimu</string>
     <string name="search_section_meaning">Inayohusiana kwa maana</string>
     <string name="search_words_none">Hakuna mstari wenye maneno haya.</string>
     <string name="search_meaning_start">Tafuta mistari inayohusiana kwa maana</string>

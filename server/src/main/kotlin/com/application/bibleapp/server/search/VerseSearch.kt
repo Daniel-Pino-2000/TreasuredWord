@@ -14,6 +14,9 @@ import java.util.concurrent.atomic.AtomicReference
 /** One verse a search found, best first. [score] is its reciprocal-rank-fusion score: higher is closer. */
 data class VerseHit(val book: Int, val chapter: Int, val verse: Int, val score: Double)
 
+/** What a search found: the ranked [verses], and a matching topic guide's [keyPassages] (#320), if any. */
+data class SearchFound(val verses: List<VerseHit>, val keyPassages: List<String> = emptyList())
+
 /**
  * Search by meaning (#287, phase 3), ranked the way phase 1's evaluation chose: the query's
  * vector against every verse's bge-m3 vector of the BSB, and Postgres full-text search on the
@@ -28,25 +31,38 @@ data class VerseHit(val book: Int, val chapter: Int, val verse: Int, val score: 
  * search (and the Bible Helper's topic guide matching, [embedQuery]) answers [QuotaExhausted]
  * until 00:00 UTC. It's counted in memory, so a restart (Render's
  * sleep) starts it again; that only makes it looser, never stricter.
+ *
+ * [keyPassages] matches the same query vector to the topic guides (#320), for no extra neurons;
+ * null leaves them out.
  */
 class VerseSearch(
     private val provider: EmbeddingProvider,
     private val translation: String = TRANSLATION,
     private val clock: Clock = Clock.systemUTC(),
-    private val dailyCap: Int = DAILY_CAP
+    private val dailyCap: Int = DAILY_CAP,
+    private val keyPassages: KeyPassages? = null
 ) {
     private val day = AtomicReference(LocalDate.now(clock))
     private val searchesToday = AtomicInteger(0)
 
     /** @throws com.application.bibleapp.server.ai.AiProviderException when the query can't be embedded. */
-    suspend fun search(query: String, limit: Int = RESULTS): List<VerseHit> {
+    suspend fun search(query: String, limit: Int = RESULTS): SearchFound {
         val vector = embedQuery(query)
         val started = System.nanoTime()
         val hits = newSuspendedTransaction(Dispatchers.IO) {
             rankVerses(TransactionManager.current().connection.connection as Connection, provider.model, translation, vector, query, limit)
         }
         log.info("Search: ${hits.size} results in ${(System.nanoTime() - started) / 1_000_000} ms")
-        return hits
+        // Not logged, not even as a count: which guide matched would hint at what was asked.
+        return SearchFound(hits, keyPassagesFor(vector))
+    }
+
+    /** Key passages never cost the search itself: if matching fails, the verses still come back. */
+    private fun keyPassagesFor(vector: FloatArray): List<String> = try {
+        keyPassages?.forQuery(vector).orEmpty()
+    } catch (e: Exception) {
+        log.warn("Key passages failed: {}", e::class.simpleName)
+        emptyList()
     }
 
     /**

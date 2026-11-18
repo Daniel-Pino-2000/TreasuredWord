@@ -62,12 +62,26 @@ class VerseSearchTest {
         folder.deleteRecursively()
     }
 
-    private fun search(clock: MutableClock = MutableClock(), cap: Int = VerseSearch.DAILY_CAP) =
-        VerseSearch(fake, translation, clock, cap)
+    private fun search(clock: MutableClock = MutableClock(), cap: Int = VerseSearch.DAILY_CAP, keyPassages: KeyPassages? = null) =
+        VerseSearch(fake, translation, clock, cap, keyPassages)
+
+    @Test
+    fun `a query matching a topic guide gets its key passages from the same embedding`() = runBlocking {
+        val guides = com.application.bibleapp.server.ai.TopicGuides.load()
+        val router = com.application.bibleapp.server.ai.TopicRouter.embedding(guides, FakeEmbeddingProvider(maxBatch = 32, dimensions = 1024))
+        val search = search(keyPassages = KeyPassages(router))
+
+        val found = search.search("I'm so stressed")
+
+        assertEquals(1, fake.calls.size)
+        assertEquals(guides.single { it.id == "anxiety" }.passages.map { it.first }, found.keyPassages)
+        assertEquals(verses.size, found.verses.size, "the ranking is the same as without")
+        assertEquals(emptyList(), search.search("Jesus wept").keyPassages)
+    }
 
     @Test
     fun `the verse closest in both rankings comes first, with one query embedding`() = runBlocking {
-        val hits = search().search("worry about tomorrow")
+        val hits = search().search("worry about tomorrow").verses
         assertEquals(VerseRef(40, 6, 34), hits.first().let { VerseRef(it.book, it.chapter, it.verse) })
         assertEquals(1, fake.calls.size)
         assertEquals(listOf("worry about tomorrow"), fake.calls.single().texts)
@@ -80,19 +94,19 @@ class VerseSearchTest {
     @Test
     fun `the keywords half ORs the words, so a verse with only some of them still rises`() = runBlocking {
         // "brokenhearted" is only in Psalm 34:18; the other words are in no verse.
-        val hits = search().search("I feel brokenhearted and alone tonight")
+        val hits = search().search("I feel brokenhearted and alone tonight").verses
         assertEquals(VerseRef(19, 34, 18), hits.first().let { VerseRef(it.book, it.chapter, it.verse) })
     }
 
     @Test
     fun `a query of only common words is ranked by the vectors alone`() = runBlocking {
-        val hits = search().search("what is it")
+        val hits = search().search("what is it").verses
         assertEquals(verses.size, hits.size)
     }
 
     @Test
     fun `at most the limit`() = runBlocking {
-        assertEquals(2, search().search("the LORD", limit = 2).size)
+        assertEquals(2, search().search("the LORD", limit = 2).verses.size)
     }
 
     @Test

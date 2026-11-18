@@ -201,6 +201,8 @@
     <string name="search_error">Couldn\'t search right now. Please try again.</string>
     <!-- Search by meaning (#287): the Search screen's two sections, word results first, then verses from the server. -->
     <string name="search_section_words">Verses with these words</string>
+    <!-- Search (#320): above "Related by meaning", the passages of the topic guide a search matched. -->
+    <string name="search_section_key_passages">Key passages</string>
     <string name="search_section_meaning">Related by meaning</string>
     <string name="search_words_none">No verses contain these words.</string>
     <string name="search_meaning_start">Find verses related by meaning</string>

@@ -177,6 +177,7 @@
     <string name="search_no_results">Tidak ada hasil untuk \"%1$s\"</string>
     <string name="search_error">Tidak dapat mencari saat ini. Coba lagi.</string>
     <string name="search_section_words">Ayat dengan kata-kata ini</string>
+    <string name="search_section_key_passages">Ayat-ayat kunci</string>
     <string name="search_section_meaning">Terkait menurut makna</string>
     <string name="search_words_none">Tidak ada ayat yang berisi kata-kata ini.</string>
     <string name="search_meaning_start">Cari ayat yang terkait menurut makna</string>

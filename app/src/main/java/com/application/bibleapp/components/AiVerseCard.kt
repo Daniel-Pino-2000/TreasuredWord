@@ -164,8 +164,9 @@ fun AiVerseCardList(
     }
 }
 
-/** The verses as one paragraph, each numbered in superscript when there's more than one. */
-private fun passageText(verses: List<PassageVerse>, numberColor: Color): AnnotatedString = buildAnnotatedString {
+/** The verses as one paragraph, each numbered in superscript when there's more than one; also
+ *  Search's key passages (#320). */
+fun passageText(verses: List<PassageVerse>, numberColor: Color): AnnotatedString = buildAnnotatedString {
     verses.forEachIndexed { index, verse ->
         if (index > 0) append(' ')
         if (verses.size > 1) {

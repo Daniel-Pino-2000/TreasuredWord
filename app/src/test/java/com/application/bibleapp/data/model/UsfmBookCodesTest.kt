@@ -1,5 +1,6 @@
 package com.application.bibleapp.data.model
 
+import com.application.bibleapp.utils.VerseReference
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -37,5 +38,20 @@ class UsfmBookCodesTest {
         assertNull(UsfmBookCodes.bookId("TOB")) // Tobit: a USFM code, but not one of the 66
         assertNull(UsfmBookCodes.code(0))
         assertNull(UsfmBookCodes.code(67))
+    }
+
+    @Test
+    fun `the server's references read as a verse, a range or a whole chapter`() {
+        assertEquals(VerseReference(19, 147, 3), UsfmBookCodes.parseReference("PSA 147:3"))
+        assertEquals(VerseReference(40, 11, 28, 30), UsfmBookCodes.parseReference("MAT 11:28-30"))
+        assertEquals(VerseReference(19, 73), UsfmBookCodes.parseReference("PSA 73"))
+        assertEquals(VerseReference(62, 5, 11, 13), UsfmBookCodes.parseReference(" 1jn 5:11-13 "))
+    }
+
+    @Test
+    fun `anything else isn't a reference`() {
+        listOf("XYZ 1:1", "PSA", "PSA 0", "PSA 23:0", "MAT 11:30-28", "MAT 11:28-", "John 3:16", "PSA 23:1, 2", "").forEach {
+            assertNull(it, UsfmBookCodes.parseReference(it))
+        }
     }
 }
