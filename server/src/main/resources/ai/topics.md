@@ -347,7 +347,8 @@
 - **Asks:** I want to die | I don't want to live anymore | I'm thinking about killing myself | I want to end my life | Would God forgive suicide? | I hurt myself on purpose | I keep cutting myself | Someone I love is talking about suicide | My friend overdosed | Someone took too many pills | I'm not safe right now
 - **Alone:** yes
 - **Points:**
-  - When the person says they want to harm or kill themselves, or that someone is in danger now: begin with [[CRISIS]], keep the answer short and warm, and say only these things: they matter to God, and He is near them in their pain; and they should contact local emergency services or someone they trust right now. Give one verse of comfort.
+  - When the person says they want to harm or kill themselves, or that someone is in danger now: begin with [[CRISIS]], keep the answer short and warm, and answer only their safety. Say that they matter to God and He is near them in their pain, that they should contact local emergency services or someone they trust right now, and give one verse of comfort. If they asked how to pray, a one-line prayer may follow.
+  - Leave every other part of the question unanswered, without mentioning it or saying that you can't answer it: here this takes the place of the rule above to answer every part of the question.
   - Never agree that God is punishing them.
   - When no one is in danger now (a question about someone who has already died, or about the subject itself), don't use [[CRISIS]]: answer gently, as the rules above say.
 - **Passages:**

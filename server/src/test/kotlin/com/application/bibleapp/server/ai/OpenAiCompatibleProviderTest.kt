@@ -150,6 +150,17 @@ class OpenAiCompatibleProviderTest {
     }
 
     @Test
+    fun cloudflaresError4006IsTheDailyLimitTooAndIsNotRetried() {
+        // Every request answered this after a busy day on 2026-11-17, until midnight (#326).
+        val provider = provider {
+            json("""{"errors":[{"message":"AiError: limit reached","code":4006}],"success":false}""", HttpStatusCode.TooManyRequests)
+        }
+
+        assertFailsWith<QuotaExhausted> { runBlocking { provider.complete(conversation, maxTokens = 700) } }
+        assertEquals(1, requests.size)
+    }
+
+    @Test
     fun cloudflaresMomentaryCapacityLimitThrowsUnavailable() {
         // Also HTTP 429, but code 3040: try again in a moment, not tomorrow.
         val provider = provider {
@@ -303,6 +314,13 @@ class OpenAiCompatibleProviderTest {
     @Test
     fun theDailyLimitBeforeAStreamThrowsQuotaExhausted() {
         val provider = provider { json("""{"errors":[{"message":"used up","code":3036}]}""", HttpStatusCode.TooManyRequests) }
+
+        assertFailsWith<QuotaExhausted> { runBlocking { provider.stream(conversation, maxTokens = 700) { } } }
+    }
+
+    @Test
+    fun error4006BeforeAStreamThrowsQuotaExhausted() {
+        val provider = provider { json("""{"errors":[{"message":"limit reached","code":4006}]}""", HttpStatusCode.TooManyRequests) }
 
         assertFailsWith<QuotaExhausted> { runBlocking { provider.stream(conversation, maxTokens = 700) { } } }
     }

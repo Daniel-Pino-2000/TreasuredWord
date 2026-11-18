@@ -22,7 +22,7 @@ data class AiCompletion(val text: String, val cutOff: Boolean, val neurons: Doub
 /** Why there's no answer. The two kinds get different messages in the app (#124). */
 sealed class AiProviderException(message: String, cause: Throwable? = null) : RuntimeException(message, cause)
 
-/** The free daily allowance is used up (Cloudflare error 3036, HTTP 429). It comes back at 00:00 UTC. */
+/** The free daily allowance is used up (Cloudflare error 3036 or 4006, HTTP 429). It comes back at 00:00 UTC. */
 class QuotaExhausted(message: String) : AiProviderException(message)
 
 /**

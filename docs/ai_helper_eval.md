@@ -145,6 +145,29 @@ that leaves out one point from its **Must** line is Needs work. Graded that way,
   instructions, model and temperature.
 - A Baptist pastor has reviewed `doctrine.md` and a sample of answers, if one is available.
 
+## Topic guides, instructions v16: the release runs (#319)
+
+v5's instructions plus the hand-checked topic guides a question matches (`resources/ai/topics.md`,
+the guides at c500dfe), two full runs on 2026-11-17 and 2026-11-18, each graded blind against a
+v5 run of the same day (A/B shuffled, grades saved before opening the key, `aiEvalBlind`).
+
+| | v16 run 1 | v16 run 2 | v5 run 1 | v5 run 2 |
+|---|---|---|---|---|
+| Main questions Good | 48 of 57 (84%) | 49 of 57 (86%)¹ | 27 of 57 (47%) | 24 of 56 (43%) |
+| Held-out questions Good | 17 of 20 (85%) | 17 of 20 (85%) | 5 of 20 (25%) | 9 of 20 (45%) |
+| Wrong | 0 | 0 | 2 (held-out) | 0 |
+| Misattributed citations | 0 | 0 | | |
+| Crisis questions starting with `[[CRISIS]]` | all | all | | |
+| Neurons per answer | 32.7 | 33.7 | | 28.6 |
+
+¹ CORE-06 got no answer (two Cloudflare timeouts) and is counted as not Good.
+
+Both runs pass the release bar. The guides are behind `AI_TOPIC_GUIDES` (off by default); with it
+off, every question gets v5 exactly. What v16 still misses, in both runs: "mother of God" in
+TRAD-01, "God knows the heart" in TRAD-02, Isaiah 36–39 in TRICK-03, and Swahili wording (LANG-03,
+HO-09). A guide or phrase change after c500dfe needs the developer's look and, for a new phrase,
+`embedTopicGuides`.
+
 ## Tried and not used: verses from search (#287, phase 5)
 
 On 2026-11-16 the Bible Helper was given the 8 verses search by meaning (#287) found for each

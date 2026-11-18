@@ -261,9 +261,9 @@ class OpenAiCompatibleProvider(
             // The error body is never logged: an "invalid input" error could repeat part of the question.
             val codes = errorCodes(body)
             log.warn("AI provider: HTTP {} in {} ms, error codes {}", status.value, millis, codes)
-            // Only 3036 is the daily allowance. Cloudflare also answers 429 with 3040 ("capacity
+            // 3036 and 4006 are the daily allowance. Cloudflare also answers 429 with 3040 ("capacity
             // temporarily exceeded, please try again"), which is over in moments, not at midnight.
-            if (QUOTA_EXHAUSTED_CODE in codes) {
+            if (isQuotaExhausted(codes)) {
                 throw QuotaExhausted("The AI's free daily allowance is used up")
             }
             // A 5xx, or a 429 that isn't the daily allowance (3040, "capacity temporarily exceeded").
@@ -300,8 +300,16 @@ class OpenAiCompatibleProvider(
          * Changing it changes the answers, so bump SystemPrompt.PROMPT_VERSION and run the evaluation.
          */
         internal const val TEMPERATURE = 0.2
-        /** Cloudflare: "you have used up your daily free allocation of 10,000 neurons". */
-        private const val QUOTA_EXHAUSTED_CODE = 3036
+        /**
+         * The free daily allowance is used up, back at 00:00 UTC. 3036 is Cloudflare's documented
+         * "you have used up your daily free allocation of 10,000 neurons". 4006 isn't in its error
+         * table, but on 2026-11-17 every request answered 429 with it after a busy day, until
+         * midnight (#326). Revisit if Cloudflare documents 4006 as something else.
+         */
+        private val QUOTA_EXHAUSTED_CODES = setOf(3036, 4006)
+
+        /** Shared with search's embeddings, which call the same Workers AI account. */
+        internal fun isQuotaExhausted(codes: List<Int>) = codes.any { it in QUOTA_EXHAUSTED_CODES }
         private val log = LoggerFactory.getLogger(OpenAiCompatibleProvider::class.java)
         private val json = Json { ignoreUnknownKeys = true }
 

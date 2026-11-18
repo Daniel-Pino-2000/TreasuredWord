@@ -101,7 +101,7 @@ class WorkersAiEmbeddingProvider(
             // The body is never logged: an "invalid input" error could repeat a text.
             val codes = OpenAiCompatibleProvider.errorCodes(text)
             log.warn("Embeddings: HTTP {} in {} ms, error codes {}", status.value, millis, codes)
-            if (QUOTA_EXHAUSTED_CODE in codes) throw QuotaExhausted("The AI's free daily allowance is used up")
+            if (OpenAiCompatibleProvider.isQuotaExhausted(codes)) throw QuotaExhausted("The AI's free daily allowance is used up")
             val transient = status.value >= 500 || status == HttpStatusCode.TooManyRequests
             throw Unavailable("Workers AI answered HTTP ${status.value}", transient = transient)
         }
@@ -152,8 +152,6 @@ class WorkersAiEmbeddingProvider(
          * per 1,000 neurons makes about 1,075 neurons per million tokens (#287's limits table).
          */
         const val NEURONS_PER_MILLION_TOKENS = 1_075.0
-        /** Cloudflare: "you have used up your daily free allocation of 10,000 neurons". */
-        private const val QUOTA_EXHAUSTED_CODE = 3036
         private val log = LoggerFactory.getLogger(WorkersAiEmbeddingProvider::class.java)
         private val json = Json { ignoreUnknownKeys = true }
 
