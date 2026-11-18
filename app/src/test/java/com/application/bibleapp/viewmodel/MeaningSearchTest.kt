@@ -42,7 +42,8 @@ class MeaningSearchTest {
         isEligible = { isMeaningSearchEligible(it) { query -> query == "John 3:16" } },
         phoneIsOnline = { online },
         serverWake = serverWake,
-        resolvePassages = ::resolvePassages
+        resolvePassages = ::resolvePassages,
+        isCrisis = { it == "I want to die" }
     )
 
     @Test
@@ -253,6 +254,52 @@ class MeaningSearchTest {
         search.onVersionChange()
         advanceUntilIdle()
         assertTrue(search.state.value.crisis)
+    }
+
+    @Test
+    fun `offline or unavailable, the phone's own phrases bring the help card`() = runTest {
+        // #330: no server to ask, so the phone's crisis phrases decide.
+        val search = meaningSearch()
+        online = false
+        search.submit("I want to die")
+        advanceUntilIdle()
+        assertEquals(MeaningSearchState("I want to die", MeaningSearchStatus.OFFLINE, crisis = true), search.state.value)
+        assertTrue(queries.isEmpty())
+
+        online = true
+        for (failure in listOf(SemanticSearchResult.Offline, SemanticSearchResult.Unavailable)) {
+            answer = failure
+            search.onQueryChange("")
+            search.submit("I want to die")
+            advanceUntilIdle()
+            assertTrue("$failure", search.state.value.crisis)
+        }
+
+        search.submit("worry about tomorrow")
+        advanceUntilIdle()
+        assertEquals(MeaningSearchStatus.UNAVAILABLE, search.state.value.status)
+        assertFalse(search.state.value.crisis)
+    }
+
+    @Test
+    fun `when the server answers, its crisis flag decides, not the phone's phrases`() = runTest {
+        // #330: the crisis guide knows far more ways to say it, and when to leave the card out.
+        answer = SemanticSearchResult.Found(listOf(VerseRef(19, 42, 5)), crisis = false)
+        val search = meaningSearch()
+
+        search.submit("I want to die")
+        advanceUntilIdle()
+        assertEquals(MeaningSearchStatus.DONE, search.state.value.status)
+        assertFalse(search.state.value.crisis)
+
+        // The verses failing to load is still the server's answer.
+        answer = SemanticSearchResult.Found(emptyList(), listOf(VerseReference(19, 34, 18)), crisis = false)
+        passagesFail = true
+        search.onQueryChange("")
+        search.submit("I want to die")
+        advanceUntilIdle()
+        assertEquals(MeaningSearchStatus.UNAVAILABLE, search.state.value.status)
+        assertFalse(search.state.value.crisis)
     }
 
     @Test

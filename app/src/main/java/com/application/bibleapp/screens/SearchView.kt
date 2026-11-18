@@ -269,7 +269,8 @@ private class MeaningSection(
  * instant and offline) first, then "Related by meaning" from the server, whose loading row sits
  * below the word results so they never wait for it or move. When the query matched a topic guide,
  * its "Key passages" come between them, with the server's answer (#320). When that guide is the
- * crisis guide, the Bible Helper's help card and then the key passages come first of all (#324).
+ * crisis guide, the Bible Helper's help card and then the key passages come first of all (#324);
+ * offline or unavailable, the card alone when the phone's own crisis phrases match (#330).
  * Without [meaning] (a verse reference), the word results alone.
  */
 @Composable
