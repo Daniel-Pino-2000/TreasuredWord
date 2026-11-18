@@ -96,11 +96,32 @@ class SearchRoutesTest {
     }
 
     @Test
+    fun aCrisisQueryIsMarkedCrisisWithTheCrisisGuidesPassages() = testApplication {
+        val response = start().search("I want to die")
+
+        assertEquals(HttpStatusCode.OK, response.status)
+        val body = response.body<SemanticSearchResponse>()
+        assertEquals(true, body.crisis, "#324: the app shows the help card")
+        val crisis = TopicGuides.load().single { it.id == "crisis" }
+        assertEquals(crisis.passages.map { it.first }, body.keyPassages)
+    }
+
+    @Test
+    fun anotherGuidesMatchLeavesCrisisOut() = testApplication {
+        val response = start().search("How can I be saved?")
+
+        assertEquals(HttpStatusCode.OK, response.status)
+        assertFalse("crisis" in response.bodyAsText(), "only true is ever sent")
+        assertEquals(null, response.body<SemanticSearchResponse>().crisis)
+    }
+
+    @Test
     fun withoutAMatchKeyPassagesAreLeftOut() = testApplication {
         val response = start().search("zzyzx qwerty")
 
         assertEquals(HttpStatusCode.OK, response.status)
         assertFalse("keyPassages" in response.bodyAsText(), "the same answer as before #320")
+        assertFalse("crisis" in response.bodyAsText(), "the same answer as before #324")
         assertEquals(null, response.body<SemanticSearchResponse>().keyPassages)
     }
 

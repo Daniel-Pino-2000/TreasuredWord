@@ -69,6 +69,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import com.application.bibleapp.R
 import com.application.bibleapp.utils.UiText
+import com.application.bibleapp.utils.CrisisPhrases
 import com.application.bibleapp.utils.VerseReference
 import com.application.bibleapp.utils.parseVerseReference
 import com.application.bibleapp.data.local.NoContentException
@@ -372,7 +373,8 @@ class BibleViewModel(
     val searchState: StateFlow<SearchUiState> = verseSearch.state
 
     // Search by meaning (#287): only on submit, from our server, below the word results, with a
-    // matching topic guide's key passages first (#320).
+    // matching topic guide's key passages first (#320), and the help card first of all for a crisis
+    // (#324), from the phone's own phrases when the server can't answer (#330).
     private val meaningSearch = MeaningSearch(
         scope = viewModelScope,
         search = semanticSearchApi::search,
@@ -388,7 +390,8 @@ class BibleViewModel(
             resolveKeyPassages(refs, _selectedVersion.value.id) { versionId, bookId, chapter ->
                 repository.getChapter(bookId, chapter, versionId)
             }
-        }
+        },
+        isCrisis = CrisisPhrases::matches
     )
 
     /** The "Related by meaning" section, without the verses the word results already show. */

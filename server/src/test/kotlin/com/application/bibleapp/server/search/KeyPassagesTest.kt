@@ -6,6 +6,7 @@ import com.application.bibleapp.server.ai.TopicRouter
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 
 /** Search's key passages (#320): which guides' passages a query vector gets, with no embedding of its own. */
 class KeyPassagesTest {
@@ -46,6 +47,14 @@ class KeyPassagesTest {
     fun aCrisisGuideAmongThePickedShowsAlone() {
         // repeated-sin first (1.0), crisis within 0.03 (0.98): only the crisis guide's passages.
         assertEquals(listOf("PSA 34:18", "MAT 11:28"), keyPassages.forQuery(floatArrayOf(0f, 0f, 0f, 1f)))
+    }
+
+    @Test
+    fun onlyTheCrisisGuideIsMarkedCrisis() {
+        // #324: the app shows the help card for this one.
+        assertEquals(KeyPassages.Match(listOf("PSA 34:18", "MAT 11:28"), crisis = true), keyPassages.match(floatArrayOf(0f, 0f, 0f, 1f)))
+        assertFalse(keyPassages.match(floatArrayOf(0f, 0.1f, 3f, 0f)).crisis)
+        assertEquals(KeyPassages.Match.NONE, keyPassages.match(floatArrayOf(0f, 1f, 0f, 0f)))
     }
 
     @Test

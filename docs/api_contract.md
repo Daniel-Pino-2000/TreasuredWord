@@ -700,7 +700,8 @@ data class SemanticSearchResult(val bookId: Int, val chapter: Int, val verse: In
 @Serializable
 data class SemanticSearchResponse(
     val results: List<SemanticSearchResult>,   // up to 20, best first
-    val keyPassages: List<String>? = null      // #320: absent when no topic guide matches
+    val keyPassages: List<String>? = null,     // #320: absent when no topic guide matches
+    val crisis: Boolean? = null                // #324: true for the crisis guide, absent otherwise
 )
 ```
 
@@ -718,6 +719,10 @@ within 0.03 of the first adds its passages too (duplicates once), and the crisis
 at 0.70 or more and within 0.06 of the best, is shown alone. No extra neurons, and whatever the Bible Helper's `AI_TOPIC_GUIDES` setting. The
 field is left out, not empty, when nothing matches, so apps from before #320 get the same answer
 as ever.
+
+`crisis` (#324): `true` when the guide that matched is the crisis guide (marked `Alone: yes` in
+`topics.md`), whose passages are then the only key passages. The app shows the Bible Helper's help
+card (a kind word and Find A Helpline) above them. Left out, never `false`, otherwise.
 POST, not GET, so the query never sits in a URL or a request log.
 Errors: `400 VALIDATION_ERROR` (`fieldErrors` keyed `q`), `503 SEARCH_UNAVAILABLE` (the AI_*
 settings aren't set, today's free neurons or the server's 20,000 searches a day are used up, or

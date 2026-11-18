@@ -41,7 +41,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.application.bibleapp.components.AiCrisisCard
+import com.application.bibleapp.components.FIND_A_HELPLINE_URL
 import com.application.bibleapp.components.SearchBar
+import com.application.bibleapp.utils.rememberExternalLinks
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import com.application.bibleapp.data.model.BibleBooks
 import com.application.bibleapp.data.model.VerseUI
 import com.application.bibleapp.ui.theme.Spacing
@@ -78,6 +84,7 @@ fun SearchView(
     val meaningState by bibleViewModel.meaningSearchState.collectAsState()
     val selectedVersion by bibleViewModel.selectedVersion.collectAsState()
     val keyboardController = LocalSoftwareKeyboardController.current
+    val links = rememberExternalLinks { bibleViewModel.showMessage(it) }
 
     // Not for a verse reference or a quoted phrase (#287): those keep the plain list of results.
     val offersMeaning = remember(searchState.query, bookNames) {
@@ -120,7 +127,8 @@ fun SearchView(
                     onSearch = {
                         keyboardController?.hide()
                         bibleViewModel.onSearchSubmit()
-                    }
+                    },
+                    onFindHelpline = { links.openPage(FIND_A_HELPLINE_URL) }
                 )
             )
             searchState.results.isNotEmpty() ->
@@ -252,15 +260,18 @@ private class MeaningSection(
     val wordsFailed: Boolean,
     val selectedVersionId: String,
     val versionLabel: (String) -> String,
-    val onSearch: () -> Unit
+    val onSearch: () -> Unit,
+    val onFindHelpline: () -> Unit
 )
 
 /**
  * The results. With [meaning], two sections (#287): "Verses with these words" (the word search,
  * instant and offline) first, then "Related by meaning" from the server, whose loading row sits
  * below the word results so they never wait for it or move. When the query matched a topic guide,
- * its "Key passages" come between them, with the server's answer (#320). Without [meaning] (a
- * verse reference), the word results alone.
+ * its "Key passages" come between them, with the server's answer (#320). When that guide is the
+ * crisis guide, the Bible Helper's help card and then the key passages come first of all (#324);
+ * offline or unavailable, the card alone when the phone's own crisis phrases match (#330).
+ * Without [meaning] (a verse reference), the word results alone.
  */
 @Composable
 private fun SearchResultsList(
@@ -279,12 +290,34 @@ private fun SearchResultsList(
             if (listState.isScrollInProgress) keyboardController?.hide()
         }
         val meaningSlow = rememberWaitingLong(meaning?.state?.isLoading == true)
+        val crisis = meaning?.state?.crisis == true
+        // The help card arrives with the server's answer, after the word results. The list keeps
+        // the item it shows at the top, so without this the card would land above the screen.
+        // Once per query, so Back from a verse still returns to where the user was (#324).
+        var crisisShown by rememberSaveable { mutableStateOf(false) }
+        LaunchedEffect(crisis) {
+            if (crisis && !crisisShown) {
+                crisisShown = true
+                listState.scrollToItem(0)
+            }
+        }
 
         LazyColumn(
             state = listState,
             modifier = Modifier
                 .fillMaxSize()
         ) {
+            if (meaning != null && crisis) {
+                // Someone may be in danger: a kind word and a way to real help before any verse,
+                // then the crisis guide's verses of comfort (#324).
+                item(key = "crisis_card") {
+                    AiCrisisCard(
+                        onFindHelpline = meaning.onFindHelpline,
+                        modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.md)
+                    )
+                }
+                keyPassagesSection(meaning, bookNames, onVerseClicked)
+            }
             if (meaning != null) {
                 item(key = "words_header") { SectionHeader(stringResource(R.string.search_section_words)) }
                 if (searchedVerses.isEmpty()) {
@@ -320,12 +353,8 @@ private fun LazyListScope.meaningSection(
     val state = meaning.state
     // A matching topic guide's passages (#320): the ones that answer the query, above the verses
     // that are only close to it. They arrive with the results, so they never move the loading row.
-    if (state.status == MeaningSearchStatus.DONE && state.keyPassages.isNotEmpty()) {
-        item(key = "key_header") { SectionHeader(stringResource(R.string.search_section_key_passages)) }
-        items(state.keyPassages, key = { "key_${it.reference}" }) { passage ->
-            KeyPassageRow(passage, meaning, bookNames, onVerseClicked)
-        }
-    }
+    // A crisis guide's are already at the top, under the help card (#324).
+    if (!state.crisis) keyPassagesSection(meaning, bookNames, onVerseClicked)
     item(key = "meaning_header") { SectionHeader(stringResource(R.string.search_section_meaning)) }
     when (state.status) {
         MeaningSearchStatus.IDLE -> item(key = "meaning_start") {
@@ -370,6 +399,20 @@ private fun LazyListScope.meaningSection(
                 )
             }
         }
+    }
+}
+
+/** The "Key passages" header and rows (#320), when the search is done and a guide matched. */
+private fun LazyListScope.keyPassagesSection(
+    meaning: MeaningSection,
+    bookNames: Map<Int, String>,
+    onVerseClicked: (bookId: Int, chapter: Int, verse: Int) -> Unit
+) {
+    val state = meaning.state
+    if (state.status != MeaningSearchStatus.DONE || state.keyPassages.isEmpty()) return
+    item(key = "key_header") { SectionHeader(stringResource(R.string.search_section_key_passages)) }
+    items(state.keyPassages, key = { "key_${it.reference}" }) { passage ->
+        KeyPassageRow(passage, meaning, bookNames, onVerseClicked)
     }
 }
 
