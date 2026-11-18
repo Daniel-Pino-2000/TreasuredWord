@@ -40,7 +40,8 @@ data class KeyPassage(val reference: VerseReference, val verses: List<PassageVer
  * The "Related by meaning" section, and the "Key passages" above it when the query matched a topic
  * guide (#320). [query] is the submitted query [results] and [keyPassages] belong to; [results]
  * leaves out the verses [keyPassages] show. [crisis] (#324): the query matched the crisis guide, so
- * the Bible Helper's help card comes first; kept even when the verses couldn't be read.
+ * the Bible Helper's help card comes first; kept even when the verses couldn't be read. When the
+ * server can't answer (offline, unavailable), the phone's own crisis phrases decide instead (#330).
  */
 data class MeaningSearchState(
     val query: String = "",
@@ -58,7 +59,9 @@ data class MeaningSearchState(
  * Cloudflare's free neurons) per real search. Typing something else clears it, and a new
  * submission cancels the one before. The verses come back as references only; [resolve] and
  * [resolvePassages] (the key passages, #320) read them from the Bibles on the phone, again after a
- * version change.
+ * version change. [isCrisis] is the phone's fallback for the help card when the server can't
+ * answer (#330): offline or unavailable only, as the server's crisis guide knows far more ways to
+ * say it.
  */
 class MeaningSearch(
     private val scope: CoroutineScope,
@@ -67,7 +70,8 @@ class MeaningSearch(
     private val isEligible: (query: String) -> Boolean,
     private val phoneIsOnline: () -> Boolean = { true },
     private val serverWake: ServerWake? = null,
-    private val resolvePassages: suspend (List<VerseReference>) -> List<KeyPassage> = { emptyList() }
+    private val resolvePassages: suspend (List<VerseReference>) -> List<KeyPassage> = { emptyList() },
+    private val isCrisis: (query: String) -> Boolean = { false }
 ) {
     private val _state = MutableStateFlow(MeaningSearchState())
     val state: StateFlow<MeaningSearchState> = _state.asStateFlow()
@@ -116,7 +120,7 @@ class MeaningSearch(
         _state.value = MeaningSearchState(query, MeaningSearchStatus.SEARCHING)
         job = scope.launch {
             if (!phoneIsOnline()) {
-                _state.value = MeaningSearchState(query, MeaningSearchStatus.OFFLINE)
+                _state.value = unanswered(query, MeaningSearchStatus.OFFLINE)
                 return@launch
             }
             serverWake?.takeUnless { it.isAwake() }?.let { wake ->
@@ -130,11 +134,16 @@ class MeaningSearch(
                     // The help card never depends on reading the verses (#324).
                     doneOrNull(query, result) ?: MeaningSearchState(query, MeaningSearchStatus.UNAVAILABLE, crisis = result.crisis)
                 }
-                SemanticSearchResult.Offline -> MeaningSearchState(query, MeaningSearchStatus.OFFLINE)
-                SemanticSearchResult.Unavailable -> MeaningSearchState(query, MeaningSearchStatus.UNAVAILABLE)
+                SemanticSearchResult.Offline -> unanswered(query, MeaningSearchStatus.OFFLINE)
+                SemanticSearchResult.Unavailable -> unanswered(query, MeaningSearchStatus.UNAVAILABLE)
             }
         }
     }
+
+    /** The server couldn't answer: the help card comes from the phone's own phrases (#330). Not
+     *  when it did answer and the verses failed to load, where its own `crisis` stands. */
+    private fun unanswered(query: String, status: MeaningSearchStatus) =
+        MeaningSearchState(query, status, crisis = isCrisis(query))
 
     /** [found] read from the phone's Bibles, key passages first, or null when that failed. */
     private suspend fun doneOrNull(query: String, found: SemanticSearchResult.Found): MeaningSearchState? = try {
