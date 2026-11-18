@@ -312,7 +312,7 @@ fun Navigation(
                     // (defaulting to verse 1) let that load's completion race this later verse
                     // pick and land after it, silently resetting the scroll target back to 1.
                     bibleViewModel.setBook(bookId, chapter, verse)
-                    navController.navigate(Screen.Bible.route)
+                    navController.returnToReader()
                 }
             )
 
@@ -323,7 +323,7 @@ fun Navigation(
                 bibleViewModel,
                 modifier = keyboardScreenModifier,
                 onVersionClicked = {
-                    navController.navigate(Screen.Bible.route)
+                    navController.returnToReader()
                 }
             )
         }

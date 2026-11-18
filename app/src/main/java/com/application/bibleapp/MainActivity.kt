@@ -112,6 +112,7 @@ import com.application.bibleapp.data.model.BookResources
 import com.application.bibleapp.navigation.Navigation
 import com.application.bibleapp.navigation.Screen
 import com.application.bibleapp.navigation.ScreenTransitions
+import com.application.bibleapp.navigation.navigateToTab
 import com.application.bibleapp.ui.theme.BibleAppTheme
 import com.application.bibleapp.ui.theme.Spacing
 import com.application.bibleapp.ui.theme.ThemeMode
@@ -433,7 +434,7 @@ class MainActivity : AppCompatActivity() {
                         ) {
                             MainNavigationRail(
                                 currentRoute = tabsRoute.route,
-                                onItemSelected = { route -> navController.navigate(route) }
+                                onItemSelected = { route -> navController.navigateToTab(route) }
                             )
                         }
                     }
@@ -575,7 +576,7 @@ class MainActivity : AppCompatActivity() {
                                             currentRoute = tabsRoute.route,
                                             bibleViewModel = bibleViewModel,
                                             chromeHiddenFraction = chromeHiddenFraction,
-                                            onItemSelected = { route -> navController.navigate(route) },
+                                            onItemSelected = { route -> navController.navigateToTab(route) },
                                             onBookPickerClicked = { navController.navigate(Screen.BookPicker.route) },
                                             modifier = Modifier.onSizeChanged { bottomBarHeightPx = it.height }
                                         )
