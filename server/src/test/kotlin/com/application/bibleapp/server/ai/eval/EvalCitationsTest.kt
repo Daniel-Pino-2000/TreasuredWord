@@ -77,8 +77,11 @@ class EvalCitationsTest {
         // Left open before the next marker, and read when every passage in it is real (#222).
         assertEquals(listOf("GEN 2:24", "ROM 1:26-27"), cited("marriage [[GEN 2:24], [[ROM 1:26-27]], the core"))
         assertEquals(listOf("JHN 3:16"), cited("[[XYZ 1:1], [[JHN 3:16]]"))
-        // Not a passage: the crisis marker, a whole book, plain text in the app, a backwards range.
-        assertEquals(emptyList(), cited("[[CRISIS]] Read [[JHN]], [[REV 13-19]], [[HEZ 3:16]], [[JHN 3:16-14]] and [[14]]."))
+        // A range of chapters, a link in the app since #339, and one more chapter after it.
+        assertEquals(listOf("1CO 12-14", "REV 13-19", "PSA 23", "PSA 24"), cited("Read [[1CO 12-14]], [[REV 13–19]] and [[PSA 23, 24]]."))
+        assertTrue(passage("1CO 12-14").overlaps(passage("1CO 13:4")))
+        // Not a passage: the crisis marker, a whole book, plain text in the app, backwards ranges.
+        assertEquals(emptyList(), cited("[[CRISIS]] Read [[JHN]], [[REV 19-13]], [[HEZ 3:16]], [[JHN 3:16-14]] and [[14]]."))
     }
 
     @Test
