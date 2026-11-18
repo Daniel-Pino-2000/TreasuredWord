@@ -89,9 +89,11 @@ class TopicGuideMatcher(
         const val TIMEOUT_MILLIS = 3_000L
         /**
          * The first match after a start (#341): on 2026-11-18 it ran past 3 s right after a
-         * restart, while warm ones took 0.6–1.1 s. It waits at most this much more, once.
+         * restart, while warm ones took 0.6–1.1 s. Render's log then showed the first request to
+         * Cloudflare after a start takes ~7.7–7.9 s even when it's free, and the warm-up's
+         * embedding 8.7 s in all, so this leaves margin above that. Only once per start.
          */
-        const val FIRST_TIMEOUT_MILLIS = 8_000L
+        const val FIRST_TIMEOUT_MILLIS = 12_000L
         private const val WARM_UP_TIMEOUT_MILLIS = 20_000L
         /** Any short text does; this one says nothing about anyone's question. */
         private const val WARM_UP_TEXT = "Bible"
