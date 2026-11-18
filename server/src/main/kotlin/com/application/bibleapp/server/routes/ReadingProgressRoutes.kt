@@ -1,6 +1,7 @@
 package com.application.bibleapp.server.routes
 
 import com.application.bibleapp.server.auth.currentUserId
+import com.application.bibleapp.server.db.dbQuery
 import com.application.bibleapp.server.db.tables.ReadingProgress
 import com.application.bibleapp.server.models.ErrorResponse
 import com.application.bibleapp.server.models.ReadingProgressResponse
@@ -15,7 +16,6 @@ import io.ktor.server.routing.put
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
-import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import java.time.Instant
 
@@ -37,7 +37,7 @@ fun Route.readingProgressRoutes() {
         get("/reading-progress") {
             val userId = call.currentUserId()
 
-            val row = transaction {
+            val row = dbQuery {
                 ReadingProgress.selectAll().where { ReadingProgress.userId eq userId }.singleOrNull()
             }
 
@@ -74,7 +74,7 @@ fun Route.readingProgressRoutes() {
             }
             val confirmedReadAt = readAt!!
 
-            val existing = transaction {
+            val existing = dbQuery {
                 ReadingProgress.selectAll().where { ReadingProgress.userId eq userId }.singleOrNull()
             }
 
@@ -88,7 +88,7 @@ fun Route.readingProgressRoutes() {
                 return@put
             }
 
-            transaction {
+            dbQuery {
                 if (existing == null) {
                     ReadingProgress.insert {
                         it[ReadingProgress.userId] = userId

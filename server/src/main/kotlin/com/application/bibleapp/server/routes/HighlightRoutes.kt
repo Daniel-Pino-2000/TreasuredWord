@@ -1,6 +1,7 @@
 package com.application.bibleapp.server.routes
 
 import com.application.bibleapp.server.auth.currentUserId
+import com.application.bibleapp.server.db.dbQuery
 import com.application.bibleapp.server.db.tables.Highlights
 import com.application.bibleapp.server.models.CreateHighlightRequest
 import com.application.bibleapp.server.models.ErrorResponse
@@ -23,7 +24,6 @@ import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.andWhere
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
-import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import java.time.Instant
 import java.util.UUID
@@ -52,7 +52,7 @@ fun Route.highlightRoutes() {
             // Read before the query, so a change saved while it runs is at or after this time and
             // the client's next `updatedSince=serverTime` still picks it up (#84).
             val serverTime = Instant.now()
-            val rows = transaction {
+            val rows = dbQuery {
                 val query = Highlights.selectAll().where { Highlights.userId eq userId }
                 if (updatedSince != null) {
                     // Include tombstones too, so a syncing device can see what was deleted.
@@ -96,7 +96,7 @@ fun Route.highlightRoutes() {
             }
 
             val now = Instant.now()
-            val highlightId = transaction {
+            val highlightId = dbQuery {
                 Highlights.insert {
                     it[Highlights.userId] = userId
                     it[versionId] = request.versionId
@@ -129,7 +129,7 @@ fun Route.highlightRoutes() {
                 }
             val request = call.receive<UpdateHighlightRequest>()
 
-            val existing = transaction {
+            val existing = dbQuery {
                 Highlights.selectAll()
                     .where { (Highlights.id eq highlightId) and (Highlights.userId eq userId) }
                     .singleOrNull()
@@ -143,7 +143,7 @@ fun Route.highlightRoutes() {
             }
 
             val now = Instant.now()
-            transaction {
+            dbQuery {
                 Highlights.update({ Highlights.id eq highlightId }) {
                     it[color] = request.color
                     it[updatedAt] = now
@@ -164,7 +164,7 @@ fun Route.highlightRoutes() {
                     return@delete
                 }
 
-            val existing = transaction {
+            val existing = dbQuery {
                 Highlights.selectAll()
                     .where { (Highlights.id eq highlightId) and (Highlights.userId eq userId) }
                     .singleOrNull()
@@ -179,7 +179,7 @@ fun Route.highlightRoutes() {
             // asks for updatedSince changes can learn this was deleted rather than just seeing
             // it silently vanish (docs/api_contract.md decision 13).
             val now = Instant.now()
-            transaction {
+            dbQuery {
                 Highlights.update({ Highlights.id eq highlightId }) {
                     it[deletedAt] = now
                     it[updatedAt] = now
