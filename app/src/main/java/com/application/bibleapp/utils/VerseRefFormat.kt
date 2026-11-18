@@ -94,6 +94,10 @@ fun formatVerseReference(reference: VerseReference, bookName: (Int) -> String): 
     return if (end == null) "$chapter:$start" else "$chapter:$start-$end"
 }
 
+/** A range of whole chapters as text, "1 Corintios 12–14", with an en dash (#339). */
+fun formatChapterRange(bookId: Int, first: Int, last: Int, bookName: (Int) -> String): String =
+    "${bookName(bookId)} $first–$last"
+
 /**
  * [bookId]'s name in translation [versionId] itself. A highlight or note is labelled in the
  * translation it was made in, matching the verse text shown with it, whatever version is selected

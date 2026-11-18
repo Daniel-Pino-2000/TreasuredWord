@@ -22,8 +22,10 @@ object EvalChecks {
         """\[\[((?:(?!\[\[|]]).){1,120})]]|\[\[([^\[\])\n]{1,40})(?:\)]?|](?!]))|\[\[((?:(?!\[\[|]]).){1,120})(?=\[\[)"""
     )
     private val separator = Regex("""[\s\]\[]*[,;][\s\]\[]*""")
+    // A book, then optionally a chapter and either ":verse-verse" or "-chapter", a range of
+    // chapters such as "1CO 12-14" (group 5, #339).
     private val piece = Regex(
-        """([1-3]?\s*\p{L}[\p{L} .]*?)\.?\s*(?:(\d{1,3})(?:\s*[:.]\s*(\d{1,3})(?:\s*[-–]\s*(\d{1,3}))?)?)?"""
+        """([1-3]?\s*\p{L}[\p{L} .]*?)\.?\s*(?:(\d{1,3})(?:\s*[:.]\s*(\d{1,3})(?:\s*[-–]\s*(\d{1,3}))?|\s*[-–]\s*(\d{1,3}))?)?"""
     )
     // The "14" of [[JHN 1:1, 14]]: the app shows it as text after the link, "John 1:1, 14".
     private val verseOnly = Regex("""\d{1,3}(?:\s*[:.]\s*\d{1,3})?(?:\s*[-–]\s*\d{1,3})?""")
@@ -66,9 +68,8 @@ object EvalChecks {
      * Why part of `[[inside]]` would show as plain text in the app, or null when all of it shows
      * as links or book names. The app reads more than the instructions ask for (#190): a whole
      * chapter `[[PSA 23]]` or book `[[JHN]]`, `1 JHN`, a name such as `PHIL`, and a list
-     * `[[JHN 1:1, 14]]`. It doesn't read a chapter range such as `[[REV 13-19]]`, so the reader
-     * would see the raw code. The server has no verse counts, so a verse past a chapter's end is
-     * left to the people grading.
+     * `[[JHN 1:1, 14]]`, and a range of chapters `[[1CO 12-14]]` (#339). The server has no verse
+     * or chapter counts, so a verse or chapter past the end is left to the people grading.
      */
     internal fun referenceProblem(inside: String): String? {
         val pieces = inside.split(separator).map { it.replace("[", "").replace("]", "").trim() }
@@ -93,9 +94,9 @@ object EvalChecks {
     }
 
     /**
-     * Every passage [answer] shows as a verse card, in order (#321): the markers [check] accepts,
-     * read the same way. A whole book (`[[JHN]]`), `[[CRISIS]]` and what the app shows as text are
-     * left out. A bare verse after a passage, the "14" of `[[JHN 1:1, 14]]`, is a verse of that
+     * Every passage [answer] cites, in order (#321): the markers [check] accepts, read the same
+     * way, each a verse card in the app or, for a range of chapters (`[[1CO 12-14]]`, #339), a
+     * link. A whole book (`[[JHN]]`), `[[CRISIS]]` and what the app shows as text are left out. A bare verse after a passage, the "14" of `[[JHN 1:1, 14]]`, is a verse of that
      * chapter, as the reader understands it.
      */
     internal fun passagesIn(answer: String): List<Passage> =
@@ -116,10 +117,13 @@ object EvalChecks {
             val passage = if (previous != null && verseOnly.matches(text)) {
                 verseAfter(previous, text)
             } else {
-                piece.matchEntire(text)?.destructured?.let { (book, chapter, from, to) ->
+                piece.matchEntire(text)?.destructured?.let { (book, chapter, from, to, lastChapter) ->
                     val id = EvalBookNames.find(book)
-                    if (id == null || chapter.isEmpty()) null // not a book, or a whole book
-                    else Passage(id, chapter.toInt(), from.toIntOrNull(), chapter.toInt(), to.toIntOrNull() ?: from.toIntOrNull())
+                    when {
+                        id == null || chapter.isEmpty() -> null // not a book, or a whole book
+                        lastChapter.isNotEmpty() -> Passage(id, chapter.toInt(), null, lastChapter.toInt(), null)
+                        else -> Passage(id, chapter.toInt(), from.toIntOrNull(), chapter.toInt(), to.toIntOrNull() ?: from.toIntOrNull())
+                    }
                 }
             }
             if (passage != null && passage.isValid) {
@@ -144,12 +148,15 @@ object EvalChecks {
 
     private fun pieceProblem(text: String): String? {
         val match = piece.matchEntire(text) ?: return "\"$text\" shows as plain text"
-        val (book, chapter, from, to) = match.destructured
+        val (book, chapter, from, to, lastChapter) = match.destructured
         if (EvalBookNames.find(book) == null) return "${book.trim()} isn't a book the app knows"
         return when {
             chapter.isEmpty() -> null // a whole book: the app shows its name
             chapter.toInt() < 1 || (from.isNotEmpty() && from.toInt() < 1) -> "chapter and verse start at 1"
             to.isNotEmpty() && to.toInt() < from.toInt() -> "the range runs backwards"
+            // A range of chapters, a link to the first since #339. In a one-chapter book the app
+            // reads it as verses ("JUD 3-4"), which the server can't tell apart: both pass.
+            lastChapter.isNotEmpty() && lastChapter.toInt() < chapter.toInt() -> "the range runs backwards"
             else -> null
         }
     }

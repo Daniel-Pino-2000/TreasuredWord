@@ -54,7 +54,8 @@ class AiEvalTest {
             "[[1 JHN 2:3-4]]", "[[1 JHN 1:9]]", // a space after the number
             "[[JHN 1:1, 14]]", "[[JHN 1:1, JHN 1:14]]", "[[PSA 103:8], [1JN 1:9]]", // a list
             "[[PHIL 4:6-7]]", "[[PHI 4:6-7]]", "[[EZEK 36:26]]", "[[John 3:16]]", // a name, not the code
-            "[[JHN 3:16–18]]", "[[jhn 3:16]]"
+            "[[JHN 3:16–18]]", "[[jhn 3:16]]",
+            "[[1CO 12-14]]", "[[REV 13–19]]", "[[1CO 12-12]]" // a range of chapters: a link (#339)
         )
         for (marker in shown) {
             assertEquals(emptyList(), EvalChecks.check(plain, "See $marker for more."), marker)
@@ -63,15 +64,16 @@ class AiEvalTest {
 
     @Test
     fun aMarkerThatShowsAsPlainTextIsFlagged() {
-        // An invented book (TRICK-03), an unknown one, chapter or verse 0, a backwards range, and
-        // a chapter range, which the app can't read and shows as "REV 13-19", raw code and all.
+        // An invented book (TRICK-03), an unknown one, chapter or verse 0, and backwards ranges of
+        // verses and of chapters, which the app shows as "1CO 14-12", raw code and all (#339).
         val plainText = mapOf(
             "[[HEZ 3:16]]" to "HEZ isn't a book the app knows",
             "[[XYZ 1:1]]" to "XYZ isn't a book the app knows",
             "[[JHN 0:1]]" to "chapter and verse start at 1",
             "[[JHN 3:0]]" to "chapter and verse start at 1",
             "[[JHN 3:16-14]]" to "the range runs backwards",
-            "[[REV 13-19]]" to "\"REV 13-19\" shows as plain text",
+            "[[1CO 14-12]]" to "the range runs backwards",
+            "[[1CO 0-2]]" to "chapter and verse start at 1",
             "[[14]]" to "\"14\" shows as plain text",
             "[[JHN 1:1, XYZ 2:2]]" to "XYZ isn't a book the app knows"
         )

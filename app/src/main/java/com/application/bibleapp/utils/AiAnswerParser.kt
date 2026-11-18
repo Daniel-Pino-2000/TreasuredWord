@@ -15,12 +15,18 @@ sealed interface AiAnswerPart {
 
     /** A whole book, such as `[[PSA]]`: shown as the book's name, without a card (#190). */
     data class Book(val bookId: Int) : AiAnswerPart
+
+    /**
+     * A range of whole chapters, such as `[[1CO 12-14]]` (#339): a link to the [first] chapter,
+     * without a card, since three chapters would make one far too long.
+     */
+    data class Chapters(val bookId: Int, val first: Int, val last: Int) : AiAnswerPart
 }
 
 /**
- * Splits [answer] at its verse markers — `[[JHN 3:16]]`, `[[JHN 3:16-18]]`, `[[PSA 23]]`, with
- * the USFM book code in any case (#129). The AI only names verses; the app shows their text from
- * the user's own Bible, so a marker that doesn't point at a real passage (an unknown book, chapter
+ * Splits [answer] at its verse markers — `[[JHN 3:16]]`, `[[JHN 3:16-18]]`, `[[PSA 23]]`, a range
+ * of chapters `[[1CO 12-14]]` (#339) — with the USFM book code in any case (#129). The AI only
+ * names verses; the app shows their text from the user's own Bible, so a marker that doesn't point at a real passage (an unknown book, chapter
  * 0, a verse past the chapter's end) becomes plain text, never a card. A verse counts as real when
  * the selected translation has it ([structure], see [ChapterStructure]) or the bundled KJV does,
  * since a card falls back to the KJV.
@@ -110,22 +116,24 @@ fun List<AiAnswerPart>.plainText(bookName: (Int) -> String): String = joinToStri
         is AiAnswerPart.Text -> part.text
         is AiAnswerPart.Reference -> formatVerseReference(part.reference, bookName)
         is AiAnswerPart.Book -> bookName(part.bookId)
+        is AiAnswerPart.Chapters -> formatChapterRange(part.bookId, part.first, part.last, bookName)
     }
 }
 
 /** One marker's text as a passage or a whole book, or null when it doesn't name a real one. */
 private fun String.toPart(structure: ChapterStructure): AiAnswerPart? {
     val match = PIECE.matchEntire(this) ?: return null
-    val (bookText, chapterText, startText, endText) = match.destructured
+    val (bookText, chapterText, startText, endText, lastChapterText) = match.destructured
     // The code the instructions ask for first, then a name or abbreviation ("1 JHN" → 1 John).
     val bookId = UsfmBookCodes.bookId(bookText.replace(" ", "")) ?: findBook(bookText) ?: return null
     if (chapterText.isEmpty()) return AiAnswerPart.Book(bookId)
 
     val chapters = maxOf(structure.chapterCount(bookId), BibleBooks.getChapterCount(bookId))
-    // A one-chapter book is often cited by verse alone: "Jude 5" is Jude 1:5.
-    if (chapters == 1 && startText.isEmpty() && chapterText.toInt() > 1) {
-        return reference(bookId, 1, chapterText, "", structure)?.let(AiAnswerPart::Reference)
+    // A one-chapter book is often cited by verse alone: "Jude 5" is Jude 1:5, "Jude 3-4" 1:3-4.
+    if (chapters == 1 && startText.isEmpty() && (chapterText.toInt() > 1 || lastChapterText.isNotEmpty())) {
+        return reference(bookId, 1, chapterText, lastChapterText, structure)?.let(AiAnswerPart::Reference)
     }
+    if (lastChapterText.isNotEmpty()) return chapterRange(bookId, chapterText.toInt(), lastChapterText.toInt(), chapters)
     return reference(bookId, chapterText.toInt(), startText, endText, structure)?.let(AiAnswerPart::Reference)
 }
 
@@ -147,6 +155,16 @@ private fun reference(
     return VerseReference(bookId, chapter, start, end.takeIf { it != start })
 }
 
+/**
+ * Chapters [first] to [last] of a book with [chapters] chapters (#339), or null when the range runs
+ * backwards or past the book's end. "12-12" is chapter 12, as a one-verse range is one verse.
+ */
+private fun chapterRange(bookId: Int, first: Int, last: Int, chapters: Int): AiAnswerPart? = when {
+    first !in 1..chapters || last !in first..chapters -> null
+    last == first -> AiAnswerPart.Reference(VerseReference(bookId, first))
+    else -> AiAnswerPart.Chapters(bookId, first, last)
+}
+
 /** One passage of a marker without its single brackets: "[1JN 1:9" → "1JN 1:9". */
 private fun String.cleanPiece(): String = replace("[", "").replace("]", "").trim()
 
@@ -164,10 +182,11 @@ private val MARKER = Regex(
 private val SEPARATOR = Regex("""[\s\]\[]*([,;])[\s\]\[]*""")
 
 /** A book — the code or a name, which may start with 1–3 and contain spaces or dots — then
- *  optionally a chapter, `:verse` (or `.verse`) and `-verse`. Spaces are tolerated, and an en dash
- *  for the range. Three digits at most, so a long number can't overflow `toInt`. */
+ *  optionally a chapter, and either `:verse` (or `.verse`) and `-verse`, or `-chapter` for a range
+ *  of chapters (group 5, #339). Spaces are tolerated, and an en dash for the range. Three digits at
+ *  most, so a long number can't overflow `toInt`. Keep in step with the evaluation's `EvalChecks`. */
 private val PIECE = Regex(
-    """([1-3]?\s*\p{L}[\p{L} .]*?)\.?\s*(?:(\d{1,3})(?:\s*[:.]\s*(\d{1,3})(?:\s*[-–]\s*(\d{1,3}))?)?)?"""
+    """([1-3]?\s*\p{L}[\p{L} .]*?)\.?\s*(?:(\d{1,3})(?:\s*[:.]\s*(\d{1,3})(?:\s*[-–]\s*(\d{1,3}))?|\s*[-–]\s*(\d{1,3}))?)?"""
 )
 
 /**

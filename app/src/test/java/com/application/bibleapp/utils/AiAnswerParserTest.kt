@@ -15,6 +15,8 @@ class AiAnswerParserTest {
 
     private fun book(bookId: Int) = AiAnswerPart.Book(bookId)
 
+    private fun chapters(bookId: Int, first: Int, last: Int) = AiAnswerPart.Chapters(bookId, first, last)
+
     @Test
     fun `a single verse`() {
         assertEquals(
@@ -208,6 +210,48 @@ class AiAnswerParserTest {
         )
     }
 
+    // A range of chapters (#339): TRAD-03 in v16's evaluation wrote [[1CO 12-14]].
+
+    @Test
+    fun `a range of chapters is a link to the first, without a card`() {
+        val parts = parseAiAnswer("Paul writes on the gifts in [[1CO 12-14]].")
+
+        assertEquals(listOf(text("Paul writes on the gifts in "), chapters(46, 12, 14), text(".")), parts)
+        assertEquals(emptyList<VerseReference>(), parts.citedReferences())
+        assertEquals(listOf(chapters(66, 13, 19)), parseAiAnswer("[[REV 13–19]]"))
+        assertEquals(listOf(chapters(46, 12, 14)), parseAiAnswer("[[1 Cor 12 - 14]]"))
+        assertEquals(listOf(ref(43, 3, 16), text(", "), chapters(43, 14, 17)), parseAiAnswer("[[JHN 3:16], [JHN 14-17]]"))
+        assertEquals(listOf(text("See "), chapters(46, 12, 14), text(".")), parseAiAnswer("See [[1CO 12-14]."))
+    }
+
+    @Test
+    fun `a range of one chapter is that chapter`() {
+        assertEquals(listOf(ref(46, 13)), parseAiAnswer("[[1CO 13-13]]"))
+    }
+
+    @Test
+    fun `a backwards range of chapters or one past the book's end becomes plain text`() {
+        // 1 Corinthians has 16 chapters.
+        assertEquals(listOf(text("1CO 14-12")), parseAiAnswer("[[1CO 14-12]]"))
+        assertEquals(listOf(text("1CO 12-17")), parseAiAnswer("[[1CO 12-17]]"))
+        assertEquals(listOf(text("1CO 0-2")), parseAiAnswer("[[1CO 0-2]]"))
+    }
+
+    @Test
+    fun `a range in a one-chapter book is a range of verses`() {
+        assertEquals(listOf(ref(65, 1, 3, 4)), parseAiAnswer("[[JUD 3-4]]"))
+        assertEquals(listOf(ref(65, 1, 1, 5)), parseAiAnswer("[[JUD 1-5]]"))
+    }
+
+    @Test
+    fun `a range of chapters reads in the version's book names, with an en dash`() {
+        val spanish = mapOf(46 to "1 Corintios")
+        val name = { id: Int -> spanish[id] ?: BibleBooks.getBookById(id)!!.name }
+
+        assertEquals("Lee 1 Corintios 12–14.", parseAiAnswer("Lee [[1CO 12-14]].").plainText(name))
+        assertEquals("1 Corinthians 12–14", formatChapterRange(46, 12, 14) { BibleBooks.getBookById(it)!!.name })
+    }
+
     @Test
     fun `a one-chapter book cited by verse alone`() {
         assertEquals(listOf(ref(65, 1, 24)), parseAiAnswer("[[JUD 24]]"))
@@ -218,7 +262,8 @@ class AiAnswerParserTest {
     fun `no answer shows raw double brackets`() {
         val markers = listOf(
             "[[1 JHN 1:9]]", "[[EZEK 36:26]]", "[[PSA]]", "[[PSA 103:8], [1JN 1:9]]", "[[PHI 4:6-7]]",
-            "[[JOHN 5:39]]", "[[PSALM 119:105]]", "[[XYZ 1:1]]", "[[JHN 99:1]]", "[[not a verse]]", "[[JHN 3:16"
+            "[[JOHN 5:39]]", "[[PSALM 119:105]]", "[[XYZ 1:1]]", "[[JHN 99:1]]", "[[not a verse]]", "[[JHN 3:16",
+            "[[1CO 12-14]]", "[[1CO 14-12]]"
         )
         markers.forEach { marker ->
             val shown = parseAiAnswer("Before $marker after").filterIsInstance<AiAnswerPart.Text>().joinToString { it.text }

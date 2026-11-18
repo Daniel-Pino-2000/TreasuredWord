@@ -113,6 +113,7 @@ import com.application.bibleapp.utils.AppLanguage
 import com.application.bibleapp.utils.VerseReference
 import com.application.bibleapp.utils.bookNameInVersion
 import com.application.bibleapp.utils.citedReferences
+import com.application.bibleapp.utils.formatChapterRange
 import com.application.bibleapp.utils.formatVerseReference
 import com.application.bibleapp.utils.crisisComfortVerse
 import com.application.bibleapp.utils.parseAiAnswer
@@ -618,6 +619,14 @@ private fun answerText(
         when (part) {
             is AiAnswerPart.Text -> append(part.text)
             is AiAnswerPart.Book -> append(bookName(part.bookId))
+            // A range of chapters opens the reader at the first one (#339).
+            is AiAnswerPart.Chapters -> withLink(
+                LinkAnnotation.Clickable(tag = "verse", styles = linkStyle) {
+                    onReference(VerseReference(part.bookId, part.first))
+                }
+            ) {
+                append(formatChapterRange(part.bookId, part.first, part.last, bookName))
+            }
             is AiAnswerPart.Reference -> withLink(
                 LinkAnnotation.Clickable(tag = "verse", styles = linkStyle) { onReference(part.reference) }
             ) {
@@ -882,7 +891,7 @@ private fun AskChatPreview(@PreviewParameter(ThemePalettePreviewProvider::class)
                 AiPassageDto("JHN 3:16-17", "16 For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life. 17 For God sent not his Son into the world to condemn the world; but that the world through him might be saved.")
             )
         ),
-        AiMessage(2, 1, AiRole.ASSISTANT, "One God in three persons: the Father, the Son and the Holy Spirit [[MAT 28:19]].\n- The [[PSA]] praise him.", createdAt = ""),
+        AiMessage(2, 1, AiRole.ASSISTANT, "One God in three persons: the Father, the Son and the Holy Spirit [[MAT 28:19]]. On his gifts, read [[1CO 12-14]].\n- The [[PSA]] praise him.", createdAt = ""),
         AiMessage(3, 1, AiRole.USER, "How should I pray?", createdAt = "")
     )
     BibleAppTheme(palette = palette) {
@@ -905,7 +914,7 @@ private fun AskChatPreview(@PreviewParameter(ThemePalettePreviewProvider::class)
                     AiAnswer(
                         message = message,
                         parts = parseAiAnswer(answerWithBullets(message.content)),
-                        bookName = { if (it == 40) "Matthew" else "Psalms" },
+                        bookName = { when (it) { 40 -> "Matthew"; 46 -> "1 Corinthians"; else -> "Psalms" } },
                         onReference = {},
                         onReport = {},
                         onFindHelpline = {},
