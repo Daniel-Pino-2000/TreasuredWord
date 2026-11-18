@@ -181,7 +181,7 @@
 
 ## grief
 - **Title:** Grief and losing someone
-- **Asks:** My mom died and I can't stop crying, where is God? | Someone I loved died | Is grieving a lack of faith? | How do I cope with the death of a loved one? | Comfort in times of sorrow
+- **Asks:** My mom died and I can't stop crying, where is God? | Someone I loved died | Is grieving a lack of faith? | How do I cope with the death of a loved one? | Comfort in times of sorrow | Nimefiwa na mtu ninayempenda | Ninahitaji faraja katika huzuni yangu
 - **Points:**
   - Begin with compassion; don't rush them or lecture.
   - God is near the brokenhearted. Grieving is not a lack of faith: Jesus wept at His friend's tomb.
