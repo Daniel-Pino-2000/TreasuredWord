@@ -70,7 +70,8 @@ only needed when a secret changes.
      from the Cloudflare dashboard; `AI_API_TOKEN` is the Workers AI token made in #122, a
      secret; `AI_MODEL` is `@cf/google/gemma-4-26b-a4b-it`. Without any of them the server still
      runs and `/ai/ask` answers `AI_UNAVAILABLE`. The free plan's 10,000 neurons a day (about
-     320 answers) can't bill: past them Cloudflare refuses with error 3036 and `/ai/ask` answers
+     320 answers) can't bill: past them Cloudflare refuses with error 3036 or 4006 (both
+     HTTP 429; 3040 is a passing "capacity" error instead) and `/ai/ask` answers
      `AI_RESTING` until 00:00 UTC. Each answer's neurons are in the log (`AI provider: HTTP 200
      in … ms, … neurons`), never the question or answer.
    - `AI_TOPIC_GUIDES` — `true` sends each Bible Helper question the topic guides it matches
