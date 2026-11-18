@@ -1,5 +1,6 @@
 package com.application.bibleapp.server.ai.eval
 
+import com.application.bibleapp.server.ai.DevAiBudget
 import com.application.bibleapp.server.ai.TopicGuides
 import com.application.bibleapp.server.ai.TopicRouter
 import com.application.bibleapp.server.ai.TopicVectors
@@ -35,11 +36,13 @@ fun main(args: Array<String>) {
     val missing = wanted.map { it.second }.distinct().filter { it !in known }
     val embedded = mutableMapOf<String, FloatArray>()
     if (missing.isNotEmpty()) {
-        val embeddings = WorkersAiEmbeddingProvider.fromConfig(config, model)
-        if (embeddings == null) {
+        val live = WorkersAiEmbeddingProvider.fromConfig(config, model)
+        if (live == null) {
             System.err.println("${missing.size} phrases need vectors: set AI_BASE_URL and AI_API_TOKEN first.")
             exitProcess(1)
         }
+        // The app shares this Cloudflare account (#343).
+        val embeddings = DevAiBudget.fromEnvironment().also { println(it.summary()) }.wrap(live)
         runBlocking {
             for (batch in missing.chunked(embeddings.maxBatch)) {
                 embeddings.embed(batch, EmbeddingKind.QUERY).vectors.forEachIndexed { i, vector ->

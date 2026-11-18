@@ -72,8 +72,11 @@ only needed when a secret changes.
      runs and `/ai/ask` answers `AI_UNAVAILABLE`. The free plan's 10,000 neurons a day (about
      320 answers) can't bill: past them Cloudflare refuses with error 3036 or 4006 (both
      HTTP 429; 3040 is a passing "capacity" error instead) and `/ai/ask` answers
-     `AI_RESTING` until 00:00 UTC. Each answer's neurons are in the log (`AI provider: HTTP 200
-     in … ms, … neurons`), never the question or answer.
+     `AI_RESTING` until 00:00 UTC. Error 971 (HTTP 429) is Cloudflare's API rate limit, 1,200
+     requests per 5 minutes for everything on the account: `/ai/ask` answers `AI_BUSY` and
+     doesn't retry (#344). Each answer's neurons are in the log (`AI provider: streamed in … ms
+     (first words after … ms), … neurons`), never the question or answer. At startup each client
+     makes one free request (`warmed up, HTTP …`) so the first question isn't slow (#347).
    - `AI_TOPIC_GUIDES` — `true` sends each Bible Helper question the topic guides it matches
      (#319, instructions version 16); unset or `false` (the default) keeps v5's instructions for
      every question. Not a secret. Needs the AI settings above. Matching costs one embedding
@@ -258,6 +261,22 @@ The same path is covered by tests: `AiRoutesTest` (no provider → `AI_UNAVAILAB
 evaluation (`docs/ai_helper_eval.md`) on the change and meet the release bar before merging or
 changing the variable. Run it soon after 00:00 UTC: it uses about 1,700 of the same 10,000 free
 neurons a day that users share.
+
+**The development tools share production's Cloudflare account (#343).** `aiEval`, `aiEvalBlind`,
+`embedTopicGuides`, `topicRoutingEval`, `semanticSearchEval` and `loadVerseSearch` use the same
+`AI_BASE_URL` and token as the server, so they spend the same 10,000 neurons and the same 1,200
+requests per 5 minutes. On 2026-11-16 loading verse vectors reached the rate limit, and on
+2026-11-17 a day of evaluations used up the neurons: both times the Bible Helper answered "try
+again" to everyone. So every tool now:
+
+- stops at **5,000 neurons a UTC day** for development (`AI_DEV_NEURON_BUDGET` changes it), counted
+  in `~/.treasuredword-dev/ai-neurons/<date>.txt` and shared by every run and worktree on this
+  computer. It prints what's used when it starts, and stops like at Cloudflare's own limit;
+- waits at least 300 ms between requests (~1,000 per 5 minutes at most).
+
+The better fix is a **second free Cloudflare account** just for development, with its own token:
+its own 10,000 neurons and rate limit, and production's token only in Render. Free, no card;
+check Cloudflare's terms first. With one, the budget can be raised to 10,000.
 
 ## What was verified locally before writing this doc (Phase 5)
 

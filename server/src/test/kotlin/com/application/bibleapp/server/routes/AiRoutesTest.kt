@@ -4,6 +4,7 @@ import ch.qos.logback.classic.Logger
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.read.ListAppender
 import com.application.bibleapp.server.ai.AiRole
+import com.application.bibleapp.server.ai.Busy
 import com.application.bibleapp.server.ai.QuotaExhausted
 import com.application.bibleapp.server.ai.StarterQuestions
 import com.application.bibleapp.server.ai.SystemPrompt
@@ -231,6 +232,21 @@ class AiRoutesTest {
 
         assertEquals(HttpStatusCode.ServiceUnavailable, response.status)
         assertEquals("AI_RESTING", response.error().code)
+        assertEquals(0, usedToday(user, clock))
+    }
+
+    @Test
+    fun cloudflaresApiRateLimitAnswers429AiBusyAndCountsNothing() = testApplication {
+        // #344: a 429, which every app version shows as "Please wait a moment".
+        val ai = FakeAiProvider().apply { failure = Busy("rate limit") }
+        val clock = MutableClock()
+        val client = startWithFakeAi(ai, clock)
+        val user = client.registerTestUser()
+
+        val response = client.ask(user)
+
+        assertEquals(HttpStatusCode.TooManyRequests, response.status)
+        assertEquals("AI_BUSY", response.error().code)
         assertEquals(0, usedToday(user, clock))
     }
 

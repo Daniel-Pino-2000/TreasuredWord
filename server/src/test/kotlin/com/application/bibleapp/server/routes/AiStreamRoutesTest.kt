@@ -1,5 +1,6 @@
 package com.application.bibleapp.server.routes
 
+import com.application.bibleapp.server.ai.Busy
 import com.application.bibleapp.server.ai.QuotaExhausted
 import com.application.bibleapp.server.ai.SystemPrompt
 import com.application.bibleapp.server.ai.Unavailable
@@ -119,6 +120,20 @@ class AiStreamRoutesTest {
 
         assertEquals(HttpStatusCode.ServiceUnavailable, response.status)
         assertEquals("AI_RESTING", Json.decodeFromString<ErrorResponse>(response.bodyAsText()).code)
+        assertEquals(0, usedToday(user, clock))
+    }
+
+    @Test
+    fun cloudflaresApiRateLimitBeforeAnyTextIs429AiBusy() = testApplication {
+        val ai = FakeAiProvider().apply { pieces = listOf("unused"); failure = Busy("rate limit") }
+        val clock = MutableClock()
+        val client = startWithFakeAi(ai, clock)
+        val user = client.registerTestUser()
+
+        val response = client.askStream(user)
+
+        assertEquals(HttpStatusCode.TooManyRequests, response.status)
+        assertEquals("AI_BUSY", Json.decodeFromString<ErrorResponse>(response.bodyAsText()).code)
         assertEquals(0, usedToday(user, clock))
     }
 

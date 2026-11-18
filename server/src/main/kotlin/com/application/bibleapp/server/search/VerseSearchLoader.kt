@@ -1,5 +1,6 @@
 package com.application.bibleapp.server.search
 
+import com.application.bibleapp.server.ai.DevAiBudget
 import com.application.bibleapp.server.search.eval.BibleText
 import com.application.bibleapp.server.search.eval.DEFAULT_RETRY_PAUSES_MILLIS
 import com.application.bibleapp.server.search.eval.EmbedProgress
@@ -203,7 +204,10 @@ fun main(args: Array<String>) {
             System.err.println("Some verses aren't in the cache: set AI_BASE_URL and AI_API_TOKEN to embed them.")
             exitProcess(1)
         }
-        WorkersAiEmbeddingProvider(WorkersAiEmbeddingProvider.accountAiUrl(baseUrl), token, model)
+        // Loading the vectors reached Cloudflare's rate limit on 2026-11-16 and the app's questions
+        // failed (#343): paced and counted like every development tool.
+        DevAiBudget.fromEnvironment().also { println(it.summary()) }
+            .wrap(WorkersAiEmbeddingProvider(WorkersAiEmbeddingProvider.accountAiUrl(baseUrl), token, model))
     }
     val cache = VectorCache(File(cacheFolder, VectorCache.fileName(model, translation)), model, translation)
 

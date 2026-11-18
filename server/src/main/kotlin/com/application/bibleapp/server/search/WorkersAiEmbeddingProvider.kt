@@ -1,5 +1,6 @@
 package com.application.bibleapp.server.search
 
+import com.application.bibleapp.server.ai.Busy
 import com.application.bibleapp.server.ai.OpenAiCompatibleProvider
 import com.application.bibleapp.server.ai.QuotaExhausted
 import com.application.bibleapp.server.ai.Unavailable
@@ -9,6 +10,7 @@ import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.HttpRequestTimeoutException
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.request.bearerAuth
+import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
@@ -54,12 +56,31 @@ class WorkersAiEmbeddingProvider(
 ) : EmbeddingProvider {
 
     private val url = "${accountAiUrl.trimEnd('/')}/run/$model"
+    private val warmUpUrl = "${accountAiUrl.trimEnd('/')}/models/search?per_page=1"
     private val isQwen = model.startsWith("@cf/qwen/")
 
     override val maxBatch: Int = MAX_BATCH
 
     private val client = HttpClient(engine) {
         install(HttpTimeout) { requestTimeoutMillis = timeoutMillis }
+    }
+
+    /**
+     * One free request to Cloudflare (the model list, no neurons), made once at startup (#347):
+     * the first question after Render wakes the server then doesn't pay for the client's first
+     * TLS connection and class loading on the slow free instance. Never throws; only the status
+     * and time are logged.
+     */
+    suspend fun warmUp() {
+        val started = System.nanoTime()
+        try {
+            val response = client.get(warmUpUrl) { bearerAuth(apiToken) }
+            log.info("Embeddings: warmed up, HTTP {} in {} ms", response.status.value, millisSince(started))
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            log.warn("Embeddings: warm-up failed after {} ms: {}", millisSince(started), e::class.simpleName)
+        }
     }
 
     /** The request body this model expects. */
@@ -102,6 +123,7 @@ class WorkersAiEmbeddingProvider(
             val codes = OpenAiCompatibleProvider.errorCodes(text)
             log.warn("Embeddings: HTTP {} in {} ms, error codes {}", status.value, millis, codes)
             if (OpenAiCompatibleProvider.isQuotaExhausted(codes)) throw QuotaExhausted("The AI's free daily allowance is used up")
+            if (OpenAiCompatibleProvider.isRateLimited(codes)) throw Busy("Cloudflare's API rate limit was reached")
             val transient = status.value >= 500 || status == HttpStatusCode.TooManyRequests
             throw Unavailable("Workers AI answered HTTP ${status.value}", transient = transient)
         }

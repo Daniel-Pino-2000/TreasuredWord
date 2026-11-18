@@ -37,7 +37,7 @@ sealed interface AiAskResult {
     /** Cloudflare's free daily quota is used up for everyone, until [resetsAtMillis] (00:00 UTC). */
     data class Resting(val resetsAtMillis: Long) : Failure
 
-    /** More than 5 questions in a minute: "Please wait a moment". */
+    /** More than 5 questions in a minute, or the AI busy for a few minutes (#344): "Please wait a moment". */
     data object RateLimited : Failure
 
     /** The AI failed or took too long, or something else went wrong on the way ("Try again"). */
@@ -142,7 +142,12 @@ class AiHelperApi(
                         "error" -> {
                             val code = runCatching { HttpClientProvider.json.decodeFromString(BackendErrorDto.serializer(), data).code }.getOrNull()
                             log("AI stream stopped: $code")
-                            return if (code == CODE_RESTING) AiAskResult.Resting(nextUtcMidnight()) else AiAskResult.Unavailable
+                            return when (code) {
+                                CODE_RESTING -> AiAskResult.Resting(nextUtcMidnight())
+                                // Cloudflare's API rate limit (#344): over in minutes, like too many questions at once.
+                                CODE_BUSY -> AiAskResult.RateLimited
+                                else -> AiAskResult.Unavailable
+                            }
                         }
                     }
                 }
@@ -209,6 +214,7 @@ class AiHelperApi(
         const val TAG = "AiHelperApi"
         const val CODE_DAILY_LIMIT = "AI_DAILY_LIMIT"
         const val CODE_RESTING = "AI_RESTING"
+        const val CODE_BUSY = "AI_BUSY"
     }
 }
 

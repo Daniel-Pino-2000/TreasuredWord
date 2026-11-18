@@ -587,8 +587,13 @@ Errors:
 | 401 | `UNAUTHORIZED` | Not signed in or the token expired | No |
 | 429 | `AI_DAILY_LIMIT` | This account already got 15 answers today (UTC); more at 00:00 UTC | No |
 | 429 | (no body) | More than 5 questions in a minute (`ai` zone), while some of today's 15 are left | No |
+| 429 | `AI_BUSY` | Cloudflare's API rate limit was reached (its error `971`, 1,200 requests per 5 minutes); try again in a few minutes (#344). Apps read any 429 that isn't `AI_DAILY_LIMIT` as "please wait a moment" | No |
 | 503 | `AI_RESTING` | Cloudflare's free daily allowance is used up (its error `3036` or `4006`); back at 00:00 UTC | No |
 | 503 | `AI_UNAVAILABLE` | The AI failed, took longer than 45 s, or isn't set up on this server | No |
+
+The server asks the AI for a streamed answer even here, so it can tell a stall from a long
+answer: one with no words after 12 s is given up on and asked once more (#345). The app still gets
+the whole answer at once.
 
 The instructions ask for `[[BOOK C:V]]`, `[[BOOK C:V-V]]` or a whole chapter `[[PSA 23]]` (a card,
 allowed since instructions v2, #206) with the USFM code. The app also reads a whole book `[[JHN]]` (its name, no card), a space
@@ -616,7 +621,7 @@ text. It keeps one answer per starter, language and `promptVersion` in `ai_start
 first request in a language asks the AI and stores the answer (unless it's a crisis answer, cut
 off, or failed); every later one gets the stored answer straight away. Either way it **doesn't
 count** as one of the day's 15 questions, works after they're used up, and `remainingToday` is
-what's left of them. AI failures answer `AI_RESTING`/`AI_UNAVAILABLE` as usual. A new
+what's left of them. AI failures answer `AI_RESTING`/`AI_BUSY`/`AI_UNAVAILABLE` as usual. A new
 `promptVersion` asks again; older rows are never read (at most 60 per version). With topic guides
 on, a starter that matches a guide is stored and read under `"16"`, so switching the setting
 never serves an answer the other instructions wrote.
@@ -632,7 +637,7 @@ server-sent events. Each event's `data` is one line of JSON:
 | `text` | `{"text": "..."}` | The next piece of the answer. Joined, they're the answer so far |
 | `crisis` | `{}` | Once, when the crisis marker is seen, before the text that follows it, so the help card can show first |
 | `done` | `AiAskResponse` | The end. Its `answer` is the one to show and save; the pieces were only a preview |
-| `error` | `ErrorResponse` (`AI_UNAVAILABLE` or `AI_RESTING`) | The AI stopped partway. Not counted |
+| `error` | `ErrorResponse` (`AI_UNAVAILABLE`, `AI_RESTING` or `AI_BUSY`) | The AI stopped partway. Not counted |
 
 The stream ends after `done` or `error`. A stream that closes without either also means no answer.
 The crisis marker never appears in `text`: a piece that could be its start is held back until it's

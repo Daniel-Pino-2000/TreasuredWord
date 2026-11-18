@@ -198,10 +198,13 @@ class AiTopicGuidesRoutesTest {
     }
 
     @Test
-    fun aQuestionRefusedByTheDailyLimitSpendsNoEmbedding() = testApplication {
+    fun aQuestionRefusedByTheDailyLimitIsNeverAnswered() = testApplication {
+        // The guides are matched while the daily count is taken (#347), so a refused question may
+        // have started its embedding (~0.01 neurons); the match is cancelled and nothing is asked.
         val clock = MutableClock()
         val embeddings = FakeEmbeddingProvider()
-        val client = startWithFakeAi(FakeAiProvider(), clock, embeddings, router())
+        val ai = FakeAiProvider()
+        val client = startWithFakeAi(ai, clock, embeddings, router())
         val user = client.registerTestUser()
         transaction {
             AiDailyUsage.insert {
@@ -212,7 +215,8 @@ class AiTopicGuidesRoutesTest {
         }
 
         assertEquals(HttpStatusCode.TooManyRequests, client.ask(user, ask("Is drinking alcohol a sin?")).status)
-        assertTrue(embeddings.calls.isEmpty())
+        assertTrue(ai.calls.isEmpty())
+        assertTrue(embeddings.calls.size <= 1)
     }
 
     @Test

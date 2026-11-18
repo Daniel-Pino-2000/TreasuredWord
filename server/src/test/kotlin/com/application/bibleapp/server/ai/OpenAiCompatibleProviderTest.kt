@@ -14,6 +14,10 @@ import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import io.ktor.server.config.MapApplicationConfig
+import io.ktor.utils.io.writeStringUtf8
+import io.ktor.utils.io.writer
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
@@ -46,6 +50,7 @@ class OpenAiCompatibleProviderTest {
     private fun provider(
         disableThinking: Boolean = true,
         timeoutMillis: Long = 5_000,
+        firstWordsTimeoutMillis: Long = 5_000,
         reply: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData
     ) = OpenAiCompatibleProvider(
         baseUrl = "https://ai.example.test/accounts/test-account/ai/v1/",
@@ -54,7 +59,8 @@ class OpenAiCompatibleProviderTest {
         disableThinking = disableThinking,
         engine = MockEngine { request -> requests += request; reply(request) },
         timeoutMillis = timeoutMillis,
-        retryPauseMillis = 0
+        retryPauseMillis = 0,
+        firstWordsTimeoutMillis = firstWordsTimeoutMillis
     )
 
     private fun MockRequestHandleScope.json(body: String, status: HttpStatusCode = HttpStatusCode.OK) =
@@ -158,6 +164,18 @@ class OpenAiCompatibleProviderTest {
 
         assertFailsWith<QuotaExhausted> { runBlocking { provider.complete(conversation, maxTokens = 700) } }
         assertEquals(1, requests.size)
+    }
+
+    @Test
+    fun cloudflaresApiRateLimitIsBusyAndIsNotRetried() {
+        // Five questions failed this way on 2026-11-16 while search's vectors were loaded (#344).
+        val provider = provider {
+            json("""{"success":false,"errors":[{"code":971,"message":"Please wait and consider throttling your request speed"}]}""", HttpStatusCode.TooManyRequests)
+        }
+
+        assertFailsWith<Busy> { runBlocking { provider.complete(conversation, maxTokens = 700) } }
+        assertFailsWith<Busy> { runBlocking { provider.stream(conversation, maxTokens = 700) { } } }
+        assertEquals(2, requests.size)
     }
 
     @Test
@@ -335,6 +353,64 @@ class OpenAiCompatibleProviderTest {
 
         assertEquals(2, calls)
         assertEquals(ANSWER, completion.text)
+    }
+
+    @Test
+    fun warmingUpAsksForTheFreeModelListAndNeverThrows() = runBlocking {
+        // #347: no neurons, and a failure there never stops the server.
+        provider { json("""{"success":true,"result":[]}""") }.warmUp()
+
+        assertEquals(HttpMethod.Get, requests.single().method)
+        assertEquals("https://ai.example.test/accounts/test-account/ai/models/search?per_page=1", requests.single().url.toString())
+        provider { error("offline") }.warmUp()
+        assertTrue("warm-up failed" in logText)
+        assertFalse(TOKEN in logText)
+    }
+
+    @Test
+    fun aStreamWithNoWordsByTheDeadlineIsTriedOnceMore() = runBlocking {
+        // #345: the first try stalls before any words, the second answers at once.
+        var calls = 0
+        val completion = provider(firstWordsTimeoutMillis = 200) {
+            calls++
+            if (calls == 1) delay(2_000)
+            events(piece(ANSWER, "stop"), "[DONE]")
+        }.stream(conversation, maxTokens = 700) { }
+
+        assertEquals(2, calls)
+        assertEquals(ANSWER, completion.text)
+        assertTrue("no words after" in logText)
+        assertTrue("first words after" in logText)
+    }
+
+    @Test
+    fun twoStallsInARowAreUnavailable() {
+        var calls = 0
+        val provider = provider(firstWordsTimeoutMillis = 100) {
+            calls++
+            delay(2_000)
+            events(piece(ANSWER, "stop"), "[DONE]")
+        }
+
+        val error = assertFailsWith<Unavailable> { runBlocking { provider.stream(conversation, maxTokens = 700) { } } }
+        assertTrue(error.stalled)
+        assertEquals(2, calls)
+    }
+
+    @Test
+    fun aSlowAnswerThatHasStartedIsntCutOffByTheDeadline() = runBlocking {
+        // Only the start has a deadline: the rest may take as long as the request's timeout.
+        val completion = provider(firstWordsTimeoutMillis = 100) {
+            val body = CoroutineScope(Dispatchers.IO).writer {
+                channel.writeStringUtf8("data: ${piece("Grace ")}\n\n")
+                channel.flush()
+                delay(500)
+                channel.writeStringUtf8("data: ${piece("is a gift.", "stop")}\n\ndata: [DONE]\n\n")
+            }.channel
+            respond(body, HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "text/event-stream"))
+        }.stream(conversation, maxTokens = 700) { }
+
+        assertEquals("Grace is a gift.", completion.text)
     }
 
     @Test
