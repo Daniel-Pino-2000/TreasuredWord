@@ -83,7 +83,9 @@ only needed when a secret changes.
      (~0.01 neurons) a question, counted against search by meaning's daily cap of 20,000; a guided
      answer costs ~4–6 more neurons than v5's. If an embedding fails or the neurons run out, the
      question is answered with v5's instructions. The log shows `Topic guides: <count> in … ms`,
-     never the question or which guides matched. Turn it on only after the developer has
+     never the question or which guides matched. With it on, the startup warm-up is one tiny
+     embedding instead (`Topic guides: warmed up in … ms`), and the first match after a start
+     may wait 8 s instead of 3 s, so a just-woken server doesn't skip the guide (#341). Turn it on only after the developer has
      reviewed every guide in `server/src/main/resources/ai/topics.md`.
 
    Saving env var changes triggers a redeploy automatically.
