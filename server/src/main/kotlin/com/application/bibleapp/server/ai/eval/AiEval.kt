@@ -6,11 +6,11 @@ import com.application.bibleapp.server.ai.AiRole
 import com.application.bibleapp.server.ai.OpenAiCompatibleProvider
 import com.application.bibleapp.server.ai.QuotaExhausted
 import com.application.bibleapp.server.ai.RoutedGuide
-import com.application.bibleapp.server.ai.TopicGuides
 import com.application.bibleapp.server.ai.TopicRouter
 import com.application.bibleapp.server.ai.SystemPrompt
 import com.application.bibleapp.server.ai.Unavailable
 import com.application.bibleapp.server.routes.AI_MAX_TOKENS
+import com.application.bibleapp.server.search.EmbeddingKind
 import com.application.bibleapp.server.search.VerseSearch
 import com.application.bibleapp.server.search.WorkersAiEmbeddingProvider
 import io.ktor.server.config.MapApplicationConfig
@@ -28,7 +28,7 @@ data class EvalResult(
     val neurons: Double? = null,
     val problems: List<String> = emptyList(),
     val error: String? = null,
-    /** The topic guides sent with it (pilot, AI_TOPIC_GUIDES); null when the run sends none. */
+    /** The topic guides sent with it (#319, AI_TOPIC_GUIDES); null when the run sends none. */
     val guides: List<RoutedGuide>? = null
 ) {
     val passed: Boolean get() = error == null && problems.isEmpty()
@@ -52,8 +52,8 @@ suspend fun evaluate(
     val results = mutableListOf<EvalResult>()
     for (question in questions) {
         val guides = guidesFor?.get(question.id).orEmpty()
-        val instructions = SystemPrompt.forLanguage(question.language) +
-            (TopicGuides.section(guides)?.let { "\n\n$it" } ?: "")
+        // The live route's instructions (#319): v5's, plus section 9 when a guide matched.
+        val instructions = SystemPrompt.withGuides(question.language, guides)
         val messages = listOf(
             AiMessage(AiRole.SYSTEM, instructions),
             AiMessage(AiRole.USER, question.ask)
@@ -147,9 +147,6 @@ fun report(results: List<EvalResult>, model: String, date: LocalDate, total: Int
  * AI_API_TOKEN and AI_MODEL like the server does. Never part of `:server:test` or CI: every run
  * spends real free-plan neurons (all questions, about 2,000 of the 10,000 a day).
  */
-/** Pilot: v5's instructions plus the matching topic guides (`topics.md`), evaluation only. */
-const val GUIDES_VERSION = "16"
-
 fun main(args: Array<String>) {
     require(args.size >= 2) { "Usage: AiEval <questions.md> <report folder> [ID,ID,…]" }
     val config = MapApplicationConfig().apply {
@@ -171,14 +168,18 @@ fun main(args: Array<String>) {
     require(unknown.isEmpty()) { "No such questions: $unknown" }
     val questions = if (only.isEmpty()) all else all.filter { it.id in only }
 
-    // Topic guides (pilot): each question is matched first, and with AI_ONLY_GUIDED only those
-    // with a guide are asked, since the others get v5's instructions unchanged.
+    // Topic guides (#319): each question is matched first as the server does (the phrase vectors
+    // made at build time, one embedding per question, TopicRouter.THRESHOLD unless
+    // AI_TOPIC_THRESHOLD says otherwise), and with AI_ONLY_GUIDED only those with a guide are
+    // asked, since the others get v5's instructions unchanged.
     val guidesFor = if (guided) {
-        val threshold = requireNotNull(System.getenv("AI_TOPIC_THRESHOLD")?.toDouble()) { "Set AI_TOPIC_THRESHOLD" }
-        val router = TopicRouter(TopicGuides.load(), WorkersAiEmbeddingProvider.fromConfig(config, VerseSearch.MODEL)!!, threshold)
+        val threshold = System.getenv("AI_TOPIC_THRESHOLD")?.toDouble() ?: TopicRouter.THRESHOLD
+        val router = TopicRouter.fromResources(VerseSearch.MODEL, threshold)
+        val embeddings = WorkersAiEmbeddingProvider.fromConfig(config, VerseSearch.MODEL)!!
         runBlocking {
-            router.prepare()
-            questions.associate { it.id to router.pick(router.scores(it.ask)) }
+            questions.chunked(embeddings.maxBatch).flatMap { batch ->
+                batch.zip(embeddings.embed(batch.map { it.ask }, EmbeddingKind.QUERY).vectors) { question, vector -> question.id to router.route(vector) }
+            }.toMap()
         }
     } else {
         null
@@ -188,7 +189,7 @@ fun main(args: Array<String>) {
     } else {
         questions
     }
-    val version = if (guided) GUIDES_VERSION else SystemPrompt.PROMPT_VERSION
+    val version = if (guided) SystemPrompt.GUIDES_VERSION else SystemPrompt.PROMPT_VERSION
 
     val date = LocalDate.now(ZoneOffset.UTC)
     val results = runBlocking { evaluate(asked, provider, guidesFor) }

@@ -28,9 +28,11 @@ private val expectedGuides: Map<String, Set<String>> = mapOf(
     "DIS-02" to setOf("endtimes"), "DIS-05" to setOf("translations"), "DIS-06" to setOf("alcohol"),
     "TRAD-05" to setOf("islam"), "LIFE-01" to setOf("grief"), "LIFE-02" to setOf("doubt"),
     "LIFE-03" to setOf("repeated-sin"), "LIFE-04" to setOf("marriage"), "LIFE-05" to setOf("bible-reading"),
-    "LIFE-06" to setOf("same-sex"), "CRISIS-01" to setOf("despair"), "CRISIS-02" to setOf("abuse"),
-    "CRISIS-03" to setOf("despair", "failure"), "CRISIS-05" to setOf("judas-peter"), "TRICK-05" to setOf("return"),
-    "TRICK-07" to setOf("government"), "TRICK-08" to setOf("despair", "anxiety"),
+    "LIFE-06" to setOf("same-sex"), "CRISIS-02" to setOf("abuse", "crisis"),
+    "CRISIS-05" to setOf("judas-peter"), "TRICK-05" to setOf("return"), "TRICK-07" to setOf("government"),
+    // The crisis and medicine guides came after the pilot's first routing run (#319).
+    "CRISIS-01" to setOf("crisis", "despair"), "CRISIS-03" to setOf("crisis", "despair", "failure"),
+    "CRISIS-04" to setOf("crisis"), "TRICK-08" to setOf("medicine", "despair", "anxiety"),
     "LANG-02" to setOf("loneliness", "prayer"), "LANG-03" to setOf("baptism"), "LANG-04" to setOf("prayer"),
     "LANG-06" to setOf("anxiety"), "LANG-08" to setOf("salvation"), "LANG-09" to setOf("security"),
     // docs/ai_helper_eval_heldout.md
@@ -39,7 +41,7 @@ private val expectedGuides: Map<String, Set<String>> = mapOf(
     "HO-07" to setOf("repeated-sin", "temptation"), "HO-08" to setOf("marriage"), "HO-09" to setOf("bible-reading"),
     "HO-10" to setOf("prayer"), "HO-11" to setOf("judas-peter"), "HO-12" to setOf("government"),
     "HO-13" to setOf("security"), "HO-14" to setOf("anxiety"), "HO-15" to setOf("islam"),
-    "HO-16" to setOf("cross", "jesus"), "HO-17" to setOf("abuse"), "HO-18" to setOf("women-pastors"),
+    "HO-16" to setOf("cross", "jesus"), "HO-17" to setOf("abuse", "crisis"), "HO-18" to setOf("women-pastors"),
     // docs/semantic_search_eval.md
     "TOPIC-01" to setOf("anxiety"), "TOPIC-02" to setOf("forgiving"), "TOPIC-03" to setOf("enemies"),
     "TOPIC-04" to setOf("salvation"), "TOPIC-05" to setOf("gossip"), "TOPIC-06" to setOf("temptation"),
@@ -71,13 +73,16 @@ private fun covers(passage: String, verse: VerseRef): Boolean {
 }
 
 /**
- * `./gradlew :server:topicRoutingEval` (topic guides pilot). Embeds every guide phrase, question
- * and search query once (~3 neurons), then, with no more neurons: how often the right guide is
+ * `./gradlew :server:topicRoutingEval` (#319). Embeds every question and search query once
+ * (~1 neuron; the phrases come from topic_vectors.tsv), then: how often the right guide is
  * picked at each threshold, and how many search queries find an expected verse in the top 10
- * with search alone and with the matching guide's passages shown first.
+ * with search alone and with the matching guide's passages shown first. An optional fifth file
+ * (`-Pprobes=`, or probes.txt in the report folder) holds extra questions, one a line as
+ * `expected guide (or none) | question`, to check a guide change for false matches before any
+ * answer is paid for.
  */
 fun main(args: Array<String>) {
-    require(args.size == 4) { "Usage: TopicRoutingEval <ai_helper_eval.md> <heldout.md> <semantic_search_eval.md> <report folder>" }
+    require(args.size in 4..5) { "Usage: TopicRoutingEval <ai_helper_eval.md> <heldout.md> <semantic_search_eval.md> <report folder> [probes.txt]" }
     val config = MapApplicationConfig().apply {
         for ((setting, variable) in listOf("baseUrl" to "AI_BASE_URL", "apiToken" to "AI_API_TOKEN")) {
             System.getenv(variable)?.let { put("ai.$setting", it) }
@@ -92,16 +97,21 @@ fun main(args: Array<String>) {
     val items = EvalQuestions.parse(File(args[0]).readText()).map { Item(it.id, it.ask, "main") } +
         EvalQuestions.parse(File(args[1]).readText()).map { Item(it.id, it.ask, "heldout") } +
         SearchEvalQueries.parse(File(args[2]).readText()).map { Item(it.id, it.query, "search", it.expected) }
+    val probeFile = args.getOrNull(4)?.takeIf { it.isNotBlank() }?.let(::File) ?: File(args[3], "probes.txt").takeIf { it.exists() }
+    val probes = probeFile?.readLines().orEmpty()
+        .filter { it.isNotBlank() && !it.startsWith("#") }
+        .mapIndexed { index, line -> "PROBE-${index + 1}" to line.split(" | ", limit = 2).map { it.trim() } }
+    val expected = expectedGuides + probes.associate { (id, parts) -> id to setOf(parts[0]).filter { it != "none" }.toSet() }
+    val allItems = items + probes.map { (id, parts) -> Item(id, parts[1], "probe") }
     val guides = TopicGuides.load()
-    val router = TopicRouter(guides, embeddings, threshold = 0.0)
+    val router = TopicRouter.fromResources(VerseSearch.MODEL, threshold = 0.0)
 
     val raw = mutableMapOf<String, FloatArray>()
     val scored = runBlocking {
-        router.prepare()
-        for (batch in items.chunked(embeddings.maxBatch)) {
+        for (batch in allItems.chunked(embeddings.maxBatch)) {
             embeddings.embed(batch.map { it.text }, EmbeddingKind.QUERY).vectors.forEachIndexed { i, v -> raw[batch[i].id] = v }
         }
-        items.associate { it.id to router.scoresFor(TopicRouter.normalized(raw.getValue(it.id))) }
+        allItems.associate { it.id to router.scoresFor(raw.getValue(it.id)) }
     }
 
     val out = StringBuilder()
@@ -113,16 +123,16 @@ fun main(args: Array<String>) {
     line("| Threshold | Set | Right | Wrong | Missed | Quiet |")
     line("|---|---|---|---|---|---|")
     for (threshold in thresholds) {
-        val picker = TopicRouter(guides, embeddings, threshold)
-        for (set in listOf("main", "heldout", "search")) {
+        val picker = TopicRouter.fromResources(VerseSearch.MODEL, threshold)
+        for (set in listOf("main", "heldout", "search", "probe").filter { set -> allItems.any { it.set == set } }) {
             var right = 0; var wrong = 0; var missed = 0; var quiet = 0
-            for (item in items.filter { it.set == set }) {
-                val expected = expectedGuides[item.id].orEmpty()
+            for (item in allItems.filter { it.set == set }) {
+                val wanted = expected[item.id].orEmpty()
                 val picked = picker.pick(scored.getValue(item.id))
                 when {
-                    picked.isEmpty() && expected.isEmpty() -> quiet++
+                    picked.isEmpty() && wanted.isEmpty() -> quiet++
                     picked.isEmpty() -> missed++
-                    picked.first().guide.id in expected -> right++
+                    picked.first().guide.id in wanted -> right++
                     else -> wrong++
                 }
             }
@@ -143,7 +153,7 @@ fun main(args: Array<String>) {
         line("| Threshold | Search alone | Guide first, then search | Groups (TOPIC, MOD, KJV, LANG) |")
         line("|---|---|---|---|")
         for (threshold in thresholds) {
-            val picker = TopicRouter(guides, embeddings, threshold)
+            val picker = TopicRouter.fromResources(VerseSearch.MODEL, threshold)
             var alone = 0; var withGuide = 0
             val byGroup = mutableMapOf<String, Int>()
             for (item in searchItems) {
@@ -159,11 +169,14 @@ fun main(args: Array<String>) {
     }
 
     line()
-    line("| Id | Set | Expected | Top 3 (score) |")
-    line("|---|---|---|---|")
-    for (item in items) {
+    val live = TopicRouter.fromResources(VerseSearch.MODEL)
+    line("| Id | Set | Expected | Sent at %.2f | Top 3 (score) |".format(TopicRouter.THRESHOLD))
+    line("|---|---|---|---|---|")
+    for (item in allItems) {
         val top = scored.getValue(item.id).take(3).joinToString(", ") { "${it.guide.id} %.3f".format(it.score) }
-        line("| ${item.id} | ${item.set} | ${expectedGuides[item.id].orEmpty().joinToString("/").ifEmpty { "–" }} | $top |")
+        val sent = live.pick(scored.getValue(item.id)).joinToString(", ") { it.guide.id }.ifEmpty { "–" }
+        val label = if (item.set == "probe") "${item.id}: ${item.text}" else item.id
+        line("| $label | ${item.set} | ${expected[item.id].orEmpty().joinToString("/").ifEmpty { "–" }} | $sent | $top |")
     }
     val file = File(args[3]).apply { mkdirs() }.resolve("topic-routing.md")
     file.writeText(out.toString())

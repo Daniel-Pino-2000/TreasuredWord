@@ -427,10 +427,10 @@ class AiRoutesTest {
 
     @Test
     fun aStarterIsAskedInTheServersWordsStoredAndThenReadyForEveryoneWithoutCounting() = testApplication {
-        forgetStarterAnswers()
         val ai = FakeAiProvider()
         val clock = MutableClock()
         val client = startWithFakeAi(ai, clock)
+        forgetStarterAnswers()
         val first = client.registerTestUser()
         val second = client.registerTestUser()
 
@@ -458,9 +458,9 @@ class AiRoutesTest {
 
     @Test
     fun aStarterWorksAfterTheDailyLimitAndSaysWhatsLeft() = testApplication {
-        forgetStarterAnswers()
         val clock = MutableClock()
         val client = startWithFakeAi(FakeAiProvider(), clock)
+        forgetStarterAnswers()
         val user = client.registerTestUser()
         transaction {
             AiDailyUsage.insert {
@@ -479,6 +479,8 @@ class AiRoutesTest {
 
     @Test
     fun anAnswerFromOlderInstructionsIsntReused() = testApplication {
+        val ai = FakeAiProvider()
+        val client = startWithFakeAi(ai)
         forgetStarterAnswers()
         transaction {
             AiStarterAnswers.insert {
@@ -489,8 +491,6 @@ class AiRoutesTest {
                 it[createdAt] = java.time.Instant.now()
             }
         }
-        val ai = FakeAiProvider()
-        val client = startWithFakeAi(ai)
         val user = client.registerTestUser()
 
         val response = client.ask(user, starter("trinity", "en"))
@@ -501,9 +501,9 @@ class AiRoutesTest {
 
     @Test
     fun aCrisisCutOffOrFailedStarterAnswerIsntStored() = testApplication {
-        forgetStarterAnswers()
         val ai = FakeAiProvider()
         val client = startWithFakeAi(ai)
+        forgetStarterAnswers()
         val user = client.registerTestUser()
 
         ai.cutOff = true
