@@ -86,6 +86,12 @@ class AiHelperApiTest {
     }
 
     @Test
+    fun `the AI busy for a few minutes is the rate limit's wait a moment`() = runTest {
+        // Cloudflare's API rate limit (#344), also how app 1.8 reads it.
+        assertEquals(AiAskResult.RateLimited, ask { json(HttpStatusCode.TooManyRequests, """{"code":"AI_BUSY","message":"…"}""") })
+    }
+
+    @Test
     fun `Cloudflare's quota used up means resting until midnight UTC`() = runTest {
         val result = ask { json(HttpStatusCode.ServiceUnavailable, """{"code":"AI_RESTING","message":"…"}""") }
 
@@ -217,6 +223,11 @@ class AiHelperApiTest {
         val result = askStreaming { events("error" to """{"code":"AI_RESTING","message":"…"}""") }
 
         assertEquals(AiAskResult.Resting(NEXT_MIDNIGHT_UTC), result)
+    }
+
+    @Test
+    fun `the AI busy partway is the rate limit's wait a moment`() = runTest {
+        assertEquals(AiAskResult.RateLimited, askStreaming { events("error" to """{"code":"AI_BUSY","message":"…"}""") })
     }
 
     @Test

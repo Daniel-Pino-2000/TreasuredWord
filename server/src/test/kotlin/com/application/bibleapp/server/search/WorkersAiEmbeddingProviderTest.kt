@@ -3,6 +3,7 @@ package com.application.bibleapp.server.search
 import ch.qos.logback.classic.Logger
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.read.ListAppender
+import com.application.bibleapp.server.ai.Busy
 import com.application.bibleapp.server.ai.QuotaExhausted
 import com.application.bibleapp.server.ai.Unavailable
 import io.ktor.client.engine.mock.MockEngine
@@ -115,6 +116,14 @@ class WorkersAiEmbeddingProviderTest {
         val provider = provider { json("""{"errors":[{"code":4006}],"success":false}""", HttpStatusCode.TooManyRequests) }
 
         assertFailsWith<QuotaExhausted> { provider.embed(listOf(VERSE), EmbeddingKind.DOCUMENT) }
+    }
+
+    @Test
+    fun cloudflaresApiRateLimitIsBusy() = runBlocking<Unit> {
+        // #344: error 971, 1,200 requests per 5 minutes for the whole account.
+        val provider = provider { json("""{"errors":[{"code":971}],"success":false}""", HttpStatusCode.TooManyRequests) }
+
+        assertFailsWith<Busy> { provider.embed(listOf(VERSE), EmbeddingKind.DOCUMENT) }
     }
 
     @Test

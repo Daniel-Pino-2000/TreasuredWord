@@ -1,5 +1,6 @@
 package com.application.bibleapp.server.ai.eval
 
+import com.application.bibleapp.server.ai.DevAiBudget
 import com.application.bibleapp.server.ai.TopicGuides
 import com.application.bibleapp.server.ai.TopicRouter
 import com.application.bibleapp.server.ai.UsfmBookCodes
@@ -88,11 +89,13 @@ fun main(args: Array<String>) {
             System.getenv(variable)?.let { put("ai.$setting", it) }
         }
     }
-    val embeddings = WorkersAiEmbeddingProvider.fromConfig(config, VerseSearch.MODEL)
-    if (embeddings == null) {
+    val workersAi = WorkersAiEmbeddingProvider.fromConfig(config, VerseSearch.MODEL)
+    if (workersAi == null) {
         System.err.println("Set AI_BASE_URL and AI_API_TOKEN first.")
         exitProcess(1)
     }
+    // The app shares this Cloudflare account (#343).
+    val embeddings = DevAiBudget.fromEnvironment().also { println(it.summary()) }.wrap(workersAi)
 
     val items = EvalQuestions.parse(File(args[0]).readText()).map { Item(it.id, it.ask, "main") } +
         EvalQuestions.parse(File(args[1]).readText()).map { Item(it.id, it.ask, "heldout") } +

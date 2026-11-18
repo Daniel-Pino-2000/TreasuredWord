@@ -18,7 +18,9 @@ import io.ktor.utils.io.writeStringUtf8
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.produce
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
@@ -90,13 +92,15 @@ internal suspend fun ApplicationCall.respondAnswerStream(
     provider: AiProvider,
     conversation: List<AiMessage>,
     maxTokens: Int,
-    onNoAnswer: () -> Unit,
+    onNoAnswer: suspend () -> Unit,
     respondError: suspend (AiProviderException) -> Unit,
-    finish: (AiCompletion) -> AiAskResponse
+    finish: suspend (AiCompletion) -> AiAskResponse
 ) = coroutineScope {
     var settled = false
-    fun noAnswer() {
-        if (!settled) onNoAnswer()
+    // NonCancellable: when the app hung up, this coroutine is cancelled, and giving the daily
+    // question back is a database call that must still happen (#346).
+    suspend fun noAnswer() {
+        if (!settled) withContext(NonCancellable) { onNoAnswer() }
         settled = true
     }
     val events = answerEvents(provider, conversation, maxTokens)

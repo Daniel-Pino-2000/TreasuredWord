@@ -7,6 +7,7 @@ import io.ktor.client.plugins.HttpRequestTimeoutException
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.bearerAuth
+import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.preparePost
 import io.ktor.client.request.setBody
@@ -21,7 +22,11 @@ import io.ktor.utils.io.readUTF8Line
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.config.ApplicationConfig
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -41,6 +46,10 @@ import org.slf4j.LoggerFactory
  * Only the HTTP status, time taken and neurons are logged, never a message or the token (#123).
  * That's also why Ktor's Logging plugin isn't installed: it prints the Authorization header.
  *
+ * A streamed answer ([stream]) that hasn't started after [firstWordsTimeoutMillis] is given up on
+ * and asked once more (#345): Gemma usually starts within a second, and on 2026-11-16 one answer
+ * waited 44 s before it came.
+ *
  * [engine] is only changed by tests, which pass Ktor's MockEngine.
  */
 class OpenAiCompatibleProvider(
@@ -50,10 +59,14 @@ class OpenAiCompatibleProvider(
     private val disableThinking: Boolean = true,
     engine: HttpClientEngine = CIO.create(),
     timeoutMillis: Long = TIMEOUT_MILLIS,
-    private val retryPauseMillis: Long = RETRY_PAUSE_MILLIS
+    private val retryPauseMillis: Long = RETRY_PAUSE_MILLIS,
+    private val firstWordsTimeoutMillis: Long = FIRST_WORDS_TIMEOUT_MILLIS
 ) : AiProvider {
 
     private val url = "${baseUrl.trimEnd('/')}/chat/completions"
+
+    /** Cloudflare's model list, next to the OpenAI-compatible `…/ai/v1` (#347). */
+    private val warmUpUrl = "${baseUrl.trimEnd('/').removeSuffix("/v1")}/models/search?per_page=1"
 
     private val client = HttpClient(engine) {
         install(ContentNegotiation) { json(json) }
@@ -113,6 +126,24 @@ class OpenAiCompatibleProvider(
         stream = stream
     )
 
+    /**
+     * One free request to Cloudflare (the model list, no neurons), made once at startup (#347):
+     * the first question after Render wakes the server then doesn't pay for the client's first
+     * TLS connection and class loading on the slow free instance. Never throws; only the status
+     * and time are logged.
+     */
+    suspend fun warmUp() {
+        val started = System.nanoTime()
+        try {
+            val response = client.get(warmUpUrl) { bearerAuth(apiToken) }
+            log.info("AI provider: warmed up, HTTP {} in {} ms", response.status.value, millisSince(started))
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            log.warn("AI provider: warm-up failed after {} ms: {}", millisSince(started), e::class.simpleName)
+        }
+    }
+
     override suspend fun complete(messages: List<AiMessage>, maxTokens: Int): AiCompletion {
         val request = request(messages, maxTokens, stream = false)
         val started = System.nanoTime()
@@ -152,7 +183,9 @@ class OpenAiCompatibleProvider(
      * Asks with `stream: true` (#285): the answer then comes as server-sent events, one
      * `data: {json}` line per piece and `data: [DONE]` at the end, as with OpenAI. A hiccup is
      * tried once more as in [complete], but only before any piece reached [onText]: after that the
-     * person has seen part of an answer, and a second one would start again below it.
+     * person has seen part of an answer, and a second one would start again below it. An answer
+     * with no words after [firstWordsTimeoutMillis] is a hiccup too, tried once more however long
+     * that took (#345).
      */
     override suspend fun stream(messages: List<AiMessage>, maxTokens: Int, onText: suspend (String) -> Unit): AiCompletion {
         val request = request(messages, maxTokens, stream = true)
@@ -162,11 +195,30 @@ class OpenAiCompatibleProvider(
         return try {
             attemptStream(request, forward)
         } catch (e: Unavailable) {
-            if (sentAny || !e.transient || millisSince(started) > RETRY_IF_FAILED_WITHIN_MILLIS) throw e
+            val quick = e.stalled || millisSince(started) <= RETRY_IF_FAILED_WITHIN_MILLIS
+            if (sentAny || !e.transient || !quick) throw e
             delay(retryPauseMillis)
             log.info("AI provider: trying once more")
             attemptStream(request, forward)
         }
+    }
+
+    /**
+     * Runs [block], which calls its argument once the answer's first words (or any reply that
+     * isn't a stream) arrived, and gives up on it when that hasn't happened within
+     * [firstWordsTimeoutMillis] (#345).
+     */
+    private suspend fun <T> withFirstWordsDeadline(started: Long, block: suspend (firstWords: () -> Unit) -> T): T = coroutineScope {
+        val arrived = CompletableDeferred<Unit>()
+        val work = async { block { arrived.complete(Unit) } }
+        // A failure before any words isn't a stall: it ends the wait, and coroutineScope rethrows it.
+        work.invokeOnCompletion { arrived.complete(Unit) }
+        if (withTimeoutOrNull(firstWordsTimeoutMillis) { arrived.await() } == null) {
+            work.cancel()
+            log.warn("AI provider: no words after {} ms, giving up on this request", millisSince(started))
+            throw Unavailable("The AI provider hadn't started its answer", transient = true, stalled = true)
+        }
+        work.await()
     }
 
     private suspend fun attemptStream(request: ChatRequest, onText: suspend (String) -> Unit): AiCompletion {
@@ -183,18 +235,21 @@ class OpenAiCompatibleProvider(
             }
         }
         try {
-            return client.preparePost(url) {
-                bearerAuth(apiToken)
-                contentType(ContentType.Application.Json)
-                setBody(request)
-            }.execute { response ->
-                // An error, or a provider that answered all at once despite `stream: true`: read
-                // it the way complete() does, and pass the answer on as one piece.
-                val isEventStream = response.contentType()?.match(ContentType.Text.EventStream) == true
-                if (!response.status.isSuccess() || !isEventStream) {
-                    read(response, millisSince(started)).also { forward(it.text) }
-                } else {
-                    readStream(response, started, forward)
+            return withFirstWordsDeadline(started) { firstWords ->
+                client.preparePost(url) {
+                    bearerAuth(apiToken)
+                    contentType(ContentType.Application.Json)
+                    setBody(request)
+                }.execute { response ->
+                    // An error, or a provider that answered all at once despite `stream: true`: read
+                    // it the way complete() does, and pass the answer on as one piece.
+                    val isEventStream = response.contentType()?.match(ContentType.Text.EventStream) == true
+                    if (!response.status.isSuccess() || !isEventStream) {
+                        firstWords()
+                        read(response, millisSince(started)).also { forward(it.text) }
+                    } else {
+                        readStream(response, started, forward, firstWords)
+                    }
                 }
             }
         } catch (e: CancellationException) {
@@ -210,9 +265,18 @@ class OpenAiCompatibleProvider(
         }
     }
 
-    /** Reads a streamed answer's events, passing each piece of `content` to [onPiece]. */
-    private suspend fun readStream(response: HttpResponse, started: Long, onPiece: suspend (String) -> Unit): AiCompletion {
+    /**
+     * Reads a streamed answer's events, passing each piece of `content` to [onPiece], and calling
+     * [firstWords] at the first piece of the answer or of its reasoning.
+     */
+    private suspend fun readStream(
+        response: HttpResponse,
+        started: Long,
+        onPiece: suspend (String) -> Unit,
+        firstWords: () -> Unit
+    ): AiCompletion {
         val channel = response.bodyAsChannel()
+        var firstWordsMillis: Long? = null
         val content = StringBuilder()
         val reasoning = StringBuilder()
         var finishReason: String? = null
@@ -232,6 +296,11 @@ class OpenAiCompatibleProvider(
             chunk.usage?.neurons?.let { neurons = it }
             val choice = chunk.choices.firstOrNull() ?: continue
             choice.finishReason?.let { finishReason = it }
+            val words = !choice.delta?.content.isNullOrEmpty() || !choice.delta?.reasoningContent.isNullOrEmpty()
+            if (words && firstWordsMillis == null) {
+                firstWordsMillis = millisSince(started)
+                firstWords()
+            }
             choice.delta?.reasoningContent?.let { reasoning.append(it) }
             // The whole answer is trimmed at the end; its start is trimmed here, so nothing jumps.
             val piece = choice.delta?.content?.let { if (content.isEmpty()) it.trimStart() else it }
@@ -239,7 +308,10 @@ class OpenAiCompatibleProvider(
             content.append(piece)
             onPiece(piece)
         }
-        log.info("AI provider: streamed in {} ms, {} neurons, finish {}", millisSince(started), neurons, finishReason)
+        log.info(
+            "AI provider: streamed in {} ms (first words after {} ms), {} neurons, finish {}",
+            millisSince(started), firstWordsMillis, neurons, finishReason
+        )
         val text = content.toString().takeIf { it.isNotBlank() }
             // As in read(): Qwen3 answers in reasoning_content, but never with an unfinished thought.
             ?: reasoning.toString().trim().takeIf { it.isNotEmpty() && finishReason != "length" }?.also { onPiece(it) }
@@ -266,7 +338,9 @@ class OpenAiCompatibleProvider(
             if (isQuotaExhausted(codes)) {
                 throw QuotaExhausted("The AI's free daily allowance is used up")
             }
-            // A 5xx, or a 429 that isn't the daily allowance (3040, "capacity temporarily exceeded").
+            // Cloudflare's API rate limit: trying again in a second would only be refused again (#344).
+            if (isRateLimited(codes)) throw Busy("Cloudflare's API rate limit was reached")
+            // A 5xx, or a 429 that isn't one of the above (3040, "capacity temporarily exceeded").
             val transient = status.value >= 500 || status == HttpStatusCode.TooManyRequests
             throw Unavailable("The AI provider answered HTTP ${status.value}", transient = transient)
         }
@@ -295,6 +369,11 @@ class OpenAiCompatibleProvider(
         private const val RETRY_IF_FAILED_WITHIN_MILLIS = 10_000L
         private const val RETRY_PAUSE_MILLIS = 1_000L
         /**
+         * The first words usually come within a second (#285). Past this the answer has stalled
+         * (#345), and one more try still ends well under the app's 90 s: 12 + 1 + 45 s at worst.
+         */
+        private const val FIRST_WORDS_TIMEOUT_MILLIS = 12_000L
+        /**
          * Low, for steady answers: the same question shouldn't get a different doctrine each time.
          * 0.2 since #206: at 0.3, each evaluation run had a different verse or two cited loosely.
          * Changing it changes the answers, so bump SystemPrompt.PROMPT_VERSION and run the evaluation.
@@ -308,8 +387,19 @@ class OpenAiCompatibleProvider(
          */
         private val QUOTA_EXHAUSTED_CODES = setOf(3036, 4006)
 
+        /**
+         * Cloudflare's API rate limit, "please wait and consider throttling your request speed":
+         * 1,200 requests per 5 minutes per user, for every API call on the account. On 2026-11-16
+         * loading search's verse vectors on the same account reached it, and five questions failed
+         * (#343, #344).
+         */
+        private val RATE_LIMITED_CODES = setOf(971)
+
         /** Shared with search's embeddings, which call the same Workers AI account. */
         internal fun isQuotaExhausted(codes: List<Int>) = codes.any { it in QUOTA_EXHAUSTED_CODES }
+
+        /** Shared with search's embeddings, like [isQuotaExhausted]. */
+        internal fun isRateLimited(codes: List<Int>) = codes.any { it in RATE_LIMITED_CODES }
         private val log = LoggerFactory.getLogger(OpenAiCompatibleProvider::class.java)
         private val json = Json { ignoreUnknownKeys = true }
 

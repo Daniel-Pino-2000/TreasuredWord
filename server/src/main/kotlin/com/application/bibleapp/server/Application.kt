@@ -20,6 +20,8 @@ import com.application.bibleapp.server.search.WorkersAiEmbeddingProvider
 import io.ktor.server.application.Application
 import io.ktor.server.application.log
 import io.ktor.server.netty.EngineMain
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.time.Clock
 
 fun main(args: Array<String>) {
@@ -44,13 +46,18 @@ fun Application.module() {
         log.warn("Key passages off: {}", e.message)
         null
     }
+    val aiProvider = OpenAiCompatibleProvider.fromConfig(environment.config)
+    val embeddingProvider = WorkersAiEmbeddingProvider.fromConfig(environment.config, VerseSearch.MODEL)
     serverModule(
         emailSender = GmailEmailSender.fromConfig(environment.config),
-        aiProvider = OpenAiCompatibleProvider.fromConfig(environment.config),
-        embeddingProvider = WorkersAiEmbeddingProvider.fromConfig(environment.config, VerseSearch.MODEL),
+        aiProvider = aiProvider,
+        embeddingProvider = embeddingProvider,
         topicRouter = router?.takeIf { topicGuides },
         keyPassagesRouter = router
     )
+    // Warms both Cloudflare clients in the background, so the start isn't delayed (#347).
+    launch(Dispatchers.IO) { aiProvider?.warmUp() }
+    launch(Dispatchers.IO) { embeddingProvider?.warmUp() }
 }
 
 /**

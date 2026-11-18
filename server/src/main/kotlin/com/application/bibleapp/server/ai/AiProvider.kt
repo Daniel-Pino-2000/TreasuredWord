@@ -19,18 +19,33 @@ data class AiMessage(val role: AiRole, val content: String)
  */
 data class AiCompletion(val text: String, val cutOff: Boolean, val neurons: Double?)
 
-/** Why there's no answer. The two kinds get different messages in the app (#124). */
+/** Why there's no answer. Each kind gets its own message in the app (#124, #344). */
 sealed class AiProviderException(message: String, cause: Throwable? = null) : RuntimeException(message, cause)
 
 /** The free daily allowance is used up (Cloudflare error 3036 or 4006, HTTP 429). It comes back at 00:00 UTC. */
 class QuotaExhausted(message: String) : AiProviderException(message)
 
 /**
+ * Cloudflare's API rate limit (error 971, HTTP 429: 1,200 requests per 5 minutes per user) was
+ * reached (#344). Over in minutes, so it's never tried again at once, and people hear the Bible
+ * Helper is busy rather than "try again".
+ */
+class Busy(message: String) : AiProviderException(message)
+
+/**
  * A timeout, a server error, or an answer we couldn't read. Worth trying again later.
  * [transient] marks a hiccup that's usually over in a moment (no connection, a 5xx, Cloudflare's
  * "capacity temporarily exceeded"), which the provider tries once more by itself (#280).
+ *
+ * [stalled] marks an answer that hadn't started by the provider's first-words deadline (#345):
+ * tried once more however long it waited, since the AI usually starts within a second.
  */
-class Unavailable(message: String, cause: Throwable? = null, val transient: Boolean = false) : AiProviderException(message, cause)
+class Unavailable(
+    message: String,
+    cause: Throwable? = null,
+    val transient: Boolean = false,
+    val stalled: Boolean = false
+) : AiProviderException(message, cause)
 
 /**
  * Sends a conversation to an AI and returns its answer (#123).

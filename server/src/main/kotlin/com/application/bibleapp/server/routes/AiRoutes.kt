@@ -5,6 +5,7 @@ import com.application.bibleapp.server.ai.AiMessage
 import com.application.bibleapp.server.ai.AiProvider
 import com.application.bibleapp.server.ai.AiProviderException
 import com.application.bibleapp.server.ai.AiRole
+import com.application.bibleapp.server.ai.Busy
 import com.application.bibleapp.server.ai.QuotaExhausted
 import com.application.bibleapp.server.ai.StarterQuestions
 import com.application.bibleapp.server.ai.SystemPrompt
@@ -12,6 +13,7 @@ import com.application.bibleapp.server.ai.TopicGuideMatcher
 import com.application.bibleapp.server.ai.Unavailable
 import com.application.bibleapp.server.ai.UsfmBookCodes
 import com.application.bibleapp.server.auth.currentUserId
+import com.application.bibleapp.server.db.dbQuery
 import com.application.bibleapp.server.db.tables.AiDailyUsage
 import com.application.bibleapp.server.db.tables.AiReports
 import com.application.bibleapp.server.db.tables.AiStarterAnswers
@@ -33,6 +35,10 @@ import io.ktor.server.routing.Route
 import io.ktor.server.routing.post
 import io.ktor.utils.io.writeStringUtf8
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.async
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.greater
@@ -44,7 +50,6 @@ import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.insertIgnore
 import org.jetbrains.exposed.sql.selectAll
-import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import org.jetbrains.exposed.sql.upsertReturning
 import java.time.Clock
@@ -130,7 +135,7 @@ internal fun validateAsk(request: AiAskRequest): Map<String, String> {
  * starter with a topic guide is stored under the guides' version (#319), so turning the guides on
  * or off never serves an answer the other instructions wrote.
  */
-private fun readyStarterAnswer(starter: String, language: String, version: String): String? = transaction {
+private suspend fun readyStarterAnswer(starter: String, language: String, version: String): String? = dbQuery {
     AiStarterAnswers.selectAll()
         .where {
             (AiStarterAnswers.starter eq starter) and (AiStarterAnswers.language eq language) and
@@ -140,7 +145,7 @@ private fun readyStarterAnswer(starter: String, language: String, version: Strin
 }
 
 /** Stores [answer] as the ready one; when two people asked at once, the first stored stays. */
-private fun storeStarterAnswer(starter: String, language: String, version: String, answer: String, now: java.time.Instant) = transaction {
+private suspend fun storeStarterAnswer(starter: String, language: String, version: String, answer: String, now: java.time.Instant) = dbQuery {
     AiStarterAnswers.insertIgnore {
         it[AiStarterAnswers.starter] = starter
         it[AiStarterAnswers.language] = language
@@ -187,7 +192,7 @@ internal fun splitCrisis(text: String): Pair<String, Boolean> =
  * count < 15 RETURNING count`), so questions sent at the same moment can't all slip past the
  * limit the way a read followed by a later write would let them.
  */
-private fun reserveAnswer(userId: UUID, day: LocalDate): Int? = transaction {
+private suspend fun reserveAnswer(userId: UUID, day: LocalDate): Int? = dbQuery {
     AiDailyUsage.upsertReturning(
         returning = listOf(AiDailyUsage.count),
         onUpdate = { it[AiDailyUsage.count] = AiDailyUsage.count + 1 },
@@ -201,7 +206,7 @@ private fun reserveAnswer(userId: UUID, day: LocalDate): Int? = transaction {
 
 /** How many answers [userId] has had on the UTC day [clock] is in: what the `ai` rate limit
  *  reads to let someone who's out of questions hear so (#271). */
-internal fun aiAnswersUsedToday(userId: UUID, clock: Clock): Int = transaction {
+internal suspend fun aiAnswersUsedToday(userId: UUID, clock: Clock): Int = dbQuery {
     val today = LocalDate.ofInstant(clock.instant(), ZoneOffset.UTC)
     AiDailyUsage.selectAll()
         .where { (AiDailyUsage.userId eq userId) and (AiDailyUsage.day eq today) }
@@ -209,20 +214,28 @@ internal fun aiAnswersUsedToday(userId: UUID, clock: Clock): Int = transaction {
 }
 
 /** Gives back an answer taken by [reserveAnswer] when none came: only answers count. */
-private fun releaseAnswer(userId: UUID, day: LocalDate) = transaction {
+private suspend fun releaseAnswer(userId: UUID, day: LocalDate) = dbQuery {
     AiDailyUsage.update({ (AiDailyUsage.userId eq userId) and (AiDailyUsage.day eq day) and (AiDailyUsage.count greater 0) }) {
         it[AiDailyUsage.count] = AiDailyUsage.count - 1
     }
 }
 
-/** The error the app gets when the AI gave no answer: resting until midnight UTC, or try again. */
+/** The error the app gets when the AI gave no answer: resting until midnight UTC, busy for a few minutes, or try again. */
 internal fun errorFor(e: AiProviderException): ErrorResponse = when (e) {
     is QuotaExhausted -> ErrorResponse("AI_RESTING", "The Bible Helper is resting until 00:00 UTC")
+    is Busy -> ErrorResponse("AI_BUSY", "The Bible Helper is busy, try again in a few minutes")
     is Unavailable -> ErrorResponse("AI_UNAVAILABLE", "Couldn't get an answer")
 }
 
+/**
+ * Busy is a 429 (#344): every app version shows a 429 that isn't AI_DAILY_LIMIT as "Please wait a
+ * moment", which is what it is. The others are 503s, as before.
+ */
+internal fun statusFor(e: AiProviderException): HttpStatusCode =
+    if (e is Busy) HttpStatusCode.TooManyRequests else HttpStatusCode.ServiceUnavailable
+
 private suspend fun ApplicationCall.respondNoAnswer(e: AiProviderException) =
-    respond(HttpStatusCode.ServiceUnavailable, errorFor(e))
+    respond(statusFor(e), errorFor(e))
 
 /**
  * Gets the AI's answer to [conversation] and sends [finish]'s response: all at once, or, when
@@ -233,17 +246,20 @@ private suspend fun ApplicationCall.respondAnswer(
     provider: AiProvider,
     conversation: List<AiMessage>,
     streaming: Boolean,
-    onNoAnswer: () -> Unit,
-    finish: (AiCompletion) -> AiAskResponse
+    onNoAnswer: suspend () -> Unit,
+    finish: suspend (AiCompletion) -> AiAskResponse
 ) {
     if (streaming) {
         respondAnswerStream(provider, conversation, AI_MAX_TOKENS, onNoAnswer, respondError = { respondNoAnswer(it) }, finish = finish)
         return
     }
     val completion = try {
-        provider.complete(conversation, AI_MAX_TOKENS)
+        // Streamed from the provider even when the app gets it all at once, so a stalled answer
+        // is given up on and asked again after 12 s, not waited for 45 s (#345).
+        provider.stream(conversation, AI_MAX_TOKENS) { }
     } catch (e: Throwable) {
-        onNoAnswer()
+        // Also when the app hung up and this coroutine is cancelled: the count still goes back (#346).
+        withContext(NonCancellable) { onNoAnswer() }
         if (e is AiProviderException) respondNoAnswer(e) else throw e
         return
     }
@@ -318,16 +334,25 @@ private suspend fun ApplicationCall.answerQuestion(aiProvider: AiProvider?, cloc
         return
     }
     val today = LocalDate.ofInstant(clock.instant(), ZoneOffset.UTC)
-    val used = reserveAnswer(userId, today)
-    if (used == null) {
+    // Topic guides (#319): one embedding of the latest question, matched while the daily count is
+    // taken (#347), and cancelled, never used, when the question is refused. A question about a
+    // selected passage has its passage instead.
+    val passage = request.passage
+    val reserved = coroutineScope {
+        val matching = if (guides != null && passage == null) async { guides.match(request.messages.last().content) } else null
+        val used = reserveAnswer(userId, today)
+        if (used == null) {
+            matching?.cancel()
+            null
+        } else {
+            used to matching?.await().orEmpty()
+        }
+    }
+    if (reserved == null) {
         respond(HttpStatusCode.TooManyRequests, ErrorResponse("AI_DAILY_LIMIT", "Today's $AI_DAILY_LIMIT questions are used up"))
         return
     }
-
-    // Topic guides (#319): one embedding of the latest question, after the daily count so a
-    // refused question spends nothing. A question about a selected passage has its passage instead.
-    val passage = request.passage
-    val matched = if (guides != null && passage == null) guides.match(request.messages.last().content) else emptyList()
+    val (used, matched) = reserved
     val version = SystemPrompt.versionFor(matched)
     val instructions = if (passage != null) {
         SystemPrompt.forLanguage(request.language, passage.reference, passage.text)
@@ -393,7 +418,7 @@ fun Route.aiRoutes(aiProvider: AiProvider?, clock: Clock, guides: TopicGuideMatc
                     return@post
                 }
                 val now = clock.instant()
-                transaction {
+                dbQuery {
                     AiReports.insert {
                         it[createdAt] = now
                         it[reason] = request.reason

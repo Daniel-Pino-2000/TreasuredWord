@@ -1,5 +1,7 @@
 package com.application.bibleapp.server.search.eval
 
+import com.application.bibleapp.server.ai.Busy
+import com.application.bibleapp.server.ai.DevAiBudget
 import com.application.bibleapp.server.ai.QuotaExhausted
 import com.application.bibleapp.server.ai.Unavailable
 import com.application.bibleapp.server.search.EmbeddingKind
@@ -172,6 +174,8 @@ suspend fun embedMissingVerses(
             embedWithRetries(provider, batch.map { it.text }, EmbeddingKind.DOCUMENT, retryPausesMillis)
         } catch (e: QuotaExhausted) {
             return progress.copy(stoppedAt = batch.first().ref, stopReason = "Cloudflare's free daily allowance ran out", quotaExhausted = true)
+        } catch (e: Busy) {
+            return progress.copy(stoppedAt = batch.first().ref, stopReason = "Cloudflare's API rate limit was reached; wait 5 minutes")
         } catch (e: Unavailable) {
             return progress.copy(stoppedAt = batch.first().ref, stopReason = "Workers AI kept failing (${e.message})")
         }
@@ -298,7 +302,9 @@ fun main(args: Array<String>) {
             System.err.println("Some vectors aren't cached yet: set AI_BASE_URL and AI_API_TOKEN first (docs/semantic_search_eval.md, \"Running it\").")
             exitProcess(1)
         }
-        WorkersAiEmbeddingProvider(WorkersAiEmbeddingProvider.accountAiUrl(baseUrl), token, model)
+        // The app shares this Cloudflare account (#343).
+        DevAiBudget.fromEnvironment().also { println(it.summary()) }
+            .wrap(WorkersAiEmbeddingProvider(WorkersAiEmbeddingProvider.accountAiUrl(baseUrl), token, model))
     }
 
     val all = SearchEvalQueries.parse(File(queriesPath).readText())
@@ -357,6 +363,9 @@ fun main(args: Array<String>) {
     } catch (e: QuotaExhausted) {
         println("Every verse is embedded and saved, but the allowance ran out before the queries. Run again after 00:00 UTC.")
         exitProcess(0)
+    } catch (e: Busy) {
+        println("Every verse is embedded and saved, but Cloudflare's API rate limit was reached before the queries. Run again in 5 minutes.")
+        exitProcess(1)
     } catch (e: Unavailable) {
         println("Every verse is embedded and saved, but Workers AI kept failing on the queries (${e.message}). Run again.")
         exitProcess(1)

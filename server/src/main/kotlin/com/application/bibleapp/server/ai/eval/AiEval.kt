@@ -3,6 +3,8 @@ package com.application.bibleapp.server.ai.eval
 import com.application.bibleapp.server.ai.AiMessage
 import com.application.bibleapp.server.ai.AiProvider
 import com.application.bibleapp.server.ai.AiRole
+import com.application.bibleapp.server.ai.Busy
+import com.application.bibleapp.server.ai.DevAiBudget
 import com.application.bibleapp.server.ai.OpenAiCompatibleProvider
 import com.application.bibleapp.server.ai.QuotaExhausted
 import com.application.bibleapp.server.ai.RoutedGuide
@@ -65,6 +67,9 @@ suspend fun evaluate(
             EvalResult(question, completion.text, completion.cutOff, completion.neurons, problems, guides = guidesFor?.let { guides })
         } catch (e: QuotaExhausted) {
             results += EvalResult(question, error = "Cloudflare's free daily allowance ran out; stopped here")
+            break
+        } catch (e: Busy) {
+            results += EvalResult(question, error = "Cloudflare's API rate limit was reached; stopped here")
             break
         } catch (e: Unavailable) {
             EvalResult(question, error = "No answer: ${e.message}")
@@ -154,11 +159,15 @@ fun main(args: Array<String>) {
             System.getenv(variable)?.let { put("ai.$setting", it) }
         }
     }
-    val provider = OpenAiCompatibleProvider.fromConfig(config)
-    if (provider == null) {
+    val live = OpenAiCompatibleProvider.fromConfig(config)
+    if (live == null) {
         System.err.println("Set AI_BASE_URL, AI_API_TOKEN and AI_MODEL first (server/DEPLOY.md says what each is).")
         exitProcess(1)
     }
+    // The app shares this Cloudflare account: the run stops at development's daily budget (#343).
+    val budget = DevAiBudget.fromEnvironment()
+    println(budget.summary())
+    val provider = budget.wrap(live)
     val model = config.property("ai.model").getString()
     val guided = System.getenv("AI_TOPIC_GUIDES")?.toBoolean() == true
 
@@ -175,7 +184,7 @@ fun main(args: Array<String>) {
     val guidesFor = if (guided) {
         val threshold = System.getenv("AI_TOPIC_THRESHOLD")?.toDouble() ?: TopicRouter.THRESHOLD
         val router = TopicRouter.fromResources(VerseSearch.MODEL, threshold)
-        val embeddings = WorkersAiEmbeddingProvider.fromConfig(config, VerseSearch.MODEL)!!
+        val embeddings = budget.wrap(WorkersAiEmbeddingProvider.fromConfig(config, VerseSearch.MODEL)!!)
         runBlocking {
             questions.chunked(embeddings.maxBatch).flatMap { batch ->
                 batch.zip(embeddings.embed(batch.map { it.ask }, EmbeddingKind.QUERY).vectors) { question, vector -> question.id to router.route(vector) }
