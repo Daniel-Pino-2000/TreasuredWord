@@ -8,6 +8,7 @@ exclude:
   - "*.pdf"
   - ai_helper_eval.md
   - ai_helper_eval_heldout.md
+  - ai_helper_eval_positions.md
   - ai_helper_plan.md
   - ai_quality_audit.md
   - api_contract.md
