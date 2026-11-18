@@ -48,7 +48,7 @@ fun Application.module() {
     }
     val aiProvider = OpenAiCompatibleProvider.fromConfig(environment.config)
     val embeddingProvider = WorkersAiEmbeddingProvider.fromConfig(environment.config, VerseSearch.MODEL)
-    serverModule(
+    val guides = serverModule(
         emailSender = GmailEmailSender.fromConfig(environment.config),
         aiProvider = aiProvider,
         embeddingProvider = embeddingProvider,
@@ -57,7 +57,16 @@ fun Application.module() {
     )
     // Warms both Cloudflare clients in the background, so the start isn't delayed (#347).
     launch(Dispatchers.IO) { aiProvider?.warmUp() }
-    launch(Dispatchers.IO) { embeddingProvider?.warmUp() }
+    launch(Dispatchers.IO) { warmUpEmbeddings(guides) { embeddingProvider?.warmUp() } }
+}
+
+/**
+ * The embedding client's warm-up at startup. With the topic guides on, one tiny embedding through
+ * [guides] (#341), which opens the connection and reaches bge-m3 too; off, the free model list
+ * ([warmUpClient], #347) is enough for search by meaning. Only one of the two runs.
+ */
+internal suspend fun warmUpEmbeddings(guides: TopicGuideMatcher?, warmUpClient: suspend () -> Unit) {
+    if (guides != null) guides.warmUp() else warmUpClient()
 }
 
 /**
@@ -68,7 +77,8 @@ fun Application.module() {
  * makes search by meaning answer SEARCH_UNAVAILABLE (#287). Tests pass a [clock] to move the daily
  * limits to the next day. A [topicRouter] turns the Bible Helper's topic guides on (#319); they
  * need [embeddingProvider] too, and without either every question gets v5's instructions.
- * [keyPassagesRouter] gives search its key passages (#320); null leaves them out.
+ * [keyPassagesRouter] gives search its key passages (#320); null leaves them out. Returns the
+ * topic guide matcher, or null when the guides are off, for [module]'s warm-up (#341).
  */
 fun Application.serverModule(
     emailSender: EmailSender?,
@@ -77,7 +87,7 @@ fun Application.serverModule(
     embeddingProvider: EmbeddingProvider? = null,
     topicRouter: TopicRouter? = null,
     keyPassagesRouter: TopicRouter? = null
-) {
+): TopicGuideMatcher? {
     configureMonitoring()
     configureSerialization()
     configureSecurity()
@@ -88,4 +98,5 @@ fun Application.serverModule(
     // Matching a question spends one embedding from search's daily cap (#319).
     val guides = topicRouter?.let { router -> search?.let { TopicGuideMatcher(router, it::embedQuery) } }
     configureRouting(emailSender, aiProvider, search, clock, guides)
+    return guides
 }
