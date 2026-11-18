@@ -587,7 +587,7 @@ Errors:
 | 401 | `UNAUTHORIZED` | Not signed in or the token expired | No |
 | 429 | `AI_DAILY_LIMIT` | This account already got 15 answers today (UTC); more at 00:00 UTC | No |
 | 429 | (no body) | More than 5 questions in a minute (`ai` zone), while some of today's 15 are left | No |
-| 503 | `AI_RESTING` | Cloudflare's free daily allowance is used up (its error `3036`); back at 00:00 UTC | No |
+| 503 | `AI_RESTING` | Cloudflare's free daily allowance is used up (its error `3036` or `4006`); back at 00:00 UTC | No |
 | 503 | `AI_UNAVAILABLE` | The AI failed, took longer than 45 s, or isn't set up on this server | No |
 
 The instructions ask for `[[BOOK C:V]]`, `[[BOOK C:V-V]]` or a whole chapter `[[PSA 23]]` (a card,
