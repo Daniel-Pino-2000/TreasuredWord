@@ -1,6 +1,7 @@
 package com.application.bibleapp.server.routes
 
 import com.application.bibleapp.server.auth.currentUserId
+import com.application.bibleapp.server.db.dbQuery
 import com.application.bibleapp.server.db.tables.Notes
 import com.application.bibleapp.server.models.CreateNoteRequest
 import com.application.bibleapp.server.models.ErrorResponse
@@ -23,7 +24,6 @@ import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.andWhere
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
-import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import java.time.Instant
 import java.util.UUID
@@ -50,7 +50,7 @@ fun Route.noteRoutes() {
 
             // Read before the query — see the same line in HighlightRoutes.kt (#84).
             val serverTime = Instant.now()
-            val rows = transaction {
+            val rows = dbQuery {
                 val query = Notes.selectAll().where { Notes.userId eq userId }
                 if (updatedSince != null) {
                     query.andWhere { Notes.updatedAt greaterEq updatedSince }
@@ -85,7 +85,7 @@ fun Route.noteRoutes() {
             // Soft-deleted notes are excluded here too, consistent with the list endpoint's
             // "a plain GET only returns active items" rule - a direct fetch by id shouldn't be
             // a back door to data the list endpoint otherwise hides.
-            val existing = transaction {
+            val existing = dbQuery {
                 Notes.selectAll()
                     .where { (Notes.id eq noteId) and (Notes.userId eq userId) }
                     .andWhere { Notes.deletedAt.isNull() }
@@ -118,7 +118,7 @@ fun Route.noteRoutes() {
             }
 
             val now = Instant.now()
-            val noteId = transaction {
+            val noteId = dbQuery {
                 Notes.insert {
                     it[Notes.userId] = userId
                     it[versionId] = request.versionId
@@ -160,7 +160,7 @@ fun Route.noteRoutes() {
                 return@put
             }
 
-            val existing = transaction {
+            val existing = dbQuery {
                 Notes.selectAll().where { (Notes.id eq noteId) and (Notes.userId eq userId) }.singleOrNull()
             }
 
@@ -170,7 +170,7 @@ fun Route.noteRoutes() {
             }
 
             val now = Instant.now()
-            transaction {
+            dbQuery {
                 Notes.update({ Notes.id eq noteId }) {
                     it[versesJson] = request.verses.toJson()
                     it[content] = request.text
@@ -192,7 +192,7 @@ fun Route.noteRoutes() {
                     return@delete
                 }
 
-            val existing = transaction {
+            val existing = dbQuery {
                 Notes.selectAll().where { (Notes.id eq noteId) and (Notes.userId eq userId) }.singleOrNull()
             }
 
@@ -202,7 +202,7 @@ fun Route.noteRoutes() {
             }
 
             val now = Instant.now()
-            transaction {
+            dbQuery {
                 Notes.update({ Notes.id eq noteId }) {
                     it[deletedAt] = now
                     it[updatedAt] = now

@@ -15,7 +15,7 @@ import java.util.UUID
 
 /**
  * Makes and checks emailed codes (#156), shared by verify-email and password reset (#157).
- * Both functions expect to run inside a `transaction { }`, so a successful check and what it
+ * Both functions expect to run inside a `dbQuery { }` (#346), so a successful check and what it
  * unlocks (marking the email verified, changing the password) happen together or not at all.
  *
  * [secret] keys the codes' HMAC (see EmailCodeIssuer).

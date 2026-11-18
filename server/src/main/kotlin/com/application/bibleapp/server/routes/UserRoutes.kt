@@ -3,6 +3,7 @@ package com.application.bibleapp.server.routes
 import com.application.bibleapp.server.auth.GoogleIdTokenVerifier
 import com.application.bibleapp.server.auth.PasswordHasher
 import com.application.bibleapp.server.auth.currentUserId
+import com.application.bibleapp.server.db.dbQuery
 import com.application.bibleapp.server.db.tables.Users
 import com.application.bibleapp.server.models.DeleteAccountRequest
 import com.application.bibleapp.server.models.ErrorResponse
@@ -16,7 +17,6 @@ import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.selectAll
-import org.jetbrains.exposed.sql.transactions.transaction
 
 /**
  * Account endpoints. Both require a valid access token, and the current user's id always
@@ -27,7 +27,7 @@ fun Route.userRoutes(googleVerifier: GoogleIdTokenVerifier?) {
         get("/users/me") {
             val userId = call.currentUserId()
 
-            val user = transaction {
+            val user = dbQuery {
                 Users.selectAll().where { Users.id eq userId }.singleOrNull()
             }
 
@@ -53,7 +53,7 @@ fun Route.userRoutes(googleVerifier: GoogleIdTokenVerifier?) {
             val userId = call.currentUserId()
             val request = call.receive<DeleteAccountRequest>()
 
-            val user = transaction {
+            val user = dbQuery {
                 Users.selectAll().where { Users.id eq userId }.singleOrNull()
             }
 
@@ -108,7 +108,7 @@ fun Route.userRoutes(googleVerifier: GoogleIdTokenVerifier?) {
             // not application code. This isn't optional polish: Google Play's User Data policy
             // requires an in-app path to delete an account and its data for any app that lets
             // users create one (decision 6).
-            transaction {
+            dbQuery {
                 Users.deleteWhere { with(it) { Users.id eq userId } }
             }
 
