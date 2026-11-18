@@ -8,6 +8,7 @@ import com.application.bibleapp.server.auth.JwtIssuer
 import com.application.bibleapp.server.auth.PasswordHasher
 import com.application.bibleapp.server.auth.RefreshTokenIssuer
 import com.application.bibleapp.server.auth.getJwtConfig
+import com.application.bibleapp.server.db.dbQuery
 import com.application.bibleapp.server.db.tables.RefreshTokens
 import com.application.bibleapp.server.db.tables.Users
 import com.application.bibleapp.server.models.AuthResponse
@@ -29,7 +30,6 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.isNull
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
-import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import java.time.Duration
 import java.time.Instant
@@ -53,7 +53,7 @@ internal fun normalizeEmail(email: String): String = email.trim().lowercase()
  * token's hash. Shared by register, login, and refresh so the "what does a successful auth
  * response look like" logic lives in exactly one place instead of being copied three times.
  */
-private fun issueTokensFor(userId: UUID, jwtConfig: JwtConfig): AuthResponse {
+private suspend fun issueTokensFor(userId: UUID, jwtConfig: JwtConfig): AuthResponse {
     val accessToken = JwtIssuer.issueAccessToken(
         secret = jwtConfig.secret,
         issuer = jwtConfig.issuer,
@@ -63,7 +63,7 @@ private fun issueTokensFor(userId: UUID, jwtConfig: JwtConfig): AuthResponse {
 
     val rawRefreshToken = RefreshTokenIssuer.generateToken()
 
-    transaction {
+    dbQuery {
         RefreshTokens.insert {
             it[RefreshTokens.userId] = userId
             it[tokenHash] = RefreshTokenIssuer.hash(rawRefreshToken)
@@ -140,7 +140,7 @@ fun Route.authRoutes(googleVerifier: GoogleIdTokenVerifier?) {
                 return@post
             }
 
-            val existingUser = transaction {
+            val existingUser = dbQuery {
                 Users.selectAll().where { Users.email eq email }.singleOrNull()
             }
 
@@ -154,7 +154,7 @@ fun Route.authRoutes(googleVerifier: GoogleIdTokenVerifier?) {
 
             val passwordHash = PasswordHasher.hash(request.password)
 
-            val userId = transaction {
+            val userId = dbQuery {
                 Users.insert {
                     it[Users.email] = email
                     it[Users.passwordHash] = passwordHash
@@ -170,7 +170,7 @@ fun Route.authRoutes(googleVerifier: GoogleIdTokenVerifier?) {
             val request = call.receive<LoginRequest>()
             val email = normalizeEmail(request.email)
 
-            val user = transaction {
+            val user = dbQuery {
                 Users.selectAll().where { Users.email eq email }.singleOrNull()
             }
 
@@ -205,15 +205,15 @@ fun Route.authRoutes(googleVerifier: GoogleIdTokenVerifier?) {
             val email = normalizeEmail(identity.email)
 
             var created = false
-            val userId = transaction {
+            val userId = dbQuery {
                 Users.selectAll().where { Users.googleSubject eq identity.subject }.singleOrNull()
-                    ?.let { return@transaction it[Users.id] }
+                    ?.let { return@dbQuery it[Users.id] }
 
                 val sameEmail = Users.selectAll().where { Users.email eq email }.singleOrNull()
                 if (sameEmail != null) {
                     // Already linked to a different Google account with this email (Google
                     // accounts can be deleted and the address reused): don't take it over.
-                    if (sameEmail[Users.googleSubject] != null) return@transaction null
+                    if (sameEmail[Users.googleSubject] != null) return@dbQuery null
                     // If the email is verified (#158), whoever set the password proved they own
                     // the inbox, the same thing Google just proved: they're the same person, so
                     // the password and their other sessions stay.
@@ -238,7 +238,7 @@ fun Route.authRoutes(googleVerifier: GoogleIdTokenVerifier?) {
                             it[revokedAt] = Instant.now()
                         }
                     }
-                    return@transaction sameEmail[Users.id]
+                    return@dbQuery sameEmail[Users.id]
                 }
 
                 created = true
@@ -275,7 +275,7 @@ fun Route.authRoutes(googleVerifier: GoogleIdTokenVerifier?) {
             val request = call.receive<RefreshRequest>()
             val submittedHash = RefreshTokenIssuer.hash(request.refreshToken)
 
-            val tokenRow = transaction {
+            val tokenRow = dbQuery {
                 RefreshTokens.selectAll().where { RefreshTokens.tokenHash eq submittedHash }.singleOrNull()
             }
 
@@ -295,7 +295,7 @@ fun Route.authRoutes(googleVerifier: GoogleIdTokenVerifier?) {
             // caller ever uses the newly-issued one. If this exact token is submitted again later,
             // that's the "reuse of an already-rotated token" signal from the contract's design
             // decisions - a sign the token may have been copied/stolen, not normal client behavior.
-            transaction {
+            dbQuery {
                 RefreshTokens.update({ RefreshTokens.id eq tokenRow[RefreshTokens.id] }) {
                     it[revokedAt] = Instant.now()
                 }
@@ -317,7 +317,7 @@ fun Route.authRoutes(googleVerifier: GoogleIdTokenVerifier?) {
             // the caller: only whoever already holds this exact raw token could have computed
             // this hash in the first place. An unknown token changes nothing and gets the same
             // 204, so the answer says nothing about which tokens exist.
-            transaction {
+            dbQuery {
                 RefreshTokens.update({ RefreshTokens.tokenHash eq tokenHash }) {
                     it[revokedAt] = Instant.now()
                 }

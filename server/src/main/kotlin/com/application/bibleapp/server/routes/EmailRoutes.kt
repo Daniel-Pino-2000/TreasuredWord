@@ -3,6 +3,7 @@ package com.application.bibleapp.server.routes
 import com.application.bibleapp.server.auth.EmailCodeStore
 import com.application.bibleapp.server.auth.PasswordHasher
 import com.application.bibleapp.server.auth.currentUserId
+import com.application.bibleapp.server.db.dbQuery
 import com.application.bibleapp.server.db.tables.EmailCodePurpose
 import com.application.bibleapp.server.db.tables.RefreshTokens
 import com.application.bibleapp.server.db.tables.Users
@@ -23,11 +24,12 @@ import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.post
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.isNull
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.selectAll
-import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import org.slf4j.LoggerFactory
 import java.time.Instant
@@ -53,15 +55,15 @@ internal suspend fun ApplicationCall.respondInvalidCode() = respond(
  */
 private suspend fun sendResetCode(emailSender: EmailSender, codes: EmailCodeStore, email: String) {
     try {
-        val (userId, code) = transaction {
-            val user = Users.selectAll().where { Users.email eq email }.singleOrNull() ?: return@transaction null
+        val (userId, code) = dbQuery {
+            val user = Users.selectAll().where { Users.email eq email }.singleOrNull() ?: return@dbQuery null
             // null when this account already got its hourly allowance of codes.
             codes.issue(user[Users.id], EmailCodePurpose.RESET_PASSWORD)?.let { user[Users.id] to it }
         } ?: return
         try {
             emailSender.send(EmailTemplates.resetPassword(email, code))
         } catch (e: EmailSendException) {
-            transaction { codes.withdrawNewest(userId, EmailCodePurpose.RESET_PASSWORD) }
+            withContext(NonCancellable) { dbQuery { codes.withdrawNewest(userId, EmailCodePurpose.RESET_PASSWORD) } }
             log.warn("Couldn't send a password reset code: {}", e.message)
         }
     } catch (e: Exception) {
@@ -89,7 +91,7 @@ fun Route.emailRoutes(emailSender: EmailSender?, codes: EmailCodeStore) {
                     return@post
                 }
                 val userId = call.currentUserId()
-                val user = transaction { Users.selectAll().where { Users.id eq userId }.singleOrNull() }
+                val user = dbQuery { Users.selectAll().where { Users.id eq userId }.singleOrNull() }
                 if (user == null) {
                     call.respond(HttpStatusCode.NotFound, ErrorResponse(code = "NOT_FOUND", message = "User not found"))
                     return@post
@@ -102,7 +104,7 @@ fun Route.emailRoutes(emailSender: EmailSender?, codes: EmailCodeStore) {
                     return@post
                 }
 
-                val code = transaction { codes.issue(userId, EmailCodePurpose.VERIFY_EMAIL) }
+                val code = dbQuery { codes.issue(userId, EmailCodePurpose.VERIFY_EMAIL) }
                 if (code == null) {
                     call.respond(
                         HttpStatusCode.TooManyRequests,
@@ -116,7 +118,9 @@ fun Route.emailRoutes(emailSender: EmailSender?, codes: EmailCodeStore) {
                 try {
                     emailSender.send(EmailTemplates.verifyEmail(user[Users.email], code))
                 } catch (e: EmailSendException) {
-                    transaction { codes.withdrawNewest(userId, EmailCodePurpose.VERIFY_EMAIL) }
+                    // Not cancellable, like the blocking transaction it replaced (#346): a code
+                    // that never went out must not count toward the hourly allowance.
+                    withContext(NonCancellable) { dbQuery { codes.withdrawNewest(userId, EmailCodePurpose.VERIFY_EMAIL) } }
                     call.respondEmailUnavailable()
                     return@post
                 }
@@ -131,11 +135,11 @@ fun Route.emailRoutes(emailSender: EmailSender?, codes: EmailCodeStore) {
                 val request = call.receive<VerifyEmailRequest>()
                 val userId = call.currentUserId()
 
-                val verified = transaction {
-                    val user = Users.selectAll().where { Users.id eq userId }.singleOrNull() ?: return@transaction false
+                val verified = dbQuery {
+                    val user = Users.selectAll().where { Users.id eq userId }.singleOrNull() ?: return@dbQuery false
                     // Already verified (a second tap, or another device got there first): done.
-                    if (user[Users.emailVerifiedAt] != null) return@transaction true
-                    if (!codes.check(userId, EmailCodePurpose.VERIFY_EMAIL, request.code)) return@transaction false
+                    if (user[Users.emailVerifiedAt] != null) return@dbQuery true
+                    if (!codes.check(userId, EmailCodePurpose.VERIFY_EMAIL, request.code)) return@dbQuery false
                     Users.update({ Users.id eq userId }) { it[emailVerifiedAt] = Instant.now() }
                     true
                 }
@@ -181,11 +185,11 @@ fun Route.emailRoutes(emailSender: EmailSender?, codes: EmailCodeStore) {
             // real one (bcrypt is by far the slowest step).
             val newHash = PasswordHasher.hash(request.newPassword)
 
-            val reset = transaction {
+            val reset = dbQuery {
                 // No such account: the same answer as a wrong code.
-                val user = Users.selectAll().where { Users.email eq email }.singleOrNull() ?: return@transaction false
+                val user = Users.selectAll().where { Users.email eq email }.singleOrNull() ?: return@dbQuery false
                 val userId = user[Users.id]
-                if (!codes.check(userId, EmailCodePurpose.RESET_PASSWORD, request.code)) return@transaction false
+                if (!codes.check(userId, EmailCodePurpose.RESET_PASSWORD, request.code)) return@dbQuery false
 
                 val now = Instant.now()
                 Users.update({ Users.id eq userId }) {

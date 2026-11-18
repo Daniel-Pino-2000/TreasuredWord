@@ -8,12 +8,10 @@ import com.application.bibleapp.server.routes.REPORT_RETENTION
 import io.ktor.server.application.Application
 import io.ktor.server.application.log
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.less
 import org.jetbrains.exposed.sql.deleteWhere
-import org.jetbrains.exposed.sql.transactions.transaction
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
@@ -29,7 +27,7 @@ private val CLEANUP_EVERY = 6.hours
  * only today's counts toward the limit). The deletes on insert in EmailCodeStore and AiRoutes
  * stay, but they only run when the same table gets a new row, which may not happen for weeks.
  */
-fun deleteExpiredRows(now: Instant): ExpiredRows = transaction {
+suspend fun deleteExpiredRows(now: Instant): ExpiredRows = dbQuery {
     val yesterday = LocalDate.ofInstant(now, ZoneOffset.UTC).minusDays(1)
     ExpiredRows(
         emailCodes = EmailCodes.deleteWhere { createdAt less now.minus(EmailCodeStore.KEEP_FOR) },
@@ -51,8 +49,8 @@ data class ExpiredRows(val emailCodes: Int, val aiReports: Int, val aiDailyUsage
  * not stop the server. Call it after configureDatabases(), which connects the database.
  */
 fun Application.startRetentionCleanup(clock: Clock) {
-    // Exposed's transaction blocks its thread while it waits for the database: IO's threads are for that.
-    launch(Dispatchers.IO) {
+    // deleteExpiredRows waits for the database on the IO threads itself (dbQuery, #346).
+    launch {
         while (true) {
             try {
                 val deleted = deleteExpiredRows(clock.instant())
