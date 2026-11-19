@@ -343,6 +343,11 @@
     <string name="palette_sage">Sage</string>
     <string name="palette_slate">Pisara</string>
     <string name="palette_rose">Rosas</string>
+    <!-- Settings › Appearance: where the home screen widget takes its colors from (#333),
+         the app's color theme or the wallpaper's (Android 12+). Short: the two choices share one row. -->
+    <string name="settings_widget_colors">Mga kulay ng widget</string>
+    <string name="widget_colors_app">Gaya ng app</string>
+    <string name="widget_colors_wallpaper">Wallpaper</string>
     <string name="theme_system">System</string>
     <string name="theme_light">Light</string>
     <string name="theme_dark">Dark</string>

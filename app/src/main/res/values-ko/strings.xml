@@ -333,6 +333,11 @@
     <string name="palette_sage">세이지</string>
     <string name="palette_slate">슬레이트</string>
     <string name="palette_rose">로즈</string>
+    <!-- Settings › Appearance: where the home screen widget takes its colors from (#333),
+         the app's color theme or the wallpaper's (Android 12+). Short: the two choices share one row. -->
+    <string name="settings_widget_colors">위젯 색상</string>
+    <string name="widget_colors_app">앱과 같게</string>
+    <string name="widget_colors_wallpaper">배경화면</string>
     <string name="theme_system">시스템</string>
     <string name="theme_light">라이트</string>
     <string name="theme_dark">다크</string>
