@@ -50,6 +50,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.customActions
 import kotlin.math.abs
+import kotlinx.coroutines.delay
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -219,7 +220,12 @@ fun LibraryView(
                             MissingVersionBanners(bibleViewModel, versionIds = filtered.mapTo(mutableSetOf()) { it.versionId })
                         }
                         items(filtered, key = { it.localId }) { highlight ->
-                            SwipeToDeleteRow(onDelete = { bibleViewModel.deleteLibraryHighlight(highlight) }) {
+                            // animateItem (#334): a deleted card fades out while the ones below
+                            // slide up into its place, and Undo fades it back in.
+                            SwipeToDeleteRow(
+                                onDelete = { bibleViewModel.deleteLibraryHighlight(highlight) },
+                                modifier = Modifier.animateItem()
+                            ) {
                                 HighlightCard(
                                     highlight = highlight,
                                     verseText = resolveVerseText(highlight.versionId, highlight.verses, verseTextByKey),
@@ -261,7 +267,10 @@ fun LibraryView(
                             MissingVersionBanners(bibleViewModel, versionIds = filtered.mapTo(mutableSetOf()) { it.versionId })
                         }
                         items(filtered, key = { it.localId }) { note ->
-                            SwipeToDeleteRow(onDelete = { bibleViewModel.deleteLibraryNote(note) }) {
+                            SwipeToDeleteRow(
+                                onDelete = { bibleViewModel.deleteLibraryNote(note) },
+                                modifier = Modifier.animateItem()
+                            ) {
                                 NoteCard(
                                     note = note,
                                     verseText = resolveVerseText(note.versionId, note.verses, verseTextByKey),
@@ -300,19 +309,27 @@ internal fun ShownInKjvLabel(modifier: Modifier = Modifier) {
  * Swipe-left (end-to-start) to delete (#243). It takes a real swipe: the card must be dragged past
  * [DELETE_SWIPE_FRACTION] of its width, and a short flick springs back instead of counting on its
  * speed alone. The background turns red with a haptic tick once letting go would delete, and back
- * when dragged back. The card slides fully off before [onDelete] runs (which shows Undo).
+ * when dragged back. [onDelete] (which shows Undo) runs the moment a swipe past the threshold is
+ * let go (#334), not once the slide has settled at the edge: the card keeps sliding off while the
+ * list's `animateItem` (passed in [modifier]) fades it out and closes the gap.
  * [enableDismissFromStartToEnd] is off so the back gesture at the screen edge never deletes, and
  * TalkBack users, who can't swipe, get a "Delete" action on the card instead.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun SwipeToDeleteRow(onDelete: () -> Unit, content: @Composable () -> Unit) {
+internal fun SwipeToDeleteRow(
+    onDelete: () -> Unit,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit
+) {
     val haptics = LocalHapticFeedback.current
     val latestOnDelete by rememberUpdatedState(onDelete)
     var rowWidth by remember { mutableIntStateOf(0) }
     // confirmValueChange runs inside the state, so it reads the state back through this holder.
     val stateHolder = remember { arrayOfNulls<SwipeToDismissBoxState>(1) }
     val density = LocalDensity.current
+    // Set by confirmValueChange when a swipe that deletes is let go; the effect below acts on it.
+    var deleteRequested by remember { mutableStateOf(false) }
     // Plain remember, not rememberSwipeToDismissBoxState (#270): that one is rememberSaveable, and
     // LazyColumn keeps an item's saved state by its key after the item leaves the list. Undo brings
     // the card back with the same localId, so it came back already "dismissed", drawn off-screen,
@@ -323,22 +340,36 @@ internal fun SwipeToDeleteRow(onDelete: () -> Unit, content: @Composable () -> U
             density = density,
             confirmValueChange = { value ->
                 // Material also settles on "dismissed" for a quick flick of any length; only a drag
-                // that really crossed the threshold counts.
+                // that really crossed the threshold counts. Material asks this when the finger
+                // lifts, before the settle animation, so that's when the delete starts (#334).
                 val offset = stateHolder[0]?.let { runCatching { it.requireOffset() }.getOrNull() } ?: 0f
-                value != SwipeToDismissBoxValue.EndToStart || abs(offset) >= rowWidth * DELETE_SWIPE_FRACTION
+                val allowed = swipeChangeAllowed(
+                    toDismissed = value == SwipeToDismissBoxValue.EndToStart,
+                    offset = offset,
+                    rowWidth = rowWidth
+                )
+                if (allowed && value == SwipeToDismissBoxValue.EndToStart) deleteRequested = true
+                allowed
             },
             positionalThreshold = { distance -> distance * DELETE_SWIPE_FRACTION }
         )
     }
     stateHolder[0] = dismissState
 
-    // Deleted once the card has finished sliding off, not the moment the gesture targets it, and
-    // only once per swipe even if this effect is restarted while the card is still dismissed.
+    // Only once per swipe: Material asks confirmValueChange again when the slide reaches the edge.
     var deleteSent by remember { mutableStateOf(false) }
-    LaunchedEffect(dismissState.currentValue) {
-        if (dismissState.currentValue == SwipeToDismissBoxValue.EndToStart && !deleteSent) {
+    LaunchedEffect(deleteRequested) {
+        if (deleteRequested && !deleteSent) {
             deleteSent = true
             latestOnDelete()
+            // Normally the card has faded out of the list and this row is gone long before this
+            // delay ends. Still here means it came back while fading out (Undo tapped very fast):
+            // LazyColumn then reuses this row as it was, slid off-screen, so bring it back and let
+            // it be swiped again.
+            delay(RETURNED_CARD_RESET_MS)
+            deleteRequested = false
+            deleteSent = false
+            dismissState.snapTo(SwipeToDismissBoxValue.Settled)
         }
     }
     val armed = dismissState.targetValue == SwipeToDismissBoxValue.EndToStart
@@ -352,7 +383,7 @@ internal fun SwipeToDeleteRow(onDelete: () -> Unit, content: @Composable () -> U
     SwipeToDismissBox(
         state = dismissState,
         enableDismissFromStartToEnd = false,
-        modifier = Modifier
+        modifier = modifier
             .onSizeChanged { rowWidth = it.width }
             .semantics {
                 customActions = listOf(CustomAccessibilityAction(deleteLabel) { latestOnDelete(); true })
@@ -392,6 +423,18 @@ internal fun SwipeToDeleteRow(onDelete: () -> Unit, content: @Composable () -> U
 
 /** How far across its width a card must be dragged before letting go deletes it (#243). */
 private const val DELETE_SWIPE_FRACTION = 0.5f
+
+/** Well past `animateItem`'s fade-out: a swiped-away row still composed after this came back (#334). */
+private const val RETURNED_CARD_RESET_MS = 1_500L
+
+/**
+ * Whether [SwipeToDeleteRow] lets its swipe state move (#243). Springing back is always allowed;
+ * moving to "dismissed" only once the card is dragged [DELETE_SWIPE_FRACTION] of [rowWidth] or
+ * more, whatever the flick's speed. [offset] is the card's current horizontal offset in px
+ * (negative when dragged left). An unmeasured row (width 0) never vetoes.
+ */
+internal fun swipeChangeAllowed(toDismissed: Boolean, offset: Float, rowWidth: Int): Boolean =
+    !toDismissed || abs(offset) >= rowWidth * DELETE_SWIPE_FRACTION
 
 /** Joins one highlight/note's verse(s) into a single display string from the preloaded
  *  [textByKey] lookup (see [BibleViewModel.libraryVerseText]) — a bare number prefix per verse
