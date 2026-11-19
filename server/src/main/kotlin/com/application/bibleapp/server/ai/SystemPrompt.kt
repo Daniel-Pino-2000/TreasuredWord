@@ -31,6 +31,13 @@ object SystemPrompt {
      */
     const val GUIDES_VERSION = "16"
 
+    /**
+     * An answer whose instructions held only the doctrine items its question needs (#297,
+     * [DoctrineRouter]) instead of all of `doctrine.md`, with the topic guides it matched, if any.
+     * A question that couldn't be matched gets the whole doctrine and reports v5 or v16 as before.
+     */
+    const val DOCTRINE_VERSION = "17"
+
     /** The app's language tags (`AppLanguage.supportedTags`) and the English name the model is told to answer in. */
     val languageNames: Map<String, String> = mapOf(
         "en" to "English",
@@ -47,20 +54,34 @@ object SystemPrompt {
 
     private val htmlComment = Regex("<!--.*?-->", RegexOption.DOT_MATCHES_ALL)
 
-    private val template: String = load("ai/system_prompt.md")
-        .replace("{doctrine}", load("ai/doctrine.md"))
+    /** `doctrine.md` in its numbered items (#297). Its whole [Doctrine.text] is the file as read. */
+    val doctrine: Doctrine = load("ai/doctrine.md").let { whole ->
+        Doctrine.parse(whole).also { check(it.text() == whole) { "doctrine.md doesn't split into its items cleanly" } }
+    }
+
+    /** The instructions with `{doctrine}` still open, for a question sent only some items (#297). */
+    private val withoutDoctrine: String = load("ai/system_prompt.md")
         .replace("{bookCodes}", UsfmBookCodes.codes.joinToString(", "))
+
+    private val template: String = withoutDoctrine.replace("{doctrine}", doctrine.text())
 
     private val passageTemplate: String = load("ai/passage.md")
 
     /**
      * The instructions for an answer in [languageTag], one of [languageNames]' keys. With a
      * [passageReference] and [passageText] (#132), `passage.md` follows them: the passage the
-     * question is about, quoted so the model reads it as Scripture, not as instructions.
+     * question is about, quoted so the model reads it as Scripture, not as instructions. With
+     * [doctrineItems] (#297), section 2 holds only those items of `doctrine.md`; null is all of it.
      */
-    fun forLanguage(languageTag: String, passageReference: String? = null, passageText: String? = null): String {
+    fun forLanguage(
+        languageTag: String,
+        passageReference: String? = null,
+        passageText: String? = null,
+        doctrineItems: List<Int>? = null
+    ): String {
         val language = requireNotNull(languageNames[languageTag]) { "Unsupported language tag $languageTag" }
-        val instructions = template.replace("{language}", language)
+        val filled = if (doctrineItems == null) template else withoutDoctrine.replace("{doctrine}", doctrine.text(doctrineItems))
+        val instructions = filled.replace("{language}", language)
         if (passageReference == null || passageText == null) return instructions
         // The text can't close the quotes it sits in, or write markers of its own (a [[CRISIS]]).
         val quoted = passageText.trim()
@@ -74,15 +95,26 @@ object SystemPrompt {
 
     /**
      * The instructions for a question without a passage that matched [guides] (#319): v5's,
-     * then section 9 with the guides; v5's exactly when there are none.
+     * then section 9 with the guides; v5's exactly when there are none. With [doctrineItems]
+     * (#297), only those doctrine items.
      */
-    fun withGuides(languageTag: String, guides: List<RoutedGuide>): String =
-        forLanguage(languageTag) + (TopicGuides.section(guides)?.let { "\n\n$it" } ?: "")
+    fun withGuides(languageTag: String, guides: List<RoutedGuide>, doctrineItems: List<Int>? = null): String =
+        forLanguage(languageTag, doctrineItems = doctrineItems) + (TopicGuides.section(guides)?.let { "\n\n$it" } ?: "")
 
-    /** The version an answer with [guides] reports and is stored under. */
-    fun versionFor(guides: List<RoutedGuide>): String = if (guides.isEmpty()) PROMPT_VERSION else GUIDES_VERSION
+    /** The version an answer with [guides] and [doctrineItems] reports and is stored under. */
+    fun versionFor(guides: List<RoutedGuide>, doctrineItems: List<Int>? = null): String = when {
+        doctrineItems != null -> DOCTRINE_VERSION
+        guides.isEmpty() -> PROMPT_VERSION
+        else -> GUIDES_VERSION
+    }
 
-    private fun load(path: String): String {
+    /** [withGuides] for what [TopicGuideMatcher.matchQuestion] found. */
+    fun withMatch(languageTag: String, match: QuestionMatch): String = withGuides(languageTag, match.guides, match.doctrineItems)
+
+    /** [versionFor] for what [TopicGuideMatcher.matchQuestion] found. */
+    fun versionFor(match: QuestionMatch): String = versionFor(match.guides, match.doctrineItems)
+
+    internal fun load(path: String): String {
         val stream = SystemPrompt::class.java.classLoader.getResourceAsStream(path)
             ?: error("Missing resource $path")
         return stream.use { it.readBytes().decodeToString() }

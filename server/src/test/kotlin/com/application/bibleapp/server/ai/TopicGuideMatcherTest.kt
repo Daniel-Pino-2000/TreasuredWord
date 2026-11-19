@@ -69,10 +69,10 @@ class TopicGuideMatcherTest {
             if (failing) throw QuotaExhausted("used up")
             fake.vector(it)
         })
-        assertEquals(emptyList(), matcher.matchStarter("x/en", "Is drinking alcohol a sin?"))
+        assertEquals(emptyList(), matcher.matchStarter("x/en", "Is drinking alcohol a sin?").guides)
         failing = false
-        assertEquals(listOf("alcohol"), matcher.matchStarter("x/en", "Is drinking alcohol a sin?").map { it.guide.id })
-        assertEquals(listOf("alcohol"), matcher.matchStarter("x/en", "Is drinking alcohol a sin?").map { it.guide.id })
+        assertEquals(listOf("alcohol"), matcher.matchStarter("x/en", "Is drinking alcohol a sin?").guides.map { it.guide.id })
+        assertEquals(listOf("alcohol"), matcher.matchStarter("x/en", "Is drinking alcohol a sin?").guides.map { it.guide.id })
         assertEquals(2, calls)
     }
 
@@ -111,6 +111,40 @@ class TopicGuideMatcherTest {
         val matcher = TopicGuideMatcher(router, { delay(300); fake.vector(it) }, timeoutMillis = 100, firstTimeoutMillis = 5_000)
         matcher.warmUp()
         assertEquals(listOf("alcohol"), matcher.match("Is drinking alcohol a sin?").map { it.guide.id })
+    }
+
+    @Test
+    fun theSameOneEmbeddingPicksTheDoctrineItemsAndAFailureSendsTheWholeDoctrine() = runBlocking {
+        // #297: no second embedding for the doctrine items.
+        val doctrine = DoctrineRouter.embedding(SystemPrompt.doctrine, FakeEmbeddingProvider())
+        var embeddings = 0
+        val matcher = TopicGuideMatcher(router, { embeddings++; fake.vector(it) }, doctrine = doctrine)
+        val match = matcher.matchQuestion("Is drinking alcohol a sin?")
+        assertEquals(1, embeddings)
+        assertEquals(listOf("alcohol"), match.guides.map { it.guide.id })
+        val items = match.doctrineItems!!
+        assertEquals(DoctrineRouter.ALWAYS.size + DoctrineRouter.EXTRA_ITEMS, items.size)
+        assertTrue(items.containsAll(DoctrineRouter.ALWAYS))
+        // No guide still gets its items.
+        assertEquals(8, matcher.matchQuestion("Who was Melchizedek?").doctrineItems?.size)
+
+        val failing = TopicGuideMatcher(router, { throw Unavailable("down") }, doctrine = doctrine)
+        assertEquals(QuestionMatch.NONE, failing.matchQuestion("Is drinking alcohol a sin?"))
+        val slow = TopicGuideMatcher(router, { delay(5_000); fake.vector(it) }, timeoutMillis = 50, firstTimeoutMillis = 50, doctrine = doctrine)
+        assertEquals(null, slow.matchQuestion("Is drinking alcohol a sin?").doctrineItems)
+        // Without a doctrine router (AI_DOCTRINE_ITEMS off), the whole doctrine as in v16.
+        assertEquals(null, TopicGuideMatcher(router, { fake.vector(it) }).matchQuestion("Is drinking alcohol a sin?").doctrineItems)
+    }
+
+    @Test
+    fun aStartersMatchIsKeptWithItsDoctrineItems() = runBlocking {
+        val doctrine = DoctrineRouter.embedding(SystemPrompt.doctrine, FakeEmbeddingProvider())
+        var embeddings = 0
+        val matcher = TopicGuideMatcher(router, { embeddings++; fake.vector(it) }, doctrine = doctrine)
+        val first = matcher.matchStarter("alcohol/en", "Is drinking alcohol a sin?")
+        assertEquals(first, matcher.matchStarter("alcohol/en", "Is drinking alcohol a sin?"))
+        assertEquals(1, embeddings)
+        assertTrue(first.doctrineItems != null)
     }
 
     @Test

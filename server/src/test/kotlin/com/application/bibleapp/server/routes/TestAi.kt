@@ -4,6 +4,7 @@ import com.application.bibleapp.server.ai.AiCompletion
 import com.application.bibleapp.server.ai.AiMessage
 import com.application.bibleapp.server.ai.AiProvider
 import com.application.bibleapp.server.ai.AiProviderException
+import com.application.bibleapp.server.ai.DoctrineRouter
 import com.application.bibleapp.server.ai.TopicRouter
 import com.application.bibleapp.server.search.EmbeddingProvider
 import com.application.bibleapp.server.serverModule
@@ -75,14 +76,15 @@ suspend fun ApplicationTestBuilder.startWithFakeAi(
     ai: AiProvider? = FakeAiProvider(),
     clock: Clock = MutableClock(),
     embeddings: EmbeddingProvider? = null,
-    topicRouter: TopicRouter? = null
+    topicRouter: TopicRouter? = null,
+    doctrineRouter: DoctrineRouter? = null
 ): HttpClient {
     environment {
         config = ApplicationConfig("application.conf")
             .mergeWith(MapApplicationConfig().apply { put("ktor.application.modules", emptyList()) })
     }
     application {
-        serverModule(emailSender = FakeEmailSender(), aiProvider = ai, clock = clock, embeddingProvider = embeddings, topicRouter = topicRouter)
+        serverModule(emailSender = FakeEmailSender(), aiProvider = ai, clock = clock, embeddingProvider = embeddings, topicRouter = topicRouter, doctrineRouter = doctrineRouter)
     }
     startApplication()
     return createClient { install(ContentNegotiation) { json() } }

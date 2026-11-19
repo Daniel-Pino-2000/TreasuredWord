@@ -94,6 +94,18 @@ tasks.register<JavaExec>("embedTopicGuides") {
     )
 }
 
+// Doctrine items (#297): the bge-m3 vector of every item of resources/ai/doctrine.md and each of
+// its sentences, into resources/ai/doctrine_vectors.tsv, which the server reads to pick each
+// question's items. Run it after changing doctrine.md (DoctrineVectorsTest fails until then) and
+// commit the file; unchanged chunks keep their vectors. Needs AI_BASE_URL and AI_API_TOKEN.
+tasks.register<JavaExec>("embedDoctrine") {
+    group = "build"
+    description = "Embeds doctrine.md's items into resources/ai/doctrine_vectors.tsv."
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("com.application.bibleapp.server.ai.eval.EmbedDoctrineKt")
+    args(file("src/main/resources/ai/doctrine_vectors.tsv").path)
+}
+
 // Topic guides: which guide each evaluation question and search query matches, at several
 // thresholds, and what the guides add to search's hits. Embeds the ~120 questions and queries
 // (~1 neuron; the phrases' vectors come from topic_vectors.tsv) and reads the verse tables in
