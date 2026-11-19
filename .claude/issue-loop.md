@@ -13,6 +13,10 @@ needs most, plus what earlier runs taught.
   evaluation run (#359 for #297). Switching an `AI_*` flag on in Render also needs their
   go-ahead.
 
+- #368 (the new logo): the developer wants it done last, with them, outside the loop.
+- #363 (practice games) while it's labelled `question`: the developer is still adding design detail.
+- #366 (licensed Bible versions) until its Step 1 is done: it needs the developer's YouVersion App Key.
+
 ## Branches, PRs, merging
 
 - `fix/<topic>` or `feature/<topic>`, `Closes #N`, merge with a **merge commit**.
