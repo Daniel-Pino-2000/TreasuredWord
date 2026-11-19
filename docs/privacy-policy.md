@@ -11,9 +11,9 @@ TreasuredWord is a free Bible reading app made by Daniel Pino, an independent de
 
 ## The short version
 
-- You can use TreasuredWord without an account. Your highlights, notes, bookmark and settings then stay on your phone.
+- You can use TreasuredWord without an account. Your highlights, notes, the verses you're memorizing, bookmark and settings then stay on your phone.
 - There are no ads, no analytics and no tracking in the app. We don't sell or share your information.
-- If you create an account, we store your email address, a scrambled form of your password (or, if you sign in with Google, your Google account ID instead), and your highlights, notes and reading position so they sync between your devices. You can delete the account and all of it from inside the app, or by emailing us.
+- If you create an account, we store your email address, a scrambled form of your password (or, if you sign in with Google, your Google account ID instead), and your highlights, notes, the verses you're memorizing with your practice progress, and reading position so they sync between your devices. You can delete the account and all of it from inside the app, or by emailing us.
 - We email you only when you ask for it: to check that your email address is yours, or to reset a forgotten password. Those emails are sent through Gmail, from TreasuredWord's own Gmail account.
 - If you ask the Bible Helper a question, it's sent with the recent conversation to our server and to Cloudflare, whose AI writes the answer. Cloudflare doesn't keep it or train on it.
 - When you search the Bible and press the search button, what you typed is also sent, without your account, to our server and to Cloudflare to find verses related by meaning. Neither keeps it.
@@ -21,7 +21,7 @@ TreasuredWord is a free Bible reading app made by Daniel Pino, an independent de
 
 ## Using the app without an account
 
-Everything you create (highlights, notes, your bookmark, reading position, theme, text size, language and reminder settings) is stored only on your device.
+Everything you create (highlights, notes, the verses you're memorizing and your practice progress, your bookmark, reading position, theme, text size, language and reminder settings) is stored only on your device.
 
 ## If you create an account
 
@@ -32,6 +32,7 @@ Creating an account is optional. When you sign up and sync, our server stores:
 - **Your Google account ID**, if you use "Continue with Google" (see below).
 - **Your highlights:** which verses, which translation, and the color.
 - **Your notes:** the text you write and the verses it's attached to.
+- **Verses you're memorizing and your practice progress:** which verses, which translation, when you added them, and how far along you are (for example your level, when you last practiced and when each one is next due).
 - **Your reading position:** translation, book, chapter and verse.
 - **Sign-in tokens**, so you stay signed in. The server keeps only a hash of each one, and on your phone they're encrypted with a key that never leaves the device.
 - **Whether your email address is verified**, and the one-time codes we email you (see below), kept only as a scrambled form (a keyed hash) and deleted within a day.
@@ -57,9 +58,9 @@ We use this information only to provide the sync you asked for by creating an ac
 
 The server runs on [Render](https://render.com) in the United States, and the data is stored in a [Neon](https://neon.tech) PostgreSQL database. If you live outside the United States, your information is transferred to and stored there. Like most web services, the server and its hosting provider keep technical logs of requests (for example, the time, the address requested and the requesting IP address) to run and protect the service.
 
-When you delete a highlight or note, the server keeps it marked as deleted, so your other devices remove it too. It's erased completely when you delete your account.
+When you delete a highlight or note, or remove a verse from your Memorize list, the server keeps it marked as deleted, so your other devices remove it too. It's erased completely when you delete your account.
 
-When you sign out, the app removes your account's highlights and notes from that phone, so the next person to sign in on it doesn't see them. They stay in your account and come back when you sign in again. If some haven't been uploaded yet, the app tells you before removing them.
+When you sign out, the app removes your account's highlights, notes and Memorize list from that phone, so the next person to sign in on it doesn't see them. They stay in your account and come back when you sign in again. If some haven't been uploaded yet, the app tells you before removing them.
 
 ## The Bible Helper (AI answers)
 
@@ -91,7 +92,7 @@ You can delete your account at any time:
 - **In the app:** open **Settings** (the gear on the You tab), and under **Account** tap **Delete account**.
 - **By email:** if you no longer have the app, email [pinoponedaniel@gmail.com](mailto:pinoponedaniel@gmail.com) from your account's email address and ask us to delete it. We'll delete it within 30 days.
 
-Deleting your account permanently erases it from our server, together with everything synced to it: highlights, notes (including ones marked as deleted), reading position, sign-in tokens, emailed codes, the Bible Helper's daily question count and the Google account ID if you used Google sign-in. If you signed up with Google, the app asks you to confirm with Google instead of a password. Copies can remain in our database provider's backups for a short time until they're replaced. Highlights and notes already on your phone stay there until you remove the app.
+Deleting your account permanently erases it from our server, together with everything synced to it: highlights, notes and verses you're memorizing (including ones marked as deleted), reading position, sign-in tokens, emailed codes, the Bible Helper's daily question count and the Google account ID if you used Google sign-in. If you signed up with Google, the app asks you to confirm with Google instead of a password. Copies can remain in our database provider's backups for a short time until they're replaced. Highlights, notes and verses you're memorizing already on your phone stay there until you remove the app.
 
 ## How long we keep information
 
@@ -118,7 +119,7 @@ The app sends these services no account information and doesn't keep a record of
 
 ## Backups and new phones
 
-If Android backup is turned on, Android copies your TreasuredWord settings (reading position, bookmark, theme, text size, reminder and language) to your Google account backup. When you move to a new phone with a cable or direct transfer, Android also copies the highlights, notes and translations stored on the phone. Your sign-in is never copied; you sign in again on the new phone.
+If Android backup is turned on, Android copies your TreasuredWord settings (reading position, bookmark, theme, text size, reminder and language) to your Google account backup. When you move to a new phone with a cable or direct transfer, Android also copies the highlights, notes, Memorize list and translations stored on the phone. Your sign-in is never copied; you sign in again on the new phone.
 
 ## Notifications
 

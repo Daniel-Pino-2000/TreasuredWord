@@ -549,4 +549,35 @@
     <!-- Accessibility action on the passage shown above a question asked about it (#281) -->
     <string name="ai_passage_show_whole">Show the whole passage</string>
     <string name="ai_passage_show_less">Show less</string>
+
+    <!-- The Memorize list (#362) -->
+    <!-- The Memorize list (#362): Library tab and You row for verses to learn by heart -->
+    <string name="label_memorize">Memorize</string>
+    <!-- Selection toolbar action that adds the selected verses to the Memorize list; keep it short -->
+    <string name="action_memorize">Memorize</string>
+    <!-- Snackbar action that opens the Memorize list -->
+    <string name="action_view">View</string>
+    <string name="message_memorize_added">Added to your Memorize list</string>
+    <string name="message_memorize_already_added">Already in your Memorize list</string>
+    <string name="message_memorize_not_one_passage">Select one verse, or verses next to each other, to memorize them.</string>
+    <string name="message_memorize_removed">Removed from your Memorize list</string>
+    <string name="library_search_memorize">Search by book or words</string>
+    <string name="library_empty_memorize">Verses you want to learn by heart go here. While reading, select a verse or a short passage and tap Memorize.</string>
+    <!-- %1$s is what was typed in the search field -->
+    <string name="library_no_memorize_match">No verses match \"%1$s\".</string>
+    <!-- Label before the two sort choices on the Memorize tab -->
+    <string name="library_sort_by">Sort</string>
+    <string name="library_sort_newest">Newest</string>
+    <string name="library_sort_due">Due for practice</string>
+    <string name="memorize_status_new">New</string>
+    <!-- Progress chip. %1$d is the current level, %2$d the highest level (5) -->
+    <string name="memorize_status_learning">Learning · %1$d of %2$d</string>
+    <string name="memorize_status_memorized">Memorized</string>
+    <!-- Progress chip. %1$s is the date it was memorized -->
+    <string name="memorize_status_memorized_on">Memorized · %1$s</string>
+    <!-- Snackbar when more verses are selected than Memorize takes. %1$d is the maximum (6) -->
+    <plurals name="message_memorize_too_long">
+        <item quantity="one">You can memorize up to %1$d verse at a time.</item>
+        <item quantity="other">You can memorize up to %1$d verses at a time.</item>
+    </plurals>
 </resources>

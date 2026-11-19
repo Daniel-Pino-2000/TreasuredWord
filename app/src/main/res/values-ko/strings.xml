@@ -476,4 +476,26 @@
     <!-- Accessibility action on the passage shown above a question asked about it (#281) -->
     <string name="ai_passage_show_whole">구절 전체 보기</string>
     <string name="ai_passage_show_less">간략히 보기</string>
+
+    <!-- Memorize (#362) -->
+    <string name="label_memorize">암송</string>
+    <string name="action_memorize">암송</string>
+    <string name="action_view">보기</string>
+    <string name="message_memorize_added">암송 목록에 추가했어요</string>
+    <string name="message_memorize_already_added">이미 암송 목록에 있어요</string>
+    <string name="message_memorize_not_one_passage">암송하려면 한 구절이나 이어지는 구절을 선택하세요.</string>
+    <string name="message_memorize_removed">암송 목록에서 삭제했어요</string>
+    <string name="library_search_memorize">책 이름이나 단어로 검색</string>
+    <string name="library_empty_memorize">외우고 싶은 구절이 여기에 모여요. 읽는 중에 구절이나 짧은 본문을 선택하고 암송을 탭하세요.</string>
+    <string name="library_no_memorize_match">\'%1$s\'과(와) 일치하는 구절이 없어요.</string>
+    <string name="library_sort_by">정렬</string>
+    <string name="library_sort_newest">최신순</string>
+    <string name="library_sort_due">복습할 차례</string>
+    <string name="memorize_status_new">새 구절</string>
+    <string name="memorize_status_learning">외우는 중 · %1$d/%2$d</string>
+    <string name="memorize_status_memorized">암송 완료</string>
+    <string name="memorize_status_memorized_on">암송 완료 · %1$s</string>
+    <plurals name="message_memorize_too_long">
+        <item quantity="other">한 번에 최대 %1$d개 절까지 암송할 수 있어요.</item>
+    </plurals>
 </resources>

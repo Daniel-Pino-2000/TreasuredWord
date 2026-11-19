@@ -487,4 +487,27 @@
     <!-- Accessibility action on the passage shown above a question asked about it (#281) -->
     <string name="ai_passage_show_whole">Onyesha kifungu chote</string>
     <string name="ai_passage_show_less">Onyesha kidogo</string>
+
+    <!-- Memorize (#362) -->
+    <string name="label_memorize">Kukariri</string>
+    <string name="action_memorize">Kariri</string>
+    <string name="action_view">Tazama</string>
+    <string name="message_memorize_added">Imeongezwa kwenye orodha yako ya kukariri</string>
+    <string name="message_memorize_already_added">Tayari iko kwenye orodha yako ya kukariri</string>
+    <string name="message_memorize_not_one_passage">Chagua mstari mmoja, au mistari inayofuatana, ili uikariri.</string>
+    <string name="message_memorize_removed">Imeondolewa kwenye orodha yako ya kukariri</string>
+    <string name="library_search_memorize">Tafuta kwa kitabu au maneno</string>
+    <string name="library_empty_memorize">Mistari unayotaka kukariri iko hapa. Unaposoma, chagua mstari au kifungu kifupi kisha gusa Kariri.</string>
+    <string name="library_no_memorize_match">Hakuna mstari unaolingana na \"%1$s\".</string>
+    <string name="library_sort_by">Panga</string>
+    <string name="library_sort_newest">Mpya zaidi</string>
+    <string name="library_sort_due">Ya kufanyia mazoezi</string>
+    <string name="memorize_status_new">Mpya</string>
+    <string name="memorize_status_learning">Unajifunza · %1$d kati ya %2$d</string>
+    <string name="memorize_status_memorized">Umekariri</string>
+    <string name="memorize_status_memorized_on">Umekariri · %1$s</string>
+    <plurals name="message_memorize_too_long">
+        <item quantity="one">Unaweza kukariri hadi mstari %1$d kwa wakati mmoja.</item>
+        <item quantity="other">Unaweza kukariri hadi mistari %1$d kwa wakati mmoja.</item>
+    </plurals>
 </resources>

@@ -122,6 +122,7 @@ import com.application.bibleapp.viewmodel.AuthViewModelFactory
 import com.application.bibleapp.viewmodel.AskViewModel
 import com.application.bibleapp.viewmodel.AskViewModelFactory
 import com.application.bibleapp.viewmodel.BibleViewModel
+import com.application.bibleapp.viewmodel.MessageAction
 import com.application.bibleapp.viewmodel.BibleViewModelFactory
 import androidx.compose.ui.res.stringResource
 import com.application.bibleapp.utils.InAppUpdates
@@ -351,6 +352,10 @@ class MainActivity : AppCompatActivity() {
                 // than at a guessed fixed offset that would be wrong the moment the tab row
                 // collapses/reappears on scroll.
                 var bottomBarHeightPx by remember { mutableIntStateOf(0) }
+                // The floating selection toolbar's height: while it shows, snackbars sit above it
+                // instead of behind it, since some (Memorize refusing a selection, #362) leave the
+                // selection open.
+                var selectionToolbarHeightPx by remember { mutableIntStateOf(0) }
 
                 // Deletion-undo and copy-confirmation messages from BibleViewModel. collectLatest
                 // so a newer message replaces (dismisses) one still showing instead of queueing.
@@ -361,14 +366,24 @@ class MainActivity : AppCompatActivity() {
                         // Don't let an Undo wait behind the update-ready snackbar (#202); that
                         // one comes back the next time the app opens.
                         snackbarHostState.currentSnackbarData?.dismiss()
+                        val actionLabel = when {
+                            message.undo != null -> resources.getString(R.string.action_undo)
+                            message.action != null -> resources.getString(R.string.action_view)
+                            else -> null
+                        }
                         val result = snackbarHostState.showSnackbar(
                             message = message.text.resolve(resources),
-                            actionLabel = if (message.undo != null) resources.getString(R.string.action_undo) else null,
-                            // Long when there's an Undo — Short's ~4s is too little time to reach it.
-                            duration = if (message.undo != null) SnackbarDuration.Long else SnackbarDuration.Short
+                            actionLabel = actionLabel,
+                            // Long when there's an action — Short's ~4s is too little time to reach it.
+                            duration = if (actionLabel != null) SnackbarDuration.Long else SnackbarDuration.Short
                         )
                         if (result == SnackbarResult.ActionPerformed) {
                             message.undo?.let { bibleViewModel.undoDeletion(it) }
+                            when (message.action) {
+                                MessageAction.OPEN_MEMORIZE ->
+                                    navController.navigate(Screen.Library.createRoute(Screen.Library.TAB_MEMORIZE)) { launchSingleTop = true }
+                                null -> Unit
+                            }
                         }
                     }
                 }
@@ -552,7 +567,12 @@ class MainActivity : AppCompatActivity() {
                             }
                             }
                         },
-                        snackbarHost = { SnackbarHost(snackbarHostState) },
+                        snackbarHost = {
+                            val selecting = currentRoute == Screen.Bible.route &&
+                                bibleViewModel.selectedVerses.collectAsState().value.isNotEmpty()
+                            val lift = if (selecting) with(LocalDensity.current) { selectionToolbarHeightPx.toDp() } + 12.dp else 0.dp
+                            SnackbarHost(snackbarHostState, modifier = Modifier.padding(bottom = lift))
+                        },
                         bottomBar = {
                             // Never shorter than the navigation bar, as when the slot is empty (the
                             // Scaffold then pads by the system bars), so the page's bottom edge
@@ -619,6 +639,7 @@ class MainActivity : AppCompatActivity() {
                                 },
                                 onShareImage = { bibleViewModel.shareSelectionAsImage() },
                                 onAddNote = { bibleViewModel.openNoteEditorForSelection() },
+                                onMemorize = { bibleViewModel.memorizeSelection() },
                                 onCancel = { bibleViewModel.clearSelection() },
                                 // "Ask about this verse" (#132): a new Bible Helper conversation with
                                 // the verses attached and a question ready to edit.
@@ -637,6 +658,7 @@ class MainActivity : AppCompatActivity() {
                                     .then(if (compactHeight) Modifier.navigationBarsPadding() else Modifier)
                                     .padding(horizontal = Spacing.lg)
                                     .offset(y = -(bottomBarHeight + gap))
+                                    .onSizeChanged { selectionToolbarHeightPx = it.height }
                             )
                         }
 

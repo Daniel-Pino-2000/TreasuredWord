@@ -486,4 +486,27 @@
     <!-- Accessibility action on the passage shown above a question asked about it (#281) -->
     <string name="ai_passage_show_whole">Ganze Bibelstelle anzeigen</string>
     <string name="ai_passage_show_less">Weniger anzeigen</string>
+
+    <!-- Memorize (#362) -->
+    <string name="label_memorize">Merkverse</string>
+    <string name="action_memorize">Einprägen</string>
+    <string name="action_view">Ansehen</string>
+    <string name="message_memorize_added">Zu deinen Merkversen hinzugefügt</string>
+    <string name="message_memorize_already_added">Schon in deinen Merkversen</string>
+    <string name="message_memorize_not_one_passage">Wähle einen Vers oder aufeinanderfolgende Verse aus, um sie auswendig zu lernen.</string>
+    <string name="message_memorize_removed">Aus deinen Merkversen entfernt</string>
+    <string name="library_search_memorize">Nach Buch oder Wörtern suchen</string>
+    <string name="library_empty_memorize">Hier stehen Verse, die du auswendig lernen möchtest. Wähle beim Lesen einen Vers oder einen kurzen Abschnitt aus und tippe auf „Einprägen“.</string>
+    <string name="library_no_memorize_match">Kein Vers passt zu „%1$s“.</string>
+    <string name="library_sort_by">Sortieren</string>
+    <string name="library_sort_newest">Neueste</string>
+    <string name="library_sort_due">Zum Üben fällig</string>
+    <string name="memorize_status_new">Neu</string>
+    <string name="memorize_status_learning">Am Lernen · %1$d von %2$d</string>
+    <string name="memorize_status_memorized">Auswendig gelernt</string>
+    <string name="memorize_status_memorized_on">Gelernt · %1$s</string>
+    <plurals name="message_memorize_too_long">
+        <item quantity="one">Du kannst höchstens %1$d Vers auf einmal auswendig lernen.</item>
+        <item quantity="other">Du kannst höchstens %1$d Verse auf einmal auswendig lernen.</item>
+    </plurals>
 </resources>

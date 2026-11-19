@@ -35,6 +35,7 @@ class VerseSelectionToolbarTest {
                     onShare = {},
                     onShareImage = {},
                     onAddNote = {},
+                    onMemorize = {},
                     onCancel = {},
                     onAsk = {}
                 )
@@ -47,8 +48,8 @@ class VerseSelectionToolbarTest {
         showToolbar()
         val contents = compose.onAllNodes(hasTestTag(SELECTION_ACTION_CONTENT_TAG), useUnmergedTree = true)
             .fetchSemanticsNodes()
-        // Copy, Share, Ask and Note.
-        assertEquals(4, contents.size)
+        // Copy, Share, Ask, Memorize and Note.
+        assertEquals(5, contents.size)
         val tolerance = with(compose.density) { 2.dp.toPx() }
         contents.forEach { content ->
             // The Box between them has no semantics, so the parent is the button (its Surface).

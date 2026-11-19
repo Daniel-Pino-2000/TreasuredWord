@@ -475,4 +475,26 @@
     <!-- Accessibility action on the passage shown above a question asked about it (#281) -->
     <string name="ai_passage_show_whole">显示整段经文</string>
     <string name="ai_passage_show_less">收起</string>
+
+    <!-- Memorize (#362) -->
+    <string name="label_memorize">背诵</string>
+    <string name="action_memorize">背诵</string>
+    <string name="action_view">查看</string>
+    <string name="message_memorize_added">已加入你的背诵列表</string>
+    <string name="message_memorize_already_added">已在你的背诵列表中</string>
+    <string name="message_memorize_not_one_passage">请选择一节经文或相连的几节经文来背诵。</string>
+    <string name="message_memorize_removed">已从你的背诵列表中移除</string>
+    <string name="library_search_memorize">按书卷或字词搜索</string>
+    <string name="library_empty_memorize">你想背下来的经文会显示在这里。阅读时选择一节经文或一小段经文，然后点按“背诵”。</string>
+    <string name="library_no_memorize_match">没有与“%1$s”匹配的经文。</string>
+    <string name="library_sort_by">排序</string>
+    <string name="library_sort_newest">最新</string>
+    <string name="library_sort_due">待练习</string>
+    <string name="memorize_status_new">新加入</string>
+    <string name="memorize_status_learning">学习中 · %1$d/%2$d</string>
+    <string name="memorize_status_memorized">已背会</string>
+    <string name="memorize_status_memorized_on">已背会 · %1$s</string>
+    <plurals name="message_memorize_too_long">
+        <item quantity="other">一次最多可以背诵 %1$d 节经文。</item>
+    </plurals>
 </resources>

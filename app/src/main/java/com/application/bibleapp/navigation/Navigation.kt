@@ -219,6 +219,10 @@ fun Navigation(
                 bibleViewModel = bibleViewModel,
                 modifier = keyboardScreenModifier,
                 initialTab = backStackEntry.arguments?.getString("tab"),
+                onOpenMemoryVerse = { verse ->
+                    bibleViewModel.openMemoryVerseFromLibrary(verse)
+                    navController.navigate(Screen.Bible.route)
+                },
                 onOpenDetail = { type, localId ->
                     navController.navigate(Screen.LibraryItemDetail.createRoute(type, localId))
                 }

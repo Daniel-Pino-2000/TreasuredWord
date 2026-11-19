@@ -6,6 +6,7 @@ import com.application.bibleapp.data.remote.HelloAoBibleDataSource
 import com.application.bibleapp.data.remote.OurMannaBibleDataSource
 import com.application.bibleapp.data.repository.BibleRepository
 import com.application.bibleapp.data.repository.HighlightRepository
+import com.application.bibleapp.data.repository.MemoryVerseRepository
 import com.application.bibleapp.data.repository.NoteRepository
 import com.application.bibleapp.data.repository.ReadingProgressRepository
 import kotlinx.coroutines.CancellationException
@@ -28,7 +29,7 @@ class AccountContentSync(context: Context) {
      *  many highlights and notes are still only on this device. */
     suspend fun uploadPendingChanges(): Int = SyncWorker.syncMutex.withLock {
         if (bibleRepository.countPendingChanges() > 0) {
-            val engine = SyncEngine(bibleRepository, HighlightRepository(), NoteRepository(), ReadingProgressRepository())
+            val engine = SyncEngine(bibleRepository, HighlightRepository(), NoteRepository(), ReadingProgressRepository(), MemoryVerseRepository())
             try {
                 engine.pushPending()
             } catch (e: CancellationException) {

@@ -11,6 +11,10 @@ import com.application.bibleapp.data.model.DailyVerseRef
 import com.application.bibleapp.data.model.DownloadedVersionInfo
 import com.application.bibleapp.data.model.Footnote
 import com.application.bibleapp.data.model.Highlight
+import com.application.bibleapp.data.model.MemoryPassage
+import com.application.bibleapp.data.model.MemoryVerse
+import com.application.bibleapp.data.remote.MemoryProgressDto
+import com.application.bibleapp.data.remote.MemoryVerseResponseDto
 import com.application.bibleapp.data.model.Note
 import com.application.bibleapp.data.model.VerseOfTheDay
 import com.application.bibleapp.data.model.VerseUI
@@ -250,7 +254,45 @@ class BibleRepository(
         BibleDatabaseManager.upsertNoteFromServer(context, dto.id, dto.versionId, dto.verses, dto.text, dto.createdAt, dto.updatedAt)
     }
 
-    /** Highlights and notes that haven't reached the server yet (#81). */
+    // ---- The Memorize list (#362) ----
+
+    suspend fun getAllActiveMemoryVerses(): List<MemoryVerse> =
+        withContext(Dispatchers.IO) { BibleDatabaseManager.getAllActiveMemoryVerses(context) }
+
+    suspend fun findActiveMemoryVerse(passage: MemoryPassage): MemoryVerse? =
+        withContext(Dispatchers.IO) { BibleDatabaseManager.findActiveMemoryVerse(context, passage) }
+
+    suspend fun addMemoryVerse(versionId: String, passage: MemoryPassage): MemoryVerse =
+        withContext(Dispatchers.IO) { BibleDatabaseManager.insertMemoryVerse(context, versionId, passage) }
+
+    suspend fun updateMemoryProgress(localId: Long, progress: MemoryProgressDto) =
+        withContext(Dispatchers.IO) { BibleDatabaseManager.updateMemoryProgress(context, localId, progress) }
+
+    suspend fun deleteMemoryVerse(localId: Long) =
+        withContext(Dispatchers.IO) { BibleDatabaseManager.softDeleteMemoryVerse(context, localId) }
+
+    suspend fun restoreMemoryVerse(verse: MemoryVerse) =
+        withContext(Dispatchers.IO) { BibleDatabaseManager.restoreMemoryVerse(context, verse) }
+
+    override suspend fun getPendingMemoryVerses(): List<MemoryVerse> =
+        withContext(Dispatchers.IO) { BibleDatabaseManager.getPendingMemoryVerses(context) }
+
+    override suspend fun markMemoryVersePushed(pushed: MemoryVerse, dto: MemoryVerseResponseDto): Boolean =
+        withContext(Dispatchers.IO) { BibleDatabaseManager.markMemoryVersePushed(context, pushed.localId, pushed.updatedAt, dto) }
+
+    override suspend fun purgeMemoryVerse(pushed: MemoryVerse) =
+        withContext(Dispatchers.IO) { BibleDatabaseManager.purgeMemoryVerse(context, pushed.localId, pushed.updatedAt) }
+
+    override suspend fun detachMemoryVerse(pushed: MemoryVerse) =
+        withContext(Dispatchers.IO) { BibleDatabaseManager.detachMemoryVerse(context, pushed.localId) }
+
+    override suspend fun deleteMemoryVerseByRemoteId(remoteId: String): Boolean =
+        withContext(Dispatchers.IO) { BibleDatabaseManager.deleteMemoryVerseByRemoteId(context, remoteId) }
+
+    override suspend fun upsertMemoryVerseFromServer(dto: MemoryVerseResponseDto): Boolean =
+        withContext(Dispatchers.IO) { BibleDatabaseManager.upsertMemoryVerseFromServer(context, dto) }
+
+    /** Highlights, notes and Memorize passages that haven't reached the server yet (#81). */
     suspend fun countPendingChanges(): Int =
         withContext(Dispatchers.IO) { BibleDatabaseManager.countPendingChanges(context) }
 
@@ -265,6 +307,11 @@ class BibleRepository(
     override fun loadNotesSyncWatermark(): String? = prefs.getString(KEY_NOTES_SYNC_WATERMARK, null)
     override fun saveNotesSyncWatermark(iso: String) {
         prefs.edit().putString(KEY_NOTES_SYNC_WATERMARK, iso).apply()
+    }
+
+    override fun loadMemoryVersesSyncWatermark(): String? = prefs.getString(KEY_MEMORY_VERSES_SYNC_WATERMARK, null)
+    override fun saveMemoryVersesSyncWatermark(iso: String) {
+        prefs.edit().putString(KEY_MEMORY_VERSES_SYNC_WATERMARK, iso).apply()
     }
 
     /**
@@ -701,6 +748,7 @@ class BibleRepository(
             context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit()
                 .remove(KEY_HIGHLIGHTS_SYNC_WATERMARK)
                 .remove(KEY_NOTES_SYNC_WATERMARK)
+                .remove(KEY_MEMORY_VERSES_SYNC_WATERMARK)
                 .remove(KEY_LAST_SYNC_COMPLETED_AT)
                 .remove(KEY_LAST_SYNC_FAILED)
                 .remove(KEY_CONTENT_OWNER)
@@ -735,6 +783,7 @@ class BibleRepository(
         const val KEY_NOTIFICATION_MINUTE = "notification_minute"
         const val KEY_HIGHLIGHTS_SYNC_WATERMARK = "highlights_sync_watermark"
         const val KEY_NOTES_SYNC_WATERMARK = "notes_sync_watermark"
+        const val KEY_MEMORY_VERSES_SYNC_WATERMARK = "memory_verses_sync_watermark"
         const val KEY_AUTO_SYNC_ENABLED = "auto_sync_enabled"
         const val KEY_WIFI_ONLY_SYNC = "wifi_only_sync"
         const val KEY_LAST_SYNC_COMPLETED_AT = "last_sync_completed_at"

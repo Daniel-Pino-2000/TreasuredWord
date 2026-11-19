@@ -70,6 +70,10 @@ class ThemePaletteContrastTest {
         pairs += Pair("widget share icon", c.primary, c.primaryContainer, NON_TEXT)
         pairs += Pair("widget verse and reference", c.onPrimaryContainer, c.primaryContainer, TEXT)
         pairs += Pair("selected tab icon and chips", c.onSecondaryContainer, c.secondaryContainer, TEXT)
+        // Library's Memorize cards (#362): New, Learning and Memorized progress chips.
+        pairs += Pair("Memorize chip: new", c.onSurfaceVariant, c.surfaceVariant, TEXT)
+        pairs += Pair("Memorize chip: learning", c.onTertiaryContainer, c.tertiaryContainer, TEXT)
+        pairs += Pair("Memorize chip: memorized", c.onPrimaryContainer, c.primaryContainer, TEXT)
         pairs += Pair("snackbar text", c.inverseOnSurface, c.inverseSurface, TEXT)
         pairs += Pair("snackbar Undo", c.inversePrimary, c.inverseSurface, TEXT)
         pairs += Pair("icon on the red swipe-to-delete", c.onError, c.error, NON_TEXT)

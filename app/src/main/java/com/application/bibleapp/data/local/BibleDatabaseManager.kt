@@ -16,6 +16,12 @@ import com.application.bibleapp.data.model.DailyVerseRef
 import com.application.bibleapp.data.model.DownloadedVersionInfo
 import com.application.bibleapp.data.model.Footnote
 import com.application.bibleapp.data.model.Highlight
+import com.application.bibleapp.data.model.MemoryPassage
+import com.application.bibleapp.data.model.MemoryStatus
+import com.application.bibleapp.data.model.MemoryVerse
+import com.application.bibleapp.data.model.matchesServer
+import com.application.bibleapp.data.remote.MemoryProgressDto
+import com.application.bibleapp.data.remote.MemoryVerseResponseDto
 import com.application.bibleapp.data.model.Note
 import com.application.bibleapp.data.model.SyncStatus
 import com.application.bibleapp.data.model.TranslationLicense
@@ -356,7 +362,33 @@ object BibleDatabaseManager {
             )
             """.trimIndent()
         )
-        Log.d("BibleDB", "Highlight/note tables ready")
+        // The Memorize list (#362): one passage per row, its progress in columns. progress_at is
+        // when the progress last changed here, so the server keeps whichever is newer (decision 21).
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS memory_verses (
+                local_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                remote_id TEXT,
+                version_id TEXT NOT NULL,
+                book_id INTEGER NOT NULL,
+                chapter INTEGER NOT NULL,
+                verse_start INTEGER NOT NULL,
+                verse_end INTEGER NOT NULL,
+                status TEXT NOT NULL DEFAULT 'NEW',
+                level INTEGER NOT NULL DEFAULT 0,
+                next_review_at TEXT,
+                last_practiced_at TEXT,
+                correct_streak INTEGER NOT NULL DEFAULT 0,
+                memorized_at TEXT,
+                progress_at TEXT,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                deleted_at TEXT,
+                sync_status TEXT NOT NULL DEFAULT 'PENDING'
+            )
+            """.trimIndent()
+        )
+        Log.d("BibleDB", "Highlight/note/memorize tables ready")
     }
 
     /**
@@ -1369,12 +1401,199 @@ object BibleDatabaseManager {
         return true
     }
 
-    /** Highlights and notes not yet on the server — what signing out would lose (#81). A row
+    // ---- The Memorize list (#362) — synced like highlights; see worker/SyncEngine.kt ----
+
+    private const val MEMORY_VERSE_COLUMNS =
+        "local_id, remote_id, version_id, book_id, chapter, verse_start, verse_end, status, level, next_review_at, " +
+            "last_practiced_at, correct_streak, memorized_at, progress_at, created_at, updated_at, deleted_at, sync_status"
+
+    private fun Cursor.stringOrNull(index: Int): String? = if (isNull(index)) null else getString(index)
+
+    private fun cursorToMemoryVerse(cursor: Cursor): MemoryVerse = MemoryVerse(
+        localId = cursor.getLong(0),
+        remoteId = cursor.stringOrNull(1),
+        versionId = cursor.getString(2),
+        bookId = cursor.getInt(3),
+        chapter = cursor.getInt(4),
+        verseStart = cursor.getInt(5),
+        verseEnd = cursor.getInt(6),
+        status = MemoryStatus.fromStored(cursor.getString(7)),
+        level = cursor.getInt(8),
+        nextReviewAt = cursor.stringOrNull(9),
+        lastPracticedAt = cursor.stringOrNull(10),
+        correctStreak = cursor.getInt(11),
+        memorizedAt = cursor.stringOrNull(12),
+        progressAt = cursor.stringOrNull(13),
+        createdAt = cursor.getString(14),
+        updatedAt = cursor.getString(15),
+        deletedAt = cursor.stringOrNull(16),
+        syncStatus = SyncStatus.fromStored(cursor.getString(17))
+    )
+
+    private fun SQLiteDatabase.queryMemoryVerses(where: String, vararg args: String): List<MemoryVerse> =
+        rawQuery("SELECT $MEMORY_VERSE_COLUMNS FROM memory_verses WHERE $where", args)
+            .use { cursor -> generateSequence { if (cursor.moveToNext()) cursorToMemoryVerse(cursor) else null }.toList() }
+
+    /** Saves a new passage locally (NEW, PENDING); the sync pass pushes it when signed in. */
+    fun insertMemoryVerse(context: Context, versionId: String, passage: MemoryPassage): MemoryVerse {
+        val db = getDatabase(context)
+        val now = isoTimestampNow()
+        db.execSQL(
+            """
+            INSERT INTO memory_verses (version_id, book_id, chapter, verse_start, verse_end, created_at, updated_at, sync_status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 'PENDING')
+            """.trimIndent(),
+            arrayOf(versionId, passage.bookId, passage.chapter, passage.verseStart, passage.verseEnd, now, now)
+        )
+        return MemoryVerse(
+            localId = lastInsertRowId(db), remoteId = null, versionId = versionId, bookId = passage.bookId,
+            chapter = passage.chapter, verseStart = passage.verseStart, verseEnd = passage.verseEnd,
+            createdAt = now, updatedAt = now
+        )
+    }
+
+    /** The active passage covering exactly [passage]'s verses, in any version, or null. */
+    fun findActiveMemoryVerse(context: Context, passage: MemoryPassage): MemoryVerse? =
+        getDatabase(context).queryMemoryVerses(
+            "deleted_at IS NULL AND book_id = ? AND chapter = ? AND verse_start = ? AND verse_end = ?",
+            passage.bookId.toString(), passage.chapter.toString(), passage.verseStart.toString(), passage.verseEnd.toString()
+        ).firstOrNull()
+
+    /** Every active passage — for Library's Memorize tab, which sorts them itself. */
+    fun getAllActiveMemoryVerses(context: Context): List<MemoryVerse> =
+        getDatabase(context).queryMemoryVerses("deleted_at IS NULL ORDER BY created_at DESC")
+
+    /**
+     * Records new practice progress (for the games, #363), stamped now as [MemoryVerse.progressAt]
+     * so the server can tell it from an older device's (decision 21).
+     */
+    fun updateMemoryProgress(context: Context, localId: Long, progress: MemoryProgressDto) {
+        val now = isoTimestampNow()
+        getDatabase(context).executeCounting(
+            """
+            UPDATE memory_verses SET status = ?, level = ?, next_review_at = ?, last_practiced_at = ?, correct_streak = ?,
+                memorized_at = ?, progress_at = ?, updated_at = ?, sync_status = 'PENDING'
+            WHERE local_id = ?
+            """.trimIndent(),
+            progress.status, progress.level, progress.nextReviewAt, progress.lastPracticedAt, progress.correctStreak,
+            progress.memorizedAt, now, now, localId
+        )
+    }
+
+    /** Soft delete, like [softDeleteHighlight]. */
+    fun softDeleteMemoryVerse(context: Context, localId: Long) {
+        val now = isoTimestampNow()
+        getDatabase(context).executeCounting(
+            "UPDATE memory_verses SET deleted_at = ?, updated_at = ?, sync_status = 'PENDING' WHERE local_id = ?",
+            now, now, localId
+        )
+    }
+
+    /** Undo for [softDeleteMemoryVerse] — see [restoreHighlight]. A passage re-created after a
+     *  sync already purged it keeps its progress. */
+    fun restoreMemoryVerse(context: Context, verse: MemoryVerse) {
+        val db = getDatabase(context)
+        val now = isoTimestampNow()
+        val restored = db.executeCounting(
+            "UPDATE memory_verses SET deleted_at = NULL, updated_at = ?, sync_status = 'PENDING' WHERE local_id = ? AND deleted_at IS NOT NULL",
+            now, verse.localId
+        ) > 0
+        if (restored) return
+        val progress = verse.progress
+        db.executeCounting(
+            """
+            INSERT INTO memory_verses (version_id, book_id, chapter, verse_start, verse_end, status, level, next_review_at,
+                last_practiced_at, correct_streak, memorized_at, progress_at, created_at, updated_at, sync_status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDING')
+            """.trimIndent(),
+            verse.versionId, verse.bookId, verse.chapter, verse.verseStart, verse.verseEnd, progress.status, progress.level,
+            progress.nextReviewAt, progress.lastPracticedAt, progress.correctStreak, progress.memorizedAt, progress.progressAt,
+            verse.createdAt, now
+        )
+    }
+
+    /** Every row (active or soft-deleted) still needing a push. */
+    fun getPendingMemoryVerses(context: Context): List<MemoryVerse> =
+        getDatabase(context).queryMemoryVerses("sync_status = 'PENDING'")
+
+    /** See [SyncLocalStore.markMemoryVersePushed][com.application.bibleapp.worker.SyncLocalStore.markMemoryVersePushed]. */
+    fun markMemoryVersePushed(context: Context, localId: Long, pushedUpdatedAt: String, dto: MemoryVerseResponseDto): Boolean {
+        val db = getDatabase(context)
+        val duplicate = db.queryMemoryVerses("remote_id = ? AND local_id != ?", dto.id, localId.toString()).isNotEmpty()
+        if (duplicate) {
+            db.executeCounting("DELETE FROM memory_verses WHERE local_id = ?", localId)
+            return false
+        }
+        val p = dto.progress
+        val marked = db.executeCounting(
+            """
+            UPDATE memory_verses SET remote_id = ?, version_id = ?, status = ?, level = ?, next_review_at = ?,
+                last_practiced_at = ?, correct_streak = ?, memorized_at = ?, progress_at = ?, created_at = ?,
+                updated_at = ?, sync_status = 'SYNCED'
+            WHERE local_id = ? AND updated_at = ?
+            """.trimIndent(),
+            dto.id, dto.versionId, p.status, p.level, p.nextReviewAt, p.lastPracticedAt, p.correctStreak, p.memorizedAt,
+            p.progressAt, dto.createdAt, dto.updatedAt, localId, pushedUpdatedAt
+        ) > 0
+        if (!marked) db.executeCounting("UPDATE memory_verses SET remote_id = ? WHERE local_id = ?", dto.id, localId)
+        return marked
+    }
+
+    /** See [purgeHighlight] — the Memorize equivalent. */
+    fun purgeMemoryVerse(context: Context, localId: Long, pushedUpdatedAt: String) {
+        val db = getDatabase(context)
+        val purged = db.executeCounting("DELETE FROM memory_verses WHERE local_id = ? AND updated_at = ?", localId, pushedUpdatedAt) > 0
+        if (!purged) db.executeCounting("UPDATE memory_verses SET remote_id = NULL WHERE local_id = ?", localId)
+    }
+
+    /** See [detachHighlight] — the Memorize equivalent. */
+    fun detachMemoryVerse(context: Context, localId: Long) {
+        getDatabase(context).executeCounting(
+            "UPDATE memory_verses SET remote_id = NULL, sync_status = 'PENDING' WHERE local_id = ?", localId
+        )
+    }
+
+    /** See [deleteHighlightByRemoteId] — the Memorize equivalent. */
+    fun deleteMemoryVerseByRemoteId(context: Context, remoteId: String): Boolean =
+        getDatabase(context).executeCounting("DELETE FROM memory_verses WHERE remote_id = ?", remoteId) > 0
+
+    /** See [upsertHighlightFromServer]: the server's copy replaces a SYNCED row here (the server
+     *  keeps the newest progress, decision 21); a PENDING one is left for its own push. */
+    fun upsertMemoryVerseFromServer(context: Context, dto: MemoryVerseResponseDto): Boolean {
+        val db = getDatabase(context)
+        val existing = db.queryMemoryVerses("remote_id = ?", dto.id).firstOrNull()
+        if (existing != null && (existing.syncStatus == SyncStatus.PENDING || existing.matchesServer(dto))) return false
+        val p = dto.progress
+        if (existing != null) {
+            return db.executeCounting(
+                """
+                UPDATE memory_verses SET version_id = ?, book_id = ?, chapter = ?, verse_start = ?, verse_end = ?, status = ?,
+                    level = ?, next_review_at = ?, last_practiced_at = ?, correct_streak = ?, memorized_at = ?, progress_at = ?,
+                    created_at = ?, updated_at = ?, deleted_at = NULL, sync_status = 'SYNCED'
+                WHERE local_id = ? AND sync_status = 'SYNCED'
+                """.trimIndent(),
+                dto.versionId, dto.bookId, dto.chapter, dto.verseStart, dto.verseEnd, p.status, p.level, p.nextReviewAt,
+                p.lastPracticedAt, p.correctStreak, p.memorizedAt, p.progressAt, dto.createdAt, dto.updatedAt, existing.localId
+            ) > 0
+        }
+        db.executeCounting(
+            """
+            INSERT INTO memory_verses (remote_id, version_id, book_id, chapter, verse_start, verse_end, status, level,
+                next_review_at, last_practiced_at, correct_streak, memorized_at, progress_at, created_at, updated_at, sync_status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'SYNCED')
+            """.trimIndent(),
+            dto.id, dto.versionId, dto.bookId, dto.chapter, dto.verseStart, dto.verseEnd, p.status, p.level, p.nextReviewAt,
+            p.lastPracticedAt, p.correctStreak, p.memorizedAt, p.progressAt, dto.createdAt, dto.updatedAt
+        )
+        return true
+    }
+
+    /** Highlights, notes and Memorize passages not yet on the server — what signing out would lose (#81). A row
      *  created and deleted again before it was ever pushed doesn't count: there's nothing to lose. */
     fun countPendingChanges(context: Context): Int {
         val db = getDatabase(context)
         val pendingClause = "sync_status = 'PENDING' AND NOT (deleted_at IS NOT NULL AND remote_id IS NULL)"
-        return listOf("highlights", "notes").sumOf { table ->
+        return listOf("highlights", "notes", "memory_verses").sumOf { table ->
             db.rawQuery("SELECT COUNT(*) FROM $table WHERE $pendingClause", null).use { cursor ->
                 cursor.moveToFirst()
                 cursor.getInt(0)
@@ -1531,6 +1750,7 @@ object BibleDatabaseManager {
         try {
             db.execSQL("DELETE FROM highlights")
             db.execSQL("DELETE FROM notes")
+            db.execSQL("DELETE FROM memory_verses")
             if (BuildConfig.AI_HELPER_ENABLED) deleteAllAiConversations(db)
             db.setTransactionSuccessful()
         } finally {
@@ -1549,6 +1769,7 @@ object BibleDatabaseManager {
         try {
             db.execSQL("DELETE FROM highlights WHERE remote_id IS NOT NULL")
             db.execSQL("DELETE FROM notes WHERE remote_id IS NOT NULL")
+            db.execSQL("DELETE FROM memory_verses WHERE remote_id IS NOT NULL")
             if (BuildConfig.AI_HELPER_ENABLED) deleteAllAiConversations(db)
             db.setTransactionSuccessful()
         } finally {
