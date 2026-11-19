@@ -9,6 +9,7 @@ import com.application.bibleapp.server.ai.Busy
 import com.application.bibleapp.server.ai.QuotaExhausted
 import com.application.bibleapp.server.ai.StarterQuestions
 import com.application.bibleapp.server.ai.SystemPrompt
+import com.application.bibleapp.server.ai.QuestionMatch
 import com.application.bibleapp.server.ai.TopicGuideMatcher
 import com.application.bibleapp.server.ai.Unavailable
 import com.application.bibleapp.server.ai.UsfmBookCodes
@@ -305,7 +306,7 @@ private suspend fun ApplicationCall.answerQuestion(aiProvider: AiProvider?, cloc
         val remaining = AI_DAILY_LIMIT - aiAnswersUsedToday(userId, clock)
         // Asked in the server's own words, so only these questions are ever stored.
         val question = StarterQuestions.question(starter, request.language)!!
-        val matched = guides?.matchStarter("$starter/${request.language}", question).orEmpty()
+        val matched = guides?.matchStarter("$starter/${request.language}", question) ?: QuestionMatch.NONE
         val version = SystemPrompt.versionFor(matched)
         readyStarterAnswer(starter, request.language, version)?.let { ready ->
             respondReady(AiAskResponse(ready, crisis = false, remainingToday = remaining, promptVersion = version), streaming)
@@ -315,7 +316,7 @@ private suspend fun ApplicationCall.answerQuestion(aiProvider: AiProvider?, cloc
             respond(HttpStatusCode.ServiceUnavailable, ErrorResponse("AI_UNAVAILABLE", "The Bible Helper isn't set up on this server"))
             return
         }
-        val instructions = SystemPrompt.withGuides(request.language, matched)
+        val instructions = SystemPrompt.withMatch(request.language, matched)
         val conversation = listOf(AiMessage(AiRole.SYSTEM, instructions), AiMessage(AiRole.USER, question))
         respondAnswer(aiProvider, conversation, streaming, onNoAnswer = {}) { completion ->
             val (text, crisis) = splitCrisis(completion.text)
@@ -334,18 +335,18 @@ private suspend fun ApplicationCall.answerQuestion(aiProvider: AiProvider?, cloc
         return
     }
     val today = LocalDate.ofInstant(clock.instant(), ZoneOffset.UTC)
-    // Topic guides (#319): one embedding of the latest question, matched while the daily count is
-    // taken (#347), and cancelled, never used, when the question is refused. A question about a
-    // selected passage has its passage instead.
+    // Topic guides (#319) and doctrine items (#297): one embedding of the latest question, matched
+    // while the daily count is taken (#347), and cancelled, never used, when the question is
+    // refused. A question about a selected passage has its passage and the whole doctrine instead.
     val passage = request.passage
     val reserved = coroutineScope {
-        val matching = if (guides != null && passage == null) async { guides.match(request.messages.last().content) } else null
+        val matching = if (guides != null && passage == null) async { guides.matchQuestion(request.messages.last().content) } else null
         val used = reserveAnswer(userId, today)
         if (used == null) {
             matching?.cancel()
             null
         } else {
-            used to matching?.await().orEmpty()
+            used to (matching?.await() ?: QuestionMatch.NONE)
         }
     }
     if (reserved == null) {
@@ -357,7 +358,7 @@ private suspend fun ApplicationCall.answerQuestion(aiProvider: AiProvider?, cloc
     val instructions = if (passage != null) {
         SystemPrompt.forLanguage(request.language, passage.reference, passage.text)
     } else {
-        SystemPrompt.withGuides(request.language, matched)
+        SystemPrompt.withMatch(request.language, matched)
     }
     val conversation = listOf(AiMessage(AiRole.SYSTEM, instructions)) +
         request.messages.map { AiMessage(if (it.role == "user") AiRole.USER else AiRole.ASSISTANT, it.content) }
@@ -387,7 +388,8 @@ private suspend fun ApplicationCall.answerQuestion(aiProvider: AiProvider?, cloc
  * move it forward. `/ai/ask/stream` sends the answer as it's written (#285); `/ai/ask` stays for
  * app versions before it. [guides] is null unless AI_TOPIC_GUIDES is on and search by meaning is
  * set up (#319); then each question gets the topic guides it matches, and its answer reports
- * [SystemPrompt.GUIDES_VERSION].
+ * [SystemPrompt.GUIDES_VERSION]. With AI_DOCTRINE_ITEMS on too (#297), it gets only the doctrine
+ * items it needs, and reports [SystemPrompt.DOCTRINE_VERSION].
  *
  * Question and answer text is never logged, here or in the provider (#124).
  */

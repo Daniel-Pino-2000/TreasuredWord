@@ -8,34 +8,51 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
+ * What a Bible Helper question was matched to: its topic guides (#319), and with the doctrine
+ * items on (#297) the items to send. Null [doctrineItems] means the whole doctrine.
+ */
+data class QuestionMatch(val guides: List<RoutedGuide>, val doctrineItems: List<Int>? = null) {
+    companion object {
+        /** Not matched: no guides and the whole doctrine, v5's instructions exactly. */
+        val NONE = QuestionMatch(emptyList())
+    }
+}
+
+/**
  * Picks the topic guides for a Bible Helper question (#319): one embedding of the question
  * ([embed], search's `VerseSearch.embedQuery`, so it counts against search's daily cap), then
  * [router]'s arithmetic against the phrase vectors made at build time.
  *
  * Never fails a question: a slow embedding (past [timeoutMillis]; [firstTimeoutMillis] for the
  * first one after a start, #341), an error or no neurons left mean no guides, and the answer gets
- * v5's instructions exactly. Only the outcome, the number of
- * guides and the time are logged, never the question or which guides it matched, since a guide's
- * topic (crisis, abuse) says what was asked.
+ * v5's instructions exactly. With a [doctrine] router (#297), the same vector also picks the
+ * doctrine items to send, so they cost nothing more, and an unmatched question gets the whole
+ * doctrine. Only the outcome, the number of
+ * guides and items, and the time are logged, never the question or which guides or items it
+ * matched, since a guide's topic (crisis, abuse) says what was asked.
  */
 class TopicGuideMatcher(
     private val router: TopicRouter,
     private val embed: suspend (String) -> FloatArray,
     private val timeoutMillis: Long = TIMEOUT_MILLIS,
-    private val firstTimeoutMillis: Long = FIRST_TIMEOUT_MILLIS
+    private val firstTimeoutMillis: Long = FIRST_TIMEOUT_MILLIS,
+    private val doctrine: DoctrineRouter? = null
 ) {
     /** Whether a match has been tried since the server started: only the first gets the long limit. */
     private val firstTried = AtomicBoolean(false)
 
     /** Starter questions are the server's own words, so each one's guides are kept once found. */
-    private val starterGuides = ConcurrentHashMap<String, List<RoutedGuide>>()
+    private val starterMatches = ConcurrentHashMap<String, QuestionMatch>()
 
     /** The guides for [question], or none when there's no match or it can't be matched now. */
-    suspend fun match(question: String): List<RoutedGuide> = matchOrNull(question).orEmpty()
+    suspend fun match(question: String): List<RoutedGuide> = matchQuestion(question).guides
 
-    /** [match] for a starter question, remembered under [key] once it was matched. */
-    suspend fun matchStarter(key: String, question: String): List<RoutedGuide> =
-        starterGuides[key] ?: matchOrNull(question)?.also { starterGuides[key] = it }.orEmpty()
+    /** The guides and doctrine items for [question]; [QuestionMatch.NONE] when it can't be matched now. */
+    suspend fun matchQuestion(question: String): QuestionMatch = matchOrNull(question) ?: QuestionMatch.NONE
+
+    /** [matchQuestion] for a starter question, remembered under [key] once it was matched. */
+    suspend fun matchStarter(key: String, question: String): QuestionMatch =
+        starterMatches[key] ?: matchOrNull(question)?.also { starterMatches[key] = it } ?: QuestionMatch.NONE
 
     /**
      * One tiny embedding at startup, in the background, when the guides are on (#341): it opens
@@ -58,15 +75,16 @@ class TopicGuideMatcher(
     }
 
     /** Null when the question couldn't be matched (as opposed to matching no guide). */
-    private suspend fun matchOrNull(question: String): List<RoutedGuide>? {
+    private suspend fun matchOrNull(question: String): QuestionMatch? {
         val started = System.nanoTime()
         // The first question after a start already waited for Render to wake the server, and its
         // embedding may pay for the first connection (#341): it gets the longer limit, once.
         val limit = if (firstTried.compareAndSet(false, true)) firstTimeoutMillis else timeoutMillis
         return try {
-            val guides = withTimeout(limit) { router.route(embed(question)) }
-            log.info("Topic guides: {} in {} ms", guides.size, millisSince(started))
-            guides
+            val vector = withTimeout(limit) { embed(question) }
+            val match = QuestionMatch(router.route(vector), doctrine?.pick(vector))
+            log.info("Topic guides: {}, doctrine items: {} in {} ms", match.guides.size, match.doctrineItems?.size ?: "all", millisSince(started))
+            match
         } catch (e: TimeoutCancellationException) {
             log.warn("Topic guides: none, no vector after {} ms", millisSince(started))
             null

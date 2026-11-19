@@ -2,6 +2,7 @@ package com.application.bibleapp.server
 
 import com.application.bibleapp.server.ai.AiProvider
 import com.application.bibleapp.server.ai.OpenAiCompatibleProvider
+import com.application.bibleapp.server.ai.DoctrineRouter
 import com.application.bibleapp.server.ai.TopicGuideMatcher
 import com.application.bibleapp.server.ai.TopicRouter
 import com.application.bibleapp.server.db.startRetentionCleanup
@@ -33,6 +34,8 @@ fun main(args: Array<String>) {
  *  settings are (#124), for answers and for search by meaning's query vectors (#287). With
  *  AI_TOPIC_GUIDES on (off by default, #319), the Bible Helper also sends the topic guides a
  *  question matches; the guides and their vectors are read now, so a bad build fails to start.
+ *  With AI_DOCTRINE_ITEMS on as well (off by default, #297), each question gets only the doctrine
+ *  items it needs, picked from the same embedding; their vectors are read now too.
  *  Search shows the matching guide's key passages either way (#320): they don't change what the
  *  Bible Helper answers, only which verses a search lists first. */
 fun Application.module() {
@@ -46,6 +49,10 @@ fun Application.module() {
         log.warn("Key passages off: {}", e.message)
         null
     }
+    val doctrineItems = environment.config.propertyOrNull("ai.doctrineItems")?.getString()?.toBoolean() == true
+    if (doctrineItems && !topicGuides) log.warn("AI_DOCTRINE_ITEMS needs AI_TOPIC_GUIDES: sending the whole doctrine")
+    // Like the guides, a bad build with the items on must not start (#297).
+    val doctrineRouter = if (doctrineItems && topicGuides) DoctrineRouter.fromResources(VerseSearch.MODEL) else null
     val aiProvider = OpenAiCompatibleProvider.fromConfig(environment.config)
     val embeddingProvider = WorkersAiEmbeddingProvider.fromConfig(environment.config, VerseSearch.MODEL)
     val guides = serverModule(
@@ -53,7 +60,8 @@ fun Application.module() {
         aiProvider = aiProvider,
         embeddingProvider = embeddingProvider,
         topicRouter = router?.takeIf { topicGuides },
-        keyPassagesRouter = router
+        keyPassagesRouter = router,
+        doctrineRouter = doctrineRouter
     )
     // Warms both Cloudflare clients in the background, so the start isn't delayed (#347).
     launch(Dispatchers.IO) { aiProvider?.warmUp() }
@@ -78,7 +86,8 @@ internal suspend fun warmUpEmbeddings(guides: TopicGuideMatcher?, warmUpClient: 
  * limits to the next day. A [topicRouter] turns the Bible Helper's topic guides on (#319); they
  * need [embeddingProvider] too, and without either every question gets v5's instructions.
  * [keyPassagesRouter] gives search its key passages (#320); null leaves them out. Returns the
- * topic guide matcher, or null when the guides are off, for [module]'s warm-up (#341).
+ * topic guide matcher, or null when the guides are off, for [module]'s warm-up (#341). A
+ * [doctrineRouter] (#297) makes that matcher pick each question's doctrine items as well.
  */
 fun Application.serverModule(
     emailSender: EmailSender?,
@@ -86,7 +95,8 @@ fun Application.serverModule(
     clock: Clock = Clock.systemUTC(),
     embeddingProvider: EmbeddingProvider? = null,
     topicRouter: TopicRouter? = null,
-    keyPassagesRouter: TopicRouter? = null
+    keyPassagesRouter: TopicRouter? = null,
+    doctrineRouter: DoctrineRouter? = null
 ): TopicGuideMatcher? {
     configureMonitoring()
     configureSerialization()
@@ -96,7 +106,7 @@ fun Application.serverModule(
     startRetentionCleanup(clock)
     val search = embeddingProvider?.let { VerseSearch(it, clock = clock, keyPassages = keyPassagesRouter?.let(::KeyPassages)) }
     // Matching a question spends one embedding from search's daily cap (#319).
-    val guides = topicRouter?.let { router -> search?.let { TopicGuideMatcher(router, it::embedQuery) } }
+    val guides = topicRouter?.let { router -> search?.let { TopicGuideMatcher(router, it::embedQuery, doctrine = doctrineRouter) } }
     configureRouting(emailSender, aiProvider, search, clock, guides)
     return guides
 }

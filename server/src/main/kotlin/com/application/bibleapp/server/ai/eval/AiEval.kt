@@ -5,6 +5,7 @@ import com.application.bibleapp.server.ai.AiProvider
 import com.application.bibleapp.server.ai.AiRole
 import com.application.bibleapp.server.ai.Busy
 import com.application.bibleapp.server.ai.DevAiBudget
+import com.application.bibleapp.server.ai.DoctrineRouter
 import com.application.bibleapp.server.ai.OpenAiCompatibleProvider
 import com.application.bibleapp.server.ai.QuotaExhausted
 import com.application.bibleapp.server.ai.RoutedGuide
@@ -31,7 +32,9 @@ data class EvalResult(
     val problems: List<String> = emptyList(),
     val error: String? = null,
     /** The topic guides sent with it (#319, AI_TOPIC_GUIDES); null when the run sends none. */
-    val guides: List<RoutedGuide>? = null
+    val guides: List<RoutedGuide>? = null,
+    /** The doctrine items sent with it (#297, AI_DOCTRINE_ITEMS); null when it got the whole doctrine. */
+    val doctrineItems: List<Int>? = null
 ) {
     val passed: Boolean get() = error == null && problems.isEmpty()
 
@@ -49,13 +52,16 @@ data class EvalResult(
 suspend fun evaluate(
     questions: List<EvalQuestion>,
     provider: AiProvider,
-    guidesFor: Map<String, List<RoutedGuide>>? = null
+    guidesFor: Map<String, List<RoutedGuide>>? = null,
+    doctrineFor: Map<String, List<Int>>? = null
 ): List<EvalResult> {
     val results = mutableListOf<EvalResult>()
     for (question in questions) {
         val guides = guidesFor?.get(question.id).orEmpty()
-        // The live route's instructions (#319): v5's, plus section 9 when a guide matched.
-        val instructions = SystemPrompt.withGuides(question.language, guides)
+        val doctrineItems = doctrineFor?.get(question.id)
+        // The live route's instructions (#319): v5's, plus section 9 when a guide matched, and
+        // only the question's doctrine items with AI_DOCTRINE_ITEMS (#297).
+        val instructions = SystemPrompt.withGuides(question.language, guides, doctrineItems)
         val messages = listOf(
             AiMessage(AiRole.SYSTEM, instructions),
             AiMessage(AiRole.USER, question.ask)
@@ -64,7 +70,7 @@ suspend fun evaluate(
             val completion = provider.complete(messages, AI_MAX_TOKENS)
             val problems = EvalChecks.check(question, completion.text).toMutableList()
             if (completion.cutOff) problems += "cut off: ran out of tokens"
-            EvalResult(question, completion.text, completion.cutOff, completion.neurons, problems, guides = guidesFor?.let { guides })
+            EvalResult(question, completion.text, completion.cutOff, completion.neurons, problems, guides = guidesFor?.let { guides }, doctrineItems = doctrineItems)
         } catch (e: QuotaExhausted) {
             results += EvalResult(question, error = "Cloudflare's free daily allowance ran out; stopped here")
             break
@@ -136,6 +142,8 @@ fun report(results: List<EvalResult>, model: String, date: LocalDate, total: Int
         result.guides?.let { guides ->
             appendLine("- **Guide:** ${guides.joinToString(", ") { "${it.guide.id} (%.2f)".format(it.score) }.ifEmpty { "none" }}")
         }
+        // Not copied into blind sheets (BlindGrading), so it doesn't give away which version wrote an answer.
+        result.doctrineItems?.let { appendLine("- **Doctrine items:** ${it.joinToString(", ")}") }
         appendLine("- **Grade:** ")
         appendLine()
         if (result.answer != null) {
@@ -170,6 +178,9 @@ fun main(args: Array<String>) {
     val provider = budget.wrap(live)
     val model = config.property("ai.model").getString()
     val guided = System.getenv("AI_TOPIC_GUIDES")?.toBoolean() == true
+    // Doctrine items (#297) are picked from the guides' embedding, as on the server.
+    val doctrineItems = System.getenv("AI_DOCTRINE_ITEMS")?.toBoolean() == true
+    require(!doctrineItems || guided) { "AI_DOCTRINE_ITEMS needs AI_TOPIC_GUIDES=true, as on the server" }
 
     val all = EvalQuestions.parse(File(args[0]).readText())
     val only = args.getOrNull(2)?.split(',')?.map { it.trim() }?.filter { it.isNotEmpty() }.orEmpty()
@@ -181,35 +192,80 @@ fun main(args: Array<String>) {
     // made at build time, one embedding per question, TopicRouter.THRESHOLD unless
     // AI_TOPIC_THRESHOLD says otherwise), and with AI_ONLY_GUIDED only those with a guide are
     // asked, since the others get v5's instructions unchanged.
-    val guidesFor = if (guided) {
-        val threshold = System.getenv("AI_TOPIC_THRESHOLD")?.toDouble() ?: TopicRouter.THRESHOLD
-        val router = TopicRouter.fromResources(VerseSearch.MODEL, threshold)
+    val vectors = if (guided) {
         val embeddings = budget.wrap(WorkersAiEmbeddingProvider.fromConfig(config, VerseSearch.MODEL)!!)
         runBlocking {
             questions.chunked(embeddings.maxBatch).flatMap { batch ->
-                batch.zip(embeddings.embed(batch.map { it.ask }, EmbeddingKind.QUERY).vectors) { question, vector -> question.id to router.route(vector) }
+                batch.zip(embeddings.embed(batch.map { it.ask }, EmbeddingKind.QUERY).vectors) { question, vector -> question.id to vector }
             }.toMap()
         }
     } else {
         null
     }
+    val threshold = System.getenv("AI_TOPIC_THRESHOLD")?.toDouble() ?: TopicRouter.THRESHOLD
+    val guidesFor = vectors?.let { byId ->
+        val router = TopicRouter.fromResources(VerseSearch.MODEL, threshold)
+        byId.mapValues { (_, vector) -> router.route(vector) }
+    }
+    val doctrineRouter = if (doctrineItems) DoctrineRouter.fromResources(VerseSearch.MODEL) else null
+    val doctrineFor = doctrineRouter?.let { router -> vectors!!.mapValues { (_, vector) -> router.pick(vector) } }
     val asked = if (guidesFor != null && System.getenv("AI_ONLY_GUIDED")?.toBoolean() == true) {
         questions.filter { guidesFor[it.id].orEmpty().isNotEmpty() }
     } else {
         questions
     }
-    val version = if (guided) SystemPrompt.GUIDES_VERSION else SystemPrompt.PROMPT_VERSION
+    val version = when {
+        doctrineItems -> SystemPrompt.DOCTRINE_VERSION
+        guided -> SystemPrompt.GUIDES_VERSION
+        else -> SystemPrompt.PROMPT_VERSION
+    }
 
     val date = LocalDate.now(ZoneOffset.UTC)
-    val results = runBlocking { evaluate(asked, provider, guidesFor) }
     val folder = File(args[1]).apply { mkdirs() }
     // Another question set (-PquestionsFile) is named in the report's file name, like "-heldout".
     val set = File(args[0]).nameWithoutExtension.removePrefix("ai_helper_eval").removePrefix("_").let { if (it.isEmpty()) "" else "-$it" }
+
+    // AI_ROUTE_ONLY (#297): only which guides and doctrine items each question gets, without
+    // asking the model (one embedding per question, a hundredth of a neuron for all of them).
+    if (System.getenv("AI_ROUTE_ONLY")?.toBoolean() == true) {
+        requireNotNull(vectors) { "AI_ROUTE_ONLY needs AI_TOPIC_GUIDES=true" }
+        val file = reportFile(folder, "$date-routing$set")
+        file.writeText(routingReport(asked, guidesFor.orEmpty(), vectors, DoctrineRouter.fromResources(VerseSearch.MODEL)))
+        println("Routing: ${file.absolutePath}")
+        exitProcess(0)
+    }
+
+    val results = runBlocking { evaluate(asked, provider, guidesFor, doctrineFor) }
     val name = "$date-${model.substringAfterLast('/')}-v$version$set${if (only.isEmpty() && asked.size == questions.size) "" else "-partial"}"
     val file = reportFile(folder, name)
     file.writeText(report(results, model, date, asked.size, version))
     println("Report: ${file.absolutePath}")
     exitProcess(0)
+}
+
+/**
+ * Which guides and doctrine items each question gets (#297, AI_ROUTE_ONLY), with the scores of the
+ * closest items outside [DoctrineRouter.ALWAYS], so the picks can be checked before a run.
+ */
+fun routingReport(
+    questions: List<EvalQuestion>,
+    guidesFor: Map<String, List<RoutedGuide>>,
+    vectors: Map<String, FloatArray>,
+    router: DoctrineRouter
+): String = buildString {
+    appendLine("# Doctrine items and guides per question")
+    appendLine()
+    appendLine("Items ${DoctrineRouter.ALWAYS.sorted().joinToString(", ")} always go; the ${DoctrineRouter.EXTRA_ITEMS} best others are picked.")
+    appendLine()
+    appendLine("| Question | Ask | Guides | Picked | Closest others (score) |")
+    appendLine("|---|---|---|---|---|")
+    for (question in questions) {
+        val vector = vectors[question.id] ?: continue
+        val picked = router.pick(vector) - DoctrineRouter.ALWAYS
+        val guides = guidesFor[question.id].orEmpty().joinToString(", ") { "${it.guide.id} (%.2f)".format(it.score) }.ifEmpty { "–" }
+        val closest = router.scoresFor(vector).take(DoctrineRouter.EXTRA_ITEMS + 2).joinToString(", ") { (number, score) -> "$number (%.3f)".format(score) }
+        appendLine("| ${question.id} | ${question.ask.replace("|", "/").take(90)} | $guides | ${picked.joinToString(", ")} | $closest |")
+    }
 }
 
 /**

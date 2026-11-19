@@ -3,6 +3,7 @@ package com.application.bibleapp.server.routes
 import ch.qos.logback.classic.Logger
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.read.ListAppender
+import com.application.bibleapp.server.ai.DoctrineRouter
 import com.application.bibleapp.server.ai.QuotaExhausted
 import com.application.bibleapp.server.ai.SystemPrompt
 import com.application.bibleapp.server.ai.TopicGuides
@@ -267,6 +268,42 @@ class AiTopicGuidesRoutesTest {
         }
         assertEquals(mapOf(SystemPrompt.PROMPT_VERSION to "v5's answer", SystemPrompt.GUIDES_VERSION to ai.answer), stored)
         transaction { AiStarterAnswers.deleteAll() }
+    }
+
+    /** The doctrine items on (#297): the same fake vectors as the guides, so a match is predictable. */
+    private fun doctrineRouter(): DoctrineRouter = runBlocking { DoctrineRouter.embedding(SystemPrompt.doctrine, FakeEmbeddingProvider()) }
+
+    @Test
+    fun withTheDoctrineItemsOnAQuestionGetsOnlyItsItemsAndReportsVersion17() = testApplication {
+        val ai = FakeAiProvider()
+        val embeddings = FakeEmbeddingProvider()
+        val doctrine = doctrineRouter()
+        val client = startWithFakeAi(ai, embeddings = embeddings, topicRouter = router(), doctrineRouter = doctrine)
+
+        val question = "Is drinking alcohol a sin?"
+        val response = client.ask(client.registerTestUser(), ask(question))
+
+        assertEquals(SystemPrompt.DOCTRINE_VERSION, response.answer().promptVersion)
+        val items = doctrine.pick(embeddings.vector(question))
+        assertEquals(SystemPrompt.forLanguage("en", doctrineItems = items) + "\n\n" + section("alcohol"), ai.instructions())
+        // Still the one embedding.
+        assertEquals(1, embeddings.calls.size)
+    }
+
+    @Test
+    fun withTheDoctrineItemsOnAFailedMatchOrAPassageGetsTheWholeDoctrine() = testApplication {
+        val ai = FakeAiProvider()
+        val embeddings = FakeEmbeddingProvider().apply { failures += Unavailable("Workers AI answered HTTP 500") }
+        val client = startWithFakeAi(ai, embeddings = embeddings, topicRouter = router(), doctrineRouter = doctrineRouter())
+        val user = client.registerTestUser()
+
+        assertEquals(SystemPrompt.PROMPT_VERSION, client.ask(user, ask("Is drinking alcohol a sin?")).answer().promptVersion)
+        assertEquals(SystemPrompt.forLanguage("en"), ai.instructions())
+
+        val passage = AiPassage("EPH 5:18", "18 Do not get drunk on wine, which leads to reckless indiscretion.")
+        val request = AiAskRequest(listOf(AiMessageDto("user", "What does this mean?")), "en", passage)
+        assertEquals(SystemPrompt.PROMPT_VERSION, client.ask(user, request).answer().promptVersion)
+        assertEquals(SystemPrompt.forLanguage("en", passage.reference, passage.text), ai.instructions())
     }
 
     @Test

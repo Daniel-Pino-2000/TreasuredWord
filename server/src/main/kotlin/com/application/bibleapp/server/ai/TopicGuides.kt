@@ -99,6 +99,11 @@ object TopicGuides {
 object TopicVectors {
     const val PATH = "ai/topic_vectors.tsv"
 
+    private val TOPICS_COMMENT = listOf(
+        "The bge-m3 vector of every \"Asks\" phrase in topics.md (#319). Made by",
+        "./gradlew :server:embedTopicGuides; don't edit by hand."
+    )
+
     /** One phrase's vector, normalized to length 1. */
     class Phrase(val guideId: String, val text: String, val vector: FloatArray)
 
@@ -124,9 +129,9 @@ object TopicVectors {
         return File(requireNotNull(model) { "No \"# model\" line" }, phrases)
     }
 
-    fun format(model: String, phrases: List<Phrase>): String = buildString {
-        appendLine("# The bge-m3 vector of every \"Asks\" phrase in topics.md (#319). Made by")
-        appendLine("# ./gradlew :server:embedTopicGuides; don't edit by hand.")
+    /** The file for [phrases]; [comment] is its opening lines, each written after "# ". */
+    fun format(model: String, phrases: List<Phrase>, comment: List<String> = TOPICS_COMMENT): String = buildString {
+        comment.forEach { appendLine("# $it") }
         appendLine("# model\t$model")
         for (phrase in phrases) {
             require('\t' !in phrase.text && '\n' !in phrase.text) { "A phrase can't hold a tab or a line break: ${phrase.text}" }

@@ -32,6 +32,11 @@ exactly as the server does with the same setting (#319, version 16: the stored p
 embedding per question, threshold 0.70 unless `AI_TOPIC_THRESHOLD` says otherwise), and the report
 names each question's guides. `AI_ONLY_GUIDED=true` asks only the questions with a guide, since
 the others get v5's instructions unchanged; a full run for the release bar asks them all.
+With `AI_DOCTRINE_ITEMS=true` as well, each question gets only the doctrine items it needs, as the
+server does with the same setting (#297, version 17: items 1–4 and the 4 closest others, picked
+from the same embedding), and the report names each question's items. `AI_ROUTE_ONLY=true` asks
+nothing: it writes `<date>-routing.md` with each question's guides and doctrine items, to check the
+picks before spending neurons.
 
 ## Comparing two versions
 
