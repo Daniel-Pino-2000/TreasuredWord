@@ -39,16 +39,30 @@ class TokenStore(context: Context) {
      *  (#109). Null for sessions saved before it was stored, until /users/me fills it in. */
     val email: String? get() = prefs.getString(KEY_EMAIL, null)
 
+    /** The Google account's profile picture address, from Google sign-in (#335). Kept only on
+     *  the phone, never sent to our server. Null for email accounts and older sessions. */
+    val pictureUrl: String? get() = prefs.getString(KEY_PICTURE_URL, null)
+
     /** True once a session has been saved and hasn't been cleared - doesn't verify the
      *  tokens are still valid server-side, just that we have something to try sending. */
     val isLoggedIn: Boolean get() = accessToken != null && refreshToken != null
 
-    fun saveSession(userId: String, email: String, accessToken: String, refreshToken: String) {
+    fun saveSession(
+        userId: String,
+        email: String,
+        accessToken: String,
+        refreshToken: String,
+        pictureUrl: String? = null
+    ) {
         prefs.edit()
             .putString(KEY_USER_ID, userId)
             .putString(KEY_EMAIL, email)
             .putString(KEY_ACCESS_TOKEN, accessToken)
             .putString(KEY_REFRESH_TOKEN, refreshToken)
+            .apply {
+                // An email sign-in after a Google one must not keep the previous picture.
+                if (pictureUrl != null) putString(KEY_PICTURE_URL, pictureUrl) else remove(KEY_PICTURE_URL)
+            }
             .apply()
     }
 
@@ -78,6 +92,7 @@ class TokenStore(context: Context) {
         const val KEY_REFRESH_TOKEN = "refresh_token"
         const val KEY_USER_ID = "user_id"
         const val KEY_EMAIL = "email"
+        const val KEY_PICTURE_URL = "picture_url"
 
         fun open(context: Context): SharedPreferences {
             val masterKey = MasterKey.Builder(context)

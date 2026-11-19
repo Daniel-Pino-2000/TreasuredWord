@@ -25,6 +25,7 @@ import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import com.application.bibleapp.R
 import com.application.bibleapp.utils.GoogleSignIn
+import com.application.bibleapp.utils.ProfilePicture
 import com.application.bibleapp.utils.UiText
 
 /**
@@ -102,6 +103,8 @@ class AuthRepository(context: Context) {
     val currentUserId: String? get() = tokenStore.userId
     /** Shown straight away on launch; [getCurrentUser] corrects it if it changed (#109). */
     val savedEmail: String? get() = tokenStore.email
+    /** The Google account's picture address, on the phone only (#335); null for email accounts. */
+    val savedPictureUrl: String? get() = tokenStore.pictureUrl
 
     suspend fun register(email: String, password: String): Result<Unit> = runCatching {
         val response = client.post("$baseUrl/auth/register") {
@@ -120,13 +123,13 @@ class AuthRepository(context: Context) {
     }
 
     /** [idToken] from Credential Manager; [email] is the Google account's, shown until
-     *  /users/me answers (#112). */
-    suspend fun signInWithGoogle(idToken: String, email: String): Result<Unit> = runCatching {
+     *  /users/me answers (#112). [pictureUrl] stays on the phone: only the token is sent (#335). */
+    suspend fun signInWithGoogle(idToken: String, email: String, pictureUrl: String?): Result<Unit> = runCatching {
         val response = client.post("$baseUrl/auth/google") {
             contentType(ContentType.Application.Json)
             setBody(GoogleSignInRequestDto(idToken))
         }
-        saveSession(response, email)
+        saveSession(response, email, pictureUrl)
     }
 
     /**
@@ -152,8 +155,10 @@ class AuthRepository(context: Context) {
         }
     }
 
-    /** After signing out or deleting the account (#141): see [GoogleSignIn.clearCredentialState]. */
+    /** After signing out or deleting the account (#141): see [GoogleSignIn.clearCredentialState].
+     *  The cached profile picture goes too (#335). */
     suspend fun forgetGoogleSignIn() {
+        ProfilePicture.forget(appContext)
         GoogleSignIn.clearCredentialState(appContext)
     }
 
@@ -220,10 +225,12 @@ class AuthRepository(context: Context) {
 
     /** [email] is what the person just typed: the auth responses don't include it, and
      *  /users/me replaces it later if the server has it differently (#109). */
-    private suspend fun saveSession(response: HttpResponse, email: String) {
+    private suspend fun saveSession(response: HttpResponse, email: String, pictureUrl: String? = null) {
         if (!response.status.isSuccess()) throw toAuthException(response)
         val auth = response.body<AuthResponseDto>()
-        tokenStore.saveSession(auth.userId, email, auth.accessToken, auth.refreshToken)
+        // A previous account's cached picture must not show for this one (#335).
+        ProfilePicture.forget(appContext)
+        tokenStore.saveSession(auth.userId, email, auth.accessToken, auth.refreshToken, pictureUrl)
         // The shared client would otherwise keep sending the previous account's token (#86).
         HttpClientProvider.forgetCachedTokens()
     }

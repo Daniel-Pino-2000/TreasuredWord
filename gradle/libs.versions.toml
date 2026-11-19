@@ -19,6 +19,9 @@ browser = "1.8.0"
 playAppUpdate = "2.1.0"
 # 11.x is built for Kotlin 2.0 / Compose 1.6+; 12+ would pull in Compose 1.8+ (#99)
 aboutLibraries = "11.2.3"
+# The Google account's picture on the You tab (#335). Apache 2.0, free. 3.0.x is the last line
+# built for Kotlin 2.0 / Compose 1.7, which the app is on.
+coil = "3.0.4"
 ktor = "3.0.3"
 exposed = "0.61.0"
 postgresql = "42.7.7"
@@ -32,6 +35,8 @@ flyway = "11.13.3"
 sqliteJdbc = "3.50.3.0"
 
 [libraries]
+coil-compose = { group = "io.coil-kt.coil3", name = "coil-compose", version.ref = "coil" }
+coil-network-okhttp = { group = "io.coil-kt.coil3", name = "coil-network-okhttp", version.ref = "coil" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-core-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "coreSplashscreen" }
 androidx-credentials = { group = "androidx.credentials", name = "credentials", version.ref = "credentials" }
