@@ -46,6 +46,7 @@ import java.io.File
 import java.io.IOException
 import java.util.Calendar
 import com.application.bibleapp.widget.DailyVerseWidgetUpdates
+import com.application.bibleapp.widget.WidgetColors
 
 /**
  * Year + day-of-year, in local time — stamped on the cached daily-verse row and compared with
@@ -474,6 +475,7 @@ class BibleRepository(
 
     fun saveThemeMode(mode: ThemeMode) {
         prefs.edit().putString(KEY_THEME_MODE, mode.name).apply()
+        DailyVerseWidgetUpdates.refreshNow(context) // the widget follows the app's light/dark (#333)
     }
 
     fun loadThemeMode(): ThemeMode {
@@ -484,9 +486,18 @@ class BibleRepository(
     /** The color theme (#244). Kept on this device only, like [ThemeMode]; not synced. */
     fun saveThemePalette(palette: ThemePalette) {
         prefs.edit().putString(KEY_THEME_PALETTE, palette.name).apply()
+        DailyVerseWidgetUpdates.refreshNow(context) // and its color theme (#333)
     }
 
     fun loadThemePalette(): ThemePalette = ThemePalette.fromStored(prefs.getString(KEY_THEME_PALETTE, null))
+
+    /** Whether the daily verse widget uses the app's theme or the wallpaper's colors (#333). */
+    fun saveWidgetColors(colors: WidgetColors) {
+        prefs.edit().putString(KEY_WIDGET_COLORS, colors.name).apply()
+        DailyVerseWidgetUpdates.refreshNow(context)
+    }
+
+    fun loadWidgetColors(): WidgetColors = WidgetColors.fromStored(prefs.getString(KEY_WIDGET_COLORS, null))
 
     /** The verse image editor's last choices (#254), so the next image starts from them. Before
      *  the first image, the style is the one named after the app's color theme. */
@@ -701,6 +712,7 @@ class BibleRepository(
         const val KEY_SELECTED_VERSION = "selected_version_id"
         const val KEY_THEME_MODE = "theme_mode"
         const val KEY_THEME_PALETTE = "theme_palette"
+        const val KEY_WIDGET_COLORS = "widget_colors"
         const val KEY_VERSE_TEXT_SCALE = "verse_text_scale"
         const val KEY_VERSE_IMAGE_STYLE = "verse_image_style"
         const val KEY_VERSE_IMAGE_FORMAT = "verse_image_format"

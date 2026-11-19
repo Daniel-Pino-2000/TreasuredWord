@@ -64,6 +64,11 @@ class ThemePaletteContrastTest {
         pairs += Pair("button label", c.onPrimary, c.primary, TEXT)
         pairs += Pair("text on accent tint (banners)", c.onPrimaryContainer, c.primaryContainer, TEXT)
         pairs += Pair("accent button on accent tint (banners)", c.primary, c.primaryContainer, TEXT)
+        // The daily verse widget on the app's theme (#333): title and share icon in primary,
+        // verse and reference in onPrimaryContainer, all on primaryContainer.
+        pairs += Pair("widget title", c.primary, c.primaryContainer, TEXT)
+        pairs += Pair("widget share icon", c.primary, c.primaryContainer, NON_TEXT)
+        pairs += Pair("widget verse and reference", c.onPrimaryContainer, c.primaryContainer, TEXT)
         pairs += Pair("selected tab icon and chips", c.onSecondaryContainer, c.secondaryContainer, TEXT)
         pairs += Pair("snackbar text", c.inverseOnSurface, c.inverseSurface, TEXT)
         pairs += Pair("snackbar Undo", c.inversePrimary, c.inverseSurface, TEXT)

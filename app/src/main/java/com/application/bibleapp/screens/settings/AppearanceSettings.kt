@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.FormatSize
 import androidx.compose.material.icons.outlined.Palette
+import androidx.compose.material.icons.outlined.Widgets
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -45,11 +46,13 @@ import com.application.bibleapp.ui.theme.ThemePalette
 import com.application.bibleapp.ui.theme.VerseTextScale
 import com.application.bibleapp.ui.theme.scaledBy
 import com.application.bibleapp.viewmodel.BibleViewModel
+import com.application.bibleapp.widget.WidgetColors
 
 @Composable
 internal fun AppearanceSettings(bibleViewModel: BibleViewModel) {
     val themeMode by bibleViewModel.themeMode.collectAsState()
     val themePalette by bibleViewModel.themePalette.collectAsState()
+    val widgetColors by bibleViewModel.widgetColors.collectAsState()
     val verseTextScale by bibleViewModel.verseTextScale.collectAsState()
     val textSizeSample by bibleViewModel.textSizeSample.collectAsState()
 
@@ -65,6 +68,19 @@ internal fun AppearanceSettings(bibleViewModel: BibleViewModel) {
         GroupedDivider()
         PaletteChoiceRow(selected = themePalette, onSelect = { bibleViewModel.setThemePalette(it) })
         GroupedDivider()
+        // The home screen widget's colors (#333). Only Android 12+ has wallpaper colors to
+        // choose; below that the widget always follows the app, so there's nothing to pick.
+        if (WidgetColors.isWallpaperAvailable()) {
+            GroupedChoiceRow(
+                title = stringResource(R.string.settings_widget_colors),
+                icon = Icons.Outlined.Widgets,
+                options = WidgetColors.entries,
+                selected = widgetColors,
+                optionLabel = { stringResource(it.labelRes) },
+                onSelect = { bibleViewModel.setWidgetColors(it) }
+            )
+            GroupedDivider()
+        }
         GroupedChoiceRow(
             title = stringResource(R.string.settings_verse_text_size),
             icon = Icons.Outlined.FormatSize,

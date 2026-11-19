@@ -35,6 +35,7 @@ import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
 import androidx.glance.appwidget.state.updateAppWidgetState
 import androidx.glance.background
+import androidx.glance.color.ColorProviders
 import androidx.glance.color.DynamicThemeColorProviders
 import androidx.glance.currentState
 import androidx.glance.layout.Column
@@ -57,6 +58,7 @@ import com.application.bibleapp.data.remote.OurMannaBibleDataSource
 import com.application.bibleapp.data.repository.BibleRepository
 import com.application.bibleapp.data.repository.resolveDailyVerseText
 import com.application.bibleapp.data.repository.todaysDailyVerseOffline
+import com.application.bibleapp.ui.theme.ThemeMode
 import com.application.bibleapp.ui.theme.ThemePalette
 import com.application.bibleapp.utils.AppLanguage
 import com.application.bibleapp.viewmodel.versionLabelFor
@@ -71,7 +73,8 @@ import com.application.bibleapp.viewmodel.versionLabelFor
  * A refresh while Glance's session is still alive doesn't run [provideGlance] again, it only
  * reloads the widget's state and recomposes, so [refreshAll] puts the new verse in that state.
  * The state a session starts with is read before [provideGlance] runs, though, so the content
- * shows whichever is newer: the verse loaded at the start, or one stored since.
+ * shows whichever is newer: the verse loaded at the start, or one stored since. The colors
+ * (#333) travel with the verse the same way, so a theme change in the app redraws a live widget.
  */
 class DailyVerseWidget : GlanceAppWidget() {
 
@@ -86,16 +89,20 @@ class DailyVerseWidget : GlanceAppWidget() {
         // Read here, not in the composition: a font size change re-renders the widget anyway.
         val fontScale = context.resources.configuration.fontScale
         provideContent {
-            GlanceTheme(colors = widgetColors()) {
-                val stored = currentState<Preferences>().toWidgetVerse()
-                val verse = if (stored != null && stored.loadedAt > loaded.loadedAt) stored else loaded
-                WidgetContent(title = verse.title, text = verse.text, reference = verse.reference, fontScale = fontScale)
+            val stored = currentState<Preferences>().toWidgetVerse()
+            val verse = if (stored != null && stored.loadedAt > loaded.loadedAt) stored else loaded
+            val colors = widgetColorSource(verse.colors, verse.palette, verse.mode, Build.VERSION.SDK_INT)
+            GlanceTheme(colors = colors.glanceColors()) {
+                WidgetContent(
+                    title = verse.title, text = verse.text, reference = verse.reference,
+                    fontScale = fontScale, colors = colors
+                )
             }
         }
     }
 
     @Composable
-    private fun WidgetContent(title: String, text: String, reference: String, fontScale: Float) {
+    private fun WidgetContent(title: String, text: String, reference: String, fontScale: Float, colors: WidgetColorSource) {
         val size = LocalSize.current
         val context = LocalContext.current
         val autoSize = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
@@ -160,11 +167,23 @@ class DailyVerseWidget : GlanceAppWidget() {
                 val views = RemoteViews(context.packageName, R.layout.widget_daily_verse_text).apply {
                     setTextViewText(R.id.widget_verse_text, layout.text)
                     setInt(R.id.widget_verse_text, "setMaxLines", layout.maxLines)
-                    // Below Android 12, Glance fixes its colors (light or dark) when it draws, while
-                    // the layout's color resource would follow the launcher's mode on its own; the
-                    // same color as the title and reference keeps them together. Android 12+ uses
-                    // the resource, the same system color Glance uses.
-                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+                    // The same color as the title and reference, which Glance draws. Always set,
+                    // never left to the layout: the launcher reuses the view, so a color set for
+                    // the previous theme would stay (#333). With the wallpaper's colors (Android
+                    // 12+), the layout's resource, the same system color Glance uses. With the
+                    // app's theme following the phone on Android 12+, both its light and dark
+                    // colors, so it switches with the phone as Glance's text does. Otherwise one
+                    // fixed color: below Android 12 Glance fixes its own (light or dark) too.
+                    val sdk = Build.VERSION.SDK_INT
+                    if (colors is WidgetColorSource.Wallpaper && sdk >= Build.VERSION_CODES.S) {
+                        setColorStateList(R.id.widget_verse_text, "setTextColor", R.color.widget_verse_text)
+                    } else if (colors is WidgetColorSource.Palette && colors.isDark == null && sdk >= Build.VERSION_CODES.S) {
+                        setColorInt(
+                            R.id.widget_verse_text, "setTextColor",
+                            colors.palette.colorScheme(isDark = false).onPrimaryContainer.toArgb(),
+                            colors.palette.colorScheme(isDark = true).onPrimaryContainer.toArgb()
+                        )
+                    } else {
                         setTextColor(R.id.widget_verse_text, GlanceTheme.colors.onPrimaryContainer.getColor(context).toArgb())
                     }
                 }
@@ -196,6 +215,9 @@ class DailyVerseWidget : GlanceAppWidget() {
         private val KEY_TEXT = stringPreferencesKey("text")
         private val KEY_REFERENCE = stringPreferencesKey("reference")
         private val KEY_LOADED_AT = longPreferencesKey("loaded_at")
+        private val KEY_PALETTE = stringPreferencesKey("palette")
+        private val KEY_MODE = stringPreferencesKey("mode")
+        private val KEY_COLORS = stringPreferencesKey("colors")
 
         private val PADDING_HORIZONTAL = WIDGET_PADDING_HORIZONTAL_DP.dp
         private val PADDING_VERTICAL = 12.dp
@@ -220,13 +242,21 @@ class DailyVerseWidget : GlanceAppWidget() {
                     this[KEY_TEXT] = verse.text
                     this[KEY_REFERENCE] = verse.reference
                     this[KEY_LOADED_AT] = verse.loadedAt
+                    this[KEY_PALETTE] = verse.palette.name
+                    this[KEY_MODE] = verse.mode.name
+                    this[KEY_COLORS] = verse.colors.name
                 }
             }
         }
 
         private fun Preferences.toWidgetVerse(): WidgetVerse? {
             val loadedAt = this[KEY_LOADED_AT] ?: return null
-            return WidgetVerse(this[KEY_TITLE].orEmpty(), this[KEY_TEXT].orEmpty(), this[KEY_REFERENCE].orEmpty(), loadedAt)
+            return WidgetVerse(
+                this[KEY_TITLE].orEmpty(), this[KEY_TEXT].orEmpty(), this[KEY_REFERENCE].orEmpty(), loadedAt,
+                palette = ThemePalette.fromStored(this[KEY_PALETTE]),
+                mode = ThemeMode.entries.firstOrNull { it.name == this[KEY_MODE] } ?: ThemeMode.SYSTEM,
+                colors = WidgetColors.fromStored(this[KEY_COLORS])
+            )
         }
 
         private suspend fun loadVerse(context: Context): WidgetVerse {
@@ -235,26 +265,40 @@ class DailyVerseWidget : GlanceAppWidget() {
             val localized = AppLanguage.localizedContext(context)
             val title = localized.getString(R.string.verse_of_the_day)
             val repository = BibleRepository(context, HelloAoBibleDataSource(), OurMannaBibleDataSource())
+            // The colors (#333) are read with the verse, so every redraw picks up a theme change.
+            val palette = repository.loadThemePalette()
+            val mode = repository.loadThemeMode()
+            val colors = repository.loadWidgetColors()
             val resolved = runCatching {
                 repository.resolveDailyVerseText(repository.todaysDailyVerseOffline(), repository.loadSelectedVersion())
             }.getOrNull()
-                ?: return WidgetVerse(title, localized.getString(R.string.widget_daily_verse_unavailable), "", loadedAt)
+                ?: return WidgetVerse(
+                    title, localized.getString(R.string.widget_daily_verse_unavailable), "", loadedAt, palette, mode, colors
+                )
             val downloaded = runCatching { repository.getDownloadedVersions() }.getOrDefault(emptyList())
             val label = versionLabelFor(resolved.versionId, emptyList(), downloaded.associateBy { it.id })
-            return WidgetVerse(title, resolved.verse.text, "${resolved.verse.reference} · $label", loadedAt)
+            return WidgetVerse(title, resolved.verse.text, "${resolved.verse.reference} · $label", loadedAt, palette, mode, colors)
         }
 
-        /** Android 12+ follows the wallpaper's colors (Material You); below that the app's own
-         *  default theme. Light or dark follows the phone, since the home screen is the phone's. */
-        private fun widgetColors() = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            DynamicThemeColorProviders
-        } else {
-            ColorProviders(
-                light = ThemePalette.PARCHMENT.colorScheme(isDark = false),
-                dark = ThemePalette.PARCHMENT.colorScheme(isDark = true)
-            )
+        /** The wallpaper's colors (Material You), or the app's color theme (#333): fixed to light
+         *  or dark when the app is, both otherwise so Glance follows the phone's mode. */
+        private fun WidgetColorSource.glanceColors(): ColorProviders = when (this) {
+            WidgetColorSource.Wallpaper -> DynamicThemeColorProviders
+            is WidgetColorSource.Palette -> if (isDark == null) {
+                ColorProviders(light = palette.colorScheme(isDark = false), dark = palette.colorScheme(isDark = true))
+            } else {
+                ColorProviders(palette.colorScheme(isDark))
+            }
         }
     }
 }
 
-private data class WidgetVerse(val title: String, val text: String, val reference: String, val loadedAt: Long)
+private data class WidgetVerse(
+    val title: String,
+    val text: String,
+    val reference: String,
+    val loadedAt: Long,
+    val palette: ThemePalette,
+    val mode: ThemeMode,
+    val colors: WidgetColors
+)

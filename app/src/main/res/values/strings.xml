@@ -388,6 +388,11 @@
     <string name="palette_sage">Sage</string>
     <string name="palette_slate">Slate</string>
     <string name="palette_rose">Rose</string>
+    <!-- Settings › Appearance: where the home screen widget takes its colors from (#333),
+         the app's color theme or the wallpaper's (Android 12+). Short: the two choices share one row. -->
+    <string name="settings_widget_colors">Widget colors</string>
+    <string name="widget_colors_app">Same as app</string>
+    <string name="widget_colors_wallpaper">Wallpaper</string>
     <string name="theme_system">System</string>
     <string name="theme_light">Light</string>
     <string name="theme_dark">Dark</string>

@@ -332,6 +332,11 @@
     <string name="palette_sage">鼠尾草</string>
     <string name="palette_slate">石板</string>
     <string name="palette_rose">玫瑰</string>
+    <!-- Settings › Appearance: where the home screen widget takes its colors from (#333),
+         the app's color theme or the wallpaper's (Android 12+). Short: the two choices share one row. -->
+    <string name="settings_widget_colors">小组件颜色</string>
+    <string name="widget_colors_app">跟随应用</string>
+    <string name="widget_colors_wallpaper">跟随壁纸</string>
     <string name="theme_system">跟随系统</string>
     <string name="theme_light">浅色</string>
     <string name="theme_dark">深色</string>
