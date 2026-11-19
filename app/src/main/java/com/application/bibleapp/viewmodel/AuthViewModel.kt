@@ -107,6 +107,11 @@ class AuthViewModel(
     private val _email = MutableStateFlow(authRepository.savedEmail)
     val email: StateFlow<String?> = _email.asStateFlow()
 
+    /** The Google account's picture address, saved on the phone with the session (#335). Null
+     *  when signed out, for email accounts, and for sessions from before it was kept. */
+    private val _pictureUrl = MutableStateFlow(authRepository.savedPictureUrl)
+    val pictureUrl: StateFlow<String?> = _pictureUrl.asStateFlow()
+
     private val _signedIn = Channel<String?>(Channel.BUFFERED)
     /** One event per successful sign-in or new account, with the account's email. The
      *  after-sign-in work and leaving the sign-in screen key off this and [isLoggedIn], not a
@@ -255,7 +260,7 @@ class AuthViewModel(
     fun onGoogleResult(result: GoogleSignInResult) {
         when (result) {
             is GoogleSignInResult.Success -> runAuthAction(google = true) {
-                authRepository.signInWithGoogle(result.idToken, result.email)
+                authRepository.signInWithGoogle(result.idToken, result.email, result.pictureUrl)
             }
             GoogleSignInResult.Cancelled -> Unit
             is GoogleSignInResult.Failed -> _errorMessage.value = result.message
@@ -285,6 +290,7 @@ class AuthViewModel(
             val refreshToken = accountContent.signOut { authRepository.endLocalSession() }
             _isLoggedIn.value = false
             _email.value = null
+            _pictureUrl.value = null
             _signInMethods.value = SignInMethods(hasPassword = null, hasGoogle = null)
             forgetVerification()
             _signOutState.value = SignOutState.Idle
@@ -320,6 +326,7 @@ class AuthViewModel(
                     authRepository.forgetGoogleSignIn()
                     _isLoggedIn.value = false
                     _email.value = null
+                    _pictureUrl.value = null
                     _signInMethods.value = SignInMethods(hasPassword = null, hasGoogle = null)
                     forgetVerification()
                     onResult(null)
@@ -353,6 +360,7 @@ class AuthViewModel(
                 // person is still signed in (a sign-out may have happened meanwhile).
                 onSuccess = { user ->
                     _email.value = authRepository.savedEmail
+                    _pictureUrl.value = authRepository.savedPictureUrl
                     _signInMethods.value = SignInMethods(user.hasPassword, user.hasGoogle)
                     _emailVerified.value = user.emailVerified
                 },
@@ -364,6 +372,7 @@ class AuthViewModel(
                     // showing "Signed in" for a session that's actually already gone.
                     _isLoggedIn.value = authRepository.isLoggedIn
                     _email.value = authRepository.savedEmail
+                    _pictureUrl.value = authRepository.savedPictureUrl
                 }
             )
         }
@@ -388,6 +397,7 @@ class AuthViewModel(
                 onSuccess = {
                     _isLoggedIn.value = true
                     _email.value = authRepository.savedEmail
+                    _pictureUrl.value = authRepository.savedPictureUrl
                     forgetVerification()
                     refreshCurrentUser()
                     onSuccess()

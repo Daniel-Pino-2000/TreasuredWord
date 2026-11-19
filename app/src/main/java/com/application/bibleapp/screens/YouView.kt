@@ -1,5 +1,11 @@
 package com.application.bibleapp.screens
 
+import android.content.res.Configuration
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewParameter
+import com.application.bibleapp.ui.theme.BibleAppTheme
+import com.application.bibleapp.ui.theme.ThemePalette
+import com.application.bibleapp.ui.theme.ThemePalettePreviewProvider
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -28,6 +34,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
+import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
+import com.application.bibleapp.utils.ProfilePicture
+import com.application.bibleapp.utils.profilePictureRequestUrl
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -63,6 +78,7 @@ fun YouView(
 ) {
     val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
     val email by authViewModel.email.collectAsState()
+    val pictureUrl by authViewModel.pictureUrl.collectAsState()
     val isSyncing by bibleViewModel.isSyncing.collectAsState()
     val lastSyncCompletedAt by bibleViewModel.lastSyncCompletedAt.collectAsState()
     val currentBookName by bibleViewModel.currentBookName.collectAsState()
@@ -89,6 +105,7 @@ fun YouView(
             if (isLoggedIn) {
                 ProfileRow(
                     email = email,
+                    pictureUrl = pictureUrl,
                     status = when {
                         isSyncing -> stringResource(R.string.sync_status_syncing)
                         lastSyncCompletedAt != null ->
@@ -133,10 +150,8 @@ fun YouView(
     }
 }
 
-/** The avatar's initial is the first letter of the signed-in email. With no email known yet (an
- *  older session, offline), the circle shows the same person icon as signed out, never "?" (#109). */
 @Composable
-private fun ProfileRow(email: String?, status: String) {
+private fun ProfileRow(email: String?, pictureUrl: String?, status: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -144,28 +159,7 @@ private fun ProfileRow(email: String?, status: String) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.md)
     ) {
-        Surface(
-            shape = CircleShape,
-            color = MaterialTheme.colorScheme.primaryContainer,
-            modifier = Modifier.size(48.dp)
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                val initial = email?.firstOrNull()?.uppercaseChar()
-                if (initial != null) {
-                    Text(
-                        text = initial.toString(),
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                } else {
-                    Icon(
-                        imageVector = Icons.Outlined.Person,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                }
-            }
-        }
+        ProfileAvatar(email = email, pictureUrl = pictureUrl)
         Column {
             Text(text = email ?: stringResource(R.string.label_signed_in), style = MaterialTheme.typography.titleMedium)
             Text(
@@ -176,6 +170,56 @@ private fun ProfileRow(email: String?, status: String) {
         }
     }
 }
+
+/**
+ * The Google account's picture (#335), over the first letter of the signed-in email. The letter
+ * shows while the picture loads, offline before it was ever loaded, if it fails, and for email
+ * accounts, which have no picture. With no email known yet (an older session, offline), the
+ * circle shows the same person icon as signed out, never "?" (#109). Decorative: the email is
+ * read out next to it.
+ */
+@Composable
+private fun ProfileAvatar(email: String?, pictureUrl: String?) {
+    val sizePx = with(LocalDensity.current) { AvatarSize.roundToPx() }
+    val requestUrl = remember(pictureUrl, sizePx) { profilePictureRequestUrl(pictureUrl, sizePx) }
+    val context = LocalContext.current
+    Surface(
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.primaryContainer,
+        modifier = Modifier.size(AvatarSize)
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            val initial = email?.firstOrNull()?.uppercaseChar()
+            if (initial != null) {
+                Text(
+                    text = initial.toString(),
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.Outlined.Person,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+            if (requestUrl != null) {
+                // Draws nothing until it has the picture, so the letter stays visible meanwhile.
+                AsyncImage(
+                    model = ImageRequest.Builder(context).data(requestUrl).crossfade(true).build(),
+                    contentDescription = null,
+                    imageLoader = ProfilePicture.imageLoader(context),
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .matchParentSize()
+                        .clip(CircleShape)
+                )
+            }
+        }
+    }
+}
+
+private val AvatarSize = 48.dp
 
 @Composable
 private fun SignedOutProfile(onSignInClick: () -> Unit) {
@@ -192,7 +236,7 @@ private fun SignedOutProfile(onSignInClick: () -> Unit) {
             Surface(
                 shape = CircleShape,
                 color = MaterialTheme.colorScheme.primaryContainer,
-                modifier = Modifier.size(48.dp)
+                modifier = Modifier.size(AvatarSize)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
@@ -241,5 +285,29 @@ private fun ContinueReadingRow(reference: String, onClick: () -> Unit) {
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurfaceVariant
         )
+    }
+}
+
+/** The account header with a picture and without one (#335). Run on a device through
+ *  PreviewActivity to see the picture load: Android Studio's preview has no network, so it shows
+ *  the letter. The address is Google's generic "no photo" avatar, not anyone's own. */
+@Preview(name = "Light", widthDp = 360)
+@Preview(name = "Dark", widthDp = 360, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun ProfileRowPreview(@PreviewParameter(ThemePalettePreviewProvider::class) palette: ThemePalette) {
+    BibleAppTheme(palette = palette) {
+        Surface {
+            Column(modifier = Modifier.padding(Spacing.lg)) {
+                GroupedPanel {
+                    ProfileRow(
+                        email = "reader@example.com",
+                        pictureUrl = "https://lh3.googleusercontent.com/a/default-user=s96-c",
+                        status = "Synced just now"
+                    )
+                    GroupedDivider()
+                    ProfileRow(email = "reader@example.com", pictureUrl = null, status = "Synced just now")
+                }
+            }
+        }
     }
 }

@@ -1,5 +1,6 @@
 package com.application.bibleapp.data.remote
 
+import com.application.bibleapp.utils.ProfilePicture
 import android.content.Context
 import com.application.bibleapp.data.local.TokenStore
 import io.ktor.client.HttpClient
@@ -88,6 +89,7 @@ object HttpClientProvider {
     }
 
     private lateinit var tokenStore: TokenStore
+    private lateinit var appContext: Context
 
     /**
      * Must be called once, before [client] is first accessed anywhere in the app.
@@ -95,7 +97,8 @@ object HttpClientProvider {
      * it runs, the same way it already wires up the daily-verse jobs.
      */
     fun init(context: Context) {
-        tokenStore = TokenStore(context.applicationContext)
+        appContext = context.applicationContext
+        tokenStore = TokenStore(appContext)
     }
 
     /**
@@ -175,6 +178,8 @@ object HttpClientProvider {
                             // silently. Clear the session so the app treats the user as
                             // logged out instead of retrying a refresh that will never work.
                             tokenStore.clear()
+                            // Signed out, so the Google picture leaves the phone too (#335).
+                            ProfilePicture.forget(appContext)
                             return@backendBearer null
                         }
 

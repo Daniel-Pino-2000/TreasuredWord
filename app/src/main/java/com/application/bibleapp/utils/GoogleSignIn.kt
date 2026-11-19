@@ -17,8 +17,9 @@ import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingExcept
 
 /** What asking Android for a Google sign-in gave back (#112). */
 sealed interface GoogleSignInResult {
-    /** [idToken] goes to our server, which checks it; [email] is shown until /users/me answers. */
-    data class Success(val idToken: String, val email: String) : GoogleSignInResult
+    /** [idToken] goes to our server, which checks it; [email] is shown until /users/me answers.
+     *  [pictureUrl] is the account's profile picture, kept on the phone only (#335). */
+    data class Success(val idToken: String, val email: String, val pictureUrl: String? = null) : GoogleSignInResult
     /** The person closed Google's sheet: not an error, so nothing is shown. */
     data object Cancelled : GoogleSignInResult
     data class Failed(val message: UiText) : GoogleSignInResult
@@ -48,7 +49,7 @@ object GoogleSignIn {
                 credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
             ) {
                 val google = GoogleIdTokenCredential.createFrom(credential.data)
-                GoogleSignInResult.Success(google.idToken, google.id)
+                GoogleSignInResult.Success(google.idToken, google.id, google.profilePictureUri?.toString())
             } else {
                 GoogleSignInResult.Failed(UiText.Res(R.string.auth_error_google_failed))
             }

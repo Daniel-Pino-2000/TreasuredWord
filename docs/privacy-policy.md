@@ -5,7 +5,7 @@ permalink: /privacy/
 
 # TreasuredWord privacy policy
 
-**Effective date:** November 17, 2026
+**Effective date:** November 19, 2026
 
 TreasuredWord is a free Bible reading app made by Daniel Pino, an independent developer. In this policy, "we" and "us" mean Daniel Pino, the developer of TreasuredWord. It explains what information the app uses, where it goes, and the choices you have. If you have questions, email [pinoponedaniel@gmail.com](mailto:pinoponedaniel@gmail.com).
 
@@ -50,6 +50,8 @@ The email is sent through Gmail, Google's email service, from a Gmail account th
 ### Signing in with Google
 
 If you choose **Continue with Google**, Google's own sign-in screen on your phone asks which Google account to use, and Google gives the app a signed token with that account's email address and its Google account ID. The app sends the token to our server, which checks with Google's published keys that it's genuine and then signs you in. We store the Google account ID (a number Google assigns, which identifies the account to us but not to anyone else) so we recognize you next time, and the email address as for any account. If you already had an account with the same email, the two are joined into one. We don't receive your Google password, contacts or anything else from your Google account, and we don't use the token for anything but signing you in. Google learns that you signed in to TreasuredWord; that's covered by [Google's privacy policy](https://policies.google.com/privacy).
+
+Google also gives the app the address of the account's profile picture. The app keeps that address on your phone only, never on our server, and downloads the picture from Google's image server (lh3.googleusercontent.com) to show it on the **You** tab. The picture is kept on the phone so it also shows offline, is never included in backups, and is removed when you sign out or delete your account. Like any web request, downloading it lets Google see your device's internet (IP) address. Accounts made with an email and password have no picture, and the app doesn't download one for them.
 
 We use this information only to provide the sync you asked for by creating an account. We don't use it for advertising, and we don't share it with anyone except the hosting providers below, who store it on our behalf, and Google, which delivers the emails you ask for.
 
@@ -97,12 +99,13 @@ We keep your account information until you delete your account. Technical logs a
 
 ## Content the app downloads
 
-To show Bible text and the verse of the day, the app downloads content from:
+To show Bible text, the verse of the day and your Google profile picture, the app downloads content from:
 
 - **[bible.helloao.org](https://bible.helloao.org)**: Bible translations you choose to download.
 - **[OurManna](https://ourmanna.com)**: the daily verse.
+- **Google's image server**: your Google account's profile picture, only if you sign in with Google (see "Signing in with Google" above).
 
-These requests carry no account information. Like any web request, they let those services see your device's internet (IP) address.
+These requests carry no TreasuredWord account information. Like any web request, they let those services see your device's internet (IP) address.
 
 ## Outside links and videos
 
