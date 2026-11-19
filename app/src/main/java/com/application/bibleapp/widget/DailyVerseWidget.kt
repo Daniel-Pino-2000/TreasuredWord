@@ -174,10 +174,13 @@ class DailyVerseWidget : GlanceAppWidget() {
                     // app's theme following the phone on Android 12+, both its light and dark
                     // colors, so it switches with the phone as Glance's text does. Otherwise one
                     // fixed color: below Android 12 Glance fixes its own (light or dark) too.
-                    val sdk = Build.VERSION.SDK_INT
-                    if (colors is WidgetColorSource.Wallpaper && sdk >= Build.VERSION_CODES.S) {
+                    // SDK_INT compared directly, not through a local copy: lint can't follow one
+                    // and flags these calls as unguarded (#357).
+                    if (colors is WidgetColorSource.Wallpaper && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                         setColorStateList(R.id.widget_verse_text, "setTextColor", R.color.widget_verse_text)
-                    } else if (colors is WidgetColorSource.Palette && colors.isDark == null && sdk >= Build.VERSION_CODES.S) {
+                    } else if (colors is WidgetColorSource.Palette && colors.isDark == null &&
+                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+                    ) {
                         setColorInt(
                             R.id.widget_verse_text, "setTextColor",
                             colors.palette.colorScheme(isDark = false).onPrimaryContainer.toArgb(),
