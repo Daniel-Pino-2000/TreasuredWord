@@ -2,10 +2,15 @@ package com.application.bibleapp.worker
 
 import android.util.Log
 import com.application.bibleapp.data.model.Highlight
+import com.application.bibleapp.data.model.MemoryVerse
 import com.application.bibleapp.data.model.Note
 import com.application.bibleapp.data.remote.BackendHttpException
 import com.application.bibleapp.data.remote.HighlightListResponseDto
 import com.application.bibleapp.data.remote.HighlightResponseDto
+import com.application.bibleapp.data.remote.CreateMemoryVerseRequestDto
+import com.application.bibleapp.data.remote.MemoryProgressDto
+import com.application.bibleapp.data.remote.MemoryVerseListResponseDto
+import com.application.bibleapp.data.remote.MemoryVerseResponseDto
 import com.application.bibleapp.data.remote.NoteListResponseDto
 import com.application.bibleapp.data.remote.NoteResponseDto
 import com.application.bibleapp.data.remote.ReadingProgressResponseDto
@@ -30,6 +35,14 @@ interface NoteSyncApi {
     suspend fun createNote(versionId: String, verses: List<VerseLocationDto>, text: String): Result<NoteResponseDto>
     suspend fun updateNote(id: String, verses: List<VerseLocationDto>, text: String): Result<NoteResponseDto>
     suspend fun deleteNote(id: String): Result<Unit>
+}
+
+/** The backend calls a sync pass makes for the Memorize list (#362) — implemented by MemoryVerseRepository. */
+interface MemoryVerseSyncApi {
+    suspend fun listMemoryVersesChangedSince(updatedSince: String?): Result<MemoryVerseListResponseDto>
+    suspend fun createMemoryVerse(request: CreateMemoryVerseRequestDto): Result<MemoryVerseResponseDto>
+    suspend fun updateMemoryProgress(id: String, progress: MemoryProgressDto): Result<MemoryVerseResponseDto>
+    suspend fun deleteMemoryVerse(id: String): Result<Unit>
 }
 
 /** Implemented by ReadingProgressRepository. */
@@ -81,10 +94,24 @@ interface SyncLocalStore {
     suspend fun deleteNoteByRemoteId(remoteId: String): Boolean
     suspend fun upsertNoteFromServer(dto: NoteResponseDto): Boolean
 
+    suspend fun getPendingMemoryVerses(): List<MemoryVerse>
+    /** Stores the server's copy of [pushed] (its id, timestamps and progress, which may be newer
+     *  progress from another device, decision 21) and marks it SYNCED — unless it changed while it
+     *  was being sent: then it only stores the id and stays PENDING. If another row here already
+     *  has that id (the server matched the same passage added on two devices), [pushed] is
+     *  dropped as a duplicate. True if it was marked SYNCED. */
+    suspend fun markMemoryVersePushed(pushed: MemoryVerse, dto: MemoryVerseResponseDto): Boolean
+    suspend fun purgeMemoryVerse(pushed: MemoryVerse)
+    suspend fun detachMemoryVerse(pushed: MemoryVerse)
+    suspend fun deleteMemoryVerseByRemoteId(remoteId: String): Boolean
+    suspend fun upsertMemoryVerseFromServer(dto: MemoryVerseResponseDto): Boolean
+
     fun loadHighlightsSyncWatermark(): String?
     fun saveHighlightsSyncWatermark(iso: String)
     fun loadNotesSyncWatermark(): String?
     fun saveNotesSyncWatermark(iso: String)
+    fun loadMemoryVersesSyncWatermark(): String?
+    fun saveMemoryVersesSyncWatermark(iso: String)
 
     fun loadReadingProgress(): LocalReadingProgress
     /** Records that the server accepted the position changed at [readAt], if it's still current. */
@@ -125,7 +152,7 @@ internal fun serverPositionWins(serverUpdatedAt: String, localChangedAt: String?
  * the stored reading position with the backend. [SyncWorker] runs it; kept apart from the worker
  * so it can be tested without Android (see SyncEngineTest).
  *
- * Per resource (highlights, then notes):
+ * Per resource (highlights, then notes, then the Memorize list, #362):
  * 1. **Push** every PENDING row â€” a create, a recolor/edit, or a DELETE for a soft-deleted row
  *    (a row deleted before it was ever pushed is just purged). A row is only marked SYNCED if it
  *    didn't change while its request was out; otherwise it stays PENDING with its new remote id
@@ -150,6 +177,7 @@ class SyncEngine(
     private val highlights: HighlightSyncApi,
     private val notes: NoteSyncApi,
     private val readingProgress: ReadingProgressSyncApi,
+    private val memoryVerses: MemoryVerseSyncApi,
     private val clock: () -> Long = System::currentTimeMillis,
     private val log: (String) -> Unit = { Log.w(TAG, it) }
 ) {
@@ -163,7 +191,11 @@ class SyncEngine(
         pushNotes()
         val notesChanged = pullNotes()
         val restored = syncReadingProgress()
-        return Outcome(highlightsChanged || notesChanged, restored)
+        // Last, so highlights, notes and the reading position still sync with a server that
+        // doesn't have the Memorize list yet.
+        pushMemoryVerses()
+        val memoryChanged = pullMemoryVerses()
+        return Outcome(highlightsChanged || notesChanged || memoryChanged, restored)
     }
 
     /**
@@ -177,15 +209,18 @@ class SyncEngine(
     suspend fun hasWorkForBackgroundPass(): Boolean =
         local.loadHighlightsSyncWatermark() == null ||
             local.loadNotesSyncWatermark() == null ||
+            local.loadMemoryVersesSyncWatermark() == null ||
             local.loadReadingProgress().hasUnpushedMove ||
             local.getPendingHighlights().isNotEmpty() ||
-            local.getPendingNotes().isNotEmpty()
+            local.getPendingNotes().isNotEmpty() ||
+            local.getPendingMemoryVerses().isNotEmpty()
 
     /** Just the pushes â€” sign-out uses this to upload what it can before removing it (#81).
      *  Throws [SyncFailedException] if the server can't be reached. */
     suspend fun pushPending() {
         pushHighlights()
         pushNotes()
+        pushMemoryVerses()
     }
 
     private suspend fun pushHighlights() {
@@ -260,6 +295,46 @@ class SyncEngine(
             changed = changed || rowChanged
         }
         local.saveNotesSyncWatermark(nextSyncWatermark(page.serverTime, requestedAt))
+        return changed
+    }
+
+    private suspend fun pushMemoryVerses() {
+        local.getPendingMemoryVerses().forEach { pushMemoryVerse(it) }
+    }
+
+    private suspend fun pushMemoryVerse(verse: MemoryVerse) {
+        val remoteId = verse.remoteId
+        when {
+            verse.deletedAt != null && remoteId == null -> local.purgeMemoryVerse(verse)
+            verse.deletedAt != null -> memoryVerses.deleteMemoryVerse(remoteId!!).handleItem(
+                "memory verse delete", verse.localId,
+                onSuccess = { local.purgeMemoryVerse(verse) },
+                onNotFound = { local.purgeMemoryVerse(verse) }
+            )
+            remoteId == null -> memoryVerses.createMemoryVerse(
+                CreateMemoryVerseRequestDto(verse.versionId, verse.bookId, verse.chapter, verse.verseStart, verse.verseEnd, verse.progress)
+            ).handleItem(
+                "memory verse create", verse.localId,
+                onSuccess = { dto -> local.markMemoryVersePushed(verse, dto) }
+            )
+            // The server keeps whichever progress is newer and answers with it (decision 21).
+            else -> memoryVerses.updateMemoryProgress(remoteId, verse.progress).handleItem(
+                "memory verse update", verse.localId,
+                onSuccess = { dto -> local.markMemoryVersePushed(verse, dto) },
+                onNotFound = { local.detachMemoryVerse(verse) }
+            )
+        }
+    }
+
+    private suspend fun pullMemoryVerses(): Boolean {
+        val requestedAt = clock()
+        val page = memoryVerses.listMemoryVersesChangedSince(local.loadMemoryVersesSyncWatermark()).orFailPass("memory verse pull")
+        var changed = false
+        page.memoryVerses.forEach { dto ->
+            val rowChanged = if (dto.deletedAt != null) local.deleteMemoryVerseByRemoteId(dto.id) else local.upsertMemoryVerseFromServer(dto)
+            changed = changed || rowChanged
+        }
+        local.saveMemoryVersesSyncWatermark(nextSyncWatermark(page.serverTime, requestedAt))
         return changed
     }
 

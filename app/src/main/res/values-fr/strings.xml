@@ -498,4 +498,28 @@
     <!-- Accessibility action on the passage shown above a question asked about it (#281) -->
     <string name="ai_passage_show_whole">Afficher tout le passage</string>
     <string name="ai_passage_show_less">Afficher moins</string>
+
+    <!-- Memorize (#362) -->
+    <string name="label_memorize">Mémoriser</string>
+    <string name="action_memorize">Mémoriser</string>
+    <string name="action_view">Voir</string>
+    <string name="message_memorize_added">Ajouté à votre liste à mémoriser</string>
+    <string name="message_memorize_already_added">Déjà dans votre liste à mémoriser</string>
+    <string name="message_memorize_not_one_passage">Sélectionnez un verset, ou des versets qui se suivent, pour les mémoriser.</string>
+    <string name="message_memorize_removed">Retiré de votre liste à mémoriser</string>
+    <string name="library_search_memorize">Rechercher par livre ou par mots</string>
+    <string name="library_empty_memorize">Les versets que vous voulez apprendre par cœur apparaissent ici. Pendant la lecture, sélectionnez un verset ou un court passage, puis touchez Mémoriser.</string>
+    <string name="library_no_memorize_match">Aucun verset ne correspond à « %1$s ».</string>
+    <string name="library_sort_by">Trier</string>
+    <string name="library_sort_newest">Plus récents</string>
+    <string name="library_sort_due">À réviser</string>
+    <string name="memorize_status_new">Nouveau</string>
+    <string name="memorize_status_learning">En cours · %1$d sur %2$d</string>
+    <string name="memorize_status_memorized">Mémorisé</string>
+    <string name="memorize_status_memorized_on">Mémorisé · %1$s</string>
+    <plurals name="message_memorize_too_long">
+        <item quantity="one">Vous pouvez mémoriser jusqu\'à %1$d verset à la fois.</item>
+        <item quantity="many">Vous pouvez mémoriser jusqu\'à %1$d versets à la fois.</item>
+        <item quantity="other">Vous pouvez mémoriser jusqu\'à %1$d versets à la fois.</item>
+    </plurals>
 </resources>

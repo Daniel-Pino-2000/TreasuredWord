@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.QuestionAnswer
+import androidx.compose.material.icons.outlined.School
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -39,12 +40,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.pluralStringResource
 
 /** Keeps the card from stretching edge to edge in landscape. Wide enough that landscape's one row
- *  leaves the five color swatches their 48dp touch areas (#248): 480dp left them about 190dp. */
-private val MAX_TOOLBAR_WIDTH = 540.dp
+ *  leaves the five color swatches their 48dp touch areas (#248): 480dp left them about 190dp.
+ *  Memorize (#362) added a 64dp action, so it grew by as much. */
+private val MAX_TOOLBAR_WIDTH = 610.dp
 
 /** Landscape's one row with Ask too (#132): four actions at 480dp left the five 36dp color swatches
- *  about 140dp, and the last one was cut off; 620dp leaves them about 280dp (#248). */
-private val MAX_TOOLBAR_WIDTH_WITH_ASK = 620.dp
+ *  about 140dp, and the last one was cut off; 620dp left them about 280dp (#248), and Memorize
+ *  (#362) added 70dp more. */
+private val MAX_TOOLBAR_WIDTH_WITH_ASK = 690.dp
 
 /**
  * A genuinely floating card — margin on every side, all four corners rounded, a real cast
@@ -58,7 +61,8 @@ private val MAX_TOOLBAR_WIDTH_WITH_ASK = 620.dp
  * [MAX_TOOLBAR_WIDTH], so it no longer covers half the screen.
  *
  * Picking a color applies it and leaves the selection (and this toolbar) open, so a note can
- * still be added to the same verses; Copy, Share, Ask, Note and Cancel each end it. Share asks
+ * still be added to the same verses; Copy, Share, Ask, Memorize (#362), Note and Cancel each end
+ * it (Memorize keeps a selection it can't take, with a message saying why). Share asks
  * whether to send text or an image (#254), rather than adding a sixth button that landscape's
  * one row has no room for. [onAsk] null
  * hides Ask ("Ask about this verse", #132), as in release builds until the Bible Helper ships.
@@ -71,6 +75,7 @@ fun VerseSelectionToolbar(
     onShare: () -> Unit,
     onShareImage: () -> Unit,
     onAddNote: () -> Unit,
+    onMemorize: () -> Unit,
     onCancel: () -> Unit,
     modifier: Modifier = Modifier,
     onAsk: (() -> Unit)? = null
@@ -103,6 +108,7 @@ fun VerseSelectionToolbar(
                 SelectionAction(stringResource(R.string.action_copy), rememberVectorPainter(Icons.Outlined.ContentCopy), onCopy, actionModifier)
                 ShareSelectionAction(onShare, onShareImage, actionModifier)
                 onAsk?.let { SelectionAction(stringResource(R.string.title_ask), rememberVectorPainter(Icons.Outlined.QuestionAnswer), it, actionModifier) }
+                SelectionAction(stringResource(R.string.action_memorize), rememberVectorPainter(Icons.Outlined.School), onMemorize, actionModifier)
                 SelectionAction(stringResource(R.string.title_note), painterResource(R.drawable.ic_stylus_note), onAddNote, actionModifier, emphasized = true)
                 IconButton(onClick = onCancel) {
                     Icon(Icons.Default.Close, contentDescription = stringResource(R.string.selection_cancel))
@@ -143,6 +149,7 @@ fun VerseSelectionToolbar(
                     SelectionAction(stringResource(R.string.action_copy), rememberVectorPainter(Icons.Outlined.ContentCopy), onCopy, actionModifier)
                     ShareSelectionAction(onShare, onShareImage, actionModifier)
                     onAsk?.let { SelectionAction(stringResource(R.string.title_ask), rememberVectorPainter(Icons.Outlined.QuestionAnswer), it, actionModifier) }
+                    SelectionAction(stringResource(R.string.action_memorize), rememberVectorPainter(Icons.Outlined.School), onMemorize, actionModifier)
                     SelectionAction(stringResource(R.string.title_note), painterResource(R.drawable.ic_stylus_note), onAddNote, actionModifier, emphasized = true)
                 }
             }
@@ -203,7 +210,8 @@ private fun SelectionAction(
                 verticalArrangement = Arrangement.spacedBy(Spacing.xs)
             ) {
                 Icon(painter = icon, contentDescription = null, modifier = Modifier.size(22.dp))
-                Text(text = label, style = MaterialTheme.typography.labelMedium, textAlign = TextAlign.Center)
+                // One line, shrunk to fit: five actions share portrait's row (#362).
+                FitOnOneLineText(label, MaterialTheme.typography.labelMedium)
             }
             menu?.invoke()
         }

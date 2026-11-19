@@ -24,8 +24,12 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.AutoStories
+import androidx.compose.material.icons.outlined.School
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SegmentedButton
@@ -64,6 +68,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import com.application.bibleapp.components.FitOnOneLineText
 import com.application.bibleapp.components.MissingVersionBanners
 import com.application.bibleapp.components.SWATCH_NAMES
 import com.application.bibleapp.components.SWATCH_TOUCH_SIZE
@@ -85,6 +90,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.application.bibleapp.data.model.Highlight
 import com.application.bibleapp.data.model.Note
+import com.application.bibleapp.data.model.MAX_MEMORY_LEVEL
+import com.application.bibleapp.data.model.MemorySort
+import com.application.bibleapp.data.model.MemoryStatus
+import com.application.bibleapp.data.model.MemoryVerse
+import com.application.bibleapp.data.model.sortedFor
 import com.application.bibleapp.data.remote.VerseLocationDto
 import com.application.bibleapp.navigation.Screen
 import com.application.bibleapp.ui.theme.Spacing
@@ -101,7 +111,8 @@ import androidx.compose.ui.res.stringResource
 
 private enum class LibraryTab(@StringRes val labelRes: Int, val routeArg: String) {
     HIGHLIGHTS(R.string.label_highlights, Screen.Library.TAB_HIGHLIGHTS),
-    NOTES(R.string.label_notes, Screen.Library.TAB_NOTES);
+    NOTES(R.string.label_notes, Screen.Library.TAB_NOTES),
+    MEMORIZE(R.string.label_memorize, Screen.Library.TAB_MEMORIZE);
 
     companion object {
         fun fromRouteArg(arg: String?): LibraryTab = entries.firstOrNull { it.routeArg == arg } ?: HIGHLIGHTS
@@ -109,7 +120,7 @@ private enum class LibraryTab(@StringRes val labelRes: Int, val routeArg: String
 }
 
 /**
- * A single screen with a segmented Highlights/Notes control, rather than two routes — see
+ * A single screen with a segmented Highlights/Notes/Memorize control (#362), rather than separate routes — see
  * docs/UI_Integration_Roadmap.md Phase D. Reads straight from [BibleViewModel.libraryHighlights]/
  * [BibleViewModel.libraryNotes] (loaded once via [BibleViewModel.loadLibrary] when this screen
  * opens); nothing here needs the backend, so it's fully usable offline and signed out, same as
@@ -122,12 +133,14 @@ fun LibraryView(
     bibleViewModel: BibleViewModel,
     modifier: Modifier = Modifier,
     initialTab: String? = null,
+    onOpenMemoryVerse: (MemoryVerse) -> Unit = {},
     onOpenDetail: (type: String, localId: Long) -> Unit
 ) {
     LaunchedEffect(Unit) { bibleViewModel.loadLibrary() }
 
     val highlights by bibleViewModel.libraryHighlights.collectAsState()
     val notes by bibleViewModel.libraryNotes.collectAsState()
+    val memoryVerses by bibleViewModel.libraryMemoryVerses.collectAsState()
     val verseTextByKey by bibleViewModel.libraryVerseText.collectAsState()
     val bookNamesByVersion by bibleViewModel.libraryBookNames.collectAsState()
     val missingVersions by bibleViewModel.libraryMissingVersionLabels.collectAsState()
@@ -140,6 +153,7 @@ fun LibraryView(
     var query by rememberSaveable { mutableStateOf("") }
     // Stored highlight ARGBs to show; empty = every color. A List (not Set) so it's saveable.
     var colorFilter by rememberSaveable { mutableStateOf(emptyList<Int>()) }
+    var memorySort by rememberSaveable { mutableStateOf(MemorySort.NEWEST) }
 
     // A landscape phone with the keyboard up leaves ~110 dp: the tab row stacked on the search
     // field doesn't fit, so the tabs step aside while typing, like the top bar (#215, #228).
@@ -161,7 +175,9 @@ fun LibraryView(
                     onClick = { selectedTab = tab },
                     shape = SegmentedButtonDefaults.itemShape(index = index, count = LibraryTab.entries.size)
                 ) {
-                    Text(stringResource(tab.labelRes))
+                    // Three tabs since Memorize (#362): a long translation shrinks rather than
+                    // breaking mid-word ("Markierunge/n").
+                    FitOnOneLineText(stringResource(tab.labelRes), LocalTextStyle.current)
                 }
             }
         }
@@ -172,7 +188,11 @@ fun LibraryView(
             placeholder = {
                 Text(
                     stringResource(
-                        if (selectedTab == LibraryTab.HIGHLIGHTS) R.string.library_search_by_book else R.string.library_search_notes
+                        when (selectedTab) {
+                            LibraryTab.HIGHLIGHTS -> R.string.library_search_by_book
+                            LibraryTab.NOTES -> R.string.library_search_notes
+                            LibraryTab.MEMORIZE -> R.string.library_search_memorize
+                        }
                     )
                 )
             },
@@ -285,6 +305,57 @@ fun LibraryView(
                     }
                 }
             }
+
+            // The Memorize list (#362): passages to learn by heart, with their practice progress.
+            LibraryTab.MEMORIZE -> {
+                val filtered = remember(memoryVerses, query, bookNamesByVersion, verseTextByKey, memorySort) {
+                    memoryVerses
+                        .filter { v ->
+                            query.isBlank() ||
+                                bookName(v.versionId, v.bookId).contains(query, ignoreCase = true) ||
+                                resolveVerseText(v.versionId, v.verses, verseTextByKey).contains(query, ignoreCase = true)
+                        }
+                        .sortedFor(memorySort)
+                }
+                if (filtered.isEmpty()) {
+                    EmptyLibraryState(
+                        message = when {
+                            memoryVerses.isEmpty() && isRestoring -> stringResource(R.string.sync_restoring_content)
+                            memoryVerses.isEmpty() -> stringResource(R.string.library_empty_memorize)
+                            else -> stringResource(R.string.library_no_memorize_match, query)
+                        },
+                        icon = rememberVectorPainter(Icons.Outlined.School)
+                    )
+                } else {
+                    LazyColumn(
+                        contentPadding = PaddingValues(Spacing.lg),
+                        verticalArrangement = Arrangement.spacedBy(Spacing.md)
+                    ) {
+                        // In the list rather than above it, so it scrolls away: a landscape phone
+                        // had room for barely one card under the tabs, search and sort.
+                        item(key = MEMORY_SORT_KEY) {
+                            MemorySortRow(selected = memorySort, onSelect = { memorySort = it })
+                        }
+                        item(key = MISSING_VERSIONS_KEY) {
+                            MissingVersionBanners(bibleViewModel, versionIds = filtered.mapTo(mutableSetOf()) { it.versionId })
+                        }
+                        items(filtered, key = { it.localId }) { verse ->
+                            SwipeToDeleteRow(
+                                onDelete = { bibleViewModel.deleteLibraryMemoryVerse(verse) },
+                                modifier = Modifier.animateItem()
+                            ) {
+                                MemoryVerseCard(
+                                    verse = verse,
+                                    verseText = resolveVerseText(verse.versionId, verse.verses, verseTextByKey),
+                                    shownInKjv = verse.versionId in missingVersions,
+                                    bookName = { bookId -> bookName(verse.versionId, bookId) },
+                                    onClick = { onOpenMemoryVerse(verse) }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -292,6 +363,9 @@ fun LibraryView(
 /** LazyColumn key of the missing-translation banners above the cards — a String, so it can't
  *  collide with a card's Long local id. */
 private const val MISSING_VERSIONS_KEY = "missing_versions"
+
+/** LazyColumn key of the Memorize tab's sort row (#362). */
+private const val MEMORY_SORT_KEY = "memory_sort"
 
 /** Under a card's verse text while it's KJV's, standing in for a translation that isn't
  *  downloaded (#78). */
@@ -588,6 +662,110 @@ private fun NoteCard(
                 )
             }
         }
+    }
+}
+
+/** Newest first, or the passages that most need practice first (#362). */
+@Composable
+private fun MemorySortRow(selected: MemorySort, onSelect: (MemorySort) -> Unit, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
+    ) {
+        Text(
+            text = stringResource(R.string.library_sort_by),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        listOf(MemorySort.NEWEST to R.string.library_sort_newest, MemorySort.DUE to R.string.library_sort_due).forEach { (sort, label) ->
+            FilterChip(
+                selected = selected == sort,
+                onClick = { onSelect(sort) },
+                label = { Text(stringResource(label)) },
+                leadingIcon = if (selected == sort) {
+                    { Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.size(FilterChipDefaults.IconSize)) }
+                } else {
+                    null
+                }
+            )
+        }
+    }
+}
+
+@Composable
+private fun MemoryVerseCard(
+    verse: MemoryVerse,
+    verseText: String,
+    shownInKjv: Boolean,
+    bookName: (Int) -> String,
+    onClick: () -> Unit
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.medium),
+        onClick = onClick,
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 1.dp,
+        shape = MaterialTheme.shapes.medium
+    ) {
+        Column(modifier = Modifier.fillMaxWidth().padding(Spacing.md)) {
+            Text(
+                text = verseRefsText(verse.verses, bookName),
+                style = MaterialTheme.typography.bodyLarge
+            )
+            if (verseText.isNotBlank()) {
+                Text(
+                    text = verseText,
+                    style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Serif),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = Spacing.xs)
+                )
+                if (shownInKjv) ShownInKjvLabel(modifier = Modifier.padding(top = Spacing.xs))
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = Spacing.sm),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
+            ) {
+                MemoryProgressChip(verse)
+                Text(
+                    text = displayDate(verse.createdAt),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f),
+                    textAlign = TextAlign.End
+                )
+            }
+        }
+    }
+}
+
+/** New, Learning (with its level) or Memorized (with the date). The pairs are in
+ *  ThemePaletteContrastTest ("Memorize chip"). */
+@Composable
+private fun MemoryProgressChip(verse: MemoryVerse) {
+    val colors = MaterialTheme.colorScheme
+    val (container, content) = when (verse.status) {
+        MemoryStatus.NEW -> colors.surfaceVariant to colors.onSurfaceVariant
+        MemoryStatus.LEARNING -> colors.tertiaryContainer to colors.onTertiaryContainer
+        MemoryStatus.MEMORIZED -> colors.primaryContainer to colors.onPrimaryContainer
+    }
+    val label = when (verse.status) {
+        MemoryStatus.NEW -> stringResource(R.string.memorize_status_new)
+        MemoryStatus.LEARNING -> stringResource(R.string.memorize_status_learning, verse.level, MAX_MEMORY_LEVEL)
+        MemoryStatus.MEMORIZED -> verse.memorizedAt?.let { stringResource(R.string.memorize_status_memorized_on, displayDate(it)) }
+            ?: stringResource(R.string.memorize_status_memorized)
+    }
+    Surface(color = container, contentColor = content, shape = MaterialTheme.shapes.small) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            modifier = Modifier.padding(horizontal = Spacing.sm, vertical = Spacing.xs)
+        )
     }
 }
 

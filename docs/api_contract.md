@@ -147,6 +147,11 @@ before code.
     the server's would otherwise skip every change made in that gap, deletes included. It's read
     before the query runs, so anything saved while the query runs is at or after it; the Android
     client still starts its next pull a minute earlier, since re-pulling a few rows is harmless.
+21. **Memorize progress never goes backwards because of an older device** (#362). Each passage's
+    progress carries `progressAt`, when it was reached on the device. The server replaces stored
+    progress only with strictly newer progress, and answers every create or update with what it
+    kept, so a phone that was offline adopts the newer progress instead of overwriting it. A
+    stale write isn't an error. Deleting a passage is still last-write-wins, like a highlight.
 
 ---
 
@@ -342,7 +347,7 @@ Errors: `401 UNAUTHORIZED`
 Auth: required
 Request: `DeleteAccountRequest` with exactly one of `password` or `googleIdToken`, a fresh Google
 ID token for the Google account linked to this account (decision 5)
-Success: `204 No Content` — deletes the account and cascades to all owned highlights, notes, reading progress, and refresh tokens (decision 6)
+Success: `204 No Content` — deletes the account and cascades to all owned highlights, notes, Memorize passages, reading progress, and refresh tokens (decision 6)
 Errors: `400 VALIDATION_ERROR` (neither given), `401 UNAUTHORIZED` (bad/missing token),
 `401 INVALID_CREDENTIALS` (wrong password, or a Google account that isn't this account's),
 `401 INVALID_GOOGLE_TOKEN`, `503 GOOGLE_SIGN_IN_UNAVAILABLE`
@@ -513,6 +518,86 @@ Success: `200 OK` → `NoteResponse`
 Errors: `400 VALIDATION_ERROR`, `401 UNAUTHORIZED`, `404 NOT_FOUND`
 
 ### `DELETE /api/v1/notes/{id}`
+Auth: required
+Success: `204 No Content` (soft delete)
+Errors: `401 UNAUTHORIZED`, `404 NOT_FOUND`
+
+---
+
+## Memorize
+
+A passage someone wants to learn by heart (#362), kept apart from highlights: one verse or up to
+6 consecutive verses in one chapter, in the version it was read in, plus its practice progress.
+The passage is fixed once added; only the progress changes, and only to newer progress
+(decision 21). The practice games (#363) move it along.
+
+```kotlin
+@Serializable
+data class MemoryProgress(
+    val status: String = "NEW",        // "NEW", "LEARNING" or "MEMORIZED"
+    val level: Int = 0,                // 0..5
+    val nextReviewAt: String? = null,  // ISO-8601
+    val lastPracticedAt: String? = null,
+    val correctStreak: Int = 0,        // 0 or more
+    val memorizedAt: String? = null,
+    val progressAt: String? = null     // when this progress was reached on the device (decision 21)
+)
+
+@Serializable
+data class CreateMemoryVerseRequest(
+    val versionId: String,
+    val bookId: Int,                   // 1..66
+    val chapter: Int,
+    val verseStart: Int,
+    val verseEnd: Int,                 // verseStart..verseStart + 5
+    val progress: MemoryProgress = MemoryProgress()   // a passage practiced before its first sync keeps it
+)
+
+@Serializable
+data class UpdateMemoryVerseRequest(val progress: MemoryProgress)
+
+@Serializable
+data class MemoryVerseResponse(
+    val id: String,
+    val versionId: String,
+    val bookId: Int,
+    val chapter: Int,
+    val verseStart: Int,
+    val verseEnd: Int,
+    val progress: MemoryProgress,
+    val createdAt: String,
+    val updatedAt: String,
+    val deletedAt: String? = null
+)
+
+@Serializable
+data class MemoryVerseListResponse(
+    val memoryVerses: List<MemoryVerseResponse>,
+    val serverTime: String             // ISO-8601, as for highlights (decision 20)
+)
+```
+
+### `GET /api/v1/memory-verses`
+Auth: required
+Query params: `updatedSince` (optional ISO-8601 — includes soft-deleted tombstones when present)
+Success: `200 OK` → `MemoryVerseListResponse` (active passages only, unless `updatedSince` is set). Pass its `serverTime` as the next `updatedSince` (decision 20)
+Errors: `401 UNAUTHORIZED`
+
+### `POST /api/v1/memory-verses`
+Auth: required
+Request: `CreateMemoryVerseRequest`
+Success: `201 Created` → `MemoryVerseResponse`. If the account already has the same passage (same
+book, chapter and verses, in any version), `200 OK` with that one instead, its progress replaced
+only if the request's is newer: two phones that added it offline end up with one entry.
+Errors: `400 VALIDATION_ERROR` (more than 6 verses, a bad book, status, level or timestamp), `401 UNAUTHORIZED`
+
+### `PATCH /api/v1/memory-verses/{id}`
+Auth: required
+Request: `UpdateMemoryVerseRequest`
+Success: `200 OK` → `MemoryVerseResponse`, with the progress the server kept (decision 21)
+Errors: `400 VALIDATION_ERROR`, `401 UNAUTHORIZED`, `404 NOT_FOUND`
+
+### `DELETE /api/v1/memory-verses/{id}`
 Auth: required
 Success: `204 No Content` (soft delete)
 Errors: `401 UNAUTHORIZED`, `404 NOT_FOUND`

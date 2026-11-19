@@ -31,11 +31,12 @@ sealed class Screen(val route: String, @StringRes val titleRes: Int) {
     object Login: Screen("login", R.string.title_sign_in)
     object Register: Screen("register", R.string.title_create_account)
 
-    /** [tab] is "highlights" or "notes" — which of Library's segmented tabs opens pre-selected,
-     *  so the You tab's library rows can deep-link straight to either one. */
+    /** [tab] is "highlights", "notes" or "memorize" (#362) — which of Library's segmented tabs
+     *  opens pre-selected, so the You tab's library rows can deep-link straight to each one. */
     object Library: Screen("library/{tab}", R.string.title_library) {
         const val TAB_HIGHLIGHTS = "highlights"
         const val TAB_NOTES = "notes"
+        const val TAB_MEMORIZE = "memorize"
         fun createRoute(tab: String) = "library/$tab"
     }
 

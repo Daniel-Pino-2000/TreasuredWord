@@ -476,4 +476,26 @@
     <!-- Accessibility action on the passage shown above a question asked about it (#281) -->
     <string name="ai_passage_show_whole">Tampilkan seluruh perikop</string>
     <string name="ai_passage_show_less">Tampilkan lebih sedikit</string>
+
+    <!-- Memorize (#362) -->
+    <string name="label_memorize">Hafalan</string>
+    <string name="action_memorize">Hafalkan</string>
+    <string name="action_view">Lihat</string>
+    <string name="message_memorize_added">Ditambahkan ke daftar hafalan Anda</string>
+    <string name="message_memorize_already_added">Sudah ada di daftar hafalan Anda</string>
+    <string name="message_memorize_not_one_passage">Pilih satu ayat, atau ayat-ayat yang berurutan, untuk menghafalnya.</string>
+    <string name="message_memorize_removed">Dihapus dari daftar hafalan Anda</string>
+    <string name="library_search_memorize">Cari menurut kitab atau kata</string>
+    <string name="library_empty_memorize">Ayat yang ingin Anda hafalkan ada di sini. Saat membaca, pilih satu ayat atau perikop pendek, lalu ketuk Hafalkan.</string>
+    <string name="library_no_memorize_match">Tidak ada ayat yang cocok dengan \"%1$s\".</string>
+    <string name="library_sort_by">Urutkan</string>
+    <string name="library_sort_newest">Terbaru</string>
+    <string name="library_sort_due">Perlu dilatih</string>
+    <string name="memorize_status_new">Baru</string>
+    <string name="memorize_status_learning">Belajar · %1$d dari %2$d</string>
+    <string name="memorize_status_memorized">Hafal</string>
+    <string name="memorize_status_memorized_on">Hafal · %1$s</string>
+    <plurals name="message_memorize_too_long">
+        <item quantity="other">Anda bisa menghafal hingga %1$d ayat sekaligus.</item>
+    </plurals>
 </resources>

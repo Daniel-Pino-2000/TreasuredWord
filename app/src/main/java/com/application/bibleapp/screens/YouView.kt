@@ -25,6 +25,7 @@ import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.BorderColor
 import androidx.compose.material.icons.outlined.EditNote
 import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.School
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -85,6 +86,7 @@ fun YouView(
     val currentChapter by bibleViewModel.currentChapter.collectAsState()
     val highlights by bibleViewModel.libraryHighlights.collectAsState()
     val notes by bibleViewModel.libraryNotes.collectAsState()
+    val memoryVerses by bibleViewModel.libraryMemoryVerses.collectAsState()
     val bookmarkLabel by bibleViewModel.bookmarkLabel.collectAsState()
 
     // For the library counts — and refreshes the sync line if a background sync finished while
@@ -145,6 +147,13 @@ fun YouView(
                 icon = Icons.Outlined.EditNote,
                 value = notes.size.toString(),
                 onClick = { onLibraryClick(Screen.Library.TAB_NOTES) }
+            )
+            GroupedDivider()
+            GroupedRow(
+                title = stringResource(R.string.label_memorize),
+                icon = Icons.Outlined.School,
+                value = memoryVerses.size.toString(),
+                onClick = { onLibraryClick(Screen.Library.TAB_MEMORIZE) }
             )
         }
     }

@@ -103,3 +103,48 @@ data class UpdateReadingProgressRequestDto(
      *  that was offline for a while can't clobber a newer position from another device. */
     val readAt: String
 )
+
+/** A Memorize passage's practice progress (#362) — see server/docs/api_contract.md, "Memorize".
+ *  [status] is a [com.application.bibleapp.data.model.MemoryStatus] name. */
+@Serializable
+data class MemoryProgressDto(
+    val status: String = "NEW",
+    val level: Int = 0,
+    val nextReviewAt: String? = null,
+    val lastPracticedAt: String? = null,
+    val correctStreak: Int = 0,
+    val memorizedAt: String? = null,
+    val progressAt: String? = null
+)
+
+@Serializable
+data class CreateMemoryVerseRequestDto(
+    val versionId: String,
+    val bookId: Int,
+    val chapter: Int,
+    val verseStart: Int,
+    val verseEnd: Int,
+    val progress: MemoryProgressDto
+)
+
+/** Only the progress changes after a passage is added. */
+@Serializable
+data class UpdateMemoryVerseRequestDto(val progress: MemoryProgressDto)
+
+@Serializable
+data class MemoryVerseResponseDto(
+    val id: String,
+    val versionId: String,
+    val bookId: Int,
+    val chapter: Int,
+    val verseStart: Int,
+    val verseEnd: Int,
+    val progress: MemoryProgressDto,
+    val createdAt: String,
+    val updatedAt: String,
+    val deletedAt: String? = null
+)
+
+/** See [HighlightListResponseDto.serverTime] (#84). */
+@Serializable
+data class MemoryVerseListResponseDto(val memoryVerses: List<MemoryVerseResponseDto>, val serverTime: String? = null)

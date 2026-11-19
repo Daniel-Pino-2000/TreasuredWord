@@ -16,6 +16,10 @@ import com.application.bibleapp.data.model.DailyVerseUI
 import com.application.bibleapp.data.model.DownloadedVersionInfo
 import com.application.bibleapp.data.model.Footnote
 import com.application.bibleapp.data.model.Highlight
+import com.application.bibleapp.data.model.MAX_MEMORY_PASSAGE_VERSES
+import com.application.bibleapp.data.model.MemorySelection
+import com.application.bibleapp.data.model.MemoryVerse
+import com.application.bibleapp.data.model.memorySelectionOf
 import com.application.bibleapp.data.model.Note
 import com.application.bibleapp.data.model.SelectedBibleVersion
 import com.application.bibleapp.data.model.TranslationLicense
@@ -99,11 +103,19 @@ data class NoteEditorState(
 sealed interface UndoableDeletion {
     data class OfHighlight(val highlight: Highlight) : UndoableDeletion
     data class OfNote(val note: Note) : UndoableDeletion
+    data class OfMemoryVerse(val verse: MemoryVerse) : UndoableDeletion
     data class OfBookmark(val bookmark: ReadingPosition) : UndoableDeletion
 }
 
-/** A one-shot message for MainActivity's Snackbar — with [undo], it gets an "Undo" action. */
-data class UserMessage(val text: UiText, val undo: UndoableDeletion? = null)
+/** A Snackbar action that goes somewhere, rather than undoing something. */
+enum class MessageAction {
+    /** Opens Library's Memorize tab (#362). */
+    OPEN_MEMORIZE
+}
+
+/** A one-shot message for MainActivity's Snackbar — with [undo], it gets an "Undo" action; with
+ *  [action], a "View" action that goes there. */
+data class UserMessage(val text: UiText, val undo: UndoableDeletion? = null, val action: MessageAction? = null)
 
 /** Looks up one verse's cached scripture text (see [BibleViewModel.libraryVerseText]) — a location
  *  alone isn't a safe key since the same verse's text can differ across versions. */
@@ -267,6 +279,10 @@ class BibleViewModel(
 
     private val _libraryNotes = MutableStateFlow<List<Note>>(emptyList())
     val libraryNotes: StateFlow<List<Note>> = _libraryNotes.asStateFlow()
+
+    // The Memorize list (#362), newest first; Library's tab sorts it as the person picks.
+    private val _libraryMemoryVerses = MutableStateFlow<List<MemoryVerse>>(emptyList())
+    val libraryMemoryVerses: StateFlow<List<MemoryVerse>> = _libraryMemoryVerses.asStateFlow()
 
     // Scripture text for every verse a library highlight/note covers, keyed by the version it was
     // made in (a highlight/note is immutable to its own version, and the same verse's text can
@@ -986,6 +1002,7 @@ class BibleViewModel(
             when (deletion) {
                 is UndoableDeletion.OfHighlight -> repository.restoreHighlight(deletion.highlight)
                 is UndoableDeletion.OfNote -> repository.restoreNote(deletion.note)
+                is UndoableDeletion.OfMemoryVerse -> repository.restoreMemoryVerse(deletion.verse)
                 is UndoableDeletion.OfBookmark -> {
                     setBookmark(deletion.bookmark)
                     return@launch
@@ -999,6 +1016,43 @@ class BibleViewModel(
 
     fun dismissHighlightPopup() {
         _highlightPopup.value = null
+    }
+
+    /**
+     * The selection toolbar's Memorize (#362): adds one verse, or a run of consecutive verses up to
+     * [MAX_MEMORY_PASSAGE_VERSES], to the Memorize list in the version being read. A longer or
+     * broken-up selection stays selected, with a message saying why. A passage already on the
+     * list isn't added twice; its message opens the list either way.
+     */
+    fun memorizeSelection() {
+        val passage = when (val result = memorySelectionOf(_selectedVerses.value)) {
+            is MemorySelection.Passage -> result.passage
+            MemorySelection.TooLong -> {
+                showMessage(UiText.Plural(R.plurals.message_memorize_too_long, MAX_MEMORY_PASSAGE_VERSES, MAX_MEMORY_PASSAGE_VERSES))
+                return
+            }
+            MemorySelection.NotOnePassage -> {
+                showMessage(UiText.Res(R.string.message_memorize_not_one_passage))
+                return
+            }
+            MemorySelection.Empty -> return
+        }
+        val versionId = _selectedVersion.value.id
+        clearSelection()
+        viewModelScope.launch {
+            val added = repository.findActiveMemoryVerse(passage) == null
+            if (added) repository.addMemoryVerse(versionId, passage)
+            _userMessages.tryEmit(
+                UserMessage(
+                    UiText.Res(if (added) R.string.message_memorize_added else R.string.message_memorize_already_added),
+                    action = MessageAction.OPEN_MEMORIZE
+                )
+            )
+            if (added) {
+                maybeOfferSignIn()
+                loadLibrary()
+            }
+        }
     }
 
     /** Opens the editor to attach a new note to the current selection — sorted into Bible order
@@ -1136,7 +1190,8 @@ class BibleViewModel(
         libraryJob = viewModelScope.launch {
             val highlights = repository.getAllActiveHighlights()
             val notes = repository.getAllActiveNotes()
-            val versionIds = (highlights.map { it.versionId } + notes.map { it.versionId }).toSet()
+            val memoryVerses = repository.getAllActiveMemoryVerses()
+            val versionIds = (highlights.map { it.versionId } + notes.map { it.versionId } + memoryVerses.map { it.versionId }).toSet()
             // A translation that isn't on this device, e.g. after a reinstall restored highlights
             // made in it (#78): show KJV's text for those verses instead of a blank, and offer
             // the download.
@@ -1149,7 +1204,8 @@ class BibleViewModel(
             // highlight/note, however many individual verses in it are actually referenced —
             // cheap local-SQLite reads, and far fewer round trips than one per verse.
             val neededChapters = (highlights.asSequence().flatMap { h -> h.verses.asSequence().map { Triple(h.versionId, it.bookId, it.chapter) } } +
-                notes.asSequence().flatMap { n -> n.verses.asSequence().map { Triple(n.versionId, it.bookId, it.chapter) } })
+                notes.asSequence().flatMap { n -> n.verses.asSequence().map { Triple(n.versionId, it.bookId, it.chapter) } } +
+                memoryVerses.asSequence().map { Triple(it.versionId, it.bookId, it.chapter) })
                 .toSet()
 
             val textByKey = mutableMapOf<VerseTextKey, String>()
@@ -1167,6 +1223,7 @@ class BibleViewModel(
             _libraryMissingVersions.value = missingVersions
             _libraryHighlights.value = highlights
             _libraryNotes.value = notes
+            _libraryMemoryVerses.value = memoryVerses
             _startupLibraryLoaded.value = true
         }
     }
@@ -1194,6 +1251,22 @@ class BibleViewModel(
             repository.deleteHighlight(highlight.localId)
             reloadHighlightsInChapter()
         }
+    }
+
+    /** Swipe-to-remove on Library's Memorize tab (#362), with Undo. */
+    fun deleteLibraryMemoryVerse(verse: MemoryVerse) {
+        _libraryMemoryVerses.update { it.filterNot { v -> v.localId == verse.localId } }
+        _userMessages.tryEmit(UserMessage(UiText.Res(R.string.message_memorize_removed), UndoableDeletion.OfMemoryVerse(verse)))
+        viewModelScope.launch { repository.deleteMemoryVerse(verse.localId) }
+    }
+
+    /** A Memorize card was tapped (#362): opens the reader at the passage with it selected, as
+     *  Home's verse card does. The practice games (#363) will open from here instead. */
+    fun openMemoryVerseFromLibrary(verse: MemoryVerse) {
+        setBook(verse.bookId, verse.chapter, verse.verseStart)
+        _selectedVerses.value = verse.verses.toSet()
+        activeSelectionHighlightId = null
+        _scrollRequest.update { it + 1 }
     }
 
     fun deleteLibraryNote(note: Note) {

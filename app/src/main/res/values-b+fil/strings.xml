@@ -488,4 +488,27 @@
     <!-- Accessibility action on the passage shown above a question asked about it (#281) -->
     <string name="ai_passage_show_whole">Ipakita ang buong talata</string>
     <string name="ai_passage_show_less">Ipakita nang mas kaunti</string>
+
+    <!-- Memorize (#362) -->
+    <string name="label_memorize">Isaulo</string>
+    <string name="action_memorize">Isaulo</string>
+    <string name="action_view">Tingnan</string>
+    <string name="message_memorize_added">Naidagdag sa listahan mong isasaulo</string>
+    <string name="message_memorize_already_added">Nasa listahan mo nang isasaulo</string>
+    <string name="message_memorize_not_one_passage">Pumili ng isang talata, o mga talatang magkakasunod, para isaulo ang mga ito.</string>
+    <string name="message_memorize_removed">Inalis sa listahan mong isasaulo</string>
+    <string name="library_search_memorize">Maghanap ayon sa aklat o salita</string>
+    <string name="library_empty_memorize">Narito ang mga talatang gusto mong isaulo. Habang nagbabasa, pumili ng isang talata o maikling sipi at i-tap ang Isaulo.</string>
+    <string name="library_no_memorize_match">Walang talatang tugma sa \"%1$s\".</string>
+    <string name="library_sort_by">Ayusin</string>
+    <string name="library_sort_newest">Pinakabago</string>
+    <string name="library_sort_due">Dapat sanayin</string>
+    <string name="memorize_status_new">Bago</string>
+    <string name="memorize_status_learning">Inaaral · %1$d sa %2$d</string>
+    <string name="memorize_status_memorized">Nasaulo na</string>
+    <string name="memorize_status_memorized_on">Nasaulo · %1$s</string>
+    <plurals name="message_memorize_too_long">
+        <item quantity="one">Hanggang %1$d talata lang ang maisasaulo mo nang sabay.</item>
+        <item quantity="other">Hanggang %1$d talata lang ang maisasaulo mo nang sabay.</item>
+    </plurals>
 </resources>

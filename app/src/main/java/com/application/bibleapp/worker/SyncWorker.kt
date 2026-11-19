@@ -9,6 +9,7 @@ import com.application.bibleapp.data.remote.OurMannaBibleDataSource
 import com.application.bibleapp.data.repository.AuthRepository
 import com.application.bibleapp.data.repository.BibleRepository
 import com.application.bibleapp.data.repository.HighlightRepository
+import com.application.bibleapp.data.repository.MemoryVerseRepository
 import com.application.bibleapp.data.repository.NoteRepository
 import com.application.bibleapp.data.repository.ReadingProgressRepository
 import com.application.bibleapp.utils.isoTimestampNow
@@ -55,7 +56,7 @@ class SyncWorker(
             )
             // Installs from before the content owner was recorded (#81) adopt the signed-in account.
             bibleRepository.adoptContentOwnerIfUnknown(authRepository.currentUserId)
-            val engine = SyncEngine(bibleRepository, HighlightRepository(), NoteRepository(), ReadingProgressRepository())
+            val engine = SyncEngine(bibleRepository, HighlightRepository(), NoteRepository(), ReadingProgressRepository(), MemoryVerseRepository())
             // The 12-hour job only sends what this device hasn't (#308). Not a "Synced" pass:
             // nothing reached the server, so Settings' status line and open screens stay as they are.
             if (inputData.getBoolean(KEY_ONLY_WITH_LOCAL_CHANGES, false) && !engine.hasWorkForBackgroundPass()) {

@@ -1,11 +1,17 @@
 package com.application.bibleapp.worker
 
 import com.application.bibleapp.data.model.Highlight
+import com.application.bibleapp.data.model.MemoryStatus
+import com.application.bibleapp.data.model.MemoryVerse
 import com.application.bibleapp.data.model.Note
 import com.application.bibleapp.data.model.SyncStatus
 import com.application.bibleapp.data.remote.BackendHttpException
 import com.application.bibleapp.data.remote.HighlightListResponseDto
 import com.application.bibleapp.data.remote.HighlightResponseDto
+import com.application.bibleapp.data.remote.CreateMemoryVerseRequestDto
+import com.application.bibleapp.data.remote.MemoryProgressDto
+import com.application.bibleapp.data.remote.MemoryVerseListResponseDto
+import com.application.bibleapp.data.remote.MemoryVerseResponseDto
 import com.application.bibleapp.data.remote.NoteListResponseDto
 import com.application.bibleapp.data.remote.NoteResponseDto
 import com.application.bibleapp.data.remote.ReadingProgressResponseDto
@@ -349,7 +355,108 @@ class SyncEngineTest {
     private fun idleLocal() = FakeLocalStore().apply {
         highlightsWatermark = "2026-10-23T08:59:00.000Z"
         notesWatermark = "2026-10-23T08:59:00.000Z"
+        memoryWatermark = "2026-10-23T08:59:00.000Z"
         reading = reading.copy(changedAt = "2026-10-20T08:00:00.000Z", pushedAt = "2026-10-20T08:00:00.000Z", hasLocalPosition = true)
+    }
+
+    // ---- #362: the Memorize list ----
+
+    @Test
+    fun `a new memorize passage is created with its progress and marked synced`() = runTest {
+        val local = FakeLocalStore().apply { addMemoryVerse(level = 2, progressAt = "2026-10-23T08:00:00.000Z") }
+        val memory = FakeMemoryVerseApi()
+
+        engine(local, memory = memory).runPass()
+
+        assertEquals(2, memory.creates.single().progress.level)
+        val row = local.memoryVerses.single()
+        assertEquals(SyncStatus.SYNCED, row.syncStatus)
+        assertEquals("m1", row.remoteId)
+    }
+
+    @Test
+    fun `newer progress the server kept replaces this device's older progress`() = runTest {
+        val local = FakeLocalStore()
+        local.addMemoryVerse(remoteId = "m1", level = 1, progressAt = "2026-10-23T08:00:00.000Z")
+        // Another phone practiced it later and reached level 3; the server keeps that (decision 21).
+        val memory = FakeMemoryVerseApi().apply {
+            updateResult = { id, _ -> Result.success(serverMemoryVerse(id, level = 3, progressAt = "2026-10-23T09:30:00.000Z")) }
+        }
+
+        engine(local, memory = memory).runPass()
+
+        val row = local.memoryVerses.single()
+        assertEquals(3, row.level)
+        assertEquals(MemoryStatus.LEARNING, row.status)
+        assertEquals(SyncStatus.SYNCED, row.syncStatus)
+    }
+
+    @Test
+    fun `progress made while the update was out is sent again next pass`() = runTest {
+        val local = FakeLocalStore()
+        val row = local.addMemoryVerse(remoteId = "m1", level = 1, progressAt = "2026-10-23T08:00:00.000Z")
+        val memory = FakeMemoryVerseApi().apply {
+            updateResult = { id, progress ->
+                local.practice(row.localId, level = 2)
+                Result.success(serverMemoryVerse(id, level = progress.level, progressAt = progress.progressAt))
+            }
+        }
+
+        engine(local, memory = memory).runPass()
+
+        val after = local.memoryVerses.single()
+        assertEquals(2, after.level)
+        assertEquals(SyncStatus.PENDING, after.syncStatus)
+    }
+
+    @Test
+    fun `the same passage added on two phones ends up as one entry`() = runTest {
+        val local = FakeLocalStore()
+        // Pulled from the other phone earlier, while this one's own add hadn't gone out yet.
+        local.addMemoryVerse(remoteId = "m1", synced = true)
+        local.addMemoryVerse()
+        val memory = FakeMemoryVerseApi().apply { createResult = { Result.success(serverMemoryVerse("m1")) } }
+
+        engine(local, memory = memory).runPass()
+
+        assertEquals(listOf("m1"), local.memoryVerses.map { it.remoteId })
+    }
+
+    @Test
+    fun `a passage removed on another phone is removed here`() = runTest {
+        val local = FakeLocalStore().apply { addMemoryVerse(remoteId = "m1", synced = true) }
+        val memory = FakeMemoryVerseApi().apply {
+            listResult = Result.success(
+                MemoryVerseListResponseDto(listOf(serverMemoryVerse("m1").copy(deletedAt = serverNow)), serverNow)
+            )
+        }
+
+        val outcome = engine(local, memory = memory).runPass()
+
+        assertTrue(local.memoryVerses.isEmpty())
+        assertTrue(outcome.contentChanged)
+    }
+
+    @Test
+    fun `a pulled passage doesn't overwrite unsent progress here`() = runTest {
+        val local = FakeLocalStore()
+        local.addMemoryVerse(remoteId = "m1", level = 4, progressAt = "2026-10-23T09:00:00.000Z")
+        val memory = FakeMemoryVerseApi().apply {
+            // This pass's push is refused, so the row stays PENDING when the pull arrives.
+            updateResult = { _, _ -> Result.failure(BackendHttpException(400, "Memory verse")) }
+            listResult = Result.success(MemoryVerseListResponseDto(listOf(serverMemoryVerse("m1", level = 1)), serverNow))
+        }
+
+        engine(local, memory = memory).runPass()
+
+        assertEquals(4, local.memoryVerses.single().level)
+    }
+
+    @Test
+    fun `an unsent memorize passage is work for the background pass`() = runTest {
+        val local = idleLocal().apply { addMemoryVerse() }
+
+        assertTrue(engine(local).hasWorkForBackgroundPass())
     }
 
     // ---- helpers ----
@@ -359,8 +466,9 @@ class SyncEngineTest {
         highlights: FakeHighlightApi = FakeHighlightApi(),
         notes: FakeNoteApi = FakeNoteApi(),
         progress: FakeReadingProgressApi = FakeReadingProgressApi(),
+        memory: FakeMemoryVerseApi = FakeMemoryVerseApi(),
         clock: () -> Long = { parseIsoTimestamp(serverNow)!! }
-    ) = SyncEngine(local, highlights, notes, progress, clock, log = {})
+    ) = SyncEngine(local, highlights, notes, progress, memory, clock, log = {})
 
     private suspend fun assertFailsPass(block: suspend () -> Unit) {
         try {
@@ -375,6 +483,31 @@ class SyncEngineTest {
 
     private fun serverNote(id: String, text: String) =
         NoteResponseDto(id, "kjv", john316, text, createdAt = serverNow, updatedAt = serverNow)
+}
+
+private fun serverMemoryVerse(id: String, level: Int = 0, progressAt: String? = null) = MemoryVerseResponseDto(
+    id = id, versionId = "kjv", bookId = 43, chapter = 3, verseStart = 16, verseEnd = 17,
+    progress = MemoryProgressDto(status = if (level == 0) "NEW" else "LEARNING", level = level, progressAt = progressAt),
+    createdAt = "2026-10-23T10:00:00Z", updatedAt = "2026-10-23T10:00:01Z"
+)
+
+private class FakeMemoryVerseApi : MemoryVerseSyncApi {
+    var listResult: Result<MemoryVerseListResponseDto> = Result.success(MemoryVerseListResponseDto(emptyList(), "2026-10-23T10:00:00Z"))
+    var createResult: (CreateMemoryVerseRequestDto) -> Result<MemoryVerseResponseDto> = { request ->
+        Result.success(serverMemoryVerse("m1", request.progress.level, request.progress.progressAt))
+    }
+    var updateResult: (String, MemoryProgressDto) -> Result<MemoryVerseResponseDto> = { id, progress ->
+        Result.success(serverMemoryVerse(id, progress.level, progress.progressAt))
+    }
+    val creates = mutableListOf<CreateMemoryVerseRequestDto>()
+
+    override suspend fun listMemoryVersesChangedSince(updatedSince: String?) = listResult
+    override suspend fun createMemoryVerse(request: CreateMemoryVerseRequestDto): Result<MemoryVerseResponseDto> {
+        creates += request
+        return createResult(request)
+    }
+    override suspend fun updateMemoryProgress(id: String, progress: MemoryProgressDto) = updateResult(id, progress)
+    override suspend fun deleteMemoryVerse(id: String): Result<Unit> = Result.success(Unit)
 }
 
 private class FakeHighlightApi : HighlightSyncApi {
@@ -433,6 +566,8 @@ private class FakeLocalStore : SyncLocalStore {
     val notes = mutableListOf<Note>()
     var highlightsWatermark: String? = null
     var notesWatermark: String? = null
+    val memoryVerses = mutableListOf<MemoryVerse>()
+    var memoryWatermark: String? = null
     var reading = LocalReadingProgress(ReadingPosition(1, 1, 1), "kjv", changedAt = null, pushedAt = null, hasLocalPosition = false)
 
     private var nextId = 1L
@@ -451,6 +586,73 @@ private class FakeLocalStore : SyncLocalStore {
         val stamp = now()
         return Note(nextId++, null, "kjv", listOf(VerseLocationDto(43, 3, 16)), text, stamp, stamp).also { notes += it }
     }
+
+    fun addMemoryVerse(remoteId: String? = null, level: Int = 0, progressAt: String? = null, synced: Boolean = false): MemoryVerse {
+        val stamp = now()
+        return MemoryVerse(
+            localId = nextId++, remoteId = remoteId, versionId = "kjv", bookId = 43, chapter = 3, verseStart = 16, verseEnd = 17,
+            status = if (level == 0) MemoryStatus.NEW else MemoryStatus.LEARNING, level = level, progressAt = progressAt,
+            createdAt = stamp, updatedAt = stamp, syncStatus = if (synced) SyncStatus.SYNCED else SyncStatus.PENDING
+        ).also { memoryVerses += it }
+    }
+
+    fun practice(localId: Long, level: Int) = updateMemoryVerse(localId) {
+        val t = now()
+        it.copy(level = level, status = MemoryStatus.LEARNING, progressAt = t, updatedAt = t, syncStatus = SyncStatus.PENDING)
+    }
+
+    private fun updateMemoryVerse(localId: Long, change: (MemoryVerse) -> MemoryVerse) {
+        val index = memoryVerses.indexOfFirst { it.localId == localId }
+        if (index >= 0) memoryVerses[index] = change(memoryVerses[index])
+    }
+
+    private fun MemoryVerse.withServer(dto: MemoryVerseResponseDto) = copy(
+        remoteId = dto.id, versionId = dto.versionId, status = MemoryStatus.fromStored(dto.progress.status), level = dto.progress.level,
+        nextReviewAt = dto.progress.nextReviewAt, lastPracticedAt = dto.progress.lastPracticedAt, correctStreak = dto.progress.correctStreak,
+        memorizedAt = dto.progress.memorizedAt, progressAt = dto.progress.progressAt, createdAt = dto.createdAt, updatedAt = dto.updatedAt,
+        deletedAt = null, syncStatus = SyncStatus.SYNCED
+    )
+
+    override suspend fun getPendingMemoryVerses() = memoryVerses.filter { it.syncStatus == SyncStatus.PENDING }
+
+    override suspend fun markMemoryVersePushed(pushed: MemoryVerse, dto: MemoryVerseResponseDto): Boolean {
+        if (memoryVerses.any { it.remoteId == dto.id && it.localId != pushed.localId }) {
+            memoryVerses.removeAll { it.localId == pushed.localId }
+            return false
+        }
+        val unchanged = memoryVerses.first { it.localId == pushed.localId }.updatedAt == pushed.updatedAt
+        updateMemoryVerse(pushed.localId) { if (unchanged) it.withServer(dto) else it.copy(remoteId = dto.id) }
+        return unchanged
+    }
+
+    override suspend fun purgeMemoryVerse(pushed: MemoryVerse) {
+        val current = memoryVerses.firstOrNull { it.localId == pushed.localId } ?: return
+        if (current.updatedAt == pushed.updatedAt) memoryVerses.remove(current) else updateMemoryVerse(pushed.localId) { it.copy(remoteId = null) }
+    }
+
+    override suspend fun detachMemoryVerse(pushed: MemoryVerse) =
+        updateMemoryVerse(pushed.localId) { it.copy(remoteId = null, syncStatus = SyncStatus.PENDING) }
+
+    override suspend fun deleteMemoryVerseByRemoteId(remoteId: String) = memoryVerses.removeAll { it.remoteId == remoteId }
+
+    override suspend fun upsertMemoryVerseFromServer(dto: MemoryVerseResponseDto): Boolean {
+        val existing = memoryVerses.firstOrNull { it.remoteId == dto.id }
+        if (existing == null) {
+            memoryVerses += MemoryVerse(
+                localId = nextId++, remoteId = null, versionId = "", bookId = dto.bookId, chapter = dto.chapter,
+                verseStart = dto.verseStart, verseEnd = dto.verseEnd, createdAt = "", updatedAt = ""
+            ).withServer(dto)
+            return true
+        }
+        if (existing.syncStatus == SyncStatus.PENDING) return false
+        val fresh = existing.withServer(dto)
+        if (fresh == existing) return false
+        updateMemoryVerse(existing.localId) { fresh }
+        return true
+    }
+
+    override fun loadMemoryVersesSyncWatermark() = memoryWatermark
+    override fun saveMemoryVersesSyncWatermark(iso: String) { memoryWatermark = iso }
 
     fun recolor(localId: Long, color: Int) = updateHighlight(localId) { it.copy(color = color, updatedAt = now(), syncStatus = SyncStatus.PENDING) }
     fun restore(localId: Long) = updateHighlight(localId) { it.copy(deletedAt = null, updatedAt = now(), syncStatus = SyncStatus.PENDING) }
