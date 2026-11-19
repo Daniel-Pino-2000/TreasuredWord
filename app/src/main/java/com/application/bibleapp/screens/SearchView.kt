@@ -61,7 +61,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import com.application.bibleapp.components.ServerWakeHint
+import com.application.bibleapp.components.rememberDelayedProgress
 import com.application.bibleapp.components.rememberWaitingLong
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import com.application.bibleapp.components.passageText
@@ -105,9 +108,14 @@ fun SearchView(
             placeholder = stringResource(R.string.search_verse_placeholder)
         )
 
-        // Always reserves its height so results don't jump when a search starts or ends.
+        // Always reserves its height so results don't jump when a search starts or ends. Delayed
+        // and held so a quick search (most of them) shows nothing instead of a flash (#337).
+        val showProgress = rememberDelayedProgress(loading = searchState.isSearching)
         Box(modifier = Modifier.fillMaxWidth().height(4.dp)) {
-            if (searchState.isSearching) LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+            // The plain overload: inside this Column, the ColumnScope one (an expanding slide) would win.
+            androidx.compose.animation.AnimatedVisibility(visible = showProgress, enter = fadeIn(), exit = fadeOut()) {
+                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+            }
         }
 
         // Driven only by searchState (what was actually searched), never by the live text.
