@@ -50,6 +50,7 @@ import java.io.File
 import java.io.IOException
 import java.util.Calendar
 import com.application.bibleapp.widget.DailyVerseWidgetUpdates
+import com.application.bibleapp.widget.MemorizeWidgetUpdates
 import com.application.bibleapp.widget.WidgetColors
 
 /**
@@ -262,17 +263,24 @@ class BibleRepository(
     suspend fun findActiveMemoryVerse(passage: MemoryPassage): MemoryVerse? =
         withContext(Dispatchers.IO) { BibleDatabaseManager.findActiveMemoryVerse(context, passage) }
 
+    // Each change to the list redraws the memorize widget (#364), so a removed passage is
+    // replaced at once and the first one added fills an empty widget.
     suspend fun addMemoryVerse(versionId: String, passage: MemoryPassage): MemoryVerse =
         withContext(Dispatchers.IO) { BibleDatabaseManager.insertMemoryVerse(context, versionId, passage) }
+            .also { MemorizeWidgetUpdates.refreshNow(context) }
 
     suspend fun updateMemoryProgress(localId: Long, progress: MemoryProgressDto) =
         withContext(Dispatchers.IO) { BibleDatabaseManager.updateMemoryProgress(context, localId, progress) }
 
-    suspend fun deleteMemoryVerse(localId: Long) =
+    suspend fun deleteMemoryVerse(localId: Long) {
         withContext(Dispatchers.IO) { BibleDatabaseManager.softDeleteMemoryVerse(context, localId) }
+        MemorizeWidgetUpdates.refreshNow(context)
+    }
 
-    suspend fun restoreMemoryVerse(verse: MemoryVerse) =
+    suspend fun restoreMemoryVerse(verse: MemoryVerse) {
         withContext(Dispatchers.IO) { BibleDatabaseManager.restoreMemoryVerse(context, verse) }
+        MemorizeWidgetUpdates.refreshNow(context)
+    }
 
     override suspend fun getPendingMemoryVerses(): List<MemoryVerse> =
         withContext(Dispatchers.IO) { BibleDatabaseManager.getPendingMemoryVerses(context) }
@@ -288,9 +296,11 @@ class BibleRepository(
 
     override suspend fun deleteMemoryVerseByRemoteId(remoteId: String): Boolean =
         withContext(Dispatchers.IO) { BibleDatabaseManager.deleteMemoryVerseByRemoteId(context, remoteId) }
+            .also { if (it) MemorizeWidgetUpdates.refreshNow(context) }
 
     override suspend fun upsertMemoryVerseFromServer(dto: MemoryVerseResponseDto): Boolean =
         withContext(Dispatchers.IO) { BibleDatabaseManager.upsertMemoryVerseFromServer(context, dto) }
+            .also { if (it) MemorizeWidgetUpdates.refreshNow(context) }
 
     /** Highlights, notes and Memorize passages that haven't reached the server yet (#81). */
     suspend fun countPendingChanges(): Int =
@@ -704,6 +714,7 @@ class BibleRepository(
     suspend fun removeAccountContent() = withContext(Dispatchers.IO) {
         BibleDatabaseManager.deleteAllUserContent(context)
         clearSyncState(context)
+        MemorizeWidgetUpdates.refreshNow(context) // its passage left with the account (#364)
     }
 
     /**

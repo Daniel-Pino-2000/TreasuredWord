@@ -405,6 +405,13 @@
     <string name="widget_daily_verse_name">TreasuredWord: versículo do dia</string>
     <string name="widget_daily_verse_description">O versículo de hoje na sua tela inicial, na tradução que você escolheu</string>
     <string name="widget_daily_verse_unavailable">Abra o TreasuredWord para carregar o versículo de hoje</string>
+    <string name="widget_memorize_name">TreasuredWord: versículo para memorizar</string>
+    <string name="widget_memorize_description">Todo dia um versículo da sua lista Memorizar, para decorar</string>
+    <string name="widget_memorize_title">Versículo para memorizar</string>
+    <string name="widget_memorize_empty">Adicione versículos para memorizar durante a leitura</string>
+    <string name="widget_memorize_unavailable">Abra o TreasuredWord para ver este versículo</string>
+    <string name="widget_memorize_hide_words">Ocultar palavras</string>
+    <string name="widget_memorize_show_words">Mostrar palavras</string>
 
     <!-- Translation credit at the end of every chapter (#98) -->
     <!-- Link to the Bible translation's license page -->

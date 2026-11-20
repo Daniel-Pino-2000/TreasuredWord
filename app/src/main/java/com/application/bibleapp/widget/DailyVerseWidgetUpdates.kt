@@ -18,8 +18,8 @@ import com.application.bibleapp.worker.DailyVerseScheduler
 import java.util.concurrent.TimeUnit
 
 /**
- * When the daily verse widget (#245) is redrawn, and the daily verse wallpaper (#257) set. No
- * periodic updates and no network: only
+ * When the daily verse widget (#245) and the memorize widget (#364) are redrawn, and the daily
+ * verse wallpaper (#257) set. No periodic updates and no network: only
  * - just after midnight, so it never shows yesterday's verse (works offline);
  * - when the day's verse is fetched (BibleRepository.refreshDailyVerse);
  * - when the translation or the app language changes, or the phone's language;
@@ -37,10 +37,12 @@ object DailyVerseWidgetUpdates {
     private const val MIDNIGHT_HOUR = 0
     private const val MIDNIGHT_MINUTE = 1
 
+    /** A placed widget of either kind: the daily verse, or the verse to memorize (#364), which
+     *  shares these redraws. */
     fun hasWidgets(context: Context): Boolean =
         AppWidgetManager.getInstance(context)
             ?.getAppWidgetIds(ComponentName(context, DailyVerseWidgetReceiver::class.java))
-            ?.isNotEmpty() == true
+            ?.isNotEmpty() == true || MemorizeWidgetUpdates.hasWidgets(context)
 
     /** Whether anything needs the daily updates: a placed widget or the daily wallpaper. */
     fun isNeeded(context: Context): Boolean = hasWidgets(context) || DailyWallpaper.isEnabled(context)
@@ -100,6 +102,8 @@ class DailyVerseWidgetWorker(context: Context, params: WorkerParameters) : Corou
         // nothing to do, and no re-arming.
         if (!DailyVerseWidgetUpdates.isNeeded(applicationContext)) return Result.success()
         DailyVerseWidget.refreshAll(applicationContext)
+        // A new day's passage at midnight, and the new language or colors otherwise (#364).
+        MemorizeWidget.refreshAll(applicationContext)
         DailyWallpaper.update(applicationContext)
         DailyVerseWidgetUpdates.markUpdatedToday(applicationContext)
         // Last, like DailyVerseNotificationWorker: REPLACE cancels this running instance.
@@ -121,8 +125,8 @@ class DailyVerseWidgetReceiver : GlanceAppWidgetReceiver() {
 
     override fun onDisabled(context: Context) {
         super.onDisabled(context)
-        // The daily wallpaper (#257) still needs the midnight update.
-        if (!DailyWallpaper.isEnabled(context)) DailyVerseWidgetUpdates.cancel(context)
+        // The daily wallpaper (#257) or a memorize widget (#364) may still need the midnight update.
+        if (!DailyVerseWidgetUpdates.isNeeded(context)) DailyVerseWidgetUpdates.cancel(context)
     }
 
     override fun onReceive(context: Context, intent: Intent) {

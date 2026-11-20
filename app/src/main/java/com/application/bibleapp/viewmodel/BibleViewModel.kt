@@ -18,6 +18,7 @@ import com.application.bibleapp.data.model.Footnote
 import com.application.bibleapp.data.model.Highlight
 import com.application.bibleapp.data.model.MAX_MEMORY_PASSAGE_VERSES
 import com.application.bibleapp.data.model.MemorySelection
+import com.application.bibleapp.data.model.MemoryPassage
 import com.application.bibleapp.data.model.MemoryVerse
 import com.application.bibleapp.data.model.memorySelectionOf
 import com.application.bibleapp.data.model.Note
@@ -1262,9 +1263,19 @@ class BibleViewModel(
 
     /** A Memorize card was tapped (#362): opens the reader at the passage with it selected, as
      *  Home's verse card does. The practice games (#363) will open from here instead. */
-    fun openMemoryVerseFromLibrary(verse: MemoryVerse) {
-        setBook(verse.bookId, verse.chapter, verse.verseStart)
-        _selectedVerses.value = verse.verses.toSet()
+    fun openMemoryVerseFromLibrary(verse: MemoryVerse) = openMemoryPassage(verse.bookId, verse.chapter, verse.verseStart, verse.verseEnd)
+
+    /** A tap on the "Verse to memorize" widget (#364), on a fresh start: the reader on the
+     *  passage, selected, once the stored reading position has loaded, so that load can't
+     *  replace it. Returns when it's open, for MainActivity to show the reader. */
+    suspend fun openMemoryPassageWhenStarted(passage: MemoryPassage) {
+        _startupChapterLoaded.first { it }
+        openMemoryPassage(passage.bookId, passage.chapter, passage.verseStart, passage.verseEnd)
+    }
+
+    private fun openMemoryPassage(bookId: Int, chapter: Int, verseStart: Int, verseEnd: Int) {
+        setBook(bookId, chapter, verseStart)
+        _selectedVerses.value = (verseStart..verseEnd).map { VerseLocationDto(bookId, chapter, it) }.toSet()
         activeSelectionHighlightId = null
         _scrollRequest.update { it + 1 }
     }

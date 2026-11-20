@@ -397,6 +397,13 @@
     <string name="widget_daily_verse_name">TreasuredWord: Talata ng Araw</string>
     <string name="widget_daily_verse_description">Ang talata ngayong araw sa iyong home screen, sa saling pinili mo</string>
     <string name="widget_daily_verse_unavailable">Buksan ang TreasuredWord para i-load ang talata ngayong araw</string>
+    <string name="widget_memorize_name">TreasuredWord: Talatang Isasaulo</string>
+    <string name="widget_memorize_description">Isang talata mula sa iyong listahang Isaulo araw-araw, para maisaulo</string>
+    <string name="widget_memorize_title">Talatang isasaulo</string>
+    <string name="widget_memorize_empty">Magdagdag ng mga talatang isasaulo habang nagbabasa</string>
+    <string name="widget_memorize_unavailable">Buksan ang TreasuredWord para makita ang talatang ito</string>
+    <string name="widget_memorize_hide_words">Itago ang mga salita</string>
+    <string name="widget_memorize_show_words">Ipakita ang mga salita</string>
 
     <!-- Translation credit at the end of every chapter (#98) -->
     <!-- Link to the Bible translation's license page -->
