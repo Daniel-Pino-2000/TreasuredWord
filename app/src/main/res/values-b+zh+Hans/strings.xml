@@ -133,6 +133,20 @@
     <string name="external_link_no_app">这部手机上没有可以打开此链接的应用。</string>
 
     <string name="about_book_open">关于这卷书</string>
+    <string name="audio_listen">收听本章</string>
+    <string name="audio_offline">你已离线。请连接网络后再收听。</string>
+    <string name="audio_error">无法播放音频。请检查网络连接后重试。</string>
+    <string name="audio_play">播放</string>
+    <string name="audio_pause">暂停</string>
+    <string name="audio_back_15">后退 15 秒</string>
+    <string name="audio_forward_15">快进 15 秒</string>
+    <string name="audio_stop">停止收听</string>
+    <!-- %1$s: narrator's name, %2$s: version's short name -->
+    <string name="audio_read_by">朗读：%1$s · %2$s</string>
+    <string name="audio_choose_narrator">选择朗读者</string>
+    <string name="audio_speed_title">速度</string>
+    <!-- %1$s: the speed, already formatted ("0,75") -->
+    <string name="audio_speed_value">%1$s×</string>
     <string name="about_book_title">关于%1$s</string>
     <string name="about_book_summary">书卷概要</string>
     <string name="about_book_videos">概览视频</string>

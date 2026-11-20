@@ -135,6 +135,20 @@
     <string name="external_link_no_app">Walang app sa teleponong ito na makakapagbukas ng link na ito.</string>
 
     <string name="about_book_open">Tungkol sa aklat na ito</string>
+    <string name="audio_listen">Pakinggan ang kabanatang ito</string>
+    <string name="audio_offline">Offline ka. Kumonekta sa internet para makapakinig.</string>
+    <string name="audio_error">Hindi ma-play ang audio. Tingnan ang iyong koneksyon at subukang muli.</string>
+    <string name="audio_play">I-play</string>
+    <string name="audio_pause">I-pause</string>
+    <string name="audio_back_15">Bumalik nang 15 segundo</string>
+    <string name="audio_forward_15">Umabante nang 15 segundo</string>
+    <string name="audio_stop">Itigil ang pakikinig</string>
+    <!-- %1$s: narrator's name, %2$s: version's short name -->
+    <string name="audio_read_by">Binasa ni %1$s · %2$s</string>
+    <string name="audio_choose_narrator">Piliin kung sino ang magbabasa</string>
+    <string name="audio_speed_title">Bilis</string>
+    <!-- %1$s: the speed, already formatted ("0,75") -->
+    <string name="audio_speed_value">%1$s×</string>
     <string name="about_book_title">Tungkol sa %1$s</string>
     <string name="about_book_summary">Buod ng aklat</string>
     <string name="about_book_videos">Mga video ng pangkalahatang-ideya</string>

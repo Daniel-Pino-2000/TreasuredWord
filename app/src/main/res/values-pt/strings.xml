@@ -134,6 +134,20 @@
     <string name="external_link_no_app">Nenhum app deste telefone consegue abrir este link.</string>
 
     <string name="about_book_open">Sobre este livro</string>
+    <string name="audio_listen">Ouvir este capítulo</string>
+    <string name="audio_offline">Você está off-line. Conecte-se à internet para ouvir.</string>
+    <string name="audio_error">Não foi possível tocar o áudio. Verifique sua conexão e tente de novo.</string>
+    <string name="audio_play">Tocar</string>
+    <string name="audio_pause">Pausar</string>
+    <string name="audio_back_15">Voltar 15 segundos</string>
+    <string name="audio_forward_15">Avançar 15 segundos</string>
+    <string name="audio_stop">Parar de ouvir</string>
+    <!-- %1$s: narrator's name, %2$s: version's short name -->
+    <string name="audio_read_by">Lido por %1$s · %2$s</string>
+    <string name="audio_choose_narrator">Escolher quem lê</string>
+    <string name="audio_speed_title">Velocidade</string>
+    <!-- %1$s: the speed, already formatted ("0,75") -->
+    <string name="audio_speed_value">%1$s×</string>
     <string name="about_book_title">Sobre %1$s</string>
     <string name="about_book_summary">Resumo do livro</string>
     <string name="about_book_videos">Vídeos de visão geral</string>

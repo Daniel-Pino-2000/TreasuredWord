@@ -146,6 +146,23 @@
 
     <!-- "About this book" sheet, from the reader's info icon. %1$s is a book name, e.g. "Genesis". -->
     <string name="about_book_open">About this book</string>
+    <!-- Chapter audio (#367). The reader's top-bar headphones button, read by screen readers. -->
+    <string name="audio_listen">Listen to this chapter</string>
+    <!-- Snackbar: Listen tapped with no internet (the audio is streamed). -->
+    <string name="audio_offline">You\'re offline. Connect to the internet to listen.</string>
+    <string name="audio_error">Couldn\'t play the audio. Check your connection and try again.</string>
+    <string name="audio_play">Play</string>
+    <string name="audio_pause">Pause</string>
+    <string name="audio_back_15">Back 15 seconds</string>
+    <string name="audio_forward_15">Forward 15 seconds</string>
+    <string name="audio_stop">Stop listening</string>
+    <!-- The player's credit line. %1$s is the narrator's name ("Bob Souer"), %2$s the version's short name ("BSB"). -->
+    <string name="audio_read_by">Read by %1$s · %2$s</string>
+    <!-- Screen reader label for tapping the credit line, which opens the list of narrators. -->
+    <string name="audio_choose_narrator">Choose who reads</string>
+    <string name="audio_speed_title">Speed</string>
+    <!-- A playback speed on the speed button and its menu. %1$s is the number, already in the app language's format ("0.75", "1.5"). -->
+    <string name="audio_speed_value">%1$s×</string>
     <string name="about_book_title">About %1$s</string>
     <string name="about_book_summary">Book summary</string>
     <string name="about_book_videos">Overview videos</string>

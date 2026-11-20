@@ -27,6 +27,7 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
@@ -88,6 +89,7 @@ import androidx.navigation.compose.rememberNavController
 import com.application.bibleapp.components.AboutBookSheet
 import com.application.bibleapp.components.AskTopBar
 import com.application.bibleapp.components.BibleChapterNav
+import com.application.bibleapp.components.ChapterAudioPlayer
 import com.application.bibleapp.components.BibleTopBar
 import com.application.bibleapp.components.BookPickerTopBar
 import com.application.bibleapp.components.BookmarkButtonState
@@ -109,6 +111,7 @@ import com.application.bibleapp.components.VerseSelectionToolbar
 import com.application.bibleapp.components.YouTopBar
 import com.application.bibleapp.data.model.BibleBooks
 import com.application.bibleapp.data.model.BookResources
+import com.application.bibleapp.data.model.ChapterAudio
 import com.application.bibleapp.navigation.Navigation
 import com.application.bibleapp.navigation.Screen
 import com.application.bibleapp.navigation.ScreenTransitions
@@ -124,6 +127,9 @@ import com.application.bibleapp.viewmodel.AskViewModelFactory
 import com.application.bibleapp.viewmodel.BibleViewModel
 import com.application.bibleapp.viewmodel.MessageAction
 import com.application.bibleapp.viewmodel.BibleViewModelFactory
+import com.application.bibleapp.viewmodel.ChapterAudioEvent
+import com.application.bibleapp.viewmodel.ChapterAudioViewModel
+import com.application.bibleapp.utils.NetworkUtils
 import androidx.compose.ui.res.stringResource
 import com.application.bibleapp.utils.InAppUpdates
 import com.application.bibleapp.utils.UiText
@@ -222,6 +228,8 @@ class MainActivity : AppCompatActivity() {
             val askViewModel: AskViewModel = viewModel(
                 factory = AskViewModelFactory(context = this)
             )
+            // Listening to a chapter (#367): the mini player and the top bar's Listen button.
+            val audioViewModel: ChapterAudioViewModel = viewModel()
 
             val navController = rememberNavController()
             val currentBackStackEntry by navController.currentBackStackEntryAsState()
@@ -397,6 +405,25 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                 }
+                // Chapter audio (#367): a failure is said in a snackbar; when one chapter ends and
+                // the next starts, the reader turns the page too, if it was still on the one that
+                // ended (someone who has gone off to read elsewhere stays there).
+                LaunchedEffect(Unit) {
+                    audioViewModel.events.collect { event ->
+                        when (event) {
+                            ChapterAudioEvent.PlaybackFailed -> bibleViewModel.showMessage(UiText.Res(R.string.audio_error))
+                            is ChapterAudioEvent.Advanced -> {
+                                val from = event.from
+                                if (bibleViewModel.selectedVersion.value.id == from.versionId &&
+                                    bibleViewModel.currentBook.value == from.bookId &&
+                                    bibleViewModel.currentChapter.value == from.chapter
+                                ) {
+                                    bibleViewModel.loadChapter(event.to.bookId, event.to.chapter)
+                                }
+                            }
+                        }
+                    }
+                }
                 // A new version finished downloading in the background (#202): Restart installs it.
                 LaunchedEffect(Unit) {
                     inAppUpdates.updateReady.collect { ready ->
@@ -507,6 +534,7 @@ class MainActivity : AppCompatActivity() {
                                     val bookmarkLabel by bibleViewModel.bookmarkLabel.collectAsState()
                                     val currentBook by bibleViewModel.currentBook.collectAsState()
                                     val currentChapter by bibleViewModel.currentChapter.collectAsState()
+                                    val selectedVersion by bibleViewModel.selectedVersion.collectAsState()
                                     BibleTopBar(
                                         scrollBehavior = scrollBehavior,
                                         versionLabel = versionLabel,
@@ -533,6 +561,19 @@ class MainActivity : AppCompatActivity() {
                                                     onSelectBook = { navController.navigate(Screen.BookPicker.route) },
                                                     compact = true
                                                 )
+                                            }
+                                        } else {
+                                            null
+                                        },
+                                        onListenClick = if (ChapterAudio.hasAudio(selectedVersion.id)) {
+                                            {
+                                                // Streaming only, so offline says so up front rather
+                                                // than opening a player that can't load (#367).
+                                                if (NetworkUtils.isOnline(this@MainActivity)) {
+                                                    audioViewModel.listen(selectedVersion.id, currentBook, currentChapter)
+                                                } else {
+                                                    bibleViewModel.showMessage(UiText.Res(R.string.audio_offline))
+                                                }
                                             }
                                         } else {
                                             null
@@ -588,6 +629,33 @@ class MainActivity : AppCompatActivity() {
                             // Scaffold then pads by the system bars), so the page's bottom edge
                             // doesn't jump once the tab bar has slid away.
                             Box(Modifier.heightIn(min = WindowInsets.systemBars.only(WindowInsetsSides.Bottom).asPaddingValues().calculateBottomPadding())) {
+                            Column(Modifier.onSizeChanged { bottomBarHeightPx = it.height }) {
+                                // The chapter audio player (#367) sits on top of the reader's
+                                // bottom chrome, or alone at the bottom in landscape, which has
+                                // no bottom bar (so it keeps clear of the navigation bar itself).
+                                val audioState by audioViewModel.state.collectAsState()
+                                val audioItem = audioState.item
+                                if (currentRoute == Screen.Bible.route && audioItem != null) {
+                                    val bookNames by bibleViewModel.bookNames.collectAsState()
+                                    val selectedVersion by bibleViewModel.selectedVersion.collectAsState()
+                                    // The book in the reader's names when it's the same version.
+                                    val audioBookName = bookNames[audioItem.bookId]?.takeIf { selectedVersion.id == audioItem.versionId }
+                                        ?: BibleBooks.getBookById(audioItem.bookId)?.name.orEmpty()
+                                    ChapterAudioPlayer(
+                                        state = audioState,
+                                        chapterTitle = "$audioBookName ${audioItem.chapter}",
+                                        versionLabel = bibleViewModel.versionLabel(audioItem.versionId),
+                                        narrators = ChapterAudio.narrators(audioItem.versionId),
+                                        onPlayPause = audioViewModel::togglePlayPause,
+                                        onSeekBack = audioViewModel::seekBack,
+                                        onSeekForward = audioViewModel::seekForward,
+                                        onSpeedChange = audioViewModel::setSpeed,
+                                        onNarratorChange = audioViewModel::setNarrator,
+                                        onClose = audioViewModel::stop,
+                                        modifier = if (compactHeight) Modifier.navigationBarsPadding() else Modifier,
+                                        compact = compactHeight
+                                    )
+                                }
                                 key(compactHeight) {
                                     // Named in full: inside the outer Row, the plain name means
                                     // the Row's own version, which can't be used down here.
@@ -607,11 +675,11 @@ class MainActivity : AppCompatActivity() {
                                             bibleViewModel = bibleViewModel,
                                             chromeHiddenFraction = chromeHiddenFraction,
                                             onItemSelected = { route -> navController.navigateToTab(route) },
-                                            onBookPickerClicked = { navController.navigate(Screen.BookPicker.route) },
-                                            modifier = Modifier.onSizeChanged { bottomBarHeightPx = it.height }
+                                            onBookPickerClicked = { navController.navigate(Screen.BookPicker.route) }
                                         )
                                     }
                                 }
+                            }
                             }
                         }
                         ) { paddingValues ->
@@ -623,9 +691,12 @@ class MainActivity : AppCompatActivity() {
                         val context = LocalContext.current
                         if (currentRoute == Screen.Bible.route && selectedVerses.isNotEmpty()) {
                             val gap = 12.dp
-                            // No bottom bar in compact height (bottomBarHeightPx would be stale from
-                            // portrait); sit above the system navigation bar instead.
-                            val bottomBarHeight = if (compactHeight) 0.dp else with(LocalDensity.current) { bottomBarHeightPx.toDp() }
+                            // No bottom bar in compact height: sit above the system navigation bar
+                            // instead, or above the chapter audio player (#367), which already
+                            // keeps clear of it.
+                            val audioPlayerShown = audioViewModel.state.collectAsState().value.item != null
+                            val clearNavigationBar = compactHeight && !audioPlayerShown
+                            val bottomBarHeight = if (clearNavigationBar) 0.dp else with(LocalDensity.current) { bottomBarHeightPx.toDp() }
                             VerseSelectionToolbar(
                                 selectionCount = selectedVerses.size,
                                 onColorSelected = { colorArgb -> bibleViewModel.highlightSelection(colorArgb) },
@@ -665,7 +736,7 @@ class MainActivity : AppCompatActivity() {
                                 },
                                 modifier = Modifier
                                     .align(Alignment.BottomCenter)
-                                    .then(if (compactHeight) Modifier.navigationBarsPadding() else Modifier)
+                                    .then(if (clearNavigationBar) Modifier.navigationBarsPadding() else Modifier)
                                     .padding(horizontal = Spacing.lg)
                                     .offset(y = -(bottomBarHeight + gap))
                                     .onSizeChanged { selectionToolbarHeightPx = it.height }

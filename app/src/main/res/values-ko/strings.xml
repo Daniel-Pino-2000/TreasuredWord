@@ -134,6 +134,20 @@
     <string name="external_link_no_app">이 링크를 열 수 있는 앱이 없어요.</string>
 
     <string name="about_book_open">이 책 소개</string>
+    <string name="audio_listen">이 장 듣기</string>
+    <string name="audio_offline">오프라인 상태예요. 인터넷에 연결한 뒤 들어 주세요.</string>
+    <string name="audio_error">오디오를 재생하지 못했어요. 연결을 확인하고 다시 시도해 주세요.</string>
+    <string name="audio_play">재생</string>
+    <string name="audio_pause">일시정지</string>
+    <string name="audio_back_15">15초 뒤로</string>
+    <string name="audio_forward_15">15초 앞으로</string>
+    <string name="audio_stop">듣기 중지</string>
+    <!-- %1$s: narrator's name, %2$s: version's short name -->
+    <string name="audio_read_by">낭독: %1$s · %2$s</string>
+    <string name="audio_choose_narrator">낭독자 선택</string>
+    <string name="audio_speed_title">속도</string>
+    <!-- %1$s: the speed, already formatted ("0,75") -->
+    <string name="audio_speed_value">%1$s×</string>
     <string name="about_book_title">%1$s 소개</string>
     <string name="about_book_summary">책 요약</string>
     <string name="about_book_videos">개요 영상</string>

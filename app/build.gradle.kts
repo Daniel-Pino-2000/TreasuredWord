@@ -198,6 +198,10 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
 
+    // Listening to a chapter (#367): audio/ChapterAudioService.kt plays it, the reader controls it
+    implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.media3.session)
+
     // Room
     val room_version = "2.7.1"
     implementation("androidx.room:room-ktx:$room_version")

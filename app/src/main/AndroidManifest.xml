@@ -17,6 +17,12 @@
         android:maxSdkVersion="28"/>
     <!-- "Set as wallpaper" for a verse image (#255). Granted on install, never asked for. -->
     <uses-permission android:name="android.permission.SET_WALLPAPER"/>
+    <!-- Listening to a chapter (#367) keeps playing with the screen off: a media playback
+         foreground service (its notification holds the controls) and a wake lock while it
+         streams. All granted on install, never asked for. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"/>
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
 
     <!-- Android 11+ hides other apps unless asked for: lets utils/ExternalLinks.kt find a browser
          that supports Custom Tabs before falling back to a plain link. -->
@@ -125,6 +131,19 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
+
+        <!-- Plays chapter audio (#367). Exported with Media3's action so the system's media
+             controls (lock screen, notification, Bluetooth headphones) can reach its session; the
+             session itself decides what a controller may do, so no permission is asked for. -->
+        <service
+            android:name=".audio.ChapterAudioService"
+            android:exported="true"
+            android:foregroundServiceType="mediaPlayback"
+            tools:ignore="ExportedService">
+            <intent-filter>
+                <action android:name="androidx.media3.session.MediaSessionService" />
+            </intent-filter>
+        </service>
 
         <receiver
             android:name=".receiver.BootCompletedReceiver"
