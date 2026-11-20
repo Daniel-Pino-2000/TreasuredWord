@@ -396,6 +396,13 @@
     <string name="widget_daily_verse_name">TreasuredWord: Mstari wa Siku</string>
     <string name="widget_daily_verse_description">Mstari wa leo kwenye skrini yako ya mwanzo, katika tafsiri uliyochagua</string>
     <string name="widget_daily_verse_unavailable">Fungua TreasuredWord ili kupakia mstari wa leo</string>
+    <string name="widget_memorize_name">TreasuredWord: Mstari wa Kukariri</string>
+    <string name="widget_memorize_description">Mstari mmoja kutoka orodha yako ya Kariri kila siku, ili uukariri</string>
+    <string name="widget_memorize_title">Mstari wa kukariri</string>
+    <string name="widget_memorize_empty">Ongeza mistari ya kukariri unaposoma</string>
+    <string name="widget_memorize_unavailable">Fungua TreasuredWord ili kuona mstari huu</string>
+    <string name="widget_memorize_hide_words">Ficha maneno</string>
+    <string name="widget_memorize_show_words">Onyesha maneno</string>
 
     <!-- Translation credit at the end of every chapter (#98) -->
     <!-- Link to the Bible translation's license page -->

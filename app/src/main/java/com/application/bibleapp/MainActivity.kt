@@ -129,6 +129,7 @@ import com.application.bibleapp.utils.InAppUpdates
 import com.application.bibleapp.utils.UiText
 import com.application.bibleapp.utils.isSpanishUi
 import com.application.bibleapp.widget.DailyVerseWidgetUpdates
+import com.application.bibleapp.widget.memoryPassageExtra
 import com.application.bibleapp.worker.SyncScheduler
 
 /** Cumulative scroll distance, in one sustained direction, required before the reading
@@ -189,6 +190,9 @@ class MainActivity : AppCompatActivity() {
             startupViewModel.shareVerseOfTheDayAsImageWhenReady(getString(R.string.verse_of_the_day))
             NotificationManagerCompat.from(this).cancel(DAILY_VERSE_NOTIFICATION_ID)
         }
+        // A tap on the "Verse to memorize" widget (#364): its passage in the reader. Only on a
+        // fresh start, like "Share image", so a rotation doesn't open it again.
+        val widgetPassage = if (savedInstanceState == null) intent?.memoryPassageExtra() else null
         // An app left open overnight shows the new day's verse when it comes back (#183).
         lifecycle.addObserver(LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_START) {
@@ -360,6 +364,12 @@ class MainActivity : AppCompatActivity() {
                 // Deletion-undo and copy-confirmation messages from BibleViewModel. collectLatest
                 // so a newer message replaces (dismisses) one still showing instead of queueing.
                 val snackbarHostState = remember { SnackbarHostState() }
+                if (widgetPassage != null) {
+                    LaunchedEffect(Unit) {
+                        bibleViewModel.openMemoryPassageWhenStarted(widgetPassage)
+                        navController.navigate(Screen.Bible.route) { launchSingleTop = true }
+                    }
+                }
                 // Resolved when shown, not when emitted, so a message follows the current language.
                 LaunchedEffect(Unit) {
                     bibleViewModel.userMessages.collectLatest { message ->

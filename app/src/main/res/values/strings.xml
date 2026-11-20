@@ -445,6 +445,15 @@
     <string name="widget_daily_verse_name">TreasuredWord daily verse</string>
     <string name="widget_daily_verse_description">Today\'s verse on your home screen, in your chosen translation</string>
     <string name="widget_daily_verse_unavailable">Open TreasuredWord to load today\'s verse</string>
+    <!-- The "Verse to memorize" home screen widget (#364): a passage from the Memorize list each day. -->
+    <string name="widget_memorize_name">TreasuredWord verse to memorize</string>
+    <string name="widget_memorize_description">A verse from your Memorize list each day, to learn by heart</string>
+    <string name="widget_memorize_title">Verse to memorize</string>
+    <string name="widget_memorize_empty">Add verses to memorize from the reader</string>
+    <string name="widget_memorize_unavailable">Open TreasuredWord to see this verse</string>
+    <!-- The widget's toggle: shows only the first letter of each word, to test yourself. -->
+    <string name="widget_memorize_hide_words">Hide words</string>
+    <string name="widget_memorize_show_words">Show words</string>
 
     <!-- Translation credit at the end of every chapter (#98) -->
     <!-- Link to the Bible translation's license page -->

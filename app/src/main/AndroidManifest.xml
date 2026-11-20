@@ -98,6 +98,22 @@
                 android:resource="@xml/daily_verse_widget_info" />
         </receiver>
 
+        <!-- Home screen widget with a passage from the Memorize list each day (#364). Exported
+             for the launcher's widget broadcasts, like the daily verse widget's. -->
+        <receiver
+            android:name=".widget.MemorizeWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_memorize_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.intent.action.LOCALE_CHANGED" />
+                <action android:name="android.intent.action.APPLICATION_LOCALE_CHANGED" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/memorize_widget_info" />
+        </receiver>
+
         <!-- Shares a verse image with another app (#254): read access to one cached file at a
              time, granted per share. Not exported; access comes only from those grants. -->
         <provider
