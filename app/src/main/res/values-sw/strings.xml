@@ -134,6 +134,20 @@
     <string name="external_link_no_app">Hakuna programu kwenye simu hii inayoweza kufungua kiungo hiki.</string>
 
     <string name="about_book_open">Kuhusu kitabu hiki</string>
+    <string name="audio_listen">Sikiliza sura hii</string>
+    <string name="audio_offline">Uko nje ya mtandao. Unganisha kwenye intaneti ili kusikiliza.</string>
+    <string name="audio_error">Sauti haikuweza kuchezwa. Angalia muunganisho wako kisha ujaribu tena.</string>
+    <string name="audio_play">Cheza</string>
+    <string name="audio_pause">Sitisha</string>
+    <string name="audio_back_15">Rudi nyuma sekunde 15</string>
+    <string name="audio_forward_15">Songa mbele sekunde 15</string>
+    <string name="audio_stop">Acha kusikiliza</string>
+    <!-- %1$s: narrator's name, %2$s: version's short name -->
+    <string name="audio_read_by">Imesomwa na %1$s · %2$s</string>
+    <string name="audio_choose_narrator">Chagua msomaji</string>
+    <string name="audio_speed_title">Kasi</string>
+    <!-- %1$s: the speed, already formatted ("0,75") -->
+    <string name="audio_speed_value">%1$s×</string>
     <string name="about_book_title">Kuhusu %1$s</string>
     <string name="about_book_summary">Muhtasari wa kitabu</string>
     <string name="about_book_videos">Video za muhtasari</string>

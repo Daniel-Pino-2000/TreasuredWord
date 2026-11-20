@@ -100,9 +100,9 @@ We keep your account information until you delete your account. Technical logs a
 
 ## Content the app downloads
 
-To show Bible text, the verse of the day and your Google profile picture, the app downloads content from:
+To show Bible text, the verse of the day and your Google profile picture, and to play the chapter audio you listen to, the app downloads content from:
 
-- **[bible.helloao.org](https://bible.helloao.org)**: Bible translations you choose to download.
+- **[bible.helloao.org](https://bible.helloao.org)**: Bible translations you choose to download, and audio you choose to play (streamed from audio.bible.helloao.org while you listen, not saved on your phone).
 - **[OurManna](https://ourmanna.com)**: the daily verse.
 - **Google's image server**: your Google account's profile picture, only if you sign in with Google (see "Signing in with Google" above).
 

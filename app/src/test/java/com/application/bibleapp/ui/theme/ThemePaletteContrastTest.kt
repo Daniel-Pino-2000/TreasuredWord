@@ -57,6 +57,9 @@ class ThemePaletteContrastTest {
         // Remove/Delete buttons in dialogs (removing a translation, discarding a note) are red.
         pairs += Pair("red text on dialog", c.error, c.surfaceContainerHigh, TEXT)
         pairs += Pair("chapter arrow on its button", c.primary, c.surfaceVariant, NON_TEXT)
+        // The chapter audio player (#367) sits on the tab bar's tint: its speed label and skip
+        // buttons are primary there, its title and credit already covered as tab-bar text above.
+        pairs += Pair("audio player speed and skip buttons", c.primary, tabBar, TEXT)
         pairs += Pair(
             "verse of the day reference",
             c.onPrimaryContainer.copy(alpha = 0.75f).compositeOver(c.primaryContainer), c.primaryContainer, TEXT

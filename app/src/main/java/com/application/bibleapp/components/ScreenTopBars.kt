@@ -10,6 +10,7 @@ import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.BookmarkRemove
 import androidx.compose.material.icons.outlined.AddComment
 import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.Headphones
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Button
@@ -47,11 +48,19 @@ fun BibleTopBar(
     onVersionClick: () -> Unit,
     bookmark: BookmarkButtonState,
     onAboutBookClick: (() -> Unit)?,
-    chapterNav: (@Composable () -> Unit)? = null
+    chapterNav: (@Composable () -> Unit)? = null,
+    onListenClick: (() -> Unit)? = null
 ) {
     TopBar(
         title = chapterNav ?: { Text(stringResource(R.string.title_bible)) },
         actions = {
+            // Only for a version with recorded audio (#367); in landscape it sits beside the
+            // chapter controls, which move up into this bar there.
+            onListenClick?.let { onClick ->
+                IconButton(onClick = onClick) {
+                    Icon(Icons.Outlined.Headphones, contentDescription = stringResource(R.string.audio_listen))
+                }
+            }
             onAboutBookClick?.let { onClick ->
                 IconButton(onClick = onClick) {
                     Icon(Icons.Outlined.Info, contentDescription = stringResource(R.string.about_book_open))

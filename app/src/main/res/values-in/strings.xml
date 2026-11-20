@@ -134,6 +134,20 @@
     <string name="external_link_no_app">Tidak ada aplikasi di ponsel ini yang dapat membuka tautan ini.</string>
 
     <string name="about_book_open">Tentang kitab ini</string>
+    <string name="audio_listen">Dengarkan pasal ini</string>
+    <string name="audio_offline">Anda sedang offline. Sambungkan ke internet untuk mendengarkan.</string>
+    <string name="audio_error">Audio tidak dapat diputar. Periksa koneksi Anda dan coba lagi.</string>
+    <string name="audio_play">Putar</string>
+    <string name="audio_pause">Jeda</string>
+    <string name="audio_back_15">Mundur 15 detik</string>
+    <string name="audio_forward_15">Maju 15 detik</string>
+    <string name="audio_stop">Berhenti mendengarkan</string>
+    <!-- %1$s: narrator's name, %2$s: version's short name -->
+    <string name="audio_read_by">Dibacakan oleh %1$s · %2$s</string>
+    <string name="audio_choose_narrator">Pilih pembaca</string>
+    <string name="audio_speed_title">Kecepatan</string>
+    <!-- %1$s: the speed, already formatted ("0,75") -->
+    <string name="audio_speed_value">%1$s×</string>
     <string name="about_book_title">Tentang %1$s</string>
     <string name="about_book_summary">Ringkasan kitab</string>
     <string name="about_book_videos">Video ikhtisar</string>
