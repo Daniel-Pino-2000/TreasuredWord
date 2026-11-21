@@ -26,13 +26,14 @@ recorded below. A YouVersion version taken off that list is deleted from phones 
   profit designation Non Profit) at [platform.youversion.com](https://platform.youversion.com).
   The name and postal address given there are shared with each publisher whose Bible is used, to
   check eligibility.
-- **App:** "TreasuredWord", **Non-commercial**, status **In Development**, website = the privacy
+- **App:** "TreasuredWord", **Non-commercial**, status **Live** since 2026-11-21, website = the privacy
   policy, Google Play URL set. Three confirmations were ticked: truly non-commercial and free with
   nothing behind a paywall; no advertisements; used to help people engage with the Bible in a way
   consistent with YouVersion's [Core Beliefs](https://platform.youversion.com/core-beliefs) (the
   Apostles' and Nicene Creed basics).
-- **To do after this ships:** press **Make Live** on the app in the portal. YouVersion says live
-  apps get higher rate limits (#374).
+- **Made Live** on 2026-11-21, by the developer (#374). The portal says going live raises the API
+  rate limits to "production based limits"; it asked only for the app's name and where it can be
+  found, and started no review. The app name there is used in YouVersion's reporting.
 - **The App Key** is a secret under the Platform terms ("keep confidential and not share with any
   third-party"):
   - local builds: `YOUVERSION_APP_KEY` in the git-ignored `local.properties`;
@@ -42,7 +43,7 @@ recorded below. A YouVersion version taken off that list is deleted from phones 
     server proxy. If it leaks or is abused, create a new key in the portal, update both places,
     and release an update.
   - Without a key, the build still works and simply doesn't offer these versions.
-- **Rate limit:** per key, not published. On HTTP 429 the reader shows a calm "try again in a
+- **Rate limit:** per key, not published (raised once the app went Live). On HTTP 429 the reader shows a calm "try again in a
   minute" message (`ChapterUnavailableMessage`). Whole Bibles are never fetched at once (1,189
   calls per reader could lock out every reader); a chapter is fetched only when opened.
 
