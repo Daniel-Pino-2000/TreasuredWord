@@ -72,6 +72,7 @@ import com.application.bibleapp.utils.formatVerseReference
 import com.application.bibleapp.viewmodel.KeyPassage
 import com.application.bibleapp.viewmodel.MeaningSearchState
 import com.application.bibleapp.viewmodel.MeaningSearchStatus
+import com.application.bibleapp.viewmodel.SearchUiState
 
 @Composable
 fun SearchView(
@@ -88,6 +89,7 @@ fun SearchView(
     val selectedVersion by bibleViewModel.selectedVersion.collectAsState()
     val keyboardController = LocalSoftwareKeyboardController.current
     val links = rememberExternalLinks { bibleViewModel.showMessage(it) }
+    val words = WordsStatus(searchState, bibleViewModel.versionLabel(selectedVersion.id), bibleViewModel::onSearchLoadMore)
 
     // Not for a verse reference or a quoted phrase (#287): those keep the plain list of results.
     val offersMeaning = remember(searchState.query, bookNames) {
@@ -125,6 +127,7 @@ fun SearchView(
                 searchedVerses = searchState.results,
                 bookNames = bookNames,
                 onVerseClicked = onVerseClicked,
+                words = words,
                 meaning = MeaningSection(
                     // A section for another query (typing moved on) offers to search this one.
                     state = meaningState.takeIf { it.query == searchState.query } ?: MeaningSearchState(),
@@ -140,7 +143,7 @@ fun SearchView(
                 )
             )
             searchState.results.isNotEmpty() ->
-                SearchResultsList(searchState.query, searchState.results, bookNames, onVerseClicked)
+                SearchResultsList(searchState.query, searchState.results, bookNames, onVerseClicked, words)
             searchState.isSearching -> Unit
             searchState.hasError -> SearchErrorState(onRetry = { bibleViewModel.onSearchSubmit() })
             searchState.query.isEmpty() -> SearchEmptyState(
@@ -150,7 +153,10 @@ fun SearchView(
                     bibleViewModel.onSearchSubmit()
                 }
             )
-            else -> SearchNoResultsState(query = searchState.query)
+            else -> SearchNoResultsState(
+                query = searchState.query,
+                note = if (searchState.savedChaptersOnly) stringResource(R.string.search_saved_chapters_only, bibleViewModel.versionLabel(selectedVersion.id)) else null
+            )
         }
     }
 }
@@ -209,7 +215,7 @@ private fun SearchEmptyState(suggestions: List<String>, onSuggestionClick: (Stri
 }
 
 @Composable
-private fun SearchNoResultsState(query: String) {
+private fun SearchNoResultsState(query: String, note: String? = null) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -229,6 +235,16 @@ private fun SearchNoResultsState(query: String) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = Spacing.lg)
         )
+        // A licensed version searched without YouVersion: it may well be in a chapter not opened yet (#378).
+        if (note != null) {
+            Text(
+                text = note,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(top = Spacing.md)
+            )
+        }
     }
 }
 
@@ -272,6 +288,13 @@ private class MeaningSection(
     val onFindHelpline: () -> Unit
 )
 
+/** The word search's paging and notes (#382, #378), and [onLoadMore] for its next results. */
+private class WordsStatus(
+    val state: SearchUiState,
+    val versionName: String,
+    val onLoadMore: () -> Unit
+)
+
 /**
  * The results. With [meaning], two sections (#287): "Verses with these words" (the word search,
  * instant and offline) first, then "Related by meaning" from the server, whose loading row sits
@@ -287,6 +310,7 @@ private fun SearchResultsList(
     searchedVerses: List<VerseUI>,
     bookNames: Map<Int, String>,
     onVerseClicked: (bookId: Int, chapter: Int, verse: Int) -> Unit,
+    words: WordsStatus,
     meaning: MeaningSection? = null
 ) {
     // A fresh scroll position per query: new results start at the top, while Back from a verse
@@ -328,6 +352,9 @@ private fun SearchResultsList(
             }
             if (meaning != null) {
                 item(key = "words_header") { SectionHeader(stringResource(R.string.search_section_words)) }
+            }
+            wordsNotes(words)
+            if (meaning != null) {
                 if (searchedVerses.isEmpty()) {
                     when {
                         meaning.wordsSearching -> Unit
@@ -347,7 +374,48 @@ private fun SearchResultsList(
                     onClick = { onVerseClicked(verse.bookId!!, verse.chapter!!, verse.verse!!) }
                 )
             }
+            moreWords(words)
             if (meaning != null) meaningSection(meaning, meaningSlow, bookNames, onVerseClicked)
+        }
+    }
+}
+
+/** Above the word results: only saved chapters were searched (#378), or a corrected spelling was (#382). */
+private fun LazyListScope.wordsNotes(words: WordsStatus) {
+    if (words.state.savedChaptersOnly) item(key = "words_saved_only") {
+        SectionNote(stringResource(R.string.search_saved_chapters_only, words.versionName))
+    }
+    words.state.closeMatchesFor?.let { typed ->
+        item(key = "words_close_matches") { SectionNote(stringResource(R.string.search_close_matches, typed)) }
+    }
+}
+
+/**
+ * Below the word results, while a licensed version has more (#382): a loading row that finds the
+ * next results when it scrolls into view, so chapters are fetched only for rows about to be seen;
+ * or Retry after a failure.
+ */
+private fun LazyListScope.moreWords(words: WordsStatus) {
+    val state = words.state
+    if (!state.canLoadMore) return
+    if (state.moreFailed) {
+        item(key = "words_more_failed") { SectionNote(stringResource(R.string.search_more_failed), onRetry = words.onLoadMore) }
+        return
+    }
+    item(key = "words_more") {
+        // Again each time a batch ends with this row still in view (VerseSearch ignores it while one runs).
+        LaunchedEffect(state.loadsDone) { words.onLoadMore() }
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.lg, vertical = Spacing.md)
+        ) {
+            CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+            Text(
+                text = stringResource(R.string.search_loading_more),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = Spacing.md)
+            )
         }
     }
 }

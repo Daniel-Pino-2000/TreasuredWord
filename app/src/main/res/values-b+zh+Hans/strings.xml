@@ -204,6 +204,13 @@
     <string name="search_section_key_passages">重点经文</string>
     <string name="search_section_meaning">意思相关</string>
     <string name="search_words_none">没有经文包含这些词。</string>
+    <!-- Search in a licensed version (#378, #382) when YouVersion's search couldn't be used (offline, too many requests). %1$s: the version's abbreviation, such as LBLA. -->
+    <string name="search_saved_chapters_only">仅搜索了你已打开的 %1$s 章节：目前无法进行完整搜索。</string>
+    <!-- Search (#382): YouVersion searched a corrected spelling. %1$s: the words as the user typed them. -->
+    <string name="search_close_matches">没有包含“%1$s”的经文。显示相近的结果。</string>
+    <!-- Search (#382): the row at the end of the word results while more are found. -->
+    <string name="search_loading_more">正在加载更多结果…</string>
+    <string name="search_more_failed">无法加载更多结果。</string>
     <string name="search_meaning_start">查找意思相关的经文</string>
     <string name="search_meaning_loading">正在查找意思相关的经文…</string>
     <string name="search_meaning_none">没有找到其他意思相关的经文。</string>

@@ -139,7 +139,8 @@ fundraising as commercial use.
 ## Privacy
 
 Reading a YouVersion version sends YouVersion the translation and chapter, the app's key and the
-device's IP address, never account data. `docs/privacy-policy.md` says so (effective 2026-11-21).
+device's IP address, never account data. Word search in one sends the words searched (#382).
+`docs/privacy-policy.md` says so (effective 2026-11-21).
 The Play Console **Data safety** form must list it: data shared with a third party is none of the
 user's personal data beyond the IP address that every web request carries, so it's the same answer
 as for bible.helloao.org, but recheck the form whenever this changes.
@@ -163,5 +164,10 @@ as for bible.helloao.org, but recheck the form whenever this changes.
 - Saved chapters keep the shape the parser gave them. If the parser changes how it reads the HTML,
   clear the saved chapters of the YouVersion versions in the same release (delete their rows in
   `downloaded_verses`/`downloaded_footnotes`; the book list stays), so they're fetched again.
-- Word search in a YouVersion version only finds chapters already opened, since only those are on
-  the phone (#378).
+- Word search in a YouVersion version uses `GET /v1/search-verses?bible_id=…&query=…&user_intent=text`
+  (#382), which returns references only, most relevant first, 25 a page. `LicensedWordSearch`
+  resolves 8 at a time as the list scrolls: from saved chapters, else by fetching and saving the
+  chapter as the reader does. YouVersion lists verses that only relate to the words after the ones
+  that have them; those are dropped, matched as the phone's own search matches. Offline, or on a 429
+  or other failure, it searches the saved chapters instead and says so (#378). The license texts
+  put no limit on search, and YouVersion offers this endpoint for licensed Bibles.

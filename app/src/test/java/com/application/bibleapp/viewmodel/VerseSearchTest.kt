@@ -1,6 +1,7 @@
 package com.application.bibleapp.viewmodel
 
 import com.application.bibleapp.data.model.VerseUI
+import com.application.bibleapp.data.repository.WordSearchPage
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.TestScope
@@ -21,11 +22,11 @@ class VerseSearchTest {
         val calls = mutableListOf<Pair<String, String>>()
         var failWith: Exception? = null
 
-        suspend fun search(query: String, versionId: String): List<VerseUI> {
+        suspend fun search(query: String, versionId: String): WordSearchPage {
             calls += query to versionId
             delay(latencyMillis)
             failWith?.let { throw it }
-            return listOf(VerseUI(id = null, text = "$query@$versionId", bookId = 1, chapter = 1, verse = 1))
+            return WordSearchPage(listOf(VerseUI(id = null, text = "$query@$versionId", bookId = 1, chapter = 1, verse = 1)))
         }
     }
 
@@ -202,5 +203,36 @@ class VerseSearchTest {
         advanceUntilIdle()
 
         assertTrue(fake.calls.isEmpty())
+    }
+
+    @Test
+    fun `loadMore shows the next results, says when it fails, and retries (#382)`() = runTest {
+        val first = VerseUI(id = null, text = "a", bookId = 1, chapter = 1, verse = 1)
+        val second = VerseUI(id = null, text = "b", bookId = 1, chapter = 1, verse = 2)
+        var fail = true
+        val last = WordSearchPage(listOf(first, second))
+        lateinit var more: suspend () -> WordSearchPage
+        more = { if (fail) WordSearchPage(listOf(first), loadMore = more, moreFailed = true) else last }
+        val search = VerseSearch(this, { _, _ -> WordSearchPage(listOf(first), loadMore = more) }, { "yv-89" })
+
+        search.onQueryChange("amor")
+        advanceUntilIdle()
+        assertTrue(search.state.value.canLoadMore)
+
+        search.loadMore()
+        advanceUntilIdle()
+        assertTrue(search.state.value.moreFailed)
+        assertEquals(1, search.state.value.results.size)
+
+        fail = false
+        search.loadMore()
+        advanceUntilIdle()
+        assertEquals(listOf(first, second), search.state.value.results)
+        assertFalse(search.state.value.canLoadMore)
+        assertFalse(search.state.value.moreFailed)
+
+        search.loadMore() // nothing more: no-op
+        advanceUntilIdle()
+        assertEquals(2, search.state.value.results.size)
     }
 }

@@ -3,6 +3,7 @@ package com.application.bibleapp.viewmodel
 import com.application.bibleapp.data.model.BibleTranslation
 import com.application.bibleapp.data.model.DEFAULT_VERSION
 import com.application.bibleapp.data.model.VerseUI
+import com.application.bibleapp.data.repository.WordSearchPage
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -22,7 +23,19 @@ data class SearchUiState(
     val query: String = "",
     val results: List<VerseUI> = emptyList(),
     val isSearching: Boolean = false,
-    val hasError: Boolean = false
+    val hasError: Boolean = false,
+    /** More results can be found as the list scrolls (a licensed version, #382). */
+    val canLoadMore: Boolean = false,
+    val isLoadingMore: Boolean = false,
+    /** How many times more results were loaded. A batch can load within one frame (its chapters
+     *  all saved), so the list asks again by this count, not by [isLoadingMore] going back to false. */
+    val loadsDone: Int = 0,
+    /** The last try for more results failed (offline, too many requests): the list offers Retry. */
+    val moreFailed: Boolean = false,
+    /** A licensed version searched only its saved chapters (#378); see [WordSearchPage]. */
+    val savedChaptersOnly: Boolean = false,
+    /** YouVersion searched a corrected spelling of this query (#382). */
+    val closeMatchesFor: String? = null
 )
 
 /**
@@ -95,13 +108,15 @@ class SearchSuggestionFilter(
  * Debounced search-as-you-type for the Search screen: a search runs once typing pauses for
  * [debounceMillis], or right away on [submit]. Every new request cancels the one before it,
  * so a slow search for an earlier query can never overwrite the results for a newer one.
- * The version is read when the search actually runs, see [onVersionChange].
+ * The version is read when the search actually runs, see [onVersionChange]. A search can find
+ * more as the list scrolls ([loadMore], #382); [debounceMillis] is read per search, as searching a
+ * licensed version sends requests to YouVersion and waits longer for typing to pause.
  */
 class VerseSearch(
     private val scope: CoroutineScope,
-    private val search: suspend (query: String, versionId: String) -> List<VerseUI>,
+    private val search: suspend (query: String, versionId: String) -> WordSearchPage,
     private val currentVersionId: () -> String,
-    private val debounceMillis: Long = DEBOUNCE_MILLIS
+    private val debounceMillis: () -> Long = { DEBOUNCE_MILLIS }
 ) {
     private val _query = MutableStateFlow("")
     /** The search field's text, exactly as typed. */
@@ -112,6 +127,7 @@ class VerseSearch(
 
     private var job: Job? = null
     private var requestedQuery = ""
+    private var more: (suspend () -> WordSearchPage)? = null
 
     /** The text changed: search it once typing pauses, or go back to idle if it's too short to search. */
     fun onQueryChange(text: String) {
@@ -125,7 +141,7 @@ class VerseSearch(
         val inFlight = job?.isActive == true
         if (inFlight && requestedQuery == query) return
         if (!inFlight && _state.value.query == query && !_state.value.hasError) return
-        launchSearch(query, debounceMillis)
+        launchSearch(query, debounceMillis())
     }
 
     /** The keyboard's Search key, a suggestion chip or Retry: search now instead of waiting out the debounce. */
@@ -140,20 +156,40 @@ class VerseSearch(
         if (query.isNotEmpty()) launchSearch(query, delayMillis = 0)
     }
 
+    /** The list scrolled near its end, or Retry after [SearchUiState.moreFailed]: find the next results. */
+    fun loadMore() {
+        val next = more ?: return
+        if (job?.isActive == true) return // a search, or more for this one, is already running
+        val query = _state.value.query
+        job = scope.launch {
+            _state.update { it.copy(isLoadingMore = true, moreFailed = false) }
+            val loadsDone = _state.value.loadsDone + 1
+            _state.value = try {
+                stateFor(query, next()).copy(loadsDone = loadsDone)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _state.value.copy(isLoadingMore = false, moreFailed = true, loadsDone = loadsDone)
+            }
+        }
+    }
+
     private fun reset() {
         job?.cancel()
         requestedQuery = ""
+        more = null
         _state.value = SearchUiState()
     }
 
     private fun launchSearch(query: String, delayMillis: Long) {
         job?.cancel()
         requestedQuery = query
+        more = null
         job = scope.launch {
             delay(delayMillis)
             _state.update { it.copy(isSearching = true) }
             _state.value = try {
-                SearchUiState(query = query, results = search(query, currentVersionId()))
+                stateFor(query, search(query, currentVersionId()))
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -162,8 +198,22 @@ class VerseSearch(
         }
     }
 
+    private fun stateFor(query: String, page: WordSearchPage): SearchUiState {
+        more = page.loadMore
+        return SearchUiState(
+            query = query,
+            results = page.verses,
+            canLoadMore = page.loadMore != null,
+            moreFailed = page.moreFailed,
+            savedChaptersOnly = page.savedChaptersOnly,
+            closeMatchesFor = page.closeMatchesFor
+        )
+    }
+
     companion object {
         const val DEBOUNCE_MILLIS = 300L
+        /** For a licensed version (#382): each search is a request to YouVersion, so wait for a real pause. */
+        const val REMOTE_DEBOUNCE_MILLIS = 700L
         /** Shorter queries match nearly every verse, so they only run when submitted explicitly. */
         const val MIN_QUERY_LENGTH = 2
     }
