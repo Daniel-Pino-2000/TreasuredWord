@@ -87,8 +87,12 @@ It takes effect after YouVersion vets the app, and either Lockman or YouVersion 
 It covered the EasyEnglish Bible 2024. Full text: [Google Doc](https://docs.google.com/document/d/1EQdlm24Y419Lb38Ih5_GxQRGKaZ-FIaVicTG5zLDDII/edit).
 EasyEnglish was taken out before it shipped (#381): this license bars using the text "to produce
 personalized content through AI", so it couldn't join the Lockman versions in Bible Helper and
-search-by-meaning answers, and one version wasn't worth a different experience. We end the license
-by deselecting it in the portal (its section 5).
+search-by-meaning answers, and one version wasn't worth a different experience.
+
+**The license stays accepted, unused (decided 2026-11-21).** The portal has no way to deselect an
+accepted license: "Your licenses" lists it read-only, and the app's settings have no choice of
+Bibles. It binds only use of the text, which the app no longer makes, so it costs nothing. To end it
+anyway, send 30 days' written notice to agreements@easyenglish.bible (its section 5).
 
 BroadStreet, Wycliffe and likely SIL, Biblion, Hawaii Pidgin Bible and EIB use the same template.
 Before accepting any of them, know what it asks:
@@ -101,7 +105,8 @@ Before accepting any of them, know what it asks:
 - **No use of the text to produce personalized content through AI**, which keeps it out of Bible
   Helper and search by meaning, including their verse cards.
 - No printing. Cross-marketing is allowed both ways without implying sponsorship.
-- They can end it at any time by written notice; we by 30 days' notice or by deselecting it.
+- They can end it at any time by written notice; we by 30 days' notice (the license also names
+  deselecting it in the portal, which the portal doesn't offer for an accepted license).
   Oklahoma law. They may receive aggregate, de-identified usage statistics.
 
 ## Decided against, or deferred
