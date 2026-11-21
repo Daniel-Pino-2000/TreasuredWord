@@ -44,6 +44,7 @@ import com.application.bibleapp.utils.isoTimestampNow
 import com.application.bibleapp.utils.parseVerseReference
 import com.application.bibleapp.utils.passage
 import com.application.bibleapp.worker.DailyVerseScheduler
+import com.application.bibleapp.worker.LicensedReadAheadScheduler
 import com.application.bibleapp.worker.LocalReadingProgress
 import com.application.bibleapp.worker.SyncLocalStore
 import kotlinx.coroutines.CancellationException
@@ -182,10 +183,36 @@ class BibleRepository(
         } catch (e: CancellationException) {
             throw e
         } catch (e: YouVersionBusyException) {
+            LicensedReadAheadScheduler.noteBusy(context, e.retryAfterSeconds) // the read-ahead waits too (#384)
             ChapterProblem.BUSY
         } catch (e: Exception) {
             Log.w("BibleRepository", "YouVersion chapter $versionId $bookId:$chapter failed: ${e.message}")
             if (NetworkUtils.isOnline(context)) ChapterProblem.UNAVAILABLE else ChapterProblem.OFFLINE
+        }
+    }
+
+    /** The reader opened [bookId] [chapter] of [versionId]: if it's a licensed version added here
+     *  and the phone is online, read the next chapters ahead in the background (#384). */
+    fun readAheadFrom(versionId: String, bookId: Int, chapter: Int) {
+        if (!YouVersionBibles.isYouVersion(versionId) || !youVersion.isConfigured) return
+        if (!NetworkUtils.isOnline(context)) return
+        LicensedReadAheadScheduler.start(context, versionId, bookId, chapter)
+    }
+
+    /** Whether [versionId] is a licensed version still added on this device, to read ahead (#384). */
+    fun canReadAhead(versionId: String): Boolean =
+        youVersion.isConfigured && YouVersionBibles.find(versionId) != null &&
+            !YouVersionBibles.isWithdrawn(versionId) && BibleDatabaseManager.isVersionDownloaded(context, versionId)
+
+    fun hasSavedChapter(versionId: String, bookId: Int, chapter: Int): Boolean =
+        BibleDatabaseManager.hasChapter(context, versionId, bookId, chapter)
+
+    /** Fetches and saves one licensed chapter for the read-ahead (#384); throws what the API threw. */
+    suspend fun fetchAndSaveLicensedChapter(versionId: String, bookId: Int, chapter: Int) {
+        val bible = YouVersionBibles.find(versionId) ?: return
+        val parsed = youVersion.fetchChapter(bible.yvId, bookId, chapter)
+        withContext(Dispatchers.IO) {
+            BibleDatabaseManager.saveChapter(context, versionId, bookId, chapter, parsed.verses, parsed.footnotes)
         }
     }
 
@@ -542,7 +569,10 @@ class BibleRepository(
     suspend fun removeWithdrawnVersions() = withContext(Dispatchers.IO) {
         BibleDatabaseManager.getDownloadedVersions(context)
             .filter { YouVersionBibles.isWithdrawn(it.id) }
-            .forEach { BibleDatabaseManager.deleteDownloadedVersion(context, it.id) }
+            .forEach {
+                LicensedReadAheadScheduler.cancelFor(context, it.id)
+                BibleDatabaseManager.deleteDownloadedVersion(context, it.id)
+            }
     }
 
     /** All locally downloaded versions, keyed for the picker to badge without a query per row. */
@@ -631,6 +661,7 @@ class BibleRepository(
 
     /** Permanently removes [versionId]'s downloaded content. No-ops for the bundled "kjv". */
     suspend fun deleteVersion(versionId: String) = withContext(Dispatchers.IO) {
+        LicensedReadAheadScheduler.cancelFor(context, versionId) // stops its read-ahead (#384)
         BibleDatabaseManager.deleteDownloadedVersion(context, versionId)
     }
 

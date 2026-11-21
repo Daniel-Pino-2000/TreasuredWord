@@ -769,6 +769,8 @@ class BibleViewModel(
             _verses.value = chapterData
             // Only a YouVersion chapter not read yet can fail to load (#366); the reader says why.
             _chapterProblem.value = load.problem.takeIf { chapterData.isEmpty() }
+            // A licensed version's next chapters are saved in the background, for offline (#384).
+            if (chapterData.isNotEmpty()) repository.readAheadFrom(versionId, bookId, chapterId)
             _footnotes.value = repository.getFootnotes(bookId = bookId, chapter = chapterId, versionId = versionId)
             _currentBook.value = bookId
             _currentChapter.value = chapterId
