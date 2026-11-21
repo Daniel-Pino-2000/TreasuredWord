@@ -117,11 +117,15 @@ fun buildVerseShareText(
     verses: List<VerseLocationDto>,
     textOf: (VerseLocationDto) -> String?,
     bookName: (Int) -> String,
-    versionLabel: String
+    versionLabel: String,
+    // A licensed Bible's publisher site (#366): Lockman lets a quote carry just the version's tag
+    // when it links lockman.org, so the link goes on its own line after the reference.
+    publisherLink: String? = null
 ): String {
     val sorted = verses.distinct().sortedWith(compareBy({ it.bookId }, { it.chapter }, { it.verse }))
     val body = sorted.mapNotNull { location ->
         textOf(location)?.trim()?.takeIf { it.isNotEmpty() }?.let { if (sorted.size > 1) "${location.verse} $it" else it }
     }.joinToString(" ")
-    return "\"$body\"\n— ${formatFullVerseRefs(sorted, bookName)} ($versionLabel)"
+    val quote = "\"$body\"\n— ${formatFullVerseRefs(sorted, bookName)} ($versionLabel)"
+    return if (publisherLink == null) quote else "$quote\n$publisherLink"
 }

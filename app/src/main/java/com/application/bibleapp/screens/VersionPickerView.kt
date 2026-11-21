@@ -1,5 +1,6 @@
 package com.application.bibleapp.screens
 
+import com.application.bibleapp.data.model.YouVersionBibles
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -193,7 +194,48 @@ fun VersionPickerView(
         // Only these can be re-downloaded; a download the catalog doesn't list can only be removed (#63).
         val catalogIds = versions.mapTo(HashSet()) { it.id }
 
+        // The licensed Bibles read through YouVersion (#366) get their own section too, since they
+        // work differently: chapters come online as they're read and are kept after that.
+        val licensedTranslations = if (!catalogUnavailable && searchQuery.isBlank()) {
+            versions.filter { YouVersionBibles.isYouVersion(it.id) }
+        } else emptyList()
+
         LazyColumn {
+            if (licensedTranslations.isNotEmpty()) {
+                stickyHeader {
+                    Surface(color = MaterialTheme.colorScheme.surfaceVariant) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = Spacing.lg, vertical = Spacing.sm)
+                        ) {
+                            Text(
+                                text = stringResource(R.string.version_section_licensed),
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            Text(
+                                text = stringResource(R.string.version_section_licensed_hint),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+                items(licensedTranslations, key = { "licensed-${it.id}" }) { version ->
+                    VersionRow(
+                        version = version,
+                        selectedVersion = selectedVersion,
+                        downloadingVersionId = downloadingVersionId,
+                        downloadProgress = downloadProgress,
+                        downloadedVersions = downloadedVersions,
+                        isInCatalog = version.id in catalogIds,
+                        bibleViewModel = bibleViewModel,
+                        onVersionClicked = onVersionClicked,
+                        onDeleteClicked = { pendingDeleteId = it.id }
+                    )
+                }
+            }
+
             if (downloadedTranslations.isNotEmpty()) {
                 stickyHeader {
                     Surface(color = MaterialTheme.colorScheme.surfaceVariant) {
@@ -273,6 +315,8 @@ private fun VersionRow(
     val isBundled = version.id == BUNDLED_TRANSLATION.id
     val downloadInfoForVersion = downloadedVersions[version.id]
     val isDownloaded = isBundled || downloadInfoForVersion != null
+    // Read online, a chapter at a time (#366): never downloaded whole, so no download button.
+    val isOnline = YouVersionBibles.isYouVersion(version.id)
     // Re-downloading needs the catalog to still list this id (#63).
     val needsUpdate = isInCatalog && downloadInfoForVersion != null && !downloadInfoForVersion.isUpToDate
 
@@ -304,6 +348,12 @@ private fun VersionRow(
                 if (needsUpdate) {
                     Text(
                         text = stringResource(R.string.version_update_available),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else if (isOnline && !isSelected) {
+                    Text(
+                        text = stringResource(R.string.version_status_online),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -363,7 +413,7 @@ private fun VersionRow(
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-            } else if (!isDownloaded && !isSelected) {
+            } else if (!isDownloaded && !isSelected && !isOnline) {
                 // Downloads without switching — tapping the row itself still downloads
                 // and switches, same as before this button existed.
                 IconButton(

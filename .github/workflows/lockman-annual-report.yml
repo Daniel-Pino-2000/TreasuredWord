@@ -1,0 +1,38 @@
+name: Lockman annual report reminder
+
+# The Lockman license (LBLA, NBLA, NASB, AMP; docs/bible-licensing.md, #366) requires a yearly report,
+# by the end of February, of how many copies were distributed the previous calendar year. This opens
+# a reminder issue every 1 February. Free: GitHub Actions on a public repository, one short run a year.
+on:
+  schedule:
+    - cron: "0 14 1 2 *"
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Open the reminder issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          year=$(( $(date -u +%Y) - 1 ))
+          title="Lockman annual report for $year (due end of February)"
+          if gh issue list --state all --search "\"$title\" in:title" --json number --jq '.[0].number' | grep -q .; then
+            echo "Already opened: $title"
+            exit 0
+          fi
+          gh issue create --title "$title" --body "$(cat <<EOF
+          The Lockman Fast-track Bible License (LBLA, NBLA, NASB 2020, NASB 1995, AMP) asks for a report, **by the end of February**, of how many copies of the app were distributed in $year. See [docs/bible-licensing.md](https://github.com/$GH_REPO/blob/main/docs/bible-licensing.md#yearly-duties).
+
+          **Done when**
+          - [ ] Count new installs for 1 January–31 December $year: Play Console → Statistics → new installs (device acquisitions).
+          - [ ] Send the number to The Lockman Foundation through its [Email Us form](https://www.lockman.org/email-us/) (name the app, TreasuredWord, its YouVersion Platform license, and the year), or by post to PO Box 2279, La Habra, CA 90632-2279.
+          - [ ] Comment here with the date it was sent (not the personal details).
+          - [ ] Recheck docs/bible-licensing.md: license texts, notices in YouVersionBibles.kt, and whether RVR1960, NTV, NLT, NKJV or ESV are now on the YouVersion Platform.
+          EOF
+          )"

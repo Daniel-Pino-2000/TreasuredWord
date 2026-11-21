@@ -542,4 +542,14 @@
         <item quantity="one">Unaweza kukariri hadi mstari %1$d kwa wakati mmoja.</item>
         <item quantity="other">Unaweza kukariri hadi mistari %1$d kwa wakati mmoja.</item>
     </plurals>
+
+    <!-- Licensed Bibles read online through YouVersion (#366) -->
+    <string name="version_section_licensed">Matoleo yenye leseni</string>
+    <string name="version_section_licensed_hint">Husomwa mtandaoni. Sura unazofungua hubaki kwenye kifaa chako.</string>
+    <string name="version_status_online">Toleo la mtandaoni</string>
+    <string name="youversion_chapter_offline">Sura hii bado haipo kwenye kifaa chako, na toleo hili linahitaji intaneti ili kuifungua. Unganisha, au chagua toleo lililopakuliwa.</string>
+    <string name="youversion_chapter_failed">Imeshindikana kupakia sura hii. Tafadhali jaribu tena.</string>
+    <string name="youversion_busy">Watu wengi wanasoma toleo hili sasa hivi. Tafadhali jaribu tena baada ya dakika moja.</string>
+    <string name="youversion_unavailable">Toleo hili halipatikani kwa sasa. Tafadhali jaribu tena baadaye.</string>
+    <string name="youversion_choose_downloaded">Chagua toleo lililopakuliwa</string>
 </resources>

@@ -1,5 +1,9 @@
 package com.application.bibleapp.viewmodel
 
+import com.application.bibleapp.data.model.YouVersionBibles
+import com.application.bibleapp.data.repository.ChapterProblem
+import com.application.bibleapp.data.remote.YouVersionBusyException
+import com.application.bibleapp.data.remote.YouVersionNotLicensedException
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.application.bibleapp.data.model.BUNDLED_TRANSLATION
@@ -162,7 +166,9 @@ data class TranslationCredit(
     /** Full title plus abbreviation, e.g. "Bíblia Livre (BLJ)". */
     val title: String,
     val license: TranslationLicense?,
-    val isBundled: Boolean = false
+    val isBundled: Boolean = false,
+    /** A licensed Bible read through YouVersion (#366): credited to its publisher, not to bible.helloao.org. */
+    val isLicensed: Boolean = false
 )
 
 /**
@@ -188,7 +194,8 @@ fun translationCreditFor(
     val fullName = listed?.nativeName?.takeIf { it.isNotBlank() } ?: saved?.fullName.orEmpty()
     return TranslationCredit(
         title = if (fullName.isBlank() || fullName == label) label else "$fullName ($label)",
-        license = saved?.license ?: listed?.license
+        license = saved?.license ?: listed?.license,
+        isLicensed = YouVersionBibles.isYouVersion(versionId)
     )
 }
 
@@ -731,6 +738,13 @@ class BibleViewModel(
     fun versionLabel(versionId: String): String =
         versionLabelFor(versionId, _availableVersions.value, _downloadedVersions.value)
 
+    private val _chapterProblem = MutableStateFlow<ChapterProblem?>(null)
+    /** Why the chapter on screen is empty, for a YouVersion version's chapter that couldn't be fetched (#366). */
+    val chapterProblem: StateFlow<ChapterProblem?> = _chapterProblem.asStateFlow()
+
+    /** The reader's "Try again" after [chapterProblem]. */
+    fun retryChapter() = loadChapter(_currentBook.value, _currentChapter.value, _currentVerse.value)
+
     fun loadChapter(bookId: Int, chapterId: Int, verseId: Int = 1) {
         // A new chapter means any in-progress selection or open popup belongs to verses that
         // are about to leave the screen.
@@ -740,8 +754,11 @@ class BibleViewModel(
         _noteEditor.value = null
         viewModelScope.launch {
             val versionId = _selectedVersion.value.id
-            val chapterData = repository.getChapter(bookId = bookId, chapter = chapterId, versionId = versionId)
+            val load = repository.loadChapter(bookId = bookId, chapter = chapterId, versionId = versionId)
+            val chapterData = load.verses
             _verses.value = chapterData
+            // Only a YouVersion chapter not read yet can fail to load (#366); the reader says why.
+            _chapterProblem.value = load.problem.takeIf { chapterData.isEmpty() }
             _footnotes.value = repository.getFootnotes(bookId = bookId, chapter = chapterId, versionId = versionId)
             _currentBook.value = bookId
             _currentChapter.value = chapterId
@@ -836,7 +853,8 @@ class BibleViewModel(
             verses = selection,
             textOf = textByLocation::get,
             bookName = { id -> names[id] ?: BibleBooks.getBookById(id)?.name ?: "" },
-            versionLabel = currentVersionLabel.value
+            versionLabel = currentVersionLabel.value,
+            publisherLink = currentPublisherLink()
         )
         clearSelection()
         return text
@@ -848,7 +866,12 @@ class BibleViewModel(
     fun takeSelectionAiPassage(): AiQuestionPassage? {
         val selection = _selectedVerses.value
         if (selection.isEmpty()) return null
-        val textByLocation = _verses.value
+        // A licensed Bible's text is never sent to Bible Helper (#366, docs/bible-licensing.md):
+        // the question carries the same verses from the bundled KJV instead.
+        val licensed = YouVersionBibles.isYouVersion(_selectedVersion.value.id)
+        val first = selection.minWithOrNull(compareBy({ it.bookId }, { it.chapter }, { it.verse }))
+        val sourceVerses = if (licensed && first != null) repository.kjvChapterNow(first.bookId, first.chapter) else _verses.value
+        val textByLocation = sourceVerses
             .filter { it.bookId != null && it.chapter != null && it.verse != null }
             .groupBy { VerseLocationDto(it.bookId!!, it.chapter!!, it.verse!!) }
             .mapValues { (_, rows) -> rows.joinToString(" ") { it.text.removePrefix(LEGACY_PARAGRAPH_MARKER).trim() } }
@@ -856,8 +879,8 @@ class BibleViewModel(
         val passage = buildAiQuestionPassage(
             selection = selection,
             textOf = textByLocation::get,
-            bookName = { id -> names[id] ?: BibleBooks.getBookById(id)?.name ?: "" },
-            versionLabel = currentVersionLabel.value
+            bookName = { id -> (if (licensed) null else names[id]) ?: BibleBooks.getBookById(id)?.name ?: "" },
+            versionLabel = if (licensed) BUNDLED_TRANSLATION.displayName else currentVersionLabel.value
         )
         clearSelection()
         return passage
@@ -890,7 +913,7 @@ class BibleViewModel(
             versionLabel = versionLabel,
             notice = currentLicenseNotice()
         )
-        val shareText = buildVerseShareText(sorted, textByLocation::get, bookName, versionLabel)
+        val shareText = buildVerseShareText(sorted, textByLocation::get, bookName, versionLabel, currentPublisherLink())
         clearSelection()
         _verseImageRequest.value = VerseImageRequest(content, shareText)
     }
@@ -926,6 +949,10 @@ class BibleViewModel(
         }
     }
 
+    /** A licensed Bible's publisher site for shared text (#366); null for every other translation. */
+    private fun currentPublisherLink(): String? =
+        YouVersionBibles.find(_selectedVersion.value.id)?.licenseUrl
+
     /** The selected translation's license notice (#98), for a verse image. Computed here rather
      *  than read from [currentTranslationCredit], which only updates while the reader shows it. */
     private fun currentLicenseNotice(): String? =
@@ -944,7 +971,8 @@ class BibleViewModel(
     /** The Home verse card's Copy/Share text, in the same `"…" — Ref (VER)` shape as a reader
      *  selection (see [buildVerseShareText]). Null until the daily verse has loaded. */
     fun verseOfTheDayShareText(): String? = _verseOfTheDay.value?.let { verse ->
-        "\"${verse.text.trim()}\"\n— ${verse.reference} (${currentVersionLabel.value})"
+        val quote = "\"${verse.text.trim()}\"\n— ${verse.reference} (${currentVersionLabel.value})"
+        currentPublisherLink()?.let { "$quote\n$it" } ?: quote
     }
 
     /** For confirmations the system doesn't already show (e.g. copy on Android 12 and older). */
@@ -1661,6 +1689,8 @@ class BibleViewModel(
     private fun downloadErrorText(error: Throwable): UiText = when (error) {
         is NoInternetException -> UiText.Res(R.string.download_error_offline)
         is NoContentException -> UiText.Res(R.string.download_error_no_content)
+        is YouVersionBusyException -> UiText.Res(R.string.youversion_busy)
+        is YouVersionNotLicensedException -> UiText.Res(R.string.youversion_unavailable)
         else -> error.message?.let { UiText.Raw(it) } ?: UiText.Res(R.string.download_failed)
     }
 }

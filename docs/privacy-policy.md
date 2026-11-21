@@ -17,6 +17,7 @@ TreasuredWord is a free Bible reading app made by Daniel Pino, an independent de
 - We email you only when you ask for it: to check that your email address is yours, or to reset a forgotten password. Those emails are sent through Gmail, from TreasuredWord's own Gmail account.
 - If you ask the Bible Helper a question, it's sent with the recent conversation to our server and to Cloudflare, whose AI writes the answer. Cloudflare doesn't keep it or train on it.
 - When you search the Bible and press the search button, what you typed is also sent, without your account, to our server and to Cloudflare to find verses related by meaning. Neither keeps it.
+- If you read one of the licensed Bible translations (such as LBLA, NBLA, NASB, AMP or EasyEnglish), the app gets each chapter from YouVersion the first time you open it. YouVersion sees which chapter, but not your account.
 - Some content comes from other websites, and some links open other services. Those services see that visit.
 
 ## Using the app without an account
@@ -68,7 +69,7 @@ The Bible Helper is an optional feature, for signed-in accounts, that answers qu
 
 When you ask a question:
 
-- **The app sends** your question, up to the last few messages of that conversation (so the answer can follow it), and the app's language to our server. If you asked from the reader with **Ask about this verse**, it also sends the verses you selected: their reference and their text in your Bible translation.
+- **The app sends** your question, up to the last few messages of that conversation (so the answer can follow it), and the app's language to our server. If you asked from the reader with **Ask about this verse**, it also sends the verses you selected: their reference and their text in your Bible translation. For the licensed translations read through YouVersion (see below), their licenses don't allow it, so the app sends the same verses from the King James Version instead.
 - **Our server adds** its own fixed instructions and sends the conversation to [Cloudflare Workers AI](https://developers.cloudflare.com/workers-ai/platform/data-usage/), which runs the AI model and sends the answer back. It may first send your latest question to Cloudflare on its own, to turn it into numbers that describe its meaning, as search by meaning does; the server uses them to pick which of our own notes on common topics to add to the instructions. Cloudflare acts as our service provider: it doesn't use what we send to train AI models and doesn't keep it after answering, except where the law requires it. Your account, email address and IP address aren't sent to Cloudflare.
 - **Our server doesn't store** your questions or the answers, and never writes them to its logs. It keeps only a count of how many questions your account asked each day, to apply the daily limit; the count is deleted with your account.
 - **Your conversations are saved on your phone**, so you can read them again. They aren't in your phone's cloud backup; a direct phone-to-phone transfer can copy them along with your downloaded Bibles. You can delete them in the app, and they're removed when you sign out or remove the app.
@@ -104,6 +105,7 @@ To show Bible text, the verse of the day and your Google profile picture, and to
 
 - **[bible.helloao.org](https://bible.helloao.org)**: Bible translations you choose to download, and audio you choose to play (streamed from audio.bible.helloao.org while you listen, not saved on your phone).
 - **[OurManna](https://ourmanna.com)**: the daily verse.
+- **The [YouVersion Platform](https://developers.youversion.com)** (api.youversion.com), run by YouVersion, Inc.: the licensed translations listed under **Licensed versions** in the version picker, such as LBLA, NBLA, NASB, AMP and EasyEnglish. When you choose one, the app gets its list of books; after that it gets each chapter the first time you open it and keeps it on your phone, so it opens offline next time. Each request tells YouVersion which translation and chapter, and carries the app's own key, which identifies TreasuredWord, not you. YouVersion may give each translation's publisher statistics on how often it's read, without information about who reads it. YouVersion's handling of these requests is covered by [its privacy policy](https://www.bible.com/privacy).
 - **Google's image server**: your Google account's profile picture, only if you sign in with Google (see "Signing in with Google" above).
 
 These requests carry no TreasuredWord account information. Like any web request, they let those services see your device's internet (IP) address.

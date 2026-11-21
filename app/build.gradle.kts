@@ -41,6 +41,18 @@ val releaseSigning: Map<String, String>? = run {
     }
 }
 
+/** YOUVERSION_APP_KEY from local.properties, else the environment (CI), else empty. */
+fun youVersionAppKey(): String {
+    val localFile = rootProject.file("local.properties")
+    val fromLocal = if (localFile.exists()) {
+        Properties().apply { localFile.inputStream().use { load(it) } }.getProperty("YOUVERSION_APP_KEY")
+    } else null
+    val key = fromLocal ?: System.getenv("YOUVERSION_APP_KEY") ?: ""
+    // Keys are plain tokens; anything that could break out of the generated Java string is refused.
+    require(key.all { it.isLetterOrDigit() || it == '-' || it == '_' }) { "YOUVERSION_APP_KEY has unexpected characters" }
+    return key
+}
+
 android {
     namespace = "com.application.bibleapp"
     compileSdk = 36
@@ -61,6 +73,11 @@ android {
         versionName = "1.8"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // The YouVersion Platform App Key for the licensed versions (#366, docs/bible-licensing.md).
+        // A secret: read from the git-ignored local.properties, or from the CI secret of the same
+        // name. Without it the build still works; the YouVersion versions just aren't offered.
+        buildConfigField("String", "YOUVERSION_APP_KEY", "\"${youVersionAppKey()}\"")
     }
 
     signingConfigs {

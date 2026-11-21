@@ -142,7 +142,8 @@ fun Navigation(
             BibleView(
                 bibleViewModel,
                 modifier = Modifier.padding(padding),
-                onSignInClick = { navController.navigate(Screen.Login.route) }
+                onSignInClick = { navController.navigate(Screen.Login.route) },
+                onChooseVersion = { navController.navigate(Screen.VersionPicker.route) }
             )
         }
 

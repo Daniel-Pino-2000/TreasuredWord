@@ -749,8 +749,14 @@ private fun paragraphAnnotatedString(
                 append(verse.text.removePrefix(LEGACY_PARAGRAPH_MARKER))
                 isFirstRunInParagraph = false
             } else {
-                runs.forEachIndexed { index, run ->
+                var index = 0
+                while (index < runs.size) {
+                    val run = runs[index]
                     val isFirstRunOfVerse = index == 0
+                    // Runs a footnote marker split off the same poetry line (#366) go inside that
+                    // line's paragraph; outside it they'd start a paragraph, so a line of their own.
+                    var lineEnd = index + 1
+                    while (run.poemLevel != null && lineEnd < runs.size && runs[lineEnd].sameLine) lineEnd++
                     val startsNewLine = run.poemLevel != null || (run.lineBreakBefore && !isFirstRunInParagraph)
 
                     if (startsNewLine) {
@@ -773,13 +779,21 @@ private fun paragraphAnnotatedString(
                         withStyle(style) {
                             if (isFirstRunOfVerse) appendVerseOpening()
                             appendRun(run, redLetterColor, footnoteMarkerStyle, footnoteSpans)
+                            for (sameLine in index + 1 until lineEnd) {
+                                if (!runs[sameLine].text.startsWithClosingPunctuation()) append(" ")
+                                appendRun(runs[sameLine], redLetterColor, footnoteMarkerStyle, footnoteSpans)
+                            }
                         }
                     } else {
-                        if (!isFirstRunInParagraph) append(" ")
+                        // No space before a run that opens with closing punctuation: a footnote
+                        // marker split "vacía†, y" into two runs (#366).
+                        val gluesToPrevious = !isFirstRunOfVerse && run.text.startsWithClosingPunctuation()
+                        if (!isFirstRunInParagraph && !gluesToPrevious) append(" ")
                         if (isFirstRunOfVerse) appendVerseOpening()
                         appendRun(run, redLetterColor, footnoteMarkerStyle, footnoteSpans)
                     }
                     isFirstRunInParagraph = false
+                    index = lineEnd
                 }
             }
 
@@ -848,3 +862,8 @@ private fun AnnotatedString.Builder.appendRun(
     withStyle(footnoteMarkerStyle) { append(FOOTNOTE_MARKER) }
     footnoteSpans += FootnoteSpan(markerStart until length, noteId)
 }
+
+/** Whether a run starts with punctuation that closes what came before (or is empty), so it's
+ *  joined to the previous run without a space. */
+internal fun String.startsWithClosingPunctuation(): Boolean =
+    isEmpty() || first() in ",.;:!?)]}»”’…"

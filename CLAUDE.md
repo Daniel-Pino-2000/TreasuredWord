@@ -91,6 +91,11 @@ scale, with no credit card needed to keep it running.
   BibleProject content, and never imply a partnership. Always name the source next to the link.
   BibleProject videos must stay free (no paywall, ads or "premium" near them) and carry the
   "author and owner" credit linking to bibleproject.com.
+- **Licensed Bibles** (LBLA, NBLA, NASB, AMP, EasyEnglish) come through the YouVersion Platform
+  under publisher licenses: `docs/bible-licensing.md` records them and their duties. Their text never
+  goes to Bible Helper or any AI feature, the app never names YouVersion, nothing may cost money or
+  show ads while they're offered, and licensed Scripture is never copied into this repo (not even
+  test fixtures). A new version needs its license accepted in the portal and recorded there first.
 - **Hand-checked data** (`data/model/BookResources.kt`): verify every URL or video ID before
   adding it (curl the page; check YouTube oEmbed's `author_url`), note the date checked, and keep
   unit tests offline.

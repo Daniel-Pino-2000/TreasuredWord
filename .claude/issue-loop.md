@@ -15,7 +15,10 @@ needs most, plus what earlier runs taught.
 
 - #368 (the new logo): the developer wants it done last, with them, outside the loop.
 - #363 (practice games) while it's labelled `question`: the developer is still adding design detail.
-- #366 (licensed Bible versions) until its Step 1 is done: it needs the developer's YouVersion App Key.
+- Bible licensing decisions that only the developer can make (docs/bible-licensing.md): #374 (Make
+  Live in the YouVersion portal), #375 (Biblica), #376 (direct publisher licenses), #379 (other
+  languages' licenses), and the yearly "Lockman annual report" issues. Never accept a license or
+  write to a publisher without the developer.
 
 ## Branches, PRs, merging
 
