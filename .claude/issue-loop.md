@@ -14,10 +14,8 @@ needs most, plus what earlier runs taught.
   go-ahead.
 
 - #368 (the new logo): the developer wants it done last, with them, outside the loop.
-- #363 (practice games) while it's labelled `question`: the developer is still adding design detail.
-- Bible licensing decisions that only the developer can make (docs/bible-licensing.md): #374 (Make
-  Live in the YouVersion portal), #375 (Biblica), #376 (direct publisher licenses), #379 (other
-  languages' licenses), and the yearly "Lockman annual report" issues. Never accept a license or
+- Bible licensing decisions that only the developer can make (docs/bible-licensing.md): #379's
+  choice of which other-language licenses to accept, and the yearly "Lockman annual report" issues. Never accept a license or
   write to a publisher without the developer.
 
 ## Branches, PRs, merging
