@@ -56,6 +56,7 @@ import java.io.IOException
 import java.util.Calendar
 import com.application.bibleapp.widget.DailyVerseWidgetUpdates
 import com.application.bibleapp.widget.MemorizeWidgetUpdates
+import com.application.bibleapp.widget.MemorizePick
 import com.application.bibleapp.widget.WidgetColors
 
 /**
@@ -644,6 +645,22 @@ class BibleRepository(
 
     fun loadWidgetColors(): WidgetColors = WidgetColors.fromStored(prefs.getString(KEY_WIDGET_COLORS, null))
 
+    /** Home's Verse to memorize tile (#365) keeps its own daily pick, by the widget's rules (#364). */
+    internal fun loadHomeMemorizePick(): MemorizePick? {
+        val day = prefs.getString(KEY_HOME_MEMORIZE_DAY, null) ?: return null
+        val id = prefs.getLong(KEY_HOME_MEMORIZE_ID, -1L).takeIf { it >= 0 } ?: return null
+        val previous = prefs.getLong(KEY_HOME_MEMORIZE_PREVIOUS_ID, -1L).takeIf { it >= 0 }
+        return MemorizePick(day, id, previous)
+    }
+
+    internal fun saveHomeMemorizePick(pick: MemorizePick) {
+        prefs.edit()
+            .putString(KEY_HOME_MEMORIZE_DAY, pick.day)
+            .putLong(KEY_HOME_MEMORIZE_ID, pick.localId)
+            .putLong(KEY_HOME_MEMORIZE_PREVIOUS_ID, pick.previousLocalId ?: -1L)
+            .apply()
+    }
+
     /** The verse image editor's last choices (#254), so the next image starts from them. Before
      *  the first image, the style is the one named after the app's color theme. */
     fun loadVerseImageOptions(): VerseImageOptions = VerseImageOptions(
@@ -860,6 +877,9 @@ class BibleRepository(
         const val KEY_THEME_MODE = "theme_mode"
         const val KEY_THEME_PALETTE = "theme_palette"
         const val KEY_WIDGET_COLORS = "widget_colors"
+        const val KEY_HOME_MEMORIZE_DAY = "home_memorize_pick_day"
+        const val KEY_HOME_MEMORIZE_ID = "home_memorize_pick_id"
+        const val KEY_HOME_MEMORIZE_PREVIOUS_ID = "home_memorize_pick_previous_id"
         const val KEY_VERSE_TEXT_SCALE = "verse_text_scale"
         const val KEY_VERSE_IMAGE_STYLE = "verse_image_style"
         const val KEY_VERSE_IMAGE_FORMAT = "verse_image_format"

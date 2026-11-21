@@ -29,6 +29,18 @@ object NetworkUtils {
         return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
             capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
     }
+
+    /**
+     * Android's Data Saver is on for this app's connection: metered, and background data
+     * restricted. Apps are asked to use less data in the foreground too, so Home shows its video
+     * tile instead of loading YouTube thumbnails (#365).
+     */
+    fun isDataSaverOn(context: Context): Boolean {
+        val connectivityManager =
+            context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager ?: return false
+        return connectivityManager.isActiveNetworkMetered &&
+            connectivityManager.restrictBackgroundStatus == ConnectivityManager.RESTRICT_BACKGROUND_STATUS_ENABLED
+    }
 }
 
 /**

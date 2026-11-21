@@ -136,8 +136,19 @@
     <string name="home_recent_highlights">Your recent highlights</string>
     <string name="home_see_all">See all</string>
     <string name="home_highlights_empty">Highlight a verse while you read and it\'ll show up here.</string>
-    <string name="home_questions_title">Questions about the Bible?</string>
-    <string name="home_questions_subtitle">Answers from GotQuestions.org</string>
+    <!-- Heading over Home's BibleProject and GotQuestions.org cards (#365). %1$s is the book being read, e.g. "John" -->
+    <string name="home_go_deeper">Go deeper in %1$s</string>
+    <!-- %1$s is a book name, e.g. "John", or two joined by a dash, e.g. "1 Kings–2 Kings" -->
+    <string name="home_watch_title">Overview: %1$s</string>
+    <string name="home_watch_more">More overviews</string>
+    <!-- TalkBack label for a video on Home. %1$s is a book name -->
+    <string name="home_watch_play">Watch BibleProject\'s overview of %1$s</string>
+    <!-- Badge on Home's Verse to memorize tile when its review is due -->
+    <string name="home_memorize_due">Due</string>
+    <!-- %1$s is the book being read, e.g. "John" -->
+    <string name="home_questions_book_title">Questions about %1$s?</string>
+    <string name="home_questions_body">A summary of the book, and answers to questions about the whole Bible.</string>
+    <string name="home_questions_browse">Browse questions</string>
 
     <!-- Outside links (GotQuestions.org, BibleProject videos) - see utils/ExternalLinks.kt -->
     <string name="external_link_opens_outside">Opens outside the app</string>

@@ -65,9 +65,8 @@ enum class ThemePalette(
     }
 }
 
-/** Secondary and tertiary copy primary, as the original palette did: the app has one accent per
- *  theme, and leaving them unset falls back to M3's purple. tertiaryContainer is the accent tint,
- *  not the selection color, because the Bible Helper's crisis card is drawn on it. */
+/** Secondary copies primary, as the original palette did, since leaving it unset falls back to
+ *  M3's purple. Tertiary is each theme's second accent (#365, see [ThemeColors]). */
 internal fun ThemeColors.toColorScheme(isDark: Boolean): ColorScheme = if (isDark) {
     darkColorScheme(
         primary = primary,
@@ -79,10 +78,10 @@ internal fun ThemeColors.toColorScheme(isDark: Boolean): ColorScheme = if (isDar
         onSecondary = onPrimary,
         secondaryContainer = secondaryContainer,
         onSecondaryContainer = onSecondaryContainer,
-        tertiary = primary,
-        onTertiary = onPrimary,
-        tertiaryContainer = primaryContainer,
-        onTertiaryContainer = onPrimaryContainer,
+        tertiary = tertiary,
+        onTertiary = onTertiary,
+        tertiaryContainer = tertiaryContainer,
+        onTertiaryContainer = onTertiaryContainer,
         background = background,
         onBackground = onSurface,
         surface = surface,
@@ -115,10 +114,10 @@ internal fun ThemeColors.toColorScheme(isDark: Boolean): ColorScheme = if (isDar
         onSecondary = onPrimary,
         secondaryContainer = secondaryContainer,
         onSecondaryContainer = onSecondaryContainer,
-        tertiary = primary,
-        onTertiary = onPrimary,
-        tertiaryContainer = primaryContainer,
-        onTertiaryContainer = onPrimaryContainer,
+        tertiary = tertiary,
+        onTertiary = onTertiary,
+        tertiaryContainer = tertiaryContainer,
+        onTertiaryContainer = onTertiaryContainer,
         background = background,
         onBackground = onSurface,
         surface = surface,

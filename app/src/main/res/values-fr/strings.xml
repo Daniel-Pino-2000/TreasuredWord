@@ -126,8 +126,19 @@
     <string name="home_recent_highlights">Vos surlignages récents</string>
     <string name="home_see_all">Tout voir</string>
     <string name="home_highlights_empty">Surlignez un verset pendant votre lecture et il apparaîtra ici.</string>
-    <string name="home_questions_title">Des questions sur la Bible ?</string>
-    <string name="home_questions_subtitle">Réponses de GotQuestions.org</string>
+    <!-- Heading over Home's BibleProject and GotQuestions.org cards (#365). %1$s is the book being read, e.g. "John" -->
+    <string name="home_go_deeper">Approfondir %1$s</string>
+    <!-- %1$s is a book name, e.g. "John", or two joined by a dash, e.g. "1 Kings–2 Kings" -->
+    <string name="home_watch_title">Présentation : %1$s</string>
+    <string name="home_watch_more">Autres présentations</string>
+    <!-- TalkBack label for a video on Home. %1$s is a book name -->
+    <string name="home_watch_play">Regarder la présentation de %1$s par BibleProject</string>
+    <!-- Badge on Home's Verse to memorize tile when its review is due -->
+    <string name="home_memorize_due">À réviser</string>
+    <!-- %1$s is the book being read, e.g. "John" -->
+    <string name="home_questions_book_title">Des questions sur %1$s ?</string>
+    <string name="home_questions_body">Un résumé du livre et des réponses aux questions sur toute la Bible.</string>
+    <string name="home_questions_browse">Parcourir les questions</string>
 
     <string name="external_link_opens_outside">S\'ouvre en dehors de l\'app</string>
     <string name="external_link_offline">Tu es hors ligne. Connecte-toi à Internet pour ouvrir ceci.</string>

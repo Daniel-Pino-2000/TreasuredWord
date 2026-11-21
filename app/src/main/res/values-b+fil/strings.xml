@@ -127,8 +127,19 @@
     <string name="home_recent_highlights">Mga kamakailang highlight mo</string>
     <string name="home_see_all">Tingnan lahat</string>
     <string name="home_highlights_empty">Mag-highlight ng talata habang nagbabasa at lalabas ito rito.</string>
-    <string name="home_questions_title">May tanong tungkol sa Bibliya?</string>
-    <string name="home_questions_subtitle">Mga sagot mula sa GotQuestions.org</string>
+    <!-- Heading over Home's BibleProject and GotQuestions.org cards (#365). %1$s is the book being read, e.g. "John" -->
+    <string name="home_go_deeper">Mas malalim sa %1$s</string>
+    <!-- %1$s is a book name, e.g. "John", or two joined by a dash, e.g. "1 Kings–2 Kings" -->
+    <string name="home_watch_title">Pangkalahatang-ideya: %1$s</string>
+    <string name="home_watch_more">Iba pang pangkalahatang-ideya</string>
+    <!-- TalkBack label for a video on Home. %1$s is a book name -->
+    <string name="home_watch_play">Panoorin ang pangkalahatang-ideya ng BibleProject sa %1$s</string>
+    <!-- Badge on Home's Verse to memorize tile when its review is due -->
+    <string name="home_memorize_due">Dapat sanayin</string>
+    <!-- %1$s is the book being read, e.g. "John" -->
+    <string name="home_questions_book_title">May tanong tungkol sa %1$s?</string>
+    <string name="home_questions_body">Buod ng aklat, at mga sagot sa mga tanong tungkol sa buong Bibliya.</string>
+    <string name="home_questions_browse">Tingnan ang mga tanong</string>
 
     <string name="external_link_opens_outside">Bubuksan sa labas ng app</string>
     <string name="external_link_offline">Offline ka. Kumonekta sa internet para mabuksan ito.</string>

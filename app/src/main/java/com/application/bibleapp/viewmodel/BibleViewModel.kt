@@ -47,6 +47,7 @@ import com.application.bibleapp.data.repository.dailyVerseDateKey
 import com.application.bibleapp.ui.theme.ThemeMode
 import com.application.bibleapp.ui.theme.ThemePalette
 import com.application.bibleapp.widget.WidgetColors
+import com.application.bibleapp.widget.pickMemorizeVerse
 import com.application.bibleapp.ui.theme.VerseTextScale
 import com.application.bibleapp.utils.buildVerseShareText
 import com.application.bibleapp.utils.formatFullVerseRefs
@@ -133,6 +134,10 @@ private const val LEGACY_PARAGRAPH_MARKER = "¶ "
 
 /** How long "Share image" from the notification or widget waits for today's verse (#256). */
 private const val DAILY_VERSE_WAIT_MS = 10_000L
+
+/** Home's tile picks with the widget's rules (#364), seeded as if it were a widget with this id;
+ *  real widget ids start at 1, so a widget on the home screen usually shows a different passage. */
+private const val HOME_MEMORIZE_PICK_ID = 0
 
 /** (bookId, chapter) to take verse 1 from for [BibleViewModel.textSizeSample]: Genesis 1, then John 1. */
 private val TEXT_SIZE_SAMPLE_CHAPTERS = listOf(1 to 1, 43 to 1)
@@ -291,6 +296,13 @@ class BibleViewModel(
     // The Memorize list (#362), newest first; Library's tab sorts it as the person picks.
     private val _libraryMemoryVerses = MutableStateFlow<List<MemoryVerse>>(emptyList())
     val libraryMemoryVerses: StateFlow<List<MemoryVerse>> = _libraryMemoryVerses.asStateFlow()
+
+    /** Today's passage for Home's Verse to memorize tile (#365), picked like the widget's (#364).
+     *  Null with an empty list, or once the picked passage is removed (until the next visit). */
+    private val _homeMemoryVerseId = MutableStateFlow<Long?>(null)
+    val homeMemoryVerse: StateFlow<MemoryVerse?> =
+        combine(_libraryMemoryVerses, _homeMemoryVerseId) { verses, id -> verses.firstOrNull { it.localId == id } }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     // Scripture text for every verse a library highlight/note covers, keyed by the version it was
     // made in (a highlight/note is immutable to its own version, and the same verse's text can
@@ -909,17 +921,21 @@ class BibleViewModel(
     /** Opens the verse image editor for today's verse (#256), with a "Verse of the Day" label on
      *  the image. Null-safe: does nothing until the daily verse has loaded. */
     fun shareVerseOfTheDayAsImage(label: String) {
-        val verse = _verseOfTheDay.value ?: return
+        val content = verseOfTheDayImageContent(label) ?: return
         val shareText = verseOfTheDayShareText() ?: return
-        _verseImageRequest.value = VerseImageRequest(
-            content = VerseImageContent(
-                lines = verse.verses.map { VerseImageLine(it.number, it.text) },
-                reference = verse.reference,
-                versionLabel = currentVersionLabel.value,
-                notice = currentLicenseNotice(),
-                label = label
-            ),
-            shareText = shareText
+        _verseImageRequest.value = VerseImageRequest(content = content, shareText = shareText)
+    }
+
+    /** Today's verse as a verse image (#256), labelled [label]: what Share image starts from, and
+     *  what Home draws as its Verse of the Day card (#365). Null until the daily verse has loaded. */
+    fun verseOfTheDayImageContent(label: String): VerseImageContent? {
+        val verse = _verseOfTheDay.value ?: return null
+        return VerseImageContent(
+            lines = verse.verses.map { VerseImageLine(it.number, it.text) },
+            reference = verse.reference,
+            versionLabel = currentVersionLabel.value,
+            notice = currentLicenseNotice(),
+            label = label
         )
     }
 
@@ -1253,6 +1269,7 @@ class BibleViewModel(
             _libraryHighlights.value = highlights
             _libraryNotes.value = notes
             _libraryMemoryVerses.value = memoryVerses
+            _homeMemoryVerseId.value = pickHomeMemoryVerse(memoryVerses)
             _startupLibraryLoaded.value = true
         }
     }
@@ -1280,6 +1297,14 @@ class BibleViewModel(
             repository.deleteHighlight(highlight.localId)
             reloadHighlightsInChapter()
         }
+    }
+
+    private fun pickHomeMemoryVerse(verses: List<MemoryVerse>): Long? {
+        val pick = pickMemorizeVerse(
+            verses, dailyVerseDateKey(), HOME_MEMORIZE_PICK_ID, repository.loadHomeMemorizePick(), System.currentTimeMillis()
+        ) ?: return null
+        repository.saveHomeMemorizePick(pick)
+        return pick.localId
     }
 
     /** Swipe-to-remove on Library's Memorize tab (#362), with Undo. */

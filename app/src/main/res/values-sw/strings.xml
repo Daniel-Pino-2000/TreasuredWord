@@ -126,8 +126,19 @@
     <string name="home_recent_highlights">Viangazio vyako vya hivi karibuni</string>
     <string name="home_see_all">Ona vyote</string>
     <string name="home_highlights_empty">Angazia aya unaposoma nayo itaonekana hapa.</string>
-    <string name="home_questions_title">Una maswali kuhusu Biblia?</string>
-    <string name="home_questions_subtitle">Majibu kutoka GotQuestions.org</string>
+    <!-- Heading over Home's BibleProject and GotQuestions.org cards (#365). %1$s is the book being read, e.g. "John" -->
+    <string name="home_go_deeper">Jifunze zaidi kuhusu %1$s</string>
+    <!-- %1$s is a book name, e.g. "John", or two joined by a dash, e.g. "1 Kings–2 Kings" -->
+    <string name="home_watch_title">Muhtasari: %1$s</string>
+    <string name="home_watch_more">Muhtasari zaidi</string>
+    <!-- TalkBack label for a video on Home. %1$s is a book name -->
+    <string name="home_watch_play">Tazama muhtasari wa BibleProject wa %1$s</string>
+    <!-- Badge on Home's Verse to memorize tile when its review is due -->
+    <string name="home_memorize_due">Rudia</string>
+    <!-- %1$s is the book being read, e.g. "John" -->
+    <string name="home_questions_book_title">Maswali kuhusu %1$s?</string>
+    <string name="home_questions_body">Muhtasari wa kitabu, na majibu ya maswali kuhusu Biblia nzima.</string>
+    <string name="home_questions_browse">Vinjari maswali</string>
 
     <string name="external_link_opens_outside">Hufunguka nje ya programu</string>
     <string name="external_link_offline">Uko nje ya mtandao. Unganisha kwenye intaneti ili kufungua hiki.</string>

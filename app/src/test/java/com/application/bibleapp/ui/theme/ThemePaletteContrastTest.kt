@@ -77,6 +77,23 @@ class ThemePaletteContrastTest {
         pairs += Pair("Memorize chip: new", c.onSurfaceVariant, c.surfaceVariant, TEXT)
         pairs += Pair("Memorize chip: learning", c.onTertiaryContainer, c.tertiaryContainer, TEXT)
         pairs += Pair("Memorize chip: memorized", c.onPrimaryContainer, c.primaryContainer, TEXT)
+        // Home (#365). The Verse to memorize tile and the Bible Helper's crisis card share the
+        // second accent: text on tertiaryContainer, level dots and the Due badge (and the crisis
+        // card's button) in tertiary with onTertiary on it.
+        pairs += Pair("Home memorize tile text", c.onTertiaryContainer, c.tertiaryContainer, TEXT)
+        pairs += Pair("Home memorize level dots", c.tertiary, c.tertiaryContainer, NON_TEXT)
+        pairs += Pair("Home memorize Due badge and crisis button", c.onTertiary, c.tertiary, TEXT)
+        pairs += Pair("Home Due badge and crisis button on their card", c.tertiary, c.tertiaryContainer, NON_TEXT)
+        // The Watch card's text sits on surfaceContainerHighest: title, credit, and the source
+        // name and bibleproject.com link in primary.
+        for ((what, fg) in listOf("text" to c.onSurface, "secondary text" to c.onSurfaceVariant, "accent text" to c.primary)) {
+            pairs += Pair("Home Watch card $what", fg, c.surfaceContainerHighest, TEXT)
+        }
+        // Continue Reading's tile: book name in primary's tile, the rest on surfaceContainerHigh.
+        pairs += Pair("Home Continue Reading progress", c.primary, c.surfaceContainerHigh, NON_TEXT)
+        // The GotQuestions.org card sits on primaryContainer, like the banners above: its source
+        // name and its outlined button (border and label) are primary there, since `outline`
+        // only reaches ~2.5:1 on that tint.
         pairs += Pair("snackbar text", c.inverseOnSurface, c.inverseSurface, TEXT)
         pairs += Pair("snackbar Undo", c.inversePrimary, c.inverseSurface, TEXT)
         pairs += Pair("icon on the red swipe-to-delete", c.onError, c.error, NON_TEXT)

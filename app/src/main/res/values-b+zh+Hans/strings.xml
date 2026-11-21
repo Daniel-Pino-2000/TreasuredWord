@@ -125,8 +125,19 @@
     <string name="home_recent_highlights">最近的标记</string>
     <string name="home_see_all">查看全部</string>
     <string name="home_highlights_empty">阅读时标记经文，它就会显示在这里。</string>
-    <string name="home_questions_title">对圣经有疑问？</string>
-    <string name="home_questions_subtitle">来自 GotQuestions.org 的解答</string>
+    <!-- Heading over Home's BibleProject and GotQuestions.org cards (#365). %1$s is the book being read, e.g. "John" -->
+    <string name="home_go_deeper">深入了解%1$s</string>
+    <!-- %1$s is a book name, e.g. "John", or two joined by a dash, e.g. "1 Kings–2 Kings" -->
+    <string name="home_watch_title">概览：%1$s</string>
+    <string name="home_watch_more">更多概览</string>
+    <!-- TalkBack label for a video on Home. %1$s is a book name -->
+    <string name="home_watch_play">观看 BibleProject 的%1$s概览</string>
+    <!-- Badge on Home's Verse to memorize tile when its review is due -->
+    <string name="home_memorize_due">待练习</string>
+    <!-- %1$s is the book being read, e.g. "John" -->
+    <string name="home_questions_book_title">对%1$s有疑问吗？</string>
+    <string name="home_questions_body">本书的概要，以及关于整本圣经的问题解答。</string>
+    <string name="home_questions_browse">浏览问题</string>
 
     <string name="external_link_opens_outside">在应用外打开</string>
     <string name="external_link_offline">你已离线。请连接网络后再打开。</string>

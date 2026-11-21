@@ -129,6 +129,11 @@ fun Navigation(
                 },
                 onSeeAllHighlightsClick = {
                     navController.navigate(Screen.Library.createRoute(Screen.Library.TAB_HIGHLIGHTS))
+                },
+                // Like a Memorize card in the Library (#362) until practice exists (#363).
+                onMemoryVerseClick = { verse ->
+                    bibleViewModel.openMemoryVerseFromLibrary(verse)
+                    navController.navigate(Screen.Bible.route)
                 }
             )
         }
