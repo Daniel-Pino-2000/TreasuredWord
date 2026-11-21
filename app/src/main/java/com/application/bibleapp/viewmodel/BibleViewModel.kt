@@ -660,6 +660,8 @@ class BibleViewModel(
         // The last version the user picked is persisted across process restarts. Only
         // trust it if it's still actually downloaded — local data may have been cleared.
         viewModelScope.launch {
+            // First, so a withdrawn licensed version that was selected falls back to the KJV (#381).
+            repository.removeWithdrawnVersions()
             val persistedId = repository.loadSelectedVersion()
             val isAvailable = persistedId == DEFAULT_VERSION.id || repository.isVersionDownloaded(persistedId)
             _selectedVersion.value = if (isAvailable) SelectedBibleVersion(id = persistedId) else DEFAULT_VERSION

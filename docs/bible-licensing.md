@@ -13,11 +13,12 @@ Last reviewed: 2026-11-21.
 |---|---|---|---|
 | Bundled in the app | KJV | Public domain | Always |
 | [bible.helloao.org](https://bible.helloao.org) | 1,500+ public-domain and openly licensed translations (RV1909, BSB, WEB…) | Each translation's own, shown in the reader's credit (#98) | Downloaded whole |
-| [YouVersion Platform](https://developers.youversion.com) | **LBLA, NBLA, NASB 2020, NASB 1995, AMP** (Lockman) and **EasyEnglish 2024** (MissionAssist) | Lockman and MissionAssist Fast-track licenses, accepted 2026-11-21 | Each chapter is fetched the first time it's opened, then kept on the phone |
+| [YouVersion Platform](https://developers.youversion.com) | **LBLA, NBLA, NASB 2020, NASB 1995, AMP** (Lockman) | Lockman Fast-track license, accepted 2026-11-21 | Each chapter is fetched the first time it's opened, then kept on the phone |
 
 The list of YouVersion versions is `app/src/main/java/com/application/bibleapp/data/model/YouVersionBibles.kt`.
 A version may be added there only after its publisher's license is accepted in the portal and
-recorded below.
+recorded below. A YouVersion version taken off that list is deleted from phones at startup
+(`YouVersionBibles.isWithdrawn`, #381), so removing one there is all an update needs to do.
 
 ## The YouVersion Platform account
 
@@ -80,25 +81,27 @@ It takes effect after YouVersion vets the app, and either Lockman or YouVersion 
 | Trademarks (LBLA, NBLA, NASB, AMP) only to name the version | Only as version labels |
 | **Every year, by the end of February, report how many copies were distributed the previous calendar year** | See "Yearly duties" |
 
-## MissionAssist Fast-track Bible License v1 (accepted 2026-11-21)
+## MissionAssist Fast-track Bible License v1 (accepted and withdrawn 2026-11-21)
 
-Covers the EasyEnglish Bible 2024. Full text: [Google Doc](https://docs.google.com/document/d/1EQdlm24Y419Lb38Ih5_GxQRGKaZ-FIaVicTG5zLDDII/edit).
-The same template is used by BroadStreet, Wycliffe and likely SIL, Biblion, Hawaii Pidgin Bible
-and EIB.
+It covered the EasyEnglish Bible 2024. Full text: [Google Doc](https://docs.google.com/document/d/1EQdlm24Y419Lb38Ih5_GxQRGKaZ-FIaVicTG5zLDDII/edit).
+EasyEnglish was taken out before it shipped (#381): this license bars using the text "to produce
+personalized content through AI", so it couldn't join the Lockman versions in Bible Helper and
+search-by-meaning answers, and one version wasn't worth a different experience. We end the license
+by deselecting it in the portal (its section 5).
 
-| Condition | How the app meets it |
-|---|---|
-| Royalty-free right to display, store and distribute in the app; users may use it online and offline | Chapters kept after reading |
-| No edits to the text; used in the form the API gives | The parser only drops markup, printed verse numbers and footnote references |
-| **All footnotes included and accessible** | Footnotes are parsed and open from their markers in the reader |
-| "Industry standard encryption" against unauthorized copying | HTTPS in transit; at rest, the app's private storage under Android's own device encryption. The app adds none of its own. If MissionAssist asks for more, encrypt the saved chapters (SQLCipher is free) |
-| **No use of the text to produce personalized content through AI** | Same AI rule as above |
-| No printing | The app prints nothing. Verse images are digital shares of a few verses |
-| Cross-marketing: they may use our name to say the text is in TreasuredWord; we may use theirs likewise, without implying sponsorship | — |
-| They can end it at any time by written notice; we by 30 days' notice or by deselecting it in the portal | If it ends, remove EASY in an update |
-| They may receive aggregate, de-identified usage statistics | Mentioned in the privacy policy |
+BroadStreet, Wycliffe and likely SIL, Biblion, Hawaii Pidgin Bible and EIB use the same template.
+Before accepting any of them, know what it asks:
 
-No notice is prescribed, so the reader shows the API's copyright line ("MissionAssist 2018-2024").
+- Royalty-free display, storage and distribution in the app; users may read it online and offline.
+- No edits to the text, which is used in the form the API gives. **All footnotes** must be included
+  and accessible.
+- "Industry standard encryption" against unauthorized copying. Android's device encryption and the
+  app's private storage may be enough; if not, SQLCipher is free.
+- **No use of the text to produce personalized content through AI**, which keeps it out of Bible
+  Helper and search by meaning, including their verse cards.
+- No printing. Cross-marketing is allowed both ways without implying sponsorship.
+- They can end it at any time by written notice; we by 30 days' notice or by deselecting it.
+  Oklahoma law. They may receive aggregate, de-identified usage statistics.
 
 ## Decided against, or deferred
 
@@ -112,6 +115,7 @@ No notice is prescribed, so the reader shows the API's copyright line ("MissionA
 | **The Passion Translation** (BroadStreet) | Not offered | A loose paraphrase by one translator that adds wording, widely criticized; YouVersion lists it "In Review", 51 books | — |
 | **Wycliffe** English/Spanish (Plain English Version, Gloss Spanish) | Not offered | Partial Bibles (29 and 39 books); the reader supports complete 66-book Bibles | Accepting Wycliffe's license would also unlock ~1,000 Bibles in other languages, worth a look for the app's other languages (#379) |
 | **SIL, Biblion, Hawaii Pidgin, EIB** | Not offered | No English or Spanish Bibles | Same as above, per language |
+| **EasyEnglish 2024** (MissionAssist) | Removed before release (#381) | Its license bars AI use of the text (see above), so it would be the one licensed version without verse cards in AI answers | — |
 
 Doctrinal check for any future version: the translation must be a faithful, complete Bible from a
 recognized Christian translation team (not one person's paraphrase), and fit YouVersion's Core
