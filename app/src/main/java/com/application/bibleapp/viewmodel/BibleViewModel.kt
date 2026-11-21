@@ -404,7 +404,11 @@ class BibleViewModel(
     private val verseSearch = VerseSearch(
         scope = viewModelScope,
         search = repository::searchVerses,
-        currentVersionId = { _selectedVersion.value.id }
+        currentVersionId = { _selectedVersion.value.id },
+        debounceMillis = {
+            if (repository.isSearchedByYouVersion(_selectedVersion.value.id)) VerseSearch.REMOTE_DEBOUNCE_MILLIS
+            else VerseSearch.DEBOUNCE_MILLIS
+        }
     )
     val searchQuery: StateFlow<String> = verseSearch.query
     val searchState: StateFlow<SearchUiState> = verseSearch.state
@@ -485,7 +489,11 @@ class BibleViewModel(
             translationCreditFor(DEFAULT_VERSION.id, emptyList(), emptyMap())
         )
 
-    private val searchSuggestionFilter = SearchSuggestionFilter(repository::hasSearchMatch)
+    // A licensed version is searched through YouVersion (#382), where these common words always
+    // find something, while the phone has only the chapters read so far: no check needed, or wanted.
+    private val searchSuggestionFilter = SearchSuggestionFilter { word, versionId ->
+        repository.isSearchedByYouVersion(versionId) || repository.hasSearchMatch(word, versionId)
+    }
 
     /** Topic chips for the empty Search screen, in the selected version's language, and only
      *  the ones that find something in it — see [searchSuggestionsFor] (#88). */
@@ -1450,6 +1458,9 @@ class BibleViewModel(
         verseSearch.onQueryChange(newQuery)
         meaningSearch.onQueryChange(newQuery)
     }
+
+    /** The results list scrolled near its end, or Retry: find more (a licensed version, #382). */
+    fun onSearchLoadMore() = verseSearch.loadMore()
 
     /** Search now, without waiting for typing to pause (keyboard Search key, a suggestion, Retry),
      *  and by meaning too (#287): the only time that one runs. */

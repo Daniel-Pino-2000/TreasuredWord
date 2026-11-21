@@ -10,6 +10,7 @@ import io.ktor.client.request.header
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.encodeURLParameter
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import java.io.IOException
@@ -31,6 +32,27 @@ class YouVersionBusyException(val retryAfterSeconds: Long?) : IOException("YouVe
 /** The key isn't licensed for this Bible (403) or isn't valid (401): only a new license or key fixes it. */
 class YouVersionNotLicensedException(status: Int) : IOException("YouVersion refused the request: HTTP $status")
 
+/**
+ * One page of YouVersion's verse search (#382): references only, never text, most relevant first.
+ * [searchInsteadFor] is the query as typed when YouVersion searched a corrected spelling instead
+ * ("grase" for "grace"); [nextPageToken] is null on the last page.
+ */
+data class YouVersionSearchPage(
+    val refs: List<VerseRef>,
+    val searchInsteadFor: String?,
+    val nextPageToken: String?
+)
+
+/** A verse reference as YouVersion's search sends it, `JHN.3.16`; null for anything else (an intro, a range). */
+internal fun parseUsfmVerse(reference: String): VerseRef? {
+    val parts = reference.split('.')
+    if (parts.size != 3) return null
+    val bookId = UsfmBookCodes.bookId(parts[0]) ?: return null
+    val chapter = parts[1].toIntOrNull()?.takeIf { it > 0 } ?: return null
+    val verse = parts[2].toIntOrNull()?.takeIf { it > 0 } ?: return null
+    return VerseRef(bookId, chapter, verse)
+}
+
 /** A Bible's book names and per-chapter verse counts, saved when the version is added. */
 data class YouVersionStructure(
     val bookNames: List<MappedBookName>,
@@ -45,7 +67,8 @@ data class YouVersionStructure(
  *
  * Endpoints used: `GET /v1/bibles/{id}` (the copyright text), `GET /v1/bibles/{id}/index`
  * (book names and verse counts, once per version), and
- * `GET /v1/bibles/{id}/passages/{BOOK.CHAPTER}?format=html` (one chapter).
+ * `GET /v1/bibles/{id}/passages/{BOOK.CHAPTER}?format=html` (one chapter), and
+ * `GET /v1/search-verses` (word search, #382: the words go to YouVersion, see docs/privacy-policy.md).
  */
 class YouVersionBibleSource(
     private val appKey: String = BuildConfig.YOUVERSION_APP_KEY,
@@ -84,6 +107,22 @@ class YouVersionBibleSource(
         return YouVersionHtmlParser.parse(passage.content)
     }
 
+    /** One page of [yvId]'s verse search for [query] (1–100 characters); [pageToken] from the page before. */
+    suspend fun searchVerses(yvId: Int, query: String, pageToken: String? = null, pageSize: Int = SEARCH_PAGE_SIZE): YouVersionSearchPage {
+        val path = buildString {
+            append("/v1/search-verses?bible_id=").append(yvId)
+            append("&query=").append(query.take(MAX_QUERY_LENGTH).encodeURLParameter())
+            append("&user_intent=text&page_size=").append(pageSize.coerceIn(1, 99))
+            if (pageToken != null) append("&page_token=").append(pageToken.encodeURLParameter())
+        }
+        val page = HttpClientProvider.json.decodeFromString(SearchDto.serializer(), get(path))
+        return YouVersionSearchPage(
+            refs = page.verses.mapNotNull { parseUsfmVerse(it.reference) },
+            searchInsteadFor = page.searchInsteadFor?.trim()?.takeIf { it.isNotEmpty() },
+            nextPageToken = page.nextPageToken?.takeIf { it.isNotEmpty() }
+        )
+    }
+
     private suspend fun get(path: String, timeoutMs: Long = CHAPTER_TIMEOUT_MS): String {
         if (!isConfigured) throw YouVersionNotLicensedException(401)
         val response: HttpResponse = client.get(baseUrl + path) {
@@ -102,6 +141,16 @@ class YouVersionBibleSource(
             else -> throw IOException("YouVersion returned ${response.status}")
         }
     }
+
+    @Serializable
+    private data class SearchDto(
+        val verses: List<SearchVerseDto> = emptyList(),
+        @SerialName("search_instead_for") val searchInsteadFor: String? = null,
+        @SerialName("next_page_token") val nextPageToken: String? = null
+    )
+
+    @Serializable
+    private data class SearchVerseDto(val reference: String = "")
 
     @Serializable
     private data class BibleDto(val copyright: String? = null)
@@ -130,5 +179,7 @@ class YouVersionBibleSource(
         const val TAG = "YouVersionAPI"
         const val CHAPTER_TIMEOUT_MS = 20_000L
         const val INDEX_TIMEOUT_MS = 60_000L
+        const val SEARCH_PAGE_SIZE = 25
+        const val MAX_QUERY_LENGTH = 100
     }
 }

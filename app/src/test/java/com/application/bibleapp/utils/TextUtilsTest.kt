@@ -1,6 +1,7 @@
 package com.application.bibleapp.utils
 
 import com.application.bibleapp.utils.TextUtils.isWrittenWithoutSpaces
+import com.application.bibleapp.utils.TextUtils.matchesSearchWords
 import com.application.bibleapp.utils.TextUtils.normalizeForSearch
 import com.application.bibleapp.utils.TextUtils.searchPattern
 import com.application.bibleapp.utils.TextUtils.wholeWordPattern
@@ -155,5 +156,16 @@ class TextUtilsTest {
     @Test
     fun `a query of only punctuation is empty`() {
         assertEquals("", "?!…".normalizeForSearch())
+    }
+
+    @Test
+    fun `matchesSearchWords matches every word at a word's start, as the phone's search does (#382)`() {
+        assertTrue(matchesSearchWords("un día Dios amó a su pueblo", "Dios amo"))
+        assertTrue(matchesSearchWords("the God of all grace", "GRÂCE"))
+        assertTrue(matchesSearchWords("they loved not their lives", "love"))
+        assertFalse(matchesSearchWords("my beloved son", "love"))
+        assertFalse(matchesSearchWords("el amor de Dios", "amor paz"))
+        assertFalse(matchesSearchWords("anything", "?!"))
+        assertTrue(matchesSearchWords("神爱世人", "爱"))
     }
 }

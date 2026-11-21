@@ -209,6 +209,13 @@
     <string name="search_section_key_passages">Passages clés</string>
     <string name="search_section_meaning">Liés par le sens</string>
     <string name="search_words_none">Aucun verset ne contient ces mots.</string>
+    <!-- Search in a licensed version (#378, #382) when YouVersion's search couldn't be used (offline, too many requests). %1$s: the version's abbreviation, such as LBLA. -->
+    <string name="search_saved_chapters_only">Recherche limitée aux chapitres de la %1$s que vous avez déjà ouverts : la recherche complète n\'est pas disponible pour le moment.</string>
+    <!-- Search (#382): YouVersion searched a corrected spelling. %1$s: the words as the user typed them. -->
+    <string name="search_close_matches">Aucun verset avec « %1$s ». Résultats proches affichés.</string>
+    <!-- Search (#382): the row at the end of the word results while more are found. -->
+    <string name="search_loading_more">Chargement d\'autres résultats…</string>
+    <string name="search_more_failed">Impossible de charger d\'autres résultats.</string>
     <string name="search_meaning_start">Trouver des versets liés par le sens</string>
     <string name="search_meaning_loading">Recherche de versets liés par le sens…</string>
     <string name="search_meaning_none">Aucun autre verset trouvé par le sens.</string>

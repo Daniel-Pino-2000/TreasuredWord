@@ -71,6 +71,19 @@ object TextUtils {
     fun String.wholeWordPattern(): String = if (isWrittenWithoutSpaces()) "%$this%" else "% $this %"
 
     /**
+     * Whether [text] has every word of [query] the way word search matches it on the phone
+     * ([searchPattern]: at the start of a word). YouVersion's verse search lists verses that only
+     * relate to the words after the ones that have them (#382); this keeps "Verses with these
+     * words" true to its name, and the same as a downloaded Bible's search.
+     */
+    fun matchesSearchWords(text: String, query: String): Boolean {
+        val words = query.normalizeForSearch().split(" ").filter { it.isNotBlank() }
+        if (words.isEmpty()) return false
+        val spaced = " ${text.normalizeForSearch()} "
+        return words.all { if (it.isWrittenWithoutSpaces()) it in spaced else " $it" in spaced }
+    }
+
+    /**
      * Whether this text is in a script written without spaces between words (Chinese, Japanese,
      * Thai, Lao, Khmer, Myanmar), where a word can't be told apart from its neighbours.
      */

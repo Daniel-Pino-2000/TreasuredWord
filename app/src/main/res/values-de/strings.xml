@@ -206,6 +206,13 @@
     <string name="search_section_key_passages">Wichtige Bibelstellen</string>
     <string name="search_section_meaning">Inhaltlich verwandt</string>
     <string name="search_words_none">Kein Vers enthält diese Wörter.</string>
+    <!-- Search in a licensed version (#378, #382) when YouVersion's search couldn't be used (offline, too many requests). %1$s: the version's abbreviation, such as LBLA. -->
+    <string name="search_saved_chapters_only">Nur die Kapitel der %1$s durchsucht, die du schon geöffnet hast: Die vollständige Suche ist gerade nicht verfügbar.</string>
+    <!-- Search (#382): YouVersion searched a corrected spelling. %1$s: the words as the user typed them. -->
+    <string name="search_close_matches">Keine Verse mit „%1$s“. Ähnliche Treffer werden angezeigt.</string>
+    <!-- Search (#382): the row at the end of the word results while more are found. -->
+    <string name="search_loading_more">Weitere Ergebnisse werden geladen…</string>
+    <string name="search_more_failed">Weitere Ergebnisse konnten nicht geladen werden.</string>
     <string name="search_meaning_start">Inhaltlich verwandte Verse finden</string>
     <string name="search_meaning_loading">Suche nach inhaltlich verwandten Versen…</string>
     <string name="search_meaning_none">Keine weiteren inhaltlich verwandten Verse gefunden.</string>

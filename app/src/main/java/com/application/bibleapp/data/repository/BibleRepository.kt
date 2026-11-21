@@ -202,18 +202,34 @@ class BibleRepository(
         BibleDatabaseManager.hasSearchMatch(context, query, versionId)
 
     /** A reference ("John 3:16", "Jn 3", the version's own book name) finds that passage; anything
-     *  else, or a reference to verses this version doesn't have, is a word search (#59). */
-    suspend fun searchVerses(query: String, versionId: String): List<VerseUI> =
+     *  else, or a reference to verses this version doesn't have, is a word search (#59). A licensed
+     *  version's chapter is fetched for a reference if it isn't saved, and its word search goes
+     *  through YouVersion ([LicensedWordSearch], #382). */
+    suspend fun searchVerses(query: String, versionId: String): WordSearchPage =
         withContext(Dispatchers.IO) {
-            if (query.isBlank()) return@withContext emptyList()
+            if (query.isBlank()) return@withContext WordSearchPage(emptyList())
             val reference = parseVerseReference(query, BibleDatabaseManager.getBookNames(context, versionId))
-            val passage = reference?.let { ref ->
-                BibleDatabaseManager.getVersesByChapter(context, ref.bookId, ref.chapter, versionId)
-                    .map { it.toUI() }
-                    .passage(ref)
+            val passage = reference?.let { ref -> loadChapter(ref.bookId, ref.chapter, versionId).verses.passage(ref) }
+            when {
+                !passage.isNullOrEmpty() -> WordSearchPage(passage)
+                isSearchedByYouVersion(versionId) -> licensedWordSearch(versionId).search(query)
+                else -> WordSearchPage(BibleDatabaseManager.searchVerses(query, versionId))
             }
-            passage?.takeIf { it.isNotEmpty() } ?: BibleDatabaseManager.searchVerses(query, versionId)
         }
+
+    /** A licensed version added on this device, whose word search goes through YouVersion (#382). */
+    fun isSearchedByYouVersion(versionId: String): Boolean =
+        YouVersionBibles.find(versionId) != null && youVersion.isConfigured
+
+    private fun licensedWordSearch(versionId: String): LicensedWordSearch {
+        val bible = requireNotNull(YouVersionBibles.find(versionId))
+        return LicensedWordSearch(
+            searchPage = { query, pageToken -> youVersion.searchVerses(bible.yvId, query, pageToken) },
+            loadChapter = { bookId, chapter -> loadChapter(bookId, chapter, versionId) },
+            searchSaved = { query -> BibleDatabaseManager.searchVerses(query, versionId) },
+            isOnline = { NetworkUtils.isOnline(context) }
+        )
+    }
 
     // ---- Highlights & Notes (local-first; see data/local/BibleDatabaseManager.kt) ----
 
