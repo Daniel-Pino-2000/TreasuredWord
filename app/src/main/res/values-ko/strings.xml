@@ -126,8 +126,19 @@
     <string name="home_recent_highlights">최근 하이라이트</string>
     <string name="home_see_all">모두 보기</string>
     <string name="home_highlights_empty">읽으면서 구절을 하이라이트하면 여기에 표시됩니다.</string>
-    <string name="home_questions_title">성경에 대해 궁금한 점이 있나요?</string>
-    <string name="home_questions_subtitle">GotQuestions.org의 답변</string>
+    <!-- Heading over Home's BibleProject and GotQuestions.org cards (#365). %1$s is the book being read, e.g. "John" -->
+    <string name="home_go_deeper">%1$s 더 깊이 알아보기</string>
+    <!-- %1$s is a book name, e.g. "John", or two joined by a dash, e.g. "1 Kings–2 Kings" -->
+    <string name="home_watch_title">개요: %1$s</string>
+    <string name="home_watch_more">다른 개요 영상</string>
+    <!-- TalkBack label for a video on Home. %1$s is a book name -->
+    <string name="home_watch_play">BibleProject의 %1$s 개요 영상 보기</string>
+    <!-- Badge on Home's Verse to memorize tile when its review is due -->
+    <string name="home_memorize_due">복습할 차례</string>
+    <!-- %1$s is the book being read, e.g. "John" -->
+    <string name="home_questions_book_title">%1$s에 대해 궁금한 점이 있나요?</string>
+    <string name="home_questions_body">이 책의 요약과 성경 전체에 대한 질문의 답을 볼 수 있어요.</string>
+    <string name="home_questions_browse">질문 둘러보기</string>
 
     <string name="external_link_opens_outside">앱 밖에서 열립니다</string>
     <string name="external_link_offline">오프라인 상태예요. 인터넷에 연결한 뒤 열어 주세요.</string>

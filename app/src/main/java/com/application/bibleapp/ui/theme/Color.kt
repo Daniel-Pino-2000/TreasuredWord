@@ -16,6 +16,10 @@ import androidx.compose.ui.graphics.Color
  *   (dividers, card frames, the progress track) use [outlineVariant].
  * - [secondaryContainer]: "selected" (nav indicator, segmented buttons, passage chips). Banners
  *   use [primaryContainer] instead, because in Ink the selection color is solid black.
+ * - [tertiaryContainer]: the theme's second accent (#365), a hue apart from [primary] so Home's
+ *   cards don't all look alike: the Verse to memorize tile and Memorize's "Learning" chip, and
+ *   the Bible Helper's crisis card with a [tertiary] button. Ink keeps to black and white by
+ *   inverting it: a black card in light mode, a white one in dark.
  */
 internal data class ThemeColors(
     val background: Color,
@@ -31,6 +35,10 @@ internal data class ThemeColors(
     val onPrimaryContainer: Color,
     val secondaryContainer: Color,
     val onSecondaryContainer: Color,
+    val tertiary: Color,
+    val onTertiary: Color,
+    val tertiaryContainer: Color,
+    val onTertiaryContainer: Color,
     val surfaceContainerLowest: Color,
     val surfaceContainerLow: Color,
     val surfaceContainer: Color,
@@ -63,6 +71,11 @@ internal val ParchmentLight = ThemeColors(
     onPrimaryContainer = Color(0xFF3D2D12),
     secondaryContainer = Color(0xFFEDDFC4),
     onSecondaryContainer = Color(0xFF3D2D12),
+    // Second accent (#365): sea green.
+    tertiary = Color(0xFF2F6B62),
+    onTertiary = Color(0xFFFFFFFF),
+    tertiaryContainer = Color(0xFFD3E8E1),
+    onTertiaryContainer = Color(0xFF0E2E29),
     surfaceContainerLowest = Color(0xFFFFFDF8),
     surfaceContainerLow = Color(0xFFFBF6EC),
     surfaceContainer = Color(0xFFF5EFE2),
@@ -93,6 +106,11 @@ internal val ParchmentDark = ThemeColors(
     onPrimaryContainer = Color(0xFFF0DDB8),
     secondaryContainer = Color(0xFF3D3220),
     onSecondaryContainer = Color(0xFFF0DDB8),
+    // Second accent (#365): sea green.
+    tertiary = Color(0xFF8FCFC0),
+    onTertiary = Color(0xFF0E2E29),
+    tertiaryContainer = Color(0xFF1F3A35),
+    onTertiaryContainer = Color(0xFFCFEDE4),
     surfaceContainerLowest = Color(0xFF1A1712),
     surfaceContainerLow = Color(0xFF24201A),
     surfaceContainer = Color(0xFF29241E),
@@ -123,6 +141,11 @@ internal val InkLight = ThemeColors(
     onPrimaryContainer = Color(0xFF111111),
     secondaryContainer = Color(0xFF111111),
     onSecondaryContainer = Color(0xFFFFFFFF),
+    // Second accent (#365): inverted: a black card.
+    tertiary = Color(0xFFFFFFFF),
+    onTertiary = Color(0xFF111111),
+    tertiaryContainer = Color(0xFF1C1C1C),
+    onTertiaryContainer = Color(0xFFFFFFFF),
     surfaceContainerLowest = Color(0xFFFFFFFF),
     surfaceContainerLow = Color(0xFFFAFAFA),
     surfaceContainer = Color(0xFFF4F4F4),
@@ -150,6 +173,11 @@ internal val InkDark = ThemeColors(
     onPrimaryContainer = Color(0xFFFFFFFF),
     secondaryContainer = Color(0xFFFFFFFF),
     onSecondaryContainer = Color(0xFF000000),
+    // Second accent (#365): inverted: a white card.
+    tertiary = Color(0xFF111111),
+    onTertiary = Color(0xFFFFFFFF),
+    tertiaryContainer = Color(0xFFEDEDED),
+    onTertiaryContainer = Color(0xFF111111),
     surfaceContainerLowest = Color(0xFF000000),
     surfaceContainerLow = Color(0xFF090909),
     surfaceContainer = Color(0xFF121212),
@@ -179,6 +207,11 @@ internal val GraphiteLight = ThemeColors(
     onPrimaryContainer = Color(0xFF1A1F27),
     secondaryContainer = Color(0xFFDCE1E8),
     onSecondaryContainer = Color(0xFF1A1F27),
+    // Second accent (#365): amber.
+    tertiary = Color(0xFF7A4F0E),
+    onTertiary = Color(0xFFFFFFFF),
+    tertiaryContainer = Color(0xFFF7E3C4),
+    onTertiaryContainer = Color(0xFF2E1D04),
     surfaceContainerLowest = Color(0xFFFAFBFB),
     surfaceContainerLow = Color(0xFFF9FAFB),
     surfaceContainer = Color(0xFFFFFFFF),
@@ -206,6 +239,11 @@ internal val GraphiteDark = ThemeColors(
     onPrimaryContainer = Color(0xFFDCE1E8),
     secondaryContainer = Color(0xFF333A45),
     onSecondaryContainer = Color(0xFFDCE1E8),
+    // Second accent (#365): amber.
+    tertiary = Color(0xFFF0C27A),
+    onTertiary = Color(0xFF2E1D04),
+    tertiaryContainer = Color(0xFF3D2F1C),
+    onTertiaryContainer = Color(0xFFF7E3C4),
     surfaceContainerLowest = Color(0xFF0F1114),
     surfaceContainerLow = Color(0xFF1B1D22),
     surfaceContainer = Color(0xFF1F2227),
@@ -235,6 +273,11 @@ internal val SageLight = ThemeColors(
     onPrimaryContainer = Color(0xFF132211),
     secondaryContainer = Color(0xFFD5E3CB),
     onSecondaryContainer = Color(0xFF132211),
+    // Second accent (#365): terracotta.
+    tertiary = Color(0xFF8A4A2C),
+    onTertiary = Color(0xFFFFFFFF),
+    tertiaryContainer = Color(0xFFF4DCCD),
+    onTertiaryContainer = Color(0xFF33170A),
     surfaceContainerLowest = Color(0xFFFBFCFA),
     surfaceContainerLow = Color(0xFFF2F4ED),
     surfaceContainer = Color(0xFFEDF0E7),
@@ -262,6 +305,11 @@ internal val SageDark = ThemeColors(
     onPrimaryContainer = Color(0xFFD5E6C9),
     secondaryContainer = Color(0xFF2F3D29),
     onSecondaryContainer = Color(0xFFD5E6C9),
+    // Second accent (#365): terracotta.
+    tertiary = Color(0xFFF0B08F),
+    onTertiary = Color(0xFF33170A),
+    tertiaryContainer = Color(0xFF46301F),
+    onTertiaryContainer = Color(0xFFF7DCCB),
     surfaceContainerLowest = Color(0xFF0F120D),
     surfaceContainerLow = Color(0xFF1A1E17),
     surfaceContainer = Color(0xFF1E231B),
@@ -291,6 +339,11 @@ internal val SlateLight = ThemeColors(
     onPrimaryContainer = Color(0xFF0D2640),
     secondaryContainer = Color(0xFFD3E3F3),
     onSecondaryContainer = Color(0xFF0D2640),
+    // Second accent (#365): coral.
+    tertiary = Color(0xFF9A3F2E),
+    onTertiary = Color(0xFFFFFFFF),
+    tertiaryContainer = Color(0xFFFADDD5),
+    onTertiaryContainer = Color(0xFF3B120A),
     surfaceContainerLowest = Color(0xFFFBFCFD),
     surfaceContainerLow = Color(0xFFF0F4F8),
     surfaceContainer = Color(0xFFEBF0F6),
@@ -318,6 +371,11 @@ internal val SlateDark = ThemeColors(
     onPrimaryContainer = Color(0xFFD0E4F7),
     secondaryContainer = Color(0xFF223950),
     onSecondaryContainer = Color(0xFFD0E4F7),
+    // Second accent (#365): coral.
+    tertiary = Color(0xFFF5A898),
+    onTertiary = Color(0xFF3B120A),
+    tertiaryContainer = Color(0xFF4A2B24),
+    onTertiaryContainer = Color(0xFFFBDAD1),
     surfaceContainerLowest = Color(0xFF0B0F14),
     surfaceContainerLow = Color(0xFF141B23),
     surfaceContainer = Color(0xFF18202A),
@@ -347,6 +405,11 @@ internal val RoseLight = ThemeColors(
     onPrimaryContainer = Color(0xFF3A1424),
     secondaryContainer = Color(0xFFF3DAE2),
     onSecondaryContainer = Color(0xFF3A1424),
+    // Second accent (#365): mint green.
+    tertiary = Color(0xFF2E6A55),
+    onTertiary = Color(0xFFFFFFFF),
+    tertiaryContainer = Color(0xFFD4EADF),
+    onTertiaryContainer = Color(0xFF0C2E21),
     surfaceContainerLowest = Color(0xFFFDFBFB),
     surfaceContainerLow = Color(0xFFF8F1EF),
     surfaceContainer = Color(0xFFF5EBE9),
@@ -374,6 +437,11 @@ internal val RoseDark = ThemeColors(
     onPrimaryContainer = Color(0xFFF7D9E3),
     secondaryContainer = Color(0xFF4A2C38),
     onSecondaryContainer = Color(0xFFF7D9E3),
+    // Second accent (#365): mint green.
+    tertiary = Color(0xFF94D2B8),
+    onTertiary = Color(0xFF0C2E21),
+    tertiaryContainer = Color(0xFF22392F),
+    onTertiaryContainer = Color(0xFFD0EDE0),
     surfaceContainerLowest = Color(0xFF130F10),
     surfaceContainerLow = Color(0xFF20191C),
     surfaceContainer = Color(0xFF251D20),

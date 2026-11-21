@@ -126,8 +126,19 @@
     <string name="home_recent_highlights">Sorotan terbaru Anda</string>
     <string name="home_see_all">Lihat semua</string>
     <string name="home_highlights_empty">Sorot ayat saat membaca dan ayat itu akan muncul di sini.</string>
-    <string name="home_questions_title">Ada pertanyaan tentang Alkitab?</string>
-    <string name="home_questions_subtitle">Jawaban dari GotQuestions.org</string>
+    <!-- Heading over Home's BibleProject and GotQuestions.org cards (#365). %1$s is the book being read, e.g. "John" -->
+    <string name="home_go_deeper">Pelajari lebih dalam: %1$s</string>
+    <!-- %1$s is a book name, e.g. "John", or two joined by a dash, e.g. "1 Kings–2 Kings" -->
+    <string name="home_watch_title">Ikhtisar: %1$s</string>
+    <string name="home_watch_more">Ikhtisar lainnya</string>
+    <!-- TalkBack label for a video on Home. %1$s is a book name -->
+    <string name="home_watch_play">Tonton ikhtisar %1$s dari BibleProject</string>
+    <!-- Badge on Home's Verse to memorize tile when its review is due -->
+    <string name="home_memorize_due">Perlu dilatih</string>
+    <!-- %1$s is the book being read, e.g. "John" -->
+    <string name="home_questions_book_title">Pertanyaan tentang %1$s?</string>
+    <string name="home_questions_body">Ringkasan kitab, dan jawaban atas pertanyaan tentang seluruh Alkitab.</string>
+    <string name="home_questions_browse">Jelajahi pertanyaan</string>
 
     <string name="external_link_opens_outside">Terbuka di luar aplikasi</string>
     <string name="external_link_offline">Anda sedang offline. Sambungkan ke internet untuk membuka ini.</string>

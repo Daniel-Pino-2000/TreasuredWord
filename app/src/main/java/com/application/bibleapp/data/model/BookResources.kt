@@ -31,6 +31,34 @@ object BookResources {
     fun overviewVideos(bookId: Int, spanish: Boolean): List<String> =
         (if (spanish) spanishVideos[bookId] else null) ?: englishVideos[bookId].orEmpty()
 
+    /**
+     * YouTube's own still for [videoId] (#365): `maxresdefault` (1280×720) for Home's Watch card,
+     * `mqdefault` (320×180) for its small "More overviews" ones. Both are 16:9 with no black bars,
+     * so they're shown whole and unedited. Every ID below has both sizes (checked 2026-11-21).
+     */
+    fun videoThumbnailUrl(videoId: String, large: Boolean): String =
+        "https://i.ytimg.com/vi/$videoId/${if (large) "maxresdefault" else "mqdefault"}.jpg"
+
+    /**
+     * Up to [count] books after [bookId] with an overview video, each with its first video, for
+     * Home's "More overviews" row (#365). Wraps from Revelation to Genesis, and skips a video
+     * already listed or covering [bookId] too, so 1 Kings is followed by 1 Chronicles, not 2 Kings.
+     */
+    fun nextOverviews(bookId: Int, spanish: Boolean, count: Int = 3): List<Pair<Int, String>> {
+        val seen = overviewVideos(bookId, spanish).toMutableSet()
+        val result = mutableListOf<Pair<Int, String>>()
+        for (step in 1 until BOOK_COUNT) {
+            val book = (bookId - 1 + step) % BOOK_COUNT + 1
+            val video = overviewVideos(book, spanish).firstOrNull() ?: continue
+            if (!seen.add(video)) continue
+            result += book to video
+            if (result.size == count) break
+        }
+        return result
+    }
+
+    private const val BOOK_COUNT = 66
+
     /** The books [videoId] covers: 11..12 for the one 1–2 Kings video, or just [bookId]. */
     fun booksCovered(videoId: String, bookId: Int, spanish: Boolean): IntRange {
         val videos = if (spanish && bookId in spanishVideos) spanishVideos else englishVideos
