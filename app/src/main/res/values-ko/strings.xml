@@ -530,4 +530,14 @@
     <plurals name="message_memorize_too_long">
         <item quantity="other">한 번에 최대 %1$d개 절까지 암송할 수 있어요.</item>
     </plurals>
+
+    <!-- Licensed Bibles read online through YouVersion (#366) -->
+    <string name="version_section_licensed">라이선스 역본</string>
+    <string name="version_section_licensed_hint">온라인으로 읽습니다. 연 장은 기기에 남습니다.</string>
+    <string name="version_status_online">온라인 역본</string>
+    <string name="youversion_chapter_offline">이 장은 아직 기기에 없고, 이 역본은 장을 열려면 인터넷 연결이 필요합니다. 인터넷에 연결하거나 다운로드한 역본을 선택하세요.</string>
+    <string name="youversion_chapter_failed">이 장을 불러오지 못했습니다. 다시 시도해 주세요.</string>
+    <string name="youversion_busy">지금 많은 사람이 이 역본을 읽고 있습니다. 1분 후에 다시 시도해 주세요.</string>
+    <string name="youversion_unavailable">지금은 이 역본을 사용할 수 없습니다. 나중에 다시 시도해 주세요.</string>
+    <string name="youversion_choose_downloaded">다운로드한 역본 선택</string>
 </resources>

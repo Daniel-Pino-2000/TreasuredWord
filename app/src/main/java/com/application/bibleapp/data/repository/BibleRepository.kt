@@ -26,6 +26,11 @@ import com.application.bibleapp.data.remote.HttpClientProvider
 import com.application.bibleapp.data.remote.NoteResponseDto
 import com.application.bibleapp.data.remote.ReadingProgressResponseDto
 import com.application.bibleapp.data.remote.VerseLocationDto
+import com.application.bibleapp.data.model.YouVersionBibles
+import com.application.bibleapp.data.local.NoContentException
+import com.application.bibleapp.data.local.NoInternetException
+import com.application.bibleapp.data.remote.YouVersionBibleSource
+import com.application.bibleapp.data.remote.YouVersionBusyException
 import com.application.bibleapp.ui.theme.ThemeMode
 import com.application.bibleapp.ui.theme.ThemePalette
 import com.application.bibleapp.ui.theme.VerseImageStyle
@@ -107,6 +112,11 @@ internal suspend fun pickDailyVerse(
 }
 
 /** The last book/chapter/verse the user had open, restored on app launch. */
+/** Why a YouVersion chapter (#366) isn't on screen: no connection, too many requests, or anything else. */
+enum class ChapterProblem { OFFLINE, BUSY, UNAVAILABLE }
+
+data class ChapterLoad(val verses: List<VerseUI>, val problem: ChapterProblem? = null)
+
 data class ReadingPosition(val bookId: Int, val chapter: Int, val verse: Int)
 
 /** The user's chosen local wall-clock time for the daily verse reminder. */
@@ -132,18 +142,52 @@ private data class CachedTranslations(val translations: List<BibleTranslation>, 
 class BibleRepository(
     private val context: Context,
     private val remote: BibleRemoteDataSource,
-    private val daily: DailyVerseDataSource
+    private val daily: DailyVerseDataSource,
+    private val youVersion: YouVersionBibleSource = YouVersionBibleSource()
 ) : SyncLocalStore {
     private val prefs by lazy {
         context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     }
 
+    /** [versionId]'s [bookId] [chapter], fetched first if it's a YouVersion chapter not read yet
+     *  (#366); empty when that isn't possible right now, as for a version that isn't on the device. */
     suspend fun getChapter(bookId: Int, chapter: Int, versionId: String): List<VerseUI> =
+        loadChapter(bookId, chapter, versionId).verses
+
+    /** The bundled KJV's [bookId] [chapter], read at once: a small query on the bundled table, for
+     *  the one place that can't wait (a licensed Bible's selection asked about in Bible Helper, #366). */
+    fun kjvChapterNow(bookId: Int, chapter: Int): List<VerseUI> =
+        BibleDatabaseManager.getVersesByChapter(context, bookId, chapter, DEFAULT_VERSION.id).map { it.toUI() }
+
+    /** Like [getChapter], plus why a YouVersion chapter couldn't be fetched, for the reader to say. */
+    suspend fun loadChapter(bookId: Int, chapter: Int, versionId: String): ChapterLoad =
         withContext(Dispatchers.IO) {
-            BibleDatabaseManager
-                .getVersesByChapter(context, bookId, chapter, versionId)
-                .map { it.toUI() }
+            val problem = if (YouVersionBibles.isYouVersion(versionId)) fetchYouVersionChapterIfMissing(bookId, chapter, versionId) else null
+            ChapterLoad(
+                verses = BibleDatabaseManager.getVersesByChapter(context, bookId, chapter, versionId).map { it.toUI() },
+                problem = problem
+            )
         }
+
+    /** Fetches and saves one chapter of a YouVersion version unless it's already saved (#366). */
+    private suspend fun fetchYouVersionChapterIfMissing(bookId: Int, chapter: Int, versionId: String): ChapterProblem? {
+        if (!BibleDatabaseManager.isVersionDownloaded(context, versionId)) return null // not added on this device
+        if (BibleDatabaseManager.hasChapter(context, versionId, bookId, chapter)) return null
+        val bible = YouVersionBibles.find(versionId) ?: return ChapterProblem.UNAVAILABLE
+        if (!NetworkUtils.isOnline(context)) return ChapterProblem.OFFLINE
+        return try {
+            val parsed = youVersion.fetchChapter(bible.yvId, bookId, chapter)
+            BibleDatabaseManager.saveChapter(context, versionId, bookId, chapter, parsed.verses, parsed.footnotes)
+            if (parsed.verses.isEmpty()) ChapterProblem.UNAVAILABLE else null
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: YouVersionBusyException) {
+            ChapterProblem.BUSY
+        } catch (e: Exception) {
+            Log.w("BibleRepository", "YouVersion chapter $versionId $bookId:$chapter failed: ${e.message}")
+            if (NetworkUtils.isOnline(context)) ChapterProblem.UNAVAILABLE else ChapterProblem.OFFLINE
+        }
+    }
 
     suspend fun getFootnotes(bookId: Int, chapter: Int, versionId: String): List<Footnote> =
         withContext(Dispatchers.IO) {
@@ -425,8 +469,12 @@ class BibleRepository(
             .filter { it.isCompleteCanon }
             .also { writeCachedVersions(it) }
         saveMissingCredits(versions)
-        versions
+        versions + youVersionTranslations()
     }
+
+    /** The licensed YouVersion Bibles (#366), offered only when the build has the App Key. */
+    private fun youVersionTranslations(): List<BibleTranslation> =
+        if (youVersion.isConfigured) YouVersionBibles.all.map { it.toTranslation() } else emptyList()
 
     /** Copies catalog titles and licenses onto downloads that lack them, so their credit works offline (#98). */
     private fun saveMissingCredits(versions: List<BibleTranslation>) {
@@ -502,12 +550,52 @@ class BibleRepository(
     suspend fun downloadVersion(
         translationId: String,
         onProgress: (Float) -> Unit = {}
-    ): Result<VersionDownloadSummary> = BibleDatabaseManager.downloadAndSaveVersion(
-        context = context,
-        translationId = translationId,
-        remote = remote,
-        onProgress = onProgress
-    )
+    ): Result<VersionDownloadSummary> =
+        if (YouVersionBibles.isYouVersion(translationId)) {
+            addYouVersion(translationId, onProgress)
+        } else {
+            BibleDatabaseManager.downloadAndSaveVersion(
+                context = context,
+                translationId = translationId,
+                remote = remote,
+                onProgress = onProgress
+            )
+        }
+
+    /**
+     * "Downloading" a YouVersion version (#366) only saves its book names, verse counts and credit:
+     * its chapters are fetched as they're read (see [loadChapter]), never all at once.
+     */
+    private suspend fun addYouVersion(versionId: String, onProgress: (Float) -> Unit): Result<VersionDownloadSummary> =
+        withContext(Dispatchers.IO) {
+            val bible = YouVersionBibles.find(versionId)
+                ?: return@withContext Result.failure(NoContentException())
+            if (!NetworkUtils.isOnline(context)) return@withContext Result.failure(NoInternetException())
+            try {
+                onProgress(0.1f)
+                val structure = youVersion.fetchStructure(bible.yvId)
+                if (structure.chapterInfo.isEmpty()) return@withContext Result.failure(NoContentException())
+                onProgress(0.8f)
+                val translation = bible.toTranslation()
+                val notice = bible.notice ?: youVersion.fetchCopyright(bible.yvId)
+                BibleDatabaseManager.registerOnlineVersion(
+                    context = context,
+                    versionId = versionId,
+                    name = bible.abbreviation,
+                    fullName = bible.title,
+                    license = translation.license?.copy(notice = notice),
+                    bookNames = structure.bookNames,
+                    chapterInfo = structure.chapterInfo
+                )
+                onProgress(1f)
+                Result.success(VersionDownloadSummary(0, 0, 0))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.e("BibleRepository", "Adding $versionId failed: ${e.message}")
+                Result.failure(e)
+            }
+        }
 
     /** Deletes then re-downloads [translationId] — the only way to pick up a newer schema_version. */
     suspend fun redownloadVersion(

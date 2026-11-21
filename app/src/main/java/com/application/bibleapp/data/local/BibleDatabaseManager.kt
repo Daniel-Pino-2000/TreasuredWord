@@ -31,6 +31,9 @@ import com.application.bibleapp.data.model.encodeToJson
 import com.application.bibleapp.data.remote.AiPassageDto
 import com.application.bibleapp.data.remote.BibleRemoteDataSource
 import com.application.bibleapp.data.remote.DownloadedTranslation
+import com.application.bibleapp.data.remote.MappedBookName
+import com.application.bibleapp.data.remote.MappedChapterInfo
+import com.application.bibleapp.data.remote.ParsedVerse
 import com.application.bibleapp.data.remote.VerseLocationDto
 import com.application.bibleapp.data.remote.decodeVerseLocationsOrEmpty
 import com.application.bibleapp.data.repository.BibleRepository
@@ -645,6 +648,106 @@ object BibleDatabaseManager {
             db.execSQL("DELETE FROM downloaded_book_names WHERE version = ?", arrayOf(versionId))
             db.execSQL("DELETE FROM downloaded_chapter_info WHERE version = ?", arrayOf(versionId))
             db.execSQL("DELETE FROM downloaded_versions WHERE id = ?", arrayOf(versionId))
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
+        }
+    }
+
+    /**
+     * Adds a YouVersion version (#366) the way a download would, but without its text: chapters
+     * are saved one by one by [saveChapter] as they're read. Book names and verse counts come
+     * first, so navigation and verse pickers work before any chapter is opened. Stamped with the
+     * current schema, since nothing is ever re-downloaded in bulk for these.
+     */
+    fun registerOnlineVersion(
+        context: Context,
+        versionId: String,
+        name: String,
+        fullName: String,
+        license: TranslationLicense?,
+        bookNames: List<MappedBookName>,
+        chapterInfo: List<MappedChapterInfo>
+    ) {
+        val db = getDatabase(context)
+        db.beginTransaction()
+        try {
+            bookNames.forEach {
+                db.execSQL(
+                    "INSERT OR REPLACE INTO downloaded_book_names (version, book_id, name) VALUES (?, ?, ?)",
+                    arrayOf(versionId, it.bookId, it.name)
+                )
+            }
+            chapterInfo.forEach {
+                db.execSQL(
+                    "INSERT OR REPLACE INTO downloaded_chapter_info (version, book_id, chapter, verse_count) VALUES (?, ?, ?, ?)",
+                    arrayOf(versionId, it.bookId, it.chapter, it.verseCount)
+                )
+            }
+            db.execSQL(
+                "INSERT OR REPLACE INTO downloaded_versions (id, name, downloaded_at, schema_version, full_name, license) VALUES (?, ?, ?, ?, ?, ?)",
+                arrayOf(
+                    versionId,
+                    name,
+                    System.currentTimeMillis(),
+                    DownloadedVersionInfo.CURRENT_DOWNLOAD_SCHEMA_VERSION,
+                    fullName.ifBlank { null },
+                    license?.let { licenseJson.encodeToString(TranslationLicense.serializer(), it) }
+                )
+            )
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
+        }
+    }
+
+    /** Whether any verse of [bookId] [chapter] is saved for [versionId]. */
+    fun hasChapter(context: Context, versionId: String, bookId: Int, chapter: Int): Boolean {
+        if (versionId == "kjv") return true
+        getDatabase(context).rawQuery(
+            "SELECT 1 FROM downloaded_verses WHERE version = ? AND book_id = ? AND chapter = ? LIMIT 1",
+            arrayOf(versionId, bookId.toString(), chapter.toString())
+        ).use { return it.moveToFirst() }
+    }
+
+    /**
+     * Saves one chapter of a YouVersion version as it's read (#366), so it opens offline next
+     * time. The licenses allow keeping the text on the device inside the app (docs/bible-licensing.md).
+     * Synchronous on purpose: the caller fetches first, then writes with no suspension in between.
+     */
+    fun saveChapter(
+        context: Context,
+        versionId: String,
+        bookId: Int,
+        chapter: Int,
+        verses: List<ParsedVerse>,
+        footnotes: List<Footnote>
+    ) {
+        if (verses.isEmpty()) return
+        val db = getDatabase(context)
+        db.beginTransaction()
+        try {
+            verses.forEach { verse ->
+                db.execSQL(
+                    """
+                    INSERT OR REPLACE INTO downloaded_verses (version, book_id, chapter, verse, text, rich_content, search_text)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    """.trimIndent(),
+                    arrayOf(
+                        versionId, bookId, chapter, verse.number, verse.plainText,
+                        verse.richContent.encodeToJson(), verse.plainText.normalizeForSearch()
+                    )
+                )
+            }
+            footnotes.forEach { note ->
+                db.execSQL(
+                    """
+                    INSERT OR REPLACE INTO downloaded_footnotes (version, book_id, chapter, note_id, verse, caller, text)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    """.trimIndent(),
+                    arrayOf(versionId, bookId, chapter, note.noteId, note.verse, note.caller, note.text)
+                )
+            }
             db.setTransactionSuccessful()
         } finally {
             db.endTransaction()

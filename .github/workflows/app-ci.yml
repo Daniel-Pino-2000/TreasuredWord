@@ -44,8 +44,11 @@ jobs:
         uses: gradle/actions/setup-gradle@v5
 
       - name: Run unit tests and build debug APK
-        # No local.properties or secrets needed: the runner image ships the Android SDK and sets
-        # ANDROID_HOME, and :app's build script reads no keys or URLs from the environment.
+        # No local.properties needed: the runner image ships the Android SDK and sets ANDROID_HOME.
+        # The only key is the YouVersion App Key (#366), from the repository secret; pull requests
+        # from forks get none, and the build still passes without it.
+        env:
+          YOUVERSION_APP_KEY: ${{ secrets.YOUVERSION_APP_KEY }}
         run: ./gradlew :app:testDebugUnitTest :app:assembleDebug --console=plain
 
       - name: Upload test report
