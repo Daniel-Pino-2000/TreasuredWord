@@ -5,7 +5,7 @@ permalink: /privacy/
 
 # TreasuredWord privacy policy
 
-**Effective date:** November 19, 2026
+**Effective date:** November 21, 2026
 
 TreasuredWord is a free Bible reading app made by Daniel Pino, an independent developer. In this policy, "we" and "us" mean Daniel Pino, the developer of TreasuredWord. It explains what information the app uses, where it goes, and the choices you have. If you have questions, email [pinoponedaniel@gmail.com](mailto:pinoponedaniel@gmail.com).
 
@@ -114,6 +114,7 @@ TreasuredWord links to resources made by other ministries. They open outside the
 
 - **GotQuestions.org** answers and book summaries open in your phone's browser (shown as a browser sheet over the app). GotQuestions.org and your browser's provider see that visit.
 - **BibleProject** overview videos open in the YouTube app, or on youtube.com if the app isn't installed. Google (YouTube) sees what you watch.
+- **Video previews on Home.** Home shows the picture (thumbnail) of the BibleProject videos for the book you're reading. The app loads these pictures from YouTube's image server (`i.ytimg.com`) when Home opens, so Google sees your device's internet (IP) address and which video pictures were loaded, even if you don't play a video. Nothing else is sent. When you're offline, or Android's Data Saver is on, the app loads no pictures and shows a colored tile instead.
 
 The app sends these services no account information and doesn't keep a record of what you open. Your visit is covered by their own privacy policies: [GotQuestions.org](https://www.gotquestions.org/privacy.html), [Google](https://policies.google.com/privacy) and your browser's.
 

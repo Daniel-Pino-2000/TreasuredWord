@@ -72,4 +72,27 @@ class BookResourcesTest {
         assertEquals(BookResources.spanishVideos[1], BookResources.overviewVideos(1, spanish = true))
         assertEquals(BookResources.englishVideos[1], BookResources.overviewVideos(1, spanish = false))
     }
+    @Test
+    fun `More overviews are the next books, each video once`() {
+        assertEquals(listOf(44, 45, 46), BookResources.nextOverviews(43, spanish = false).map { it.first })
+        // 1–2 Kings share a video, so 1 Kings is followed by 1 Chronicles; 1–3 John, by Jude.
+        assertEquals(13, BookResources.nextOverviews(11, spanish = false).first().first)
+        assertEquals(65, BookResources.nextOverviews(62, spanish = false).first().first)
+        // After Revelation it wraps to Genesis.
+        assertEquals(listOf(1, 2, 3), BookResources.nextOverviews(66, spanish = false).map { it.first })
+        for (spanish in listOf(false, true)) for (book in 1..66) {
+            val more = BookResources.nextOverviews(book, spanish)
+            val ids = more.map { it.second }
+            assertEquals("book $book", 3, more.size)
+            assertEquals("book $book repeats a video", ids.size, ids.toSet().size)
+            assertTrue("book $book lists its own video", ids.none { it in BookResources.overviewVideos(book, spanish) })
+            more.forEach { (b, id) -> assertEquals(BookResources.overviewVideos(b, spanish).first(), id) }
+        }
+    }
+
+    @Test
+    fun `thumbnails are YouTube's own 16 by 9 stills`() {
+        assertEquals("https://i.ytimg.com/vi/abcdefghijk/maxresdefault.jpg", BookResources.videoThumbnailUrl("abcdefghijk", large = true))
+        assertEquals("https://i.ytimg.com/vi/abcdefghijk/mqdefault.jpg", BookResources.videoThumbnailUrl("abcdefghijk", large = false))
+    }
 }
