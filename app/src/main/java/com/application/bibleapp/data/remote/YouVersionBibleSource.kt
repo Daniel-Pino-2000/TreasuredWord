@@ -62,8 +62,9 @@ data class YouVersionStructure(
 /**
  * Reads the licensed Bibles (data/model/YouVersionBibles.kt) from the YouVersion Platform API
  * (https://developers.youversion.com, #366). Chapters are fetched one at a time as they're read,
- * never a whole Bible at once: the API's rate limit is per app key and unpublished, so a
- * download of all 1,189 chapters per reader could lock every reader out.
+ * and read ahead slowly in the background (#384, LicensedReadAheadWorker), never a whole Bible at
+ * once: the API's rate limit is per app key and unpublished, so a download of all 1,189 chapters
+ * per reader could lock every reader out.
  *
  * Endpoints used: `GET /v1/bibles/{id}` (the copyright text), `GET /v1/bibles/{id}/index`
  * (book names and verse counts, once per version), and

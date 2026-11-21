@@ -45,7 +45,16 @@ recorded below. A YouVersion version taken off that list is deleted from phones 
   - Without a key, the build still works and simply doesn't offer these versions.
 - **Rate limit:** per key, not published (raised once the app went Live). On HTTP 429 the reader shows a calm "try again in a
   minute" message (`ChapterUnavailableMessage`). Whole Bibles are never fetched at once (1,189
-  calls per reader could lock out every reader); a chapter is fetched only when opened.
+  calls per reader could lock out every reader). A chapter is fetched when opened, and while a
+  licensed version is read online the app reads ahead slowly in the background (#384,
+  `LicensedReadAheadWorker`): the rest of the book, then the next books, one chapter about every
+  15 s, on Wi-Fi or another unmetered network only, at most 100 chapters per phone per day. A 429
+  (to the reader or the read-ahead) stops it until `Retry-After` has passed (5 minutes if it
+  doesn't say) and doubles its pause, up to 4 minutes, back to 15 s the next day. Removing the
+  version cancels it. The numbers live in `ReadAheadLimits` (`data/repository/LicensedReadAhead.kt`);
+  raise them only if 429s turn out to be rare. A one-tap "download whole version" would come
+  after that, if ever. The license allows it: Lockman's text may reach the phone "by live data
+  connection or download to the user's device".
 
 ### YouVersion Platform Terms of Use (last modified 2026-08-17), accepted 2026-11-21
 
@@ -72,7 +81,7 @@ It takes effect after YouVersion vets the app, and either Lockman or YouVersion 
 | Condition | How the app meets it |
 |---|---|
 | Text only in an app that gets it through the YouVersion Platform | `YouVersionBibleSource` |
-| "Live data connection or download to the user's device" | Chapters are kept on the phone after they're read |
+| "Live data connection or download to the user's device" | Chapters are kept on the phone after they're read, and the next ones are read ahead slowly on Wi-Fi (#384) |
 | Downloading a large part for use outside the app must be difficult | Text stays in the app's private database; nothing exports a book or more |
 | Completely free: no charges, no membership fees, **no third-party advertising** | The app's rule; see Donations below |
 | A clickable link to lockman.org and the license's copyright notice, conspicuous | The chapter credit shows the notice word for word (`YouVersionBibles.kt`) and a lockman.org link |
