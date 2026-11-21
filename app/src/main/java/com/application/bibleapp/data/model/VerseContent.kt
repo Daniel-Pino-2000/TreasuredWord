@@ -26,7 +26,10 @@ data class VerseRun(
     val poemLevel: Int? = null,
     val lineBreakBefore: Boolean = false,
     val footnoteId: Int? = null,
-    val paragraphBreakBefore: Boolean = false
+    val paragraphBreakBefore: Boolean = false,
+    /** Continues the poetry line the run before it started: a footnote marker split the line,
+     *  but it stays one line (YouVersion text, #366). bible.helloao.org runs never set it. */
+    val sameLine: Boolean = false
 )
 
 /** A heading or Hebrew subtitle that appears immediately before a verse. */

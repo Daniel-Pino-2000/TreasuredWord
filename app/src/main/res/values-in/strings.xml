@@ -519,4 +519,14 @@
     <plurals name="message_memorize_too_long">
         <item quantity="other">Anda bisa menghafal hingga %1$d ayat sekaligus.</item>
     </plurals>
+
+    <!-- Licensed Bibles read online through YouVersion (#366) -->
+    <string name="version_section_licensed">Versi berlisensi</string>
+    <string name="version_section_licensed_hint">Dibaca secara online. Pasal yang Anda buka tetap tersimpan di perangkat.</string>
+    <string name="version_status_online">Versi online</string>
+    <string name="youversion_chapter_offline">Pasal ini belum ada di perangkat Anda, dan versi ini memerlukan koneksi internet untuk membukanya. Sambungkan ke internet, atau pilih versi yang sudah diunduh.</string>
+    <string name="youversion_chapter_failed">Pasal ini tidak dapat dimuat. Silakan coba lagi.</string>
+    <string name="youversion_busy">Banyak orang sedang membaca versi ini. Silakan coba lagi dalam satu menit.</string>
+    <string name="youversion_unavailable">Versi ini sedang tidak tersedia. Silakan coba lagi nanti.</string>
+    <string name="youversion_choose_downloaded">Pilih versi yang sudah diunduh</string>
 </resources>

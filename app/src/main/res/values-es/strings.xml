@@ -560,4 +560,14 @@
         <item quantity="many">Puedes memorizar hasta %1$d versículos a la vez.</item>
         <item quantity="other">Puedes memorizar hasta %1$d versículos a la vez.</item>
     </plurals>
+
+    <!-- Licensed Bibles read online through YouVersion (#366) -->
+    <string name="version_section_licensed">Versiones con licencia</string>
+    <string name="version_section_licensed_hint">Se leen en línea. Los capítulos que abras se quedan en tu dispositivo.</string>
+    <string name="version_status_online">Versión en línea</string>
+    <string name="youversion_chapter_offline">Este capítulo aún no está en tu dispositivo y esta versión necesita conexión a internet para abrirlo. Conéctate o elige una versión descargada.</string>
+    <string name="youversion_chapter_failed">No se pudo cargar este capítulo. Inténtalo de nuevo.</string>
+    <string name="youversion_busy">Mucha gente está leyendo esta versión ahora mismo. Inténtalo de nuevo en un minuto.</string>
+    <string name="youversion_unavailable">Esta versión no está disponible ahora mismo. Inténtalo de nuevo más tarde.</string>
+    <string name="youversion_choose_downloaded">Elegir una versión descargada</string>
 </resources>

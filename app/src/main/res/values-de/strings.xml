@@ -530,4 +530,14 @@
         <item quantity="one">Du kannst höchstens %1$d Vers auf einmal auswendig lernen.</item>
         <item quantity="other">Du kannst höchstens %1$d Verse auf einmal auswendig lernen.</item>
     </plurals>
+
+    <!-- Licensed Bibles read online through YouVersion (#366) -->
+    <string name="version_section_licensed">Lizenzierte Übersetzungen</string>
+    <string name="version_section_licensed_hint">Online lesen. Geöffnete Kapitel bleiben auf deinem Gerät.</string>
+    <string name="version_status_online">Online-Übersetzung</string>
+    <string name="youversion_chapter_offline">Dieses Kapitel ist noch nicht auf deinem Gerät, und diese Übersetzung braucht zum Öffnen eine Internetverbindung. Verbinde dich oder wähle eine heruntergeladene Übersetzung.</string>
+    <string name="youversion_chapter_failed">Dieses Kapitel konnte nicht geladen werden. Bitte versuche es erneut.</string>
+    <string name="youversion_busy">Gerade lesen sehr viele diese Übersetzung. Bitte versuche es in einer Minute erneut.</string>
+    <string name="youversion_unavailable">Diese Übersetzung ist gerade nicht verfügbar. Bitte versuche es später erneut.</string>
+    <string name="youversion_choose_downloaded">Heruntergeladene Übersetzung wählen</string>
 </resources>

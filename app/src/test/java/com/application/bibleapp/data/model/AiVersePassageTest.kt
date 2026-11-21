@@ -31,6 +31,16 @@ class AiVersePassageTest {
     }
 
     @Test
+    fun `a licensed YouVersion translation is never quoted next to an AI answer`() = runTest {
+        // Made-up words: licensed text never goes in this repo (#366).
+        val licensed = chapter(16 to "Licensed words…", 17 to "More licensed words…")
+
+        val passage = loadAiVersePassage(VerseReference(43, 3, 16), YouVersionBibles.all.first().id, chapters(licensed))
+
+        assertEquals(AiVersePassage("kjv", listOf(PassageVerse(16, "For God so loved the world…"))), passage)
+    }
+
+    @Test
     fun `the KJV when the selected translation doesn't have the chapter`() = runTest {
         val passage = loadAiVersePassage(VerseReference(43, 3, 16), "nt_only", chapters(emptyList()))
 

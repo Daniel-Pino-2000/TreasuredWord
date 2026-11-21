@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.isSystemInDarkTheme
 import com.application.bibleapp.ui.theme.highlightFill
 import com.application.bibleapp.components.BibleText
+import com.application.bibleapp.components.ChapterUnavailableMessage
 import com.application.bibleapp.components.HighlightActionSheet
 import com.application.bibleapp.components.NoteEditorSheet
 import com.application.bibleapp.components.NoteListSheet
@@ -43,7 +44,8 @@ import androidx.compose.ui.res.stringResource
 fun BibleView(
     bibleViewModel: BibleViewModel,
     modifier: Modifier = Modifier,
-    onSignInClick: () -> Unit = {}
+    onSignInClick: () -> Unit = {},
+    onChooseVersion: () -> Unit = {}
 ) {
 
     val currentVerse by bibleViewModel.currentVerse.collectAsState()
@@ -60,6 +62,7 @@ fun BibleView(
     val noteListVerse by bibleViewModel.noteListVerse.collectAsState()
     val bookNames by bibleViewModel.bookNames.collectAsState()
     val translationCredit by bibleViewModel.currentTranslationCredit.collectAsState()
+    val chapterProblem by bibleViewModel.chapterProblem.collectAsState()
     val links = rememberExternalLinks { bibleViewModel.showMessage(it) }
 
     // Back cancels a verse selection first, like the toolbar's X, instead of leaving the reader
@@ -124,7 +127,15 @@ fun BibleView(
             )
         }
 
-        BibleText(
+        val problem = chapterProblem
+        if (problem != null && verses.isEmpty()) {
+            ChapterUnavailableMessage(
+                problem = problem,
+                onRetry = bibleViewModel::retryChapter,
+                onChooseVersion = onChooseVersion,
+                modifier = Modifier.fillMaxWidth().weight(1f)
+            )
+        } else BibleText(
             verses = verses,
             scrollToIndex = currentVerse,
             chapterTitle = chapterTitle,

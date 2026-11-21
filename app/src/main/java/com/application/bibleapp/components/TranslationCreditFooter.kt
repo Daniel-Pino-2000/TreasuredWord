@@ -26,7 +26,7 @@ private const val BIBLE_TEXT_SOURCE_NAME = "bible.helloao.org"
 private const val BIBLE_TEXT_SOURCE_URL = "https://bible.helloao.org"
 
 /**
- * The credit under the last verse of every chapter (#98): the translation's title, its license
+ * The credit under the last verse of every chapter (#98, #366): the translation's title, its license
  * (most downloadable Bibles require the credit, and some a notice), and where the text came from.
  * At the end of the chapter rather than only in the version picker, so it's always with the text
  * it credits, on- or offline. [onOpenLink] gets https URLs for ExternalLinks.openPage.
@@ -60,7 +60,9 @@ fun TranslationCreditFooter(
                 text = buildAnnotatedString {
                     if (license.publicDomain) append("$publicDomain · ")
                     withLink(LinkAnnotation.Clickable("license", linkStyles) { onOpenLink(license.url) }) {
-                        append(licenseLabel)
+                        // A licensed Bible links its publisher's site by name, as its license asks
+                        // (Lockman: "a clickable link to LOCKMAN's web site", #366).
+                        append(if (credit.isLicensed) license.url.removePrefix("https://").removePrefix("www.") else licenseLabel)
                     }
                 },
                 style = MaterialTheme.typography.bodySmall,
@@ -70,7 +72,9 @@ fun TranslationCreditFooter(
         license?.notice?.let { notice ->
             Text(text = notice, style = MaterialTheme.typography.bodySmall, color = textColor)
         }
-        if (!credit.isBundled) {
+        // A licensed Bible's text comes through the YouVersion Platform, whose terms don't allow
+        // using its name in the app (docs/bible-licensing.md); its publisher is credited above.
+        if (!credit.isBundled && !credit.isLicensed) {
             Text(
                 text = linkedSourceName(source, linkStyles) { onOpenLink(BIBLE_TEXT_SOURCE_URL) },
                 style = MaterialTheme.typography.bodySmall,

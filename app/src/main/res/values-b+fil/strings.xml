@@ -532,4 +532,14 @@
         <item quantity="one">Hanggang %1$d talata lang ang maisasaulo mo nang sabay.</item>
         <item quantity="other">Hanggang %1$d talata lang ang maisasaulo mo nang sabay.</item>
     </plurals>
+
+    <!-- Licensed Bibles read online through YouVersion (#366) -->
+    <string name="version_section_licensed">Mga lisensyadong bersyon</string>
+    <string name="version_section_licensed_hint">Binabasa online. Nananatili sa iyong device ang mga kabanatang binuksan mo.</string>
+    <string name="version_status_online">Online na bersyon</string>
+    <string name="youversion_chapter_offline">Wala pa sa iyong device ang kabanatang ito, at kailangan ng bersyong ito ng internet para buksan ito. Kumonekta, o pumili ng na-download na bersyon.</string>
+    <string name="youversion_chapter_failed">Hindi ma-load ang kabanatang ito. Pakisubukan ulit.</string>
+    <string name="youversion_busy">Maraming tao ang nagbabasa ng bersyong ito ngayon. Pakisubukan ulit pagkalipas ng isang minuto.</string>
+    <string name="youversion_unavailable">Hindi available ang bersyong ito ngayon. Pakisubukan ulit mamaya.</string>
+    <string name="youversion_choose_downloaded">Pumili ng na-download na bersyon</string>
 </resources>

@@ -606,4 +606,14 @@
         <item quantity="one">You can memorize up to %1$d verse at a time.</item>
         <item quantity="other">You can memorize up to %1$d verses at a time.</item>
     </plurals>
+
+    <!-- Licensed Bibles read online through YouVersion (#366) -->
+    <string name="version_section_licensed">Licensed versions</string>
+    <string name="version_section_licensed_hint">Read online. Chapters you open stay on your device.</string>
+    <string name="version_status_online">Online version</string>
+    <string name="youversion_chapter_offline">This chapter isn\'t on your device yet, and this version needs an internet connection to open it. Connect, or choose a downloaded version.</string>
+    <string name="youversion_chapter_failed">This chapter couldn\'t be loaded. Please try again.</string>
+    <string name="youversion_busy">Many people are reading this version right now. Please try again in a minute.</string>
+    <string name="youversion_unavailable">This version isn\'t available right now. Please try again later.</string>
+    <string name="youversion_choose_downloaded">Choose a downloaded version</string>
 </resources>

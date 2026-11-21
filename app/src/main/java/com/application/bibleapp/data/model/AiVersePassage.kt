@@ -30,6 +30,10 @@ suspend fun loadAiVersePassage(
     fun isComplete(verses: List<PassageVerse>): Boolean =
         if (wanted == null) verses.isNotEmpty() else verses.map { it.number }.containsAll(wanted.toList())
 
+    // Licensed Bibles read through YouVersion (#366) never go next to Bible Helper or search-by-
+    // meaning answers: the YouVersion terms and MissionAssist's license bar using their text with
+    // AI (docs/bible-licensing.md). Those answers quote the bundled KJV instead.
+    val selectedVersionId = if (YouVersionBibles.isYouVersion(selectedVersionId)) DEFAULT_VERSION.id else selectedVersionId
     val selected = versesIn(chapterOf(selectedVersionId))
     if (isComplete(selected) || selectedVersionId == DEFAULT_VERSION.id) {
         return selected.takeIf { it.isNotEmpty() }?.let { AiVersePassage(selectedVersionId, it) }
