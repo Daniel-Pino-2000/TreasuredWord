@@ -522,6 +522,13 @@ class BibleRepository(
         BibleDatabaseManager.isVersionDownloaded(context, versionId)
     }
 
+    /** Deletes saved YouVersion versions the app no longer offers (#381): see [YouVersionBibles.isWithdrawn]. */
+    suspend fun removeWithdrawnVersions() = withContext(Dispatchers.IO) {
+        BibleDatabaseManager.getDownloadedVersions(context)
+            .filter { YouVersionBibles.isWithdrawn(it.id) }
+            .forEach { BibleDatabaseManager.deleteDownloadedVersion(context, it.id) }
+    }
+
     /** All locally downloaded versions, keyed for the picker to badge without a query per row. */
     suspend fun getDownloadedVersions(): List<DownloadedVersionInfo> = withContext(Dispatchers.IO) {
         BibleDatabaseManager.getDownloadedVersions(context)

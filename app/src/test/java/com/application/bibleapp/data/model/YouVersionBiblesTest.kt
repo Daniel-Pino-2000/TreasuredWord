@@ -28,6 +28,14 @@ class YouVersionBiblesTest {
     }
 
     @Test
+    fun `a YouVersion version no longer offered is withdrawn, offered and helloao ones are not`() {
+        assertTrue("EasyEnglish was removed (#381)", YouVersionBibles.isWithdrawn("yv-2079"))
+        YouVersionBibles.all.forEach { assertFalse(it.abbreviation, YouVersionBibles.isWithdrawn(it.id)) }
+        assertFalse(YouVersionBibles.isWithdrawn("kjv"))
+        assertFalse(YouVersionBibles.isWithdrawn("spa_r09"))
+    }
+
+    @Test
     fun `Lockman versions carry the notice their license prescribes`() {
         YouVersionBibles.all.filter { it.publisher == "The Lockman Foundation" }.forEach { bible ->
             val notice = bible.notice!!

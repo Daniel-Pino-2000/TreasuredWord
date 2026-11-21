@@ -108,18 +108,6 @@ object YouVersionBibles {
             licenseUrl = LOCKMAN_URL,
             notice = "Amplified® Bible Copyright © 2015 by The Lockman Foundation, La Habra, Calif. Used by " +
                 "permission. All rights reserved. For Permission to Quote Information visit www.Lockman.org"
-        ),
-        // MissionAssist Fast-track Bible License v1. Its license names no notice of its own, so the
-        // API's copyright text is shown.
-        YouVersionBible(
-            yvId = 2079,
-            abbreviation = "EASY",
-            title = "EasyEnglish Bible 2024",
-            languageName = "English",
-            languageCode = "eng",
-            publisher = "MissionAssist",
-            licenseUrl = "https://www.easyenglish.bible",
-            notice = null
         )
     )
 
@@ -128,4 +116,11 @@ object YouVersionBibles {
     fun isYouVersion(versionId: String): Boolean = versionId.startsWith(YouVersionBible.ID_PREFIX)
 
     fun find(versionId: String): YouVersionBible? = byId[versionId]
+
+    /**
+     * A YouVersion version the app no longer offers, such as the EasyEnglish Bible (removed
+     * before release, #381) or one whose license ended: its saved book list and chapters are
+     * deleted at startup, since a license that ends leaves no right to keep the text.
+     */
+    fun isWithdrawn(versionId: String): Boolean = isYouVersion(versionId) && versionId !in byId
 }
