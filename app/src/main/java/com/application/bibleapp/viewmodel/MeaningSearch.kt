@@ -1,20 +1,29 @@
 package com.application.bibleapp.viewmodel
 
+import com.application.bibleapp.data.model.DEFAULT_VERSION
 import com.application.bibleapp.data.model.PassageVerse
 import com.application.bibleapp.data.model.VerseUI
+import com.application.bibleapp.data.model.YouVersionBibles
 import com.application.bibleapp.data.model.loadAiVersePassage
+import com.application.bibleapp.data.model.passageIn
 import com.application.bibleapp.data.remote.SemanticSearchResult
 import com.application.bibleapp.data.remote.ServerWake
 import com.application.bibleapp.data.remote.VerseRef
 import com.application.bibleapp.utils.VerseReference
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 
 /** Where the Search screen's "Related by meaning" section is (#287). */
 enum class MeaningSearchStatus {
@@ -192,12 +201,20 @@ fun List<MeaningVerse>.withoutWordResults(wordResults: List<VerseUI>): List<Mean
  * Reads [refs] from the phone's Bibles: [selectedVersionId], or the bundled KJV when it doesn't
  * have a verse, as the Bible Helper's verse cards do ([loadAiVersePassage], #129). A verse
  * neither has is left out. Each chapter is read once per call, however many verses it has.
+ *
+ * A licensed version (#383) shows the whole list or none of it: its chapters not saved yet are
+ * fetched [LICENSED_PARALLEL_CHAPTERS] at a time, as its word search does (#382), and if one can't
+ * be (offline, a 429) or lacks a verse, the whole list is the KJV's, never a mix.
  */
 suspend fun resolveMeaningVerses(
     refs: List<VerseRef>,
     selectedVersionId: String,
     chapterOf: suspend (versionId: String, bookId: Int, chapter: Int) -> List<VerseUI>
 ): List<MeaningVerse> {
+    if (YouVersionBibles.isYouVersion(selectedVersionId)) {
+        return licensedMeaningVerses(refs, selectedVersionId, chapterOf)
+            ?: resolveMeaningVerses(refs, DEFAULT_VERSION.id, chapterOf)
+    }
     val chapters = mutableMapOf<Triple<String, Int, Int>, List<VerseUI>>()
     return refs.mapNotNull { ref ->
         val reference = VerseReference(ref.bookId, ref.chapter, ref.verse, ref.verse)
@@ -207,6 +224,36 @@ suspend fun resolveMeaningVerses(
         passage?.verses?.firstOrNull()?.let { MeaningVerse(ref.bookId, ref.chapter, ref.verse, it.text, passage.versionId) }
     }
 }
+
+/** All of [refs] in the licensed [versionId], or null as soon as one chapter can't be loaded or one verse is missing. */
+private suspend fun licensedMeaningVerses(
+    refs: List<VerseRef>,
+    versionId: String,
+    chapterOf: suspend (versionId: String, bookId: Int, chapter: Int) -> List<VerseUI>
+): List<MeaningVerse>? {
+    val permits = Semaphore(LICENSED_PARALLEL_CHAPTERS)
+    val failed = AtomicBoolean(false) // once one fails the list is the KJV's: the chapters still waiting aren't fetched
+    val chapters = coroutineScope {
+        refs.map { it.bookId to it.chapter }.distinct().map { (bookId, chapter) ->
+            async {
+                permits.withPermit {
+                    if (failed.get()) return@withPermit null
+                    chapterOf(versionId, bookId, chapter).takeIf { it.isNotEmpty() }.also { if (it == null) failed.set(true) }
+                }?.let { (bookId to chapter) to it }
+            }
+        }.awaitAll()
+    }
+    if (failed.get()) return null
+    val byChapter = chapters.filterNotNull().toMap()
+    return refs.map { ref ->
+        val verse = passageIn(byChapter[ref.bookId to ref.chapter].orEmpty(), VerseReference(ref.bookId, ref.chapter, ref.verse, ref.verse))
+            .firstOrNull() ?: return null
+        MeaningVerse(ref.bookId, ref.chapter, ref.verse, verse.text, versionId)
+    }
+}
+
+/** How many of a licensed version's chapters search by meaning fetches at once (#383), as its word search does. */
+const val LICENSED_PARALLEL_CHAPTERS = 3
 
 /**
  * Reads search's key passages (#320) from the phone's Bibles, each whole from one translation as

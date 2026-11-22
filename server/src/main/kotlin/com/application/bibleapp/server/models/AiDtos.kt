@@ -8,10 +8,12 @@ data class AiMessageDto(val role: String, val content: String)
 
 /**
  * The passage "Ask about this verse" attaches (#132): a USFM reference such as "JHN 3:16-18" and
- * its text in the reader's own translation, at most 2,000 characters.
+ * its text in the reader's own translation, at most 2,000 characters. A licensed version's text
+ * never comes (#383): [text] is left out, [version] names the reader's version ("NASB 2020"), and
+ * the server quotes the BSB instead ([com.application.bibleapp.server.ai.PassageText]).
  */
 @Serializable
-data class AiPassage(val reference: String, val text: String)
+data class AiPassage(val reference: String, val text: String? = null, val version: String? = null)
 
 /** `POST /api/v1/ai/ask` (#124). `language` is one of the app's tags, e.g. "es" or "pt-BR".
  *  [passage] is only there when the question was asked from the reader (#132). [starter] names

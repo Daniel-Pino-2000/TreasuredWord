@@ -10,9 +10,29 @@ const val AI_PASSAGE_MAX_CHARS = 2_000
 /**
  * Verses attached to a Bible Helper question with "Ask about this verse" (#132). [label] is how
  * the chip names them, in the version's book names with its abbreviation ("Juan 3:16-18 (RV1909)");
- * [dto] is what the server gets: a USFM reference and the text, verse numbers inline.
+ * [reference] is USFM, and [text] the verses as the conversation shows them, numbers inline.
+ *
+ * [licensedVersionId] is set when they're from a licensed version (#383): its text may be shown
+ * next to an answer but never sent to the AI (docs/bible-licensing.md), so [dto], what the server
+ * gets, then carries only the reference and the version's name.
  */
-data class AiQuestionPassage(val label: String, val dto: AiPassageDto)
+data class AiQuestionPassage(
+    val label: String,
+    val reference: String,
+    val text: String,
+    val licensedVersionId: String? = null
+) {
+    val dto: AiPassageDto
+        get() = if (licensedVersionId == null) {
+            AiPassageDto(reference, text)
+        } else {
+            AiPassageDto(reference, version = YouVersionBibles.find(licensedVersionId)?.abbreviation)
+        }
+
+    /** The licensed version's publisher site, to link its name to (Lockman's tag rule, #383); null otherwise. */
+    val publisherUrl: String?
+        get() = licensedVersionId?.let { YouVersionBibles.find(it)?.licenseUrl }
+}
 
 /**
  * The passage for the reader's [selection], or null when none of it has text. Only the first
@@ -24,7 +44,8 @@ fun buildAiQuestionPassage(
     selection: Collection<VerseLocationDto>,
     textOf: (VerseLocationDto) -> String?,
     bookName: (Int) -> String,
-    versionLabel: String
+    versionLabel: String,
+    licensedVersionId: String? = null
 ): AiQuestionPassage? {
     val sorted = selection.distinct().sortedWith(compareBy({ it.bookId }, { it.chapter }, { it.verse }))
     val first = sorted.firstOrNull() ?: return null
@@ -37,10 +58,9 @@ fun buildAiQuestionPassage(
     val text = verses.joinToString(" ") { (location, text) -> if (numbered) "${location.verse} $text" else text }
     return AiQuestionPassage(
         label = "${formatFullVerseRefs(verses.map { it.first }, bookName)} ($versionLabel)",
-        dto = AiPassageDto(
-            reference = "$code ${first.chapter}:${verseRuns(verses.map { it.first.verse })}",
-            text = cutToLength(text, AI_PASSAGE_MAX_CHARS)
-        )
+        reference = "$code ${first.chapter}:${verseRuns(verses.map { it.first.verse })}",
+        text = cutToLength(text, AI_PASSAGE_MAX_CHARS),
+        licensedVersionId = licensedVersionId
     )
 }
 

@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.em
 import com.application.bibleapp.R
 import com.application.bibleapp.data.model.AiVersePassage
 import com.application.bibleapp.data.model.PassageVerse
+import com.application.bibleapp.data.model.YouVersionBibles
 import com.application.bibleapp.ui.theme.BibleAppTheme
 import com.application.bibleapp.ui.theme.Spacing
 import com.application.bibleapp.ui.theme.ThemePalette
@@ -45,6 +46,7 @@ import com.application.bibleapp.ui.theme.ThemePalettePreviewProvider
 import com.application.bibleapp.utils.VerseReference
 import com.application.bibleapp.utils.bookNameInVersion
 import com.application.bibleapp.utils.formatVerseReference
+import com.application.bibleapp.utils.rememberExternalLinks
 import com.application.bibleapp.viewmodel.BibleViewModel
 
 /** How many verse cards an answer shows before "Show N more" (#129). */
@@ -54,7 +56,8 @@ const val AI_VERSE_CARDS_SHOWN = 5
 sealed interface AiVerseCardText {
     data object Loading : AiVerseCardText
     data object Missing : AiVerseCardText
-    data class Loaded(val passage: AiVersePassage, val versionLabel: String) : AiVerseCardText
+    /** [publisherUrl] is a licensed version's publisher site, which its tag links to (#383). */
+    data class Loaded(val passage: AiVersePassage, val versionLabel: String, val publisherUrl: String? = null) : AiVerseCardText
 }
 
 /**
@@ -73,10 +76,11 @@ fun AiVerseCard(
 ) {
     val bookNames by bibleViewModel.bookNames.collectAsState()
     val selectedVersion by bibleViewModel.selectedVersion.collectAsState()
+    val links = rememberExternalLinks { bibleViewModel.showMessage(it) }
     // Reloads when the translation changes, so the card always matches the reader.
     val text by produceState<AiVerseCardText>(AiVerseCardText.Loading, reference, selectedVersion) {
         value = bibleViewModel.aiVersePassage(reference)
-            ?.let { AiVerseCardText.Loaded(it, bibleViewModel.versionLabel(it.versionId)) }
+            ?.let { AiVerseCardText.Loaded(it, bibleViewModel.versionLabel(it.versionId), YouVersionBibles.find(it.versionId)?.licenseUrl) }
             ?: AiVerseCardText.Missing
     }
     AiVerseCardContent(
@@ -85,6 +89,7 @@ fun AiVerseCard(
         },
         text = text,
         onReadChapter = { onReadChapter(reference.bookId, reference.chapter, reference.startVerse ?: 1) },
+        onOpenLink = links::openPage,
         modifier = modifier
     )
 }
@@ -95,7 +100,8 @@ fun AiVerseCardContent(
     reference: String,
     text: AiVerseCardText,
     onReadChapter: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onOpenLink: (String) -> Unit = {}
 ) {
     OutlinedCard(onClick = onReadChapter, modifier = modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium) {
         Column(
@@ -110,8 +116,9 @@ fun AiVerseCardContent(
                     modifier = Modifier.weight(1f)
                 )
                 if (text is AiVerseCardText.Loaded) {
+                    val linkColor = versionTagLinkColor
                     Text(
-                        text = text.versionLabel,
+                        text = buildAnnotatedString { appendVersionTag(text.versionLabel, text.publisherUrl, linkColor, onOpenLink) },
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -200,6 +207,17 @@ private fun AiVerseCardPreview(@PreviewParameter(ThemePalettePreviewProvider::cl
                             )
                         ),
                         versionLabel = "RV1909"
+                    ),
+                    onReadChapter = {}
+                )
+                // A licensed version's tag links to its publisher (#383). Placeholder words: licensed
+                // text never goes in this repo.
+                AiVerseCardContent(
+                    reference = "Romans 8:28",
+                    text = AiVerseCardText.Loaded(
+                        AiVersePassage("yv-nasb2020", listOf(PassageVerse(28, "The verse in the reader's licensed version."))),
+                        versionLabel = "NASB 2020",
+                        publisherUrl = "https://www.lockman.org"
                     ),
                     onReadChapter = {}
                 )

@@ -155,11 +155,6 @@ class BibleRepository(
     suspend fun getChapter(bookId: Int, chapter: Int, versionId: String): List<VerseUI> =
         loadChapter(bookId, chapter, versionId).verses
 
-    /** The bundled KJV's [bookId] [chapter], read at once: a small query on the bundled table, for
-     *  the one place that can't wait (a licensed Bible's selection asked about in Bible Helper, #366). */
-    fun kjvChapterNow(bookId: Int, chapter: Int): List<VerseUI> =
-        BibleDatabaseManager.getVersesByChapter(context, bookId, chapter, DEFAULT_VERSION.id).map { it.toUI() }
-
     /** Like [getChapter], plus why a YouVersion chapter couldn't be fetched, for the reader to say. */
     suspend fun loadChapter(bookId: Int, chapter: Int, versionId: String): ChapterLoad =
         withContext(Dispatchers.IO) {
@@ -573,6 +568,8 @@ class BibleRepository(
                 LicensedReadAheadScheduler.cancelFor(context, it.id)
                 BibleDatabaseManager.deleteDownloadedVersion(context, it.id)
             }
+        // Even one removed by hand before it was withdrawn may still be quoted in a conversation (#383).
+        BibleDatabaseManager.forgetWithdrawnPassageText(context, YouVersionBibles::isWithdrawn)
     }
 
     /** All locally downloaded versions, keyed for the picker to badge without a query per row. */

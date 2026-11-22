@@ -94,13 +94,14 @@ import com.application.bibleapp.components.AiVerseCard
 import com.application.bibleapp.components.AiVerseCardList
 import com.application.bibleapp.components.AiAnswerPlaceholder
 import com.application.bibleapp.components.AiTypingDots
+import com.application.bibleapp.components.appendVersionTag
 import com.application.bibleapp.components.rememberWaitingLong
 import com.application.bibleapp.data.model.AiMessage
 import com.application.bibleapp.data.model.AiQuestionPassage
 import com.application.bibleapp.data.model.AiRole
 import com.application.bibleapp.data.remote.AiAskResult
 import com.application.bibleapp.data.remote.AiPartialAnswer
-import com.application.bibleapp.data.remote.AiPassageDto
+import com.application.bibleapp.data.model.YouVersionBibles
 import com.application.bibleapp.data.repository.AiHelperRepository.Companion.MAX_QUESTION_CHARS
 import com.application.bibleapp.ui.theme.BibleAppTheme
 import com.application.bibleapp.ui.theme.Spacing
@@ -250,6 +251,7 @@ fun AskView(
         onRetry = { askViewModel.retry(language) },
         onSignInClick = onSignInClick,
         onRemovePassage = askViewModel::removePassage,
+        onOpenLink = links::openPage,
         scroll = askViewModel.chatScroll,
         answer = { message, streaming ->
             // While it's written, a reference still being typed ("[[JHN 3:") waits until it's whole (#285).
@@ -281,6 +283,7 @@ private fun AskChat(
     onRetry: () -> Unit,
     onSignInClick: () -> Unit,
     onRemovePassage: () -> Unit,
+    onOpenLink: (String) -> Unit = {},
     scroll: AskChatScroll = remember { AskChatScroll() },
     answer: @Composable (message: AiMessage, streaming: Boolean) -> Unit
 ) {
@@ -333,7 +336,7 @@ private fun AskChat(
                 }
             }
             items(state.messages, key = { it.id }) { message ->
-                if (message.role == AiRole.USER) QuestionBubble(message) else answer(message, false)
+                if (message.role == AiRole.USER) QuestionBubble(message, onOpenLink) else answer(message, false)
             }
             if (state.isSending) {
                 item(key = "thinking") {
@@ -474,7 +477,7 @@ private fun AskIntro(onStarter: (id: String, question: String) -> Unit, enabled:
 
 /** A question, with the passage it was asked about above it (#281). */
 @Composable
-private fun QuestionBubble(message: AiMessage) {
+private fun QuestionBubble(message: AiMessage, onOpenLink: (String) -> Unit) {
     Box(modifier = Modifier.fillMaxWidth().padding(start = Spacing.xxl), contentAlignment = Alignment.CenterEnd) {
         Surface(
             color = MaterialTheme.colorScheme.primaryContainer,
@@ -485,7 +488,7 @@ private fun QuestionBubble(message: AiMessage) {
                 modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.md),
                 verticalArrangement = Arrangement.spacedBy(Spacing.sm)
             ) {
-                message.passage?.let { PassageQuote(it) }
+                message.passage?.let { PassageQuote(it, onOpenLink) }
                 Text(text = message.content, style = MaterialTheme.typography.bodyLarge)
             }
         }
@@ -497,8 +500,8 @@ private fun QuestionBubble(message: AiMessage) {
  * reference, and the text cut to a few lines until it's tapped.
  */
 @Composable
-private fun PassageQuote(passage: AiQuestionPassage) {
-    var expanded by rememberSaveable(passage.dto.reference) { mutableStateOf(false) }
+private fun PassageQuote(passage: AiQuestionPassage, onOpenLink: (String) -> Unit) {
+    var expanded by rememberSaveable(passage.reference) { mutableStateOf(false) }
     var overflows by remember(passage) { mutableStateOf(false) }
     val toggleLabel = stringResource(if (expanded) R.string.ai_passage_show_less else R.string.ai_passage_show_whole)
     Row(
@@ -522,16 +525,35 @@ private fun PassageQuote(passage: AiQuestionPassage) {
         Column(modifier = Modifier.padding(start = Spacing.sm), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                 Icon(Icons.AutoMirrored.Outlined.MenuBook, contentDescription = null, modifier = Modifier.size(16.dp))
-                Text(text = passage.label, style = MaterialTheme.typography.labelLarge)
+                Text(text = passageLabel(passage, onOpenLink), style = MaterialTheme.typography.labelLarge)
             }
-            Text(
-                text = passage.dto.text,
+            // Empty once a licensed version is taken off the app (#383): only the reference stays.
+            if (passage.text.isNotEmpty()) Text(
+                text = passage.text,
                 style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Serif),
                 maxLines = if (expanded) Int.MAX_VALUE else PASSAGE_QUOTE_LINES,
                 overflow = TextOverflow.Ellipsis,
                 onTextLayout = { if (!expanded) overflows = it.hasVisualOverflow }
             )
         }
+    }
+}
+
+/**
+ * [passage]'s label, its licensed version's tag ("Juan 3:16 (LBLA)") linked to the publisher's site
+ * (Lockman's rule for quoted verses, #383), in the bubble's own text color so it reads on any theme.
+ */
+@Composable
+private fun passageLabel(passage: AiQuestionPassage, onOpenLink: (String) -> Unit): AnnotatedString {
+    val url = passage.publisherUrl
+    val tag = passage.licensedVersionId?.let { YouVersionBibles.find(it)?.abbreviation }
+    val at = if (url != null && tag != null) passage.label.lastIndexOf("($tag)") else -1
+    if (at < 0) return AnnotatedString(passage.label)
+    val linkColor = LocalContentColor.current
+    return buildAnnotatedString {
+        append(passage.label.substring(0, at + 1))
+        appendVersionTag(tag!!, url, linkColor, onOpenLink)
+        append(passage.label.substring(at + 1 + tag.length))
     }
 }
 
@@ -888,18 +910,27 @@ private fun AskChatPreview(@PreviewParameter(ThemePalettePreviewProvider::class)
             1, 1, AiRole.USER, "What does this passage mean?", createdAt = "",
             passage = AiQuestionPassage(
                 "John 3:16-17 (KJV)",
-                AiPassageDto("JHN 3:16-17", "16 For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life. 17 For God sent not his Son into the world to condemn the world; but that the world through him might be saved.")
+                "JHN 3:16-17",
+                "16 For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life. 17 For God sent not his Son into the world to condemn the world; but that the world through him might be saved."
             )
         ),
         AiMessage(2, 1, AiRole.ASSISTANT, "One God in three persons: the Father, the Son and the Holy Spirit [[MAT 28:19]]. On his gifts, read [[1CO 12-14]].\n- The [[PSA]] praise him.", createdAt = ""),
-        AiMessage(3, 1, AiRole.USER, "How should I pray?", createdAt = "")
+        AiMessage(3, 1, AiRole.USER, "How should I pray?", createdAt = ""),
+        // A licensed version's passage (#383): its tag links to the publisher. Placeholder words:
+        // licensed text never goes in this repo.
+        AiMessage(
+            4, 1, AiRole.USER, "What does this passage mean?", createdAt = "",
+            passage = YouVersionBibles.all.first().let { bible ->
+                AiQuestionPassage("Juan 3:16 (${bible.abbreviation})", "JHN 3:16", "The verse in the reader's licensed version.", bible.id)
+            }
+        )
     )
     BibleAppTheme(palette = palette) {
         Surface {
             AskChat(
                 state = AskUiState(
                     conversationId = 1, messages = messages, failure = AiAskResult.Unavailable, remainingToday = 2,
-                    passage = AiQuestionPassage("John 3:16", AiPassageDto("John 3:16", "For God so loved the world"))
+                    passage = AiQuestionPassage("John 3:16", "JHN 3:16", "For God so loved the world")
                 ),
                 draft = "Why",
                 online = false,

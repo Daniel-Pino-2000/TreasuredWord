@@ -617,7 +617,8 @@ data class AiMessageDto(val role: String, val content: String)   // "user" or "a
 @Serializable
 data class AiPassage(
     val reference: String,       // USFM, within one chapter: "JHN 3", "JHN 3:16-18", "LUK 12:4,6-7"
-    val text: String             // the passage in the reader's own translation, 1–2,000 characters
+    val text: String? = null,    // the passage in the reader's own translation, 1–2,000 characters; never a licensed version's (#383)
+    val version: String? = null  // with no text: the licensed version the person reads, as the app names it ("NASB 2020")
 )
 
 @Serializable
@@ -647,10 +648,17 @@ Rules for `AiAskRequest` (any broken one is `400 VALIDATION_ERROR`, with `fieldE
 - `language`: one of the app's tags: `en`, `de`, `es`, `fr`, `pt-BR`, `id`, `fil`, `sw`, `ko`,
   `zh-Hans`. The answer comes in that language.
 - `passage` (optional, #132): `reference` is a USFM code, a space and a chapter, then optionally
-  `:verse`, `-verse` and `,verse` parts, all in one chapter; `text` is not blank and at most 2,000
-  characters. Its errors are keyed `passage`. The server adds it after its instructions as the
-  passage the question is about, quoted, with `"""` and `[[`/`]]` in the text flattened so it can't
-  close its quotes or write a marker. The app sends it with each question of a conversation that
+  `:verse`, `-verse` and `,verse` parts, all in one chapter; `text`, when sent, is not blank and at
+  most 2,000 characters; `version`, when sent, is 1–20 letters, digits, spaces, dots or dashes,
+  starting with a letter or digit. Its errors are keyed `passage`. The server adds it after its
+  instructions as the passage the question is about, quoted, with `"""` and `[[`/`]]` in the text
+  flattened so it can't close its quotes or write a marker.
+  - **Without `text`** (#383): the reader's version is a licensed one, whose text may never go to
+    an AI (`docs/bible-licensing.md`). The server quotes the same verses from the public-domain BSB
+    it keeps for search by meaning (`search_verses`, cut at a word to 2,000 characters) and tells
+    the model the person reads `version` (`ai/passage_other_version.md`), so it explains the passage
+    and cites it rather than quoting the BSB as their wording. A reference with no BSB verses is
+    `400 VALIDATION_ERROR` keyed `passage`, before anything is counted. `promptVersion` is unchanged. The app sends it with each question of a conversation that
   started from the reader, so follow-ups keep it; it isn't part of `messages` or their size limits.
 - `starter` (optional, #284): `saved`, `baptism`, `trinity`, `prayer`, `start_reading` or `death`,
   only with a single message and no `passage` (a new conversation's first question, from a starter

@@ -2,6 +2,7 @@ package com.application.bibleapp.viewmodel
 
 import com.application.bibleapp.data.model.PassageVerse
 import com.application.bibleapp.data.model.VerseUI
+import com.application.bibleapp.data.model.YouVersionBibles
 import com.application.bibleapp.utils.VerseReference
 import com.application.bibleapp.data.remote.SemanticSearchResult
 import com.application.bibleapp.data.remote.ServerWake
@@ -323,6 +324,28 @@ class MeaningSearchTest {
 
         assertEquals(listOf(meaning[1]), meaning.withoutWordResults(words))
         assertFalse(meaning.withoutWordResults(emptyList()).isEmpty())
+    }
+
+    @Test
+    fun `a licensed version's list is all its own or all the KJV's, never a mix (#383)`() = runTest {
+        val id = YouVersionBibles.all.first().id
+        fun chapter(bookId: Int, chapter: Int, vararg verses: Pair<Int, String>) =
+            verses.map { (n, text) -> VerseUI(id = n, text = text, bookId = bookId, chapter = chapter, verse = n) }
+        val refs = listOf(VerseRef(43, 14, 27), VerseRef(19, 23, 1))
+        val kjv = mapOf(43 to chapter(43, 14, 27 to "Peace I leave with you…"), 19 to chapter(19, 23, 1 to "The LORD is my shepherd…"))
+        // Made-up words: licensed text never goes in this repo (#366).
+        val licensed = mapOf(43 to chapter(43, 14, 27 to "Licensed peace…"), 19 to chapter(19, 23, 1 to "Licensed shepherd…"))
+
+        val all = resolveMeaningVerses(refs, id) { versionId, bookId, _ -> (if (versionId == id) licensed else kjv)[bookId].orEmpty() }
+        assertEquals(listOf("Licensed peace…", "Licensed shepherd…"), all.map { it.text })
+        assertTrue(all.all { it.versionId == id })
+
+        // Psalm 23 couldn't be fetched (offline, a 429): the whole list is the KJV's.
+        val fallback = resolveMeaningVerses(refs, id) { versionId, bookId, _ ->
+            if (versionId == id && bookId == 19) emptyList() else (if (versionId == id) licensed else kjv)[bookId].orEmpty()
+        }
+        assertEquals(listOf("Peace I leave with you…", "The LORD is my shepherd…"), fallback.map { it.text })
+        assertTrue(fallback.all { it.versionId == "kjv" })
     }
 
     @Test

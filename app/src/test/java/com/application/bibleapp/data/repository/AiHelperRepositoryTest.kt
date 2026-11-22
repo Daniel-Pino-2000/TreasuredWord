@@ -9,7 +9,6 @@ import com.application.bibleapp.data.remote.AiAskRequestDto
 import com.application.bibleapp.data.remote.AiAskResult
 import com.application.bibleapp.data.remote.AiHelperApi
 import com.application.bibleapp.data.remote.AiMessageDto
-import com.application.bibleapp.data.remote.AiPassageDto
 import com.application.bibleapp.data.remote.HttpClientProvider
 import com.application.bibleapp.data.repository.AiHelperRepository.Companion.MAX_ANSWER_CHARS
 import com.application.bibleapp.data.repository.AiHelperRepository.Companion.MAX_HISTORY_CHARS
@@ -120,7 +119,7 @@ class AiHelperRepositoryTest {
         assertEquals(listOf(AiMessageDto("user", "Why?")), sentBodies.last().messages)
     }
 
-    private val passage = AiQuestionPassage("John 3:16 (KJV)", AiPassageDto("JHN 3:16", "For God so loved the world"))
+    private val passage = AiQuestionPassage("John 3:16 (KJV)", "JHN 3:16", "For God so loved the world")
 
     @Test
     fun `a question asked about a passage keeps it, and retry sends it again (#281)`() = runTest {
