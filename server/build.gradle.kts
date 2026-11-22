@@ -122,7 +122,11 @@ val semanticSearchEvalRuntime by configurations.creating
 // expected verse in their top 10, into build/semantic-search-eval/. Spends real free-plan neurons
 // (~1,200 the first time, then the vectors come from a cache under build/), so it's never part of
 // `test`, `check` or CI. Needs AI_BASE_URL and AI_API_TOKEN. -PembeddingModel picks the model,
-// -Pqueries=TOPIC-01,LANG-KO-01 runs only those, -Pbible=<file.tsv> embeds another translation.
+// -Pqueries=TOPIC-01,LANG-KO-01 runs only those, -Pbible=<file.tsv> embeds another translation,
+// -PqueriesFile=docs/semantic_search_eval_heldout.md runs the held-out set instead (#393).
+val searchQueriesFile = providers.gradleProperty("queriesFile").map { rootProject.file(it).path }
+    .orElse(rootProject.file("docs/semantic_search_eval.md").path)
+
 tasks.register<JavaExec>("semanticSearchEval") {
     group = "verification"
     description = "Measures search by meaning against docs/semantic_search_eval.md and writes a report to build/semantic-search-eval."
@@ -132,7 +136,7 @@ tasks.register<JavaExec>("semanticSearchEval") {
     // copies at once (blended, centred, a second translation).
     maxHeapSize = "3g"
     args(
-        rootProject.file("docs/semantic_search_eval.md").path,
+        searchQueriesFile.get(),
         layout.buildDirectory.dir("semantic-search-eval").get().asFile.path,
         rootProject.file("app/src/main/assets/bible_default.db").path,
         providers.gradleProperty("embeddingModel").getOrElse("@cf/baai/bge-m3"),
@@ -153,7 +157,7 @@ tasks.register<JavaExec>("semanticSearchEvalDb") {
     classpath = sourceSets["main"].runtimeClasspath
     mainClass.set("com.application.bibleapp.server.search.eval.DatabaseSearchEvalKt")
     args(
-        rootProject.file("docs/semantic_search_eval.md").path,
+        searchQueriesFile.get(),
         layout.buildDirectory.dir("semantic-search-eval/cache").get().asFile.path,
         providers.gradleProperty("embeddingModel").getOrElse("@cf/baai/bge-m3")
     )

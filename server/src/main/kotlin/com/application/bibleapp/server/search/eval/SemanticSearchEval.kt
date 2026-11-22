@@ -3,10 +3,13 @@ package com.application.bibleapp.server.search.eval
 import com.application.bibleapp.server.ai.Busy
 import com.application.bibleapp.server.ai.DevAiBudget
 import com.application.bibleapp.server.ai.QuotaExhausted
+import com.application.bibleapp.server.ai.TopicRouter
 import com.application.bibleapp.server.ai.Unavailable
 import com.application.bibleapp.server.search.EmbeddingKind
 import com.application.bibleapp.server.search.EmbeddingProvider
 import com.application.bibleapp.server.search.Embeddings
+import com.application.bibleapp.server.search.KeyPassages
+import com.application.bibleapp.server.search.VerseSearch
 import com.application.bibleapp.server.search.WorkersAiEmbeddingProvider
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -18,6 +21,9 @@ import kotlin.system.exitProcess
 
 /** How many results a query is judged on: a search page's worth (#287). */
 const val TOP_K = 10
+
+/** The variant the live endpoint ranks with (vectors + full-text search, RRF; #287, phase 3). */
+const val LIVE_VARIANT = "plain + keywords (RRF)"
 
 /** A verse and how close it is to the query (cosine similarity, 1 = same direction). */
 data class Scored(val ref: VerseRef, val score: Float)
@@ -378,7 +384,9 @@ fun main(args: Array<String>) {
     vectors.clear() // ~130 MB that the variants below can use instead
     val results = queries.map { score(it, queryVectors.vectors.getValue(it.id), index) }
     val date = LocalDate.now(ZoneOffset.UTC)
-    val suffix = if (only.isEmpty()) "" else "-partial"
+    // Another queries file (-PqueriesFile, #393) names its reports, so the held-out set's don't overwrite the main set's.
+    val set = File(queriesPath).nameWithoutExtension.removePrefix("semantic_search_eval").trim('_', '-')
+    val suffix = (if (set.isEmpty()) "" else "-${VectorCache.slug(set)}") + if (only.isEmpty()) "" else "-partial"
     val name = "$date-${VectorCache.slug(model.substringAfterLast('/'))}-$translation$suffix"
     val file = File(reportFolder.apply { mkdirs() }, "$name.md")
     file.writeText(report(results, model, translation, date, index, verseText, bible, queryVectors))
@@ -389,8 +397,18 @@ fun main(args: Array<String>) {
 
     val variants = runVariants(model, translation, kjvPath, reportFolder, index, verses, queries, queryVectors)
     val variantsFile = File(reportFolder, "$name-variants.md")
-    variantsFile.writeText(variantsReport(model, translation, date, variants))
+    var variantsText = variantsReport(model, translation, date, variants)
     variants.forEach { println("  ${it.results.count { r -> r.hit }} of ${it.results.size}  ${it.name}") }
+
+    // The guides' phrase vectors are bge-m3's, so Key passages can only be scored with that model.
+    val live = variants.firstOrNull { it.name == LIVE_VARIANT }
+    if (model == VerseSearch.MODEL && live != null) {
+        val keyPassages = KeyPassages(TopicRouter.fromResources(model))
+        val withPassages = live.results.map { KeyPassagesResult(it.query, keyPassages.forQuery(queryVectors.vectors.getValue(it.query.id)), it) }
+        variantsText += "\n" + keyPassagesReport(withPassages)
+        println("  ${withPassages.count { it.hit }} of ${withPassages.size}  Key passages first, then $LIVE_VARIANT (what Search shows)")
+    }
+    variantsFile.writeText(variantsText)
     println("Variants: ${variantsFile.absolutePath}")
     exitProcess(0)
 }
@@ -420,7 +438,7 @@ private fun runVariants(
     val out = mutableListOf<VariantResult>()
     out += evaluate(Variant("plain cosine ($translation)") { _, v -> index.scores(v) })
     out += evaluate(Variant("keywords only (BM25, $translation)") { q, _ -> keywords.scores(q.query) })
-    out += evaluate(hybrid("plain + keywords (RRF)", { _, v -> index.scores(v) }))
+    out += evaluate(hybrid(LIVE_VARIANT, { _, v -> index.scores(v) }))
     val centred = index.centred()
     out += evaluate(Variant("centred") { _, v -> centred.scores(v) })
     for (weight in listOf(0.3f, 0.5f, 1f)) {
