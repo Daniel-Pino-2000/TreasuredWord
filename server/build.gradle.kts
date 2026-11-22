@@ -141,7 +141,9 @@ tasks.register<JavaExec>("semanticSearchEval") {
         rootProject.file("app/src/main/assets/bible_default.db").path,
         providers.gradleProperty("embeddingModel").getOrElse("@cf/baai/bge-m3"),
         providers.gradleProperty("queries").getOrElse(""),
-        providers.gradleProperty("bible").map { rootProject.file(it).path }.getOrElse("")
+        providers.gradleProperty("bible").map { rootProject.file(it).path }.getOrElse(""),
+        // -Pnaves=<NavesTopicalDictionary.csv>: also try Nave's Topical Bible as a topical index (#394).
+        providers.gradleProperty("naves").map { rootProject.file(it).path }.getOrElse("")
     )
 }
 
