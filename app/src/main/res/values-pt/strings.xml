@@ -571,4 +571,107 @@
     <string name="youversion_busy">Muitas pessoas estão lendo esta versão agora. Tente novamente em um minuto.</string>
     <string name="youversion_unavailable">Esta versão não está disponível agora. Tente novamente mais tarde.</string>
     <string name="youversion_choose_downloaded">Escolher uma versão baixada</string>
+
+    <!-- Memorize practice games (#363) -->
+    <string name="practice_title">Praticar</string>
+    <string name="practice_start">Praticar</string>
+    <plurals name="practice_due_count">
+        <item quantity="one">%1$d versículo para hoje</item>
+        <item quantity="many">%1$d versículos para hoje</item>
+        <item quantity="other">%1$d versículos para hoje</item>
+    </plurals>
+    <string name="practice_none_due">Nada para hoje</string>
+    <plurals name="practice_streak">
+        <item quantity="one">%1$d dia seguido</item>
+        <item quantity="many">%1$d dias seguidos</item>
+        <item quantity="other">%1$d dias seguidos</item>
+    </plurals>
+    <string name="practice_setup_verses">Versículos</string>
+    <string name="practice_setup_due">Para hoje (%1$d)</string>
+    <string name="practice_setup_all">Todos (%1$d)</string>
+    <string name="practice_setup_choose">Escolher versículos</string>
+    <string name="practice_setup_game">Jogo</string>
+    <string name="practice_setup_start">Começar</string>
+    <string name="practice_game_mixed">Misto</string>
+    <string name="practice_game_mixed_hint">Cada versículo recebe o jogo do seu nível</string>
+    <string name="practice_game_read">Ler e ouvir</string>
+    <string name="practice_game_read_hint">Leia o versículo inteiro ou ouça em voz alta</string>
+    <string name="practice_game_gaps">Complete as lacunas</string>
+    <string name="practice_game_gaps_hint">Toque nas palavras que faltam</string>
+    <string name="practice_game_order">Coloque em ordem</string>
+    <string name="practice_game_order_hint">Toque nas frases na ordem certa</string>
+    <string name="practice_game_letters">Primeiras letras</string>
+    <string name="practice_game_letters_hint">Só aparece a primeira letra de cada palavra</string>
+    <string name="practice_game_fading">Palavras que somem</string>
+    <string name="practice_game_fading_hint">As palavras desaparecem até não sobrar nenhuma</string>
+    <string name="practice_game_type">Escreva de memória</string>
+    <string name="practice_game_type_hint">Escreva o versículo inteiro: a prova de que você sabe</string>
+    <string name="practice_game_reference">Qual é a referência?</string>
+    <string name="practice_game_reference_hint">Ligue um versículo à sua referência</string>
+    <string name="practice_page_of">%1$d de %2$d</string>
+    <string name="practice_bonus">Rodada bônus</string>
+    <string name="practice_read_in_bible">Ler na Bíblia</string>
+    <string name="practice_level">Nível %1$d de %2$d</string>
+    <string name="practice_swipe_hint">Deslize para cima para o próximo versículo</string>
+    <string name="practice_next">Próximo</string>
+    <string name="practice_listen">Ouvir</string>
+    <string name="practice_stop">Parar</string>
+    <string name="practice_read_done">Já li</string>
+    <string name="practice_gaps_instructions">Toque nas palavras que faltam, em ordem.</string>
+    <string name="practice_gap_blank">lacuna</string>
+    <string name="practice_not_that_one">Essa não. Tente de novo.</string>
+    <string name="practice_order_instructions">Toque nas frases na ordem certa.</string>
+    <string name="practice_letters_instructions">Diga o versículo em pensamento e depois confira palavra por palavra.</string>
+    <string name="practice_letters_next_word">Próxima palavra</string>
+    <string name="practice_show_all">Mostrar tudo</string>
+    <string name="practice_got_it">Acertei</string>
+    <string name="practice_not_yet">Ainda não</string>
+    <string name="practice_fading_instructions">Leia o versículo em voz alta. Cada toque esconde mais palavras.</string>
+    <string name="practice_fading_hide">Esconder mais palavras</string>
+    <string name="practice_fading_recite">Agora diga de memória e depois confira.</string>
+    <string name="practice_fading_show">Mostrar o versículo</string>
+    <string name="practice_check_yourself">Você acertou?</string>
+    <string name="practice_type_instructions">Escreva a passagem inteira de memória.</string>
+    <string name="practice_type_label">O versículo</string>
+    <string name="practice_type_check">Conferir</string>
+    <string name="practice_type_score">%1$d%% certo</string>
+    <string name="practice_type_legend">Palavras que faltam ou estão erradas ficam em vermelho. Erros de digitação perdoados ficam sublinhados.</string>
+    <string name="practice_mark_missed">faltou</string>
+    <string name="practice_mark_wrong">errada</string>
+    <string name="practice_mark_typo">erro de digitação</string>
+    <string name="practice_reference_pick_ref">Qual é esta referência?</string>
+    <string name="practice_reference_pick_text">Qual é %1$s?</string>
+    <string name="practice_right">Certo!</string>
+    <string name="practice_answer_marked">A resposta certa está marcada.</string>
+    <string name="practice_result_memorized">Memorizado! Você escreveu de memória em dois dias diferentes.</string>
+    <plurals name="practice_result_level">
+        <item quantity="one">Nível %1$d de %2$d. Próxima prática em %3$d dia.</item>
+        <item quantity="many">Nível %1$d de %2$d. Próxima prática em %3$d dias.</item>
+        <item quantity="other">Nível %1$d de %2$d. Próxima prática em %3$d dias.</item>
+    </plurals>
+    <string name="practice_result_one_more">Passou! Escreva de memória mais uma vez em outro dia para ficar memorizado.</string>
+    <string name="practice_result_still_memorized">Continua memorizado. Ele volta daqui a um mês para não esquecer.</string>
+    <string name="practice_result_down">Ainda não desta vez. Ele volta amanhã, um nível mais fácil.</string>
+    <string name="practice_result_extra_pass">Muito bem! Foi prática extra, então o calendário dele não muda.</string>
+    <string name="practice_result_extra_fail">Ainda não. Foi prática extra, então o calendário dele não muda.</string>
+    <string name="practice_text_unavailable">O texto deste versículo não está no seu aparelho agora. Conecte-se à internet e tente de novo.</string>
+    <string name="practice_summary_title">Prática concluída</string>
+    <plurals name="practice_summary_practiced">
+        <item quantity="one">%1$d versículo praticado</item>
+        <item quantity="many">%1$d versículos praticados</item>
+        <item quantity="other">%1$d versículos praticados</item>
+    </plurals>
+    <plurals name="practice_summary_moved_up">
+        <item quantity="one">%1$d subiu de nível</item>
+        <item quantity="many">%1$d subiram de nível</item>
+        <item quantity="other">%1$d subiram de nível</item>
+    </plurals>
+    <plurals name="practice_summary_memorized">
+        <item quantity="one">%1$d memorizado pela primeira vez</item>
+        <item quantity="many">%1$d memorizados pela primeira vez</item>
+        <item quantity="other">%1$d memorizados pela primeira vez</item>
+    </plurals>
+    <string name="practice_done">Pronto</string>
+    <string name="practice_again">Praticar de novo</string>
+    <string name="practice_nothing">Não há nada para praticar aqui. Escolha Todos ou adicione versículos pelo leitor.</string>
 </resources>

@@ -95,6 +95,10 @@ import com.application.bibleapp.data.model.MemorySort
 import com.application.bibleapp.data.model.MemoryStatus
 import com.application.bibleapp.data.model.MemoryVerse
 import com.application.bibleapp.data.model.sortedFor
+import com.application.bibleapp.data.model.isDueToday
+import com.application.bibleapp.components.PracticeSetupSheet
+import androidx.compose.material3.Button
+import androidx.compose.ui.res.pluralStringResource
 import com.application.bibleapp.data.remote.VerseLocationDto
 import com.application.bibleapp.navigation.Screen
 import com.application.bibleapp.ui.theme.Spacing
@@ -133,7 +137,7 @@ fun LibraryView(
     bibleViewModel: BibleViewModel,
     modifier: Modifier = Modifier,
     initialTab: String? = null,
-    onOpenMemoryVerse: (MemoryVerse) -> Unit = {},
+    onPractice: (game: String, ids: List<Long>) -> Unit = { _, _ -> },
     onOpenDetail: (type: String, localId: Long) -> Unit
 ) {
     LaunchedEffect(Unit) { bibleViewModel.loadLibrary() }
@@ -154,6 +158,8 @@ fun LibraryView(
     // Stored highlight ARGBs to show; empty = every color. A List (not Set) so it's saveable.
     var colorFilter by rememberSaveable { mutableStateOf(emptyList<Int>()) }
     var memorySort by rememberSaveable { mutableStateOf(MemorySort.NEWEST) }
+    var practiceSetupOpen by rememberSaveable { mutableStateOf(false) }
+    val streakDays by bibleViewModel.practiceStreakDays.collectAsState()
 
     // A landscape phone with the keyboard up leaves ~110 dp: the tab row stacked on the search
     // field doesn't fit, so the tabs step aside while typing, like the top bar (#215, #228).
@@ -333,6 +339,13 @@ fun LibraryView(
                     ) {
                         // In the list rather than above it, so it scrolls away: a landscape phone
                         // had room for barely one card under the tabs, search and sort.
+                        item(key = PRACTICE_KEY) {
+                            val dueCount = remember(memoryVerses) {
+                                val now = System.currentTimeMillis()
+                                memoryVerses.count { isDueToday(it, now) }
+                            }
+                            PracticeRow(dueCount = dueCount, streakDays = streakDays, onPractice = { practiceSetupOpen = true })
+                        }
                         item(key = MEMORY_SORT_KEY) {
                             MemorySortRow(selected = memorySort, onSelect = { memorySort = it })
                         }
@@ -349,7 +362,8 @@ fun LibraryView(
                                     verseText = resolveVerseText(verse.versionId, verse.verses, verseTextByKey),
                                     shownInKjv = verse.versionId in missingVersions,
                                     bookName = { bookId -> bookName(verse.versionId, bookId) },
-                                    onClick = { onOpenMemoryVerse(verse) }
+                                    // Practice that one passage (#363); its page has "Read in the Bible".
+                                    onClick = { onPractice(Screen.MemorizePractice.MIXED, listOf(verse.localId)) }
                                 )
                             }
                         }
@@ -358,7 +372,28 @@ fun LibraryView(
             }
         }
     }
+
+    if (practiceSetupOpen) {
+        val ordered = remember(memoryVerses) { practiceOrder(memoryVerses) }
+        val dueIds = remember(memoryVerses) {
+            val now = System.currentTimeMillis()
+            memoryVerses.filter { isDueToday(it, now) }.mapTo(HashSet()) { it.localId }
+        }
+        PracticeSetupSheet(
+            verses = ordered,
+            dueIds = dueIds,
+            reference = { verse -> verseRefsText(verse.verses) { bookId -> bookName(verse.versionId, bookId) } },
+            onStart = { game, ids ->
+                practiceSetupOpen = false
+                onPractice(game, ids)
+            },
+            onDismiss = { practiceSetupOpen = false }
+        )
+    }
 }
+
+/** LazyColumn key of the Practice row on the Memorize tab (#363). */
+private const val PRACTICE_KEY = "practice"
 
 /** LazyColumn key of the missing-translation banners above the cards — a String, so it can't
  *  collide with a card's Long local id. */
@@ -660,6 +695,41 @@ private fun NoteCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = Spacing.xs)
                 )
+            }
+        }
+    }
+}
+
+/** The Practice button (#363), with how many passages are due and the daily streak. */
+@Composable
+private fun PracticeRow(dueCount: Int, streakDays: Int, onPractice: () -> Unit) {
+    Surface(
+        color = MaterialTheme.colorScheme.primaryContainer,
+        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        shape = MaterialTheme.shapes.medium,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(Spacing.md),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.md)
+        ) {
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                Text(
+                    text = if (dueCount > 0) pluralStringResource(R.plurals.practice_due_count, dueCount, dueCount)
+                    else stringResource(R.string.practice_none_due),
+                    style = MaterialTheme.typography.titleSmall
+                )
+                if (streakDays > 0) {
+                    Text(
+                        text = pluralStringResource(R.plurals.practice_streak, streakDays, streakDays),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+            Button(onClick = onPractice) {
+                Icon(Icons.Outlined.School, contentDescription = null, modifier = Modifier.padding(end = Spacing.sm).size(18.dp))
+                Text(stringResource(R.string.practice_start))
             }
         }
     }

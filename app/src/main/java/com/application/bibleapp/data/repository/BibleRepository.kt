@@ -13,6 +13,7 @@ import com.application.bibleapp.data.model.Footnote
 import com.application.bibleapp.data.model.Highlight
 import com.application.bibleapp.data.model.MemoryPassage
 import com.application.bibleapp.data.model.MemoryVerse
+import com.application.bibleapp.data.model.PracticeStreak
 import com.application.bibleapp.data.remote.MemoryProgressDto
 import com.application.bibleapp.data.remote.MemoryVerseResponseDto
 import com.application.bibleapp.data.model.Note
@@ -712,6 +713,17 @@ class BibleRepository(
             .apply()
     }
 
+    /** The Memorize practice's daily streak (#363). Kept on this device only. */
+    fun loadPracticeStreak(): PracticeStreak =
+        PracticeStreak(prefs.getString(KEY_PRACTICE_STREAK_DAY, null), prefs.getInt(KEY_PRACTICE_STREAK_DAYS, 0))
+
+    fun savePracticeStreak(streak: PracticeStreak) {
+        prefs.edit()
+            .putString(KEY_PRACTICE_STREAK_DAY, streak.lastDay)
+            .putInt(KEY_PRACTICE_STREAK_DAYS, streak.days)
+            .apply()
+    }
+
     /** The verse image editor's last choices (#254), so the next image starts from them. Before
      *  the first image, the style is the one named after the app's color theme. */
     fun loadVerseImageOptions(): VerseImageOptions = VerseImageOptions(
@@ -929,6 +941,8 @@ class BibleRepository(
         const val KEY_THEME_PALETTE = "theme_palette"
         const val KEY_WIDGET_COLORS = "widget_colors"
         const val KEY_HOME_MEMORIZE_DAY = "home_memorize_pick_day"
+        const val KEY_PRACTICE_STREAK_DAY = "memorize_practice_streak_day"
+        const val KEY_PRACTICE_STREAK_DAYS = "memorize_practice_streak_days"
         const val KEY_HOME_MEMORIZE_ID = "home_memorize_pick_id"
         const val KEY_HOME_MEMORIZE_PREVIOUS_ID = "home_memorize_pick_previous_id"
         const val KEY_VERSE_TEXT_SCALE = "verse_text_scale"

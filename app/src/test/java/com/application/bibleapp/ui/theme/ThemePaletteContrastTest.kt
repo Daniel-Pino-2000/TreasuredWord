@@ -77,6 +77,15 @@ class ThemePaletteContrastTest {
         pairs += Pair("Memorize chip: new", c.onSurfaceVariant, c.surfaceVariant, TEXT)
         pairs += Pair("Memorize chip: learning", c.onTertiaryContainer, c.tertiaryContainer, TEXT)
         pairs += Pair("Memorize chip: memorized", c.onPrimaryContainer, c.primaryContainer, TEXT)
+        // Memorize practice (#363): a passed game's result and the right choice sit on
+        // primaryContainer (covered above as banner text), a failed one and a wrong choice on
+        // errorContainer; the level dots are primary on the page, and the Practice row's button
+        // is primary on primaryContainer (covered above).
+        pairs += Pair("practice result: not yet", c.onErrorContainer, c.errorContainer, TEXT)
+        pairs += Pair("practice result: extra practice", c.onSurfaceVariant, c.surfaceVariant, TEXT)
+        pairs += Pair("practice level dots", c.primary, c.background, NON_TEXT)
+        pairs += Pair("practice check on a passed result", c.onPrimary, c.primary, NON_TEXT)
+        pairs += Pair("practice cross on a failed result", c.errorContainer, c.onErrorContainer, NON_TEXT)
         // Home (#365). The Verse to memorize tile and the Bible Helper's crisis card share the
         // second accent: text on tertiaryContainer, level dots and the Due badge (and the crisis
         // card's button) in tertiary with onTertiary on it.

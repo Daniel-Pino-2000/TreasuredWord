@@ -547,4 +547,95 @@
     <string name="youversion_busy">Banyak orang sedang membaca versi ini. Silakan coba lagi dalam satu menit.</string>
     <string name="youversion_unavailable">Versi ini sedang tidak tersedia. Silakan coba lagi nanti.</string>
     <string name="youversion_choose_downloaded">Pilih versi yang sudah diunduh</string>
+
+    <!-- Memorize practice games (#363) -->
+    <string name="practice_title">Latihan</string>
+    <string name="practice_start">Latihan</string>
+    <plurals name="practice_due_count">
+        <item quantity="other">%1$d ayat untuk hari ini</item>
+    </plurals>
+    <string name="practice_none_due">Tidak ada untuk hari ini</string>
+    <plurals name="practice_streak">
+        <item quantity="other">%1$d hari berturut-turut</item>
+    </plurals>
+    <string name="practice_setup_verses">Ayat</string>
+    <string name="practice_setup_due">Hari ini (%1$d)</string>
+    <string name="practice_setup_all">Semua (%1$d)</string>
+    <string name="practice_setup_choose">Pilih ayat</string>
+    <string name="practice_setup_game">Permainan</string>
+    <string name="practice_setup_start">Mulai</string>
+    <string name="practice_game_mixed">Campuran</string>
+    <string name="practice_game_mixed_hint">Setiap ayat mendapat permainan yang sesuai dengan tingkatnya</string>
+    <string name="practice_game_read">Baca dan dengarkan</string>
+    <string name="practice_game_read_hint">Baca seluruh ayat, atau dengarkan dibacakan</string>
+    <string name="practice_game_gaps">Isi yang kosong</string>
+    <string name="practice_game_gaps_hint">Ketuk kata-kata yang hilang</string>
+    <string name="practice_game_order">Susun urutannya</string>
+    <string name="practice_game_order_hint">Ketuk bagian-bagian kalimat sesuai urutan</string>
+    <string name="practice_game_letters">Huruf pertama</string>
+    <string name="practice_game_letters_hint">Hanya huruf pertama setiap kata yang terlihat</string>
+    <string name="practice_game_fading">Kata yang memudar</string>
+    <string name="practice_game_fading_hint">Kata-kata menghilang sampai tidak ada yang tersisa</string>
+    <string name="practice_game_type">Ketik dari ingatan</string>
+    <string name="practice_game_type_hint">Ketik seluruh ayat: bukti bahwa Anda hafal</string>
+    <string name="practice_game_reference">Ayat yang mana?</string>
+    <string name="practice_game_reference_hint">Cocokkan ayat dengan rujukannya</string>
+    <string name="practice_page_of">%1$d dari %2$d</string>
+    <string name="practice_bonus">Ronde bonus</string>
+    <string name="practice_read_in_bible">Baca di Alkitab</string>
+    <string name="practice_level">Tingkat %1$d dari %2$d</string>
+    <string name="practice_swipe_hint">Geser ke atas untuk ayat berikutnya</string>
+    <string name="practice_next">Berikutnya</string>
+    <string name="practice_listen">Dengarkan</string>
+    <string name="practice_stop">Berhenti</string>
+    <string name="practice_read_done">Sudah saya baca</string>
+    <string name="practice_gaps_instructions">Ketuk kata-kata yang hilang sesuai urutan.</string>
+    <string name="practice_gap_blank">kosong</string>
+    <string name="practice_not_that_one">Bukan yang itu. Coba lagi.</string>
+    <string name="practice_order_instructions">Ketuk bagian-bagian kalimat sesuai urutan.</string>
+    <string name="practice_letters_instructions">Ucapkan ayat dalam hati, lalu periksa kata demi kata.</string>
+    <string name="practice_letters_next_word">Kata berikutnya</string>
+    <string name="practice_show_all">Tampilkan semua</string>
+    <string name="practice_got_it">Bisa</string>
+    <string name="practice_not_yet">Belum</string>
+    <string name="practice_fading_instructions">Bacalah ayat dengan suara keras. Setiap ketukan menyembunyikan lebih banyak kata.</string>
+    <string name="practice_fading_hide">Sembunyikan lebih banyak kata</string>
+    <string name="practice_fading_recite">Sekarang ucapkan dari ingatan, lalu periksa.</string>
+    <string name="practice_fading_show">Tampilkan ayat</string>
+    <string name="practice_check_yourself">Apakah Anda benar?</string>
+    <string name="practice_type_instructions">Ketik seluruh bagian dari ingatan.</string>
+    <string name="practice_type_label">Ayatnya</string>
+    <string name="practice_type_check">Periksa</string>
+    <string name="practice_type_score">%1$d%% benar</string>
+    <string name="practice_type_legend">Kata yang terlewat atau salah berwarna merah. Salah ketik yang dimaafkan digarisbawahi.</string>
+    <string name="practice_mark_missed">terlewat</string>
+    <string name="practice_mark_wrong">salah</string>
+    <string name="practice_mark_typo">salah ketik</string>
+    <string name="practice_reference_pick_ref">Ayat apakah ini?</string>
+    <string name="practice_reference_pick_text">Manakah %1$s?</string>
+    <string name="practice_right">Benar!</string>
+    <string name="practice_answer_marked">Jawaban yang benar sudah ditandai.</string>
+    <string name="practice_result_memorized">Hafal! Anda mengetiknya dari ingatan pada dua hari yang berbeda.</string>
+    <plurals name="practice_result_level">
+        <item quantity="other">Tingkat %1$d dari %2$d. Latihan berikutnya dalam %3$d hari.</item>
+    </plurals>
+    <string name="practice_result_one_more">Lulus! Ketik sekali lagi dari ingatan di hari lain agar hafal.</string>
+    <string name="practice_result_still_memorized">Masih hafal. Ayat ini kembali sebulan lagi agar tetap segar.</string>
+    <string name="practice_result_down">Belum tepat kali ini. Ayat ini kembali besok, satu tingkat lebih mudah.</string>
+    <string name="practice_result_extra_pass">Bagus! Ini latihan tambahan, jadi jadwalnya tetap sama.</string>
+    <string name="practice_result_extra_fail">Belum tepat. Ini latihan tambahan, jadi jadwalnya tetap sama.</string>
+    <string name="practice_text_unavailable">Teks ayat ini belum ada di perangkat Anda. Sambungkan ke internet, lalu coba lagi.</string>
+    <string name="practice_summary_title">Latihan selesai</string>
+    <plurals name="practice_summary_practiced">
+        <item quantity="other">%1$d ayat dilatih</item>
+    </plurals>
+    <plurals name="practice_summary_moved_up">
+        <item quantity="other">%1$d naik satu tingkat</item>
+    </plurals>
+    <plurals name="practice_summary_memorized">
+        <item quantity="other">%1$d baru dihafal</item>
+    </plurals>
+    <string name="practice_done">Selesai</string>
+    <string name="practice_again">Latihan lagi</string>
+    <string name="practice_nothing">Tidak ada yang bisa dilatih di sini. Pilih Semua, atau tambahkan ayat dari pembaca.</string>
 </resources>

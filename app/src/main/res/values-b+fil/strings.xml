@@ -560,4 +560,101 @@
     <string name="youversion_busy">Maraming tao ang nagbabasa ng bersyong ito ngayon. Pakisubukan ulit pagkalipas ng isang minuto.</string>
     <string name="youversion_unavailable">Hindi available ang bersyong ito ngayon. Pakisubukan ulit mamaya.</string>
     <string name="youversion_choose_downloaded">Pumili ng na-download na bersyon</string>
+
+    <!-- Memorize practice games (#363) -->
+    <string name="practice_title">Magsanay</string>
+    <string name="practice_start">Magsanay</string>
+    <plurals name="practice_due_count">
+        <item quantity="one">%1$d talata para ngayon</item>
+        <item quantity="other">%1$d talata para ngayon</item>
+    </plurals>
+    <string name="practice_none_due">Walang nakatakda ngayon</string>
+    <plurals name="practice_streak">
+        <item quantity="one">%1$d araw na sunod-sunod</item>
+        <item quantity="other">%1$d araw na sunod-sunod</item>
+    </plurals>
+    <string name="practice_setup_verses">Mga talata</string>
+    <string name="practice_setup_due">Ngayong araw (%1$d)</string>
+    <string name="practice_setup_all">Lahat (%1$d)</string>
+    <string name="practice_setup_choose">Pumili ng mga talata</string>
+    <string name="practice_setup_game">Laro</string>
+    <string name="practice_setup_start">Simulan</string>
+    <string name="practice_game_mixed">Halo-halo</string>
+    <string name="practice_game_mixed_hint">Bawat talata ay may larong angkop sa antas nito</string>
+    <string name="practice_game_read">Basahin at pakinggan</string>
+    <string name="practice_game_read_hint">Basahin ang buong talata, o pakinggan itong binabasa</string>
+    <string name="practice_game_gaps">Punan ang patlang</string>
+    <string name="practice_game_gaps_hint">I-tap ang mga nawawalang salita</string>
+    <string name="practice_game_order">Ayusin ang pagkakasunod</string>
+    <string name="practice_game_order_hint">I-tap ang mga parirala sa tamang pagkakasunod</string>
+    <string name="practice_game_letters">Unang titik</string>
+    <string name="practice_game_letters_hint">Unang titik lang ng bawat salita ang makikita</string>
+    <string name="practice_game_fading">Naglalahong salita</string>
+    <string name="practice_game_fading_hint">Naglalaho ang mga salita hanggang wala nang matira</string>
+    <string name="practice_game_type">I-type mula sa alaala</string>
+    <string name="practice_game_type_hint">I-type ang buong talata: ang patunay na alam mo ito</string>
+    <string name="practice_game_reference">Aling talata?</string>
+    <string name="practice_game_reference_hint">Itugma ang talata sa reperensiya nito</string>
+    <string name="practice_page_of">%1$d sa %2$d</string>
+    <string name="practice_bonus">Bonus na round</string>
+    <string name="practice_read_in_bible">Basahin sa Bibliya</string>
+    <string name="practice_level">Antas %1$d sa %2$d</string>
+    <string name="practice_swipe_hint">Mag-swipe pataas para sa susunod na talata</string>
+    <string name="practice_next">Susunod</string>
+    <string name="practice_listen">Pakinggan</string>
+    <string name="practice_stop">Itigil</string>
+    <string name="practice_read_done">Nabasa ko na</string>
+    <string name="practice_gaps_instructions">I-tap ang mga nawawalang salita nang sunod-sunod.</string>
+    <string name="practice_gap_blank">patlang</string>
+    <string name="practice_not_that_one">Hindi iyan. Subukan muli.</string>
+    <string name="practice_order_instructions">I-tap ang mga parirala sa tamang pagkakasunod.</string>
+    <string name="practice_letters_instructions">Bigkasin ang talata sa isip, saka suriin ito bawat salita.</string>
+    <string name="practice_letters_next_word">Susunod na salita</string>
+    <string name="practice_show_all">Ipakita lahat</string>
+    <string name="practice_got_it">Tama ako</string>
+    <string name="practice_not_yet">Hindi pa</string>
+    <string name="practice_fading_instructions">Basahin nang malakas ang talata. Bawat tap ay nagtatago ng mas maraming salita.</string>
+    <string name="practice_fading_hide">Magtago ng mas maraming salita</string>
+    <string name="practice_fading_recite">Bigkasin ito ngayon mula sa alaala, saka suriin.</string>
+    <string name="practice_fading_show">Ipakita ang talata</string>
+    <string name="practice_check_yourself">Tama ba ang nasabi mo?</string>
+    <string name="practice_type_instructions">I-type ang buong sipi mula sa alaala.</string>
+    <string name="practice_type_label">Ang talata</string>
+    <string name="practice_type_check">Suriin</string>
+    <string name="practice_type_score">%1$d%% tama</string>
+    <string name="practice_type_legend">Pula ang mga nakaligtaan o maling salita. May salungguhit ang mga pinalampas na typo.</string>
+    <string name="practice_mark_missed">nakaligtaan</string>
+    <string name="practice_mark_wrong">mali</string>
+    <string name="practice_mark_typo">typo</string>
+    <string name="practice_reference_pick_ref">Aling reperensiya ito?</string>
+    <string name="practice_reference_pick_text">Alin ang %1$s?</string>
+    <string name="practice_right">Tama!</string>
+    <string name="practice_answer_marked">Nakamarka ang tamang sagot.</string>
+    <string name="practice_result_memorized">Kabisado na! Na-type mo ito mula sa alaala sa dalawang magkaibang araw.</string>
+    <plurals name="practice_result_level">
+        <item quantity="one">Antas %1$d sa %2$d. Susunod na pagsasanay sa loob ng %3$d araw.</item>
+        <item quantity="other">Antas %1$d sa %2$d. Susunod na pagsasanay sa loob ng %3$d araw.</item>
+    </plurals>
+    <string name="practice_result_one_more">Pasado! I-type ito muli mula sa alaala sa ibang araw para maging kabisado.</string>
+    <string name="practice_result_still_memorized">Kabisado pa rin. Babalik ito sa loob ng isang buwan para hindi makalimutan.</string>
+    <string name="practice_result_down">Hindi pa ngayon. Babalik ito bukas, isang antas na mas madali.</string>
+    <string name="practice_result_extra_pass">Magaling! Dagdag na pagsasanay ito, kaya hindi nagbabago ang iskedyul nito.</string>
+    <string name="practice_result_extra_fail">Hindi pa. Dagdag na pagsasanay ito, kaya hindi nagbabago ang iskedyul nito.</string>
+    <string name="practice_text_unavailable">Wala pa sa device mo ang teksto ng talatang ito. Kumonekta sa internet, saka subukan muli.</string>
+    <string name="practice_summary_title">Tapos ang pagsasanay</string>
+    <plurals name="practice_summary_practiced">
+        <item quantity="one">%1$d talata ang sinanay</item>
+        <item quantity="other">%1$d talata ang sinanay</item>
+    </plurals>
+    <plurals name="practice_summary_moved_up">
+        <item quantity="one">%1$d ang umakyat ng antas</item>
+        <item quantity="other">%1$d ang umakyat ng antas</item>
+    </plurals>
+    <plurals name="practice_summary_memorized">
+        <item quantity="one">%1$d ang bagong kabisado</item>
+        <item quantity="other">%1$d ang bagong kabisado</item>
+    </plurals>
+    <string name="practice_done">Tapos na</string>
+    <string name="practice_again">Magsanay muli</string>
+    <string name="practice_nothing">Walang masasanay dito. Piliin ang Lahat, o magdagdag ng mga talata mula sa reader.</string>
 </resources>

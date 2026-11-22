@@ -634,4 +634,113 @@
     <string name="youversion_busy">Many people are reading this version right now. Please try again in a minute.</string>
     <string name="youversion_unavailable">This version isn\'t available right now. Please try again later.</string>
     <string name="youversion_choose_downloaded">Choose a downloaded version</string>
+
+    <!-- Memorize practice games (#363) -->
+    <string name="practice_title">Practice</string>
+    <!-- Button on the Memorize tab that opens practice -->
+    <string name="practice_start">Practice</string>
+    <!-- Under the Practice button. %1$d is how many verses are due -->
+    <plurals name="practice_due_count">
+        <item quantity="one">%1$d verse due today</item>
+        <item quantity="other">%1$d verses due today</item>
+    </plurals>
+    <string name="practice_none_due">Nothing due today</string>
+    <!-- The daily practice streak. %1$d is the number of days -->
+    <plurals name="practice_streak">
+        <item quantity="one">%1$d day in a row</item>
+        <item quantity="other">%1$d days in a row</item>
+    </plurals>
+    <string name="practice_setup_verses">Verses</string>
+    <!-- %1$d is how many verses are due -->
+    <string name="practice_setup_due">Due today (%1$d)</string>
+    <!-- %1$d is how many verses are on the list -->
+    <string name="practice_setup_all">All (%1$d)</string>
+    <string name="practice_setup_choose">Choose verses</string>
+    <string name="practice_setup_game">Game</string>
+    <string name="practice_setup_start">Start</string>
+    <string name="practice_game_mixed">Mixed</string>
+    <string name="practice_game_mixed_hint">Each verse gets the game that fits its level</string>
+    <string name="practice_game_read">Read and listen</string>
+    <string name="practice_game_read_hint">Read the whole verse, or hear it read aloud</string>
+    <string name="practice_game_gaps">Fill the gaps</string>
+    <string name="practice_game_gaps_hint">Tap the missing words</string>
+    <string name="practice_game_order">Put it in order</string>
+    <string name="practice_game_order_hint">Tap the phrases in the right order</string>
+    <string name="practice_game_letters">First letters</string>
+    <string name="practice_game_letters_hint">Only the first letter of each word shows</string>
+    <string name="practice_game_fading">Fading words</string>
+    <string name="practice_game_fading_hint">Words disappear until none are left</string>
+    <string name="practice_game_type">Type it from memory</string>
+    <string name="practice_game_type_hint">Type the whole verse: the proof you know it</string>
+    <string name="practice_game_reference">Which reference?</string>
+    <string name="practice_game_reference_hint">Match a verse with its reference</string>
+    <!-- Page counter in the practice feed. %1$d is this page, %2$d how many there are -->
+    <string name="practice_page_of">%1$d of %2$d</string>
+    <string name="practice_bonus">Bonus round</string>
+    <string name="practice_read_in_bible">Read in the Bible</string>
+    <!-- Spoken label of the level dots. %1$d is the level, %2$d the highest level (5) -->
+    <string name="practice_level">Level %1$d of %2$d</string>
+    <string name="practice_swipe_hint">Swipe up for the next verse</string>
+    <string name="practice_next">Next</string>
+    <string name="practice_listen">Listen</string>
+    <string name="practice_stop">Stop</string>
+    <string name="practice_read_done">I\'ve read it</string>
+    <string name="practice_gaps_instructions">Tap the missing words in order.</string>
+    <!-- Spoken in place of a missing word, for TalkBack -->
+    <string name="practice_gap_blank">blank</string>
+    <string name="practice_not_that_one">Not that one. Try again.</string>
+    <string name="practice_order_instructions">Tap the phrases in the right order.</string>
+    <string name="practice_letters_instructions">Say the verse in your head, then check it word by word.</string>
+    <string name="practice_letters_next_word">Next word</string>
+    <string name="practice_show_all">Show all</string>
+    <string name="practice_got_it">Got it</string>
+    <string name="practice_not_yet">Not yet</string>
+    <string name="practice_fading_instructions">Read the verse aloud. Each tap hides more words.</string>
+    <string name="practice_fading_hide">Hide more words</string>
+    <string name="practice_fading_recite">Now say it from memory, then check.</string>
+    <string name="practice_fading_show">Show the verse</string>
+    <string name="practice_check_yourself">Did you get it right?</string>
+    <string name="practice_type_instructions">Type the whole passage from memory.</string>
+    <string name="practice_type_label">The verse</string>
+    <string name="practice_type_check">Check</string>
+    <!-- %1$d is the percentage of words right -->
+    <string name="practice_type_score">%1$d%% right</string>
+    <string name="practice_type_legend">Missed and wrong words are in red. Forgiven typos are underlined.</string>
+    <!-- Spoken after a word TalkBack reads in the checked answer -->
+    <string name="practice_mark_missed">missed</string>
+    <string name="practice_mark_wrong">wrong</string>
+    <string name="practice_mark_typo">typo</string>
+    <string name="practice_reference_pick_ref">Which reference is this?</string>
+    <!-- %1$s is a verse reference, like John 3:16 -->
+    <string name="practice_reference_pick_text">Which one is %1$s?</string>
+    <string name="practice_right">Right!</string>
+    <string name="practice_answer_marked">The right one is marked.</string>
+    <string name="practice_result_memorized">Memorized! You typed it from memory on two different days.</string>
+    <!-- After passing. %1$d is the new level, %2$d the highest level (5), %3$d days until the next practice -->
+    <plurals name="practice_result_level">
+        <item quantity="one">Level %1$d of %2$d. Next practice in %3$d day.</item>
+        <item quantity="other">Level %1$d of %2$d. Next practice in %3$d days.</item>
+    </plurals>
+    <string name="practice_result_one_more">Passed! Type it from memory once more on another day to make it Memorized.</string>
+    <string name="practice_result_still_memorized">Still memorized. It comes back in a month to stay fresh.</string>
+    <string name="practice_result_down">Not quite this time. It comes back tomorrow, one level easier.</string>
+    <string name="practice_result_extra_pass">Well done! This was extra practice, so its schedule stays the same.</string>
+    <string name="practice_result_extra_fail">Not quite. This was extra practice, so its schedule stays the same.</string>
+    <string name="practice_text_unavailable">This verse\'s text isn\'t on your device right now. Connect to the internet, then try again.</string>
+    <string name="practice_summary_title">Practice done</string>
+    <plurals name="practice_summary_practiced">
+        <item quantity="one">%1$d verse practiced</item>
+        <item quantity="other">%1$d verses practiced</item>
+    </plurals>
+    <plurals name="practice_summary_moved_up">
+        <item quantity="one">%1$d moved up a level</item>
+        <item quantity="other">%1$d moved up a level</item>
+    </plurals>
+    <plurals name="practice_summary_memorized">
+        <item quantity="one">%1$d newly memorized</item>
+        <item quantity="other">%1$d newly memorized</item>
+    </plurals>
+    <string name="practice_done">Done</string>
+    <string name="practice_again">Practice again</string>
+    <string name="practice_nothing">There\'s nothing to practice here. Choose All, or add verses from the reader.</string>
 </resources>
