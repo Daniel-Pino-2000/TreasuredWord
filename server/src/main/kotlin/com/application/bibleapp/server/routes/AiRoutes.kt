@@ -6,6 +6,7 @@ import com.application.bibleapp.server.ai.AiProvider
 import com.application.bibleapp.server.ai.AiProviderException
 import com.application.bibleapp.server.ai.AiRole
 import com.application.bibleapp.server.ai.Busy
+import com.application.bibleapp.server.ai.PassageText
 import com.application.bibleapp.server.ai.QuotaExhausted
 import com.application.bibleapp.server.ai.StarterQuestions
 import com.application.bibleapp.server.ai.SystemPrompt
@@ -74,7 +75,11 @@ private const val MAX_PASSAGE_CHARS = 2_000
 /** A USFM reference within one chapter: "JHN 3", "JHN 3:16", "JHN 3:16-18" or "JHN 3:16,18-20". */
 private val PASSAGE_REFERENCE = Regex("""([0-9A-Z]{3}) [1-9]\d{0,2}(?::[1-9]\d{0,2}(?:-[1-9]\d{0,2})?(?:,[1-9]\d{0,2}(?:-[1-9]\d{0,2})?)*)?""")
 
-private val REPORT_REASONS = setOf("WRONG_TEACHING", "WRONG_VERSE", "HARMFUL", "OTHER")
+/** A version's name as the app shows it ("NASB 2020", "LBLA"), which goes in the instructions
+ *  (#383): letters, digits, spaces, dots and dashes only, so it can't carry instructions of its own. */
+private val PASSAGE_VERSION = Regex("""[\p{L}\p{N}][\p{L}\p{N} .\-]{0,19}""")
+
+private val REPORT_REASONS =setOf("WRONG_TEACHING", "WRONG_VERSE", "HARMFUL", "OTHER")
 private const val MAX_REPORT_QUESTION_CHARS = 1_000
 private const val MAX_REPORT_ANSWER_CHARS = 4_000
 private const val MAX_REPORT_COMMENT_CHARS = 500
@@ -109,8 +114,10 @@ internal fun validateAsk(request: AiAskRequest): Map<String, String> {
         val code = PASSAGE_REFERENCE.matchEntire(passage.reference)?.groupValues?.get(1)
         val passageError = when {
             code == null || code !in UsfmBookCodes.codes -> "passage reference must be a USFM reference such as JHN 3:16-18"
-            passage.text.isBlank() -> "passage text must not be blank"
-            passage.text.length > MAX_PASSAGE_CHARS -> "passage text must be at most $MAX_PASSAGE_CHARS characters"
+            passage.text != null && passage.text.isBlank() -> "passage text must not be blank"
+            passage.text != null && passage.text.length > MAX_PASSAGE_CHARS -> "passage text must be at most $MAX_PASSAGE_CHARS characters"
+            passage.version != null && !PASSAGE_VERSION.matches(passage.version) ->
+                "passage version must be a short version name such as NASB 2020"
             else -> null
         }
         if (passageError != null) errors["passage"] = passageError
@@ -338,6 +345,19 @@ private suspend fun ApplicationCall.answerQuestion(aiProvider: AiProvider?, cloc
     // taken (#347), and cancelled, never used, when the question is refused. A question about a
     // selected passage has its passage instead.
     val passage = request.passage
+    // A licensed version's passage comes without its text (#383): quote the BSB instead, before
+    // the question is counted. No BSB verse there means the reference names verses that don't exist.
+    val passageText = when {
+        passage == null -> null
+        passage.text != null -> passage.text
+        else -> PassageText.bsb(passage.reference, MAX_PASSAGE_CHARS) ?: run {
+            respond(
+                HttpStatusCode.BadRequest,
+                ErrorResponse("VALIDATION_ERROR", "Invalid question", mapOf("passage" to "passage reference names no verses"))
+            )
+            return
+        }
+    }
     val reserved = coroutineScope {
         val matching = if (guides != null && passage == null) async { guides.match(request.messages.last().content) } else null
         val used = reserveAnswer(userId, today)
@@ -354,8 +374,10 @@ private suspend fun ApplicationCall.answerQuestion(aiProvider: AiProvider?, cloc
     }
     val (used, matched) = reserved
     val version = SystemPrompt.versionFor(matched)
-    val instructions = if (passage != null) {
-        SystemPrompt.forLanguage(request.language, passage.reference, passage.text)
+    val instructions = if (passage != null && passageText != null) {
+        // A version is named only for a quoted BSB, so the model knows the reader's wording differs.
+        val otherVersion = if (passage.text == null) passage.version ?: "" else null
+        SystemPrompt.forLanguage(request.language, passage.reference, passageText, otherVersion)
     } else {
         SystemPrompt.withGuides(request.language, matched)
     }

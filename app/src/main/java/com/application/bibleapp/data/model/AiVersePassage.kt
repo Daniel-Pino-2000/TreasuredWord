@@ -13,38 +13,46 @@ data class PassageVerse(val number: Int, val text: String)
  * a verse it leaves out) — whole, never a mix of the two (#129). The words always come from a
  * Bible on the phone, never from the AI. [chapterOf] loads the reference's chapter in a version
  * (BibleRepository.getChapter). Null when neither has any of it.
+ *
+ * A licensed version read through YouVersion (#383) is shown too: its terms allow Scripture next
+ * to an AI answer when it's shown word for word (docs/bible-licensing.md), never sent to the AI.
+ * [chapterOf] fetches its chapter when it isn't saved; offline or on a 429 it comes back empty, and
+ * the passage is the KJV's.
  */
 suspend fun loadAiVersePassage(
     reference: VerseReference,
     selectedVersionId: String,
     chapterOf: suspend (versionId: String) -> List<VerseUI>
 ): AiVersePassage? {
-    val wanted = reference.startVerse?.let { start -> start..(reference.endVerse ?: start) }
-
-    fun versesIn(chapter: List<VerseUI>): List<PassageVerse> = chapter.mapNotNull { verse ->
-        val number = verse.verse ?: return@mapNotNull null
-        val text = verse.text.removePrefix(LEGACY_PARAGRAPH_MARKER).trim()
-        if (text.isEmpty() || (wanted != null && number !in wanted)) null else PassageVerse(number, text)
-    }
-
-    fun isComplete(verses: List<PassageVerse>): Boolean =
-        if (wanted == null) verses.isNotEmpty() else verses.map { it.number }.containsAll(wanted.toList())
-
-    // Licensed Bibles read through YouVersion (#366) never go next to Bible Helper or search-by-
-    // meaning answers yet: the YouVersion terms limit their text with AI to verbatim display
-    // (docs/bible-licensing.md). Those answers quote the bundled KJV instead.
-    val selectedVersionId = if (YouVersionBibles.isYouVersion(selectedVersionId)) DEFAULT_VERSION.id else selectedVersionId
-    val selected = versesIn(chapterOf(selectedVersionId))
-    if (isComplete(selected) || selectedVersionId == DEFAULT_VERSION.id) {
+    val selected = passageIn(chapterOf(selectedVersionId), reference)
+    if (isComplete(selected, reference) || selectedVersionId == DEFAULT_VERSION.id) {
         return selected.takeIf { it.isNotEmpty() }?.let { AiVersePassage(selectedVersionId, it) }
     }
-    val kjv = versesIn(chapterOf(DEFAULT_VERSION.id))
+    val kjv = passageIn(chapterOf(DEFAULT_VERSION.id), reference)
     return when {
-        isComplete(kjv) -> AiVersePassage(DEFAULT_VERSION.id, kjv)
+        isComplete(kjv, reference) -> AiVersePassage(DEFAULT_VERSION.id, kjv)
         selected.isNotEmpty() -> AiVersePassage(selectedVersionId, selected)
         kjv.isNotEmpty() -> AiVersePassage(DEFAULT_VERSION.id, kjv)
         else -> null
     }
+}
+
+/** [reference]'s verses in [chapter], a verse stored as several rows joined back together. */
+fun passageIn(chapter: List<VerseUI>, reference: VerseReference): List<PassageVerse> {
+    val wanted = reference.startVerse?.let { start -> start..(reference.endVerse ?: start) }
+    val texts = linkedMapOf<Int, MutableList<String>>()
+    chapter.forEach { verse ->
+        val number = verse.verse ?: return@forEach
+        val text = verse.text.removePrefix(LEGACY_PARAGRAPH_MARKER).trim()
+        if (text.isNotEmpty() && (wanted == null || number in wanted)) texts.getOrPut(number) { mutableListOf() } += text
+    }
+    return texts.map { (number, parts) -> PassageVerse(number, parts.joinToString(" ")) }
+}
+
+/** Whether [verses] are all of [reference]: every verse of a range, or any of a whole chapter. */
+private fun isComplete(verses: List<PassageVerse>, reference: VerseReference): Boolean {
+    val start = reference.startVerse ?: return verses.isNotEmpty()
+    return verses.map { it.number }.containsAll((start..(reference.endVerse ?: start)).toList())
 }
 
 /** A stray pilcrow some plain-text verses start with (see BibleText.kt). */

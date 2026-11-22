@@ -878,12 +878,10 @@ class BibleViewModel(
     fun takeSelectionAiPassage(): AiQuestionPassage? {
         val selection = _selectedVerses.value
         if (selection.isEmpty()) return null
-        // A licensed Bible's text is never sent to Bible Helper (#366, docs/bible-licensing.md):
-        // the question carries the same verses from the bundled KJV instead.
-        val licensed = YouVersionBibles.isYouVersion(_selectedVersion.value.id)
-        val first = selection.minWithOrNull(compareBy({ it.bookId }, { it.chapter }, { it.verse }))
-        val sourceVerses = if (licensed && first != null) repository.kjvChapterNow(first.bookId, first.chapter) else _verses.value
-        val textByLocation = sourceVerses
+        // A licensed Bible's text is shown with the question but never sent to Bible Helper
+        // (#383, docs/bible-licensing.md): the passage says which version, and the server quotes the BSB.
+        val licensedVersionId = _selectedVersion.value.id.takeIf { YouVersionBibles.isYouVersion(it) }
+        val textByLocation = _verses.value
             .filter { it.bookId != null && it.chapter != null && it.verse != null }
             .groupBy { VerseLocationDto(it.bookId!!, it.chapter!!, it.verse!!) }
             .mapValues { (_, rows) -> rows.joinToString(" ") { it.text.removePrefix(LEGACY_PARAGRAPH_MARKER).trim() } }
@@ -891,8 +889,9 @@ class BibleViewModel(
         val passage = buildAiQuestionPassage(
             selection = selection,
             textOf = textByLocation::get,
-            bookName = { id -> (if (licensed) null else names[id]) ?: BibleBooks.getBookById(id)?.name ?: "" },
-            versionLabel = if (licensed) BUNDLED_TRANSLATION.displayName else currentVersionLabel.value
+            bookName = { id -> names[id] ?: BibleBooks.getBookById(id)?.name ?: "" },
+            versionLabel = currentVersionLabel.value,
+            licensedVersionId = licensedVersionId
         )
         clearSelection()
         return passage

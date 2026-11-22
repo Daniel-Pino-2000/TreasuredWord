@@ -52,13 +52,22 @@ object SystemPrompt {
         .replace("{bookCodes}", UsfmBookCodes.codes.joinToString(", "))
 
     private val passageTemplate: String = load("ai/passage.md")
+    private val otherVersionPassageTemplate: String = load("ai/passage_other_version.md")
 
     /**
      * The instructions for an answer in [languageTag], one of [languageNames]' keys. With a
      * [passageReference] and [passageText] (#132), `passage.md` follows them: the passage the
-     * question is about, quoted so the model reads it as Scripture, not as instructions.
+     * question is about, quoted so the model reads it as Scripture, not as instructions. With an
+     * [otherVersion] (#383), [passageText] is the BSB standing in for a licensed version the
+     * person reads, named by it ("NASB 2020", or blank when the app didn't say), and
+     * `passage_other_version.md` asks the model not to quote the BSB as their wording.
      */
-    fun forLanguage(languageTag: String, passageReference: String? = null, passageText: String? = null): String {
+    fun forLanguage(
+        languageTag: String,
+        passageReference: String? = null,
+        passageText: String? = null,
+        otherVersion: String? = null
+    ): String {
         val language = requireNotNull(languageNames[languageTag]) { "Unsupported language tag $languageTag" }
         val instructions = template.replace("{language}", language)
         if (passageReference == null || passageText == null) return instructions
@@ -68,7 +77,13 @@ object SystemPrompt {
             .replace("[[", "[")
             .replace("]]", "]")
         // The text goes in last, so nothing inside it can be taken for a placeholder.
-        val passage = passageTemplate.replace("{reference}", passageReference).replace("{text}", quoted)
+        val template = if (otherVersion == null) {
+            passageTemplate
+        } else {
+            // validateAsk allows only letters, digits, spaces, dots and dashes in a version's name.
+            otherVersionPassageTemplate.replace("{version}", otherVersion.trim().ifEmpty { "their own Bible translation" })
+        }
+        val passage = template.replace("{reference}", passageReference).replace("{text}", quoted)
         return "$instructions\n\n$passage"
     }
 

@@ -31,13 +31,33 @@ class AiVersePassageTest {
     }
 
     @Test
-    fun `a licensed YouVersion translation is never quoted next to an AI answer`() = runTest {
+    fun `a licensed YouVersion translation is shown word for word next to an AI answer (#383)`() = runTest {
         // Made-up words: licensed text never goes in this repo (#366).
         val licensed = chapter(16 to "Licensed words…", 17 to "More licensed words…")
+        val id = YouVersionBibles.all.first().id
 
-        val passage = loadAiVersePassage(VerseReference(43, 3, 16), YouVersionBibles.all.first().id, chapters(licensed))
+        val passage = loadAiVersePassage(VerseReference(43, 3, 16), id, chapters(licensed))
 
-        assertEquals(AiVersePassage("kjv", listOf(PassageVerse(16, "For God so loved the world…"))), passage)
+        assertEquals(AiVersePassage(id, listOf(PassageVerse(16, "Licensed words…"))), passage)
+    }
+
+    @Test
+    fun `a licensed chapter that can't be fetched (offline, 429) is the KJV whole`() = runTest {
+        val passage = loadAiVersePassage(VerseReference(43, 3, 16, 17), YouVersionBibles.all.first().id, chapters(emptyList()))
+
+        assertEquals(
+            AiVersePassage("kjv", listOf(PassageVerse(16, "For God so loved the world…"), PassageVerse(17, "For God sent not…"))),
+            passage
+        )
+    }
+
+    @Test
+    fun `a verse stored as several rows is joined back together`() = runTest {
+        val split = chapter(16 to "First half", 17 to "Next verse") + VerseUI(id = 99, text = "second half", bookId = 43, chapter = 3, verse = 16)
+
+        val passage = loadAiVersePassage(VerseReference(43, 3, 16), "spa", chapters(split))
+
+        assertEquals(AiVersePassage("spa", listOf(PassageVerse(16, "First half second half"))), passage)
     }
 
     @Test

@@ -67,7 +67,11 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
+import com.application.bibleapp.components.appendVersionTag
 import com.application.bibleapp.components.passageText
+import com.application.bibleapp.components.versionTagLinkColor
+import com.application.bibleapp.data.model.YouVersionBibles
+import androidx.compose.ui.text.buildAnnotatedString
 import com.application.bibleapp.utils.formatVerseReference
 import com.application.bibleapp.viewmodel.KeyPassage
 import com.application.bibleapp.viewmodel.MeaningSearchState
@@ -135,6 +139,8 @@ fun SearchView(
                     wordsFailed = searchState.hasError,
                     selectedVersionId = selectedVersion.id,
                     versionLabel = bibleViewModel::versionLabel,
+                    publisherUrl = { YouVersionBibles.find(it)?.licenseUrl },
+                    onOpenLink = links::openPage,
                     onSearch = {
                         keyboardController?.hide()
                         bibleViewModel.onSearchSubmit()
@@ -284,6 +290,9 @@ private class MeaningSection(
     val wordsFailed: Boolean,
     val selectedVersionId: String,
     val versionLabel: (String) -> String,
+    /** A licensed version's publisher site, which its tag links to (#383); null for every other. */
+    val publisherUrl: (String) -> String?,
+    val onOpenLink: (String) -> Unit,
     val onSearch: () -> Unit,
     val onFindHelpline: () -> Unit
 )
@@ -466,11 +475,9 @@ private fun LazyListScope.meaningSection(
             }
             items(state.results, key = { "meaning_${it.bookId}_${it.chapter}_${it.verse}" }) { verse ->
                 val bookName = bookNames[verse.bookId] ?: BibleBooks.getBookById(verse.bookId)?.name ?: "Unknown"
-                // From the bundled KJV when the selected translation lacks the verse: say so.
-                val label = if (verse.versionId == meaning.selectedVersionId) "" else " · ${meaning.versionLabel(verse.versionId)}"
                 SearchResultRow(
-                    reference = "$bookName ${verse.chapter}:${verse.verse}$label",
-                    text = verse.text,
+                    reference = meaning.taggedReference("$bookName ${verse.chapter}:${verse.verse}", verse.versionId),
+                    text = AnnotatedString(verse.text),
                     onClick = { onVerseClicked(verse.bookId, verse.chapter, verse.verse) }
                 )
             }
@@ -501,10 +508,8 @@ private fun KeyPassageRow(
     onVerseClicked: (bookId: Int, chapter: Int, verse: Int) -> Unit
 ) {
     val reference = formatVerseReference(passage.reference) { bookNames[it] ?: BibleBooks.getBookById(it)?.name ?: "Unknown" }
-    // From the bundled KJV when the selected translation lacks part of it: say so.
-    val label = if (passage.versionId == meaning.selectedVersionId) "" else " · ${meaning.versionLabel(passage.versionId)}"
     SearchResultRow(
-        reference = reference + label,
+        reference = meaning.taggedReference(reference, passage.versionId),
         text = passageText(passage.verses, MaterialTheme.colorScheme.onSurfaceVariant),
         // A whole chapter (Psalm 73) or a long range (Ephesians 5:21-33) would push everything else
         // off the screen; the reader is a tap away. 8 lines, like the Bible Helper's verse cards.
@@ -514,6 +519,24 @@ private fun KeyPassageRow(
 }
 
 private const val KEY_PASSAGE_MAX_LINES = 8
+
+/**
+ * [reference] with its version's tag when it's from the bundled KJV because the selected
+ * translation lacks it, or from a licensed version, whose tag links to its publisher (Lockman's
+ * rule for quoted verses, #383).
+ */
+@Composable
+private fun MeaningSection.taggedReference(reference: String, versionId: String): AnnotatedString {
+    val publisher = publisherUrl(versionId)
+    val linkColor = versionTagLinkColor
+    return buildAnnotatedString {
+        append(reference)
+        if (versionId != selectedVersionId || publisher != null) {
+            append(" · ")
+            appendVersionTag(versionLabel(versionId), publisher, linkColor, onOpenLink)
+        }
+    }
+}
 
 @Composable
 private fun SectionHeader(text: String) {
@@ -548,7 +571,11 @@ private fun SearchResultRow(reference: String, text: String, onClick: () -> Unit
     SearchResultRow(reference, AnnotatedString(text), onClick = onClick)
 
 @Composable
-private fun SearchResultRow(reference: String, text: AnnotatedString, maxLines: Int = Int.MAX_VALUE, onClick: () -> Unit) {
+private fun SearchResultRow(reference: String, text: AnnotatedString, maxLines: Int = Int.MAX_VALUE, onClick: () -> Unit) =
+    SearchResultRow(AnnotatedString(reference), text, maxLines, onClick)
+
+@Composable
+private fun SearchResultRow(reference: AnnotatedString, text: AnnotatedString, maxLines: Int = Int.MAX_VALUE, onClick: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()

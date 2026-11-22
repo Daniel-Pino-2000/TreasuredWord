@@ -7,7 +7,6 @@ import com.application.bibleapp.data.remote.AiAskResult
 import com.application.bibleapp.data.model.AiQuestionPassage
 import com.application.bibleapp.data.remote.AiAskRequestDto
 import com.application.bibleapp.data.remote.AiHelperApi
-import com.application.bibleapp.data.remote.AiPassageDto
 import com.application.bibleapp.data.remote.AiReportReason
 import com.application.bibleapp.data.remote.AiReportRequestDto
 import com.application.bibleapp.data.remote.AiReportResult
@@ -516,7 +515,7 @@ class AskViewModelTest {
         assertEquals(AiAskResult.Unavailable, viewModel.report(question.id, AiReportReason.OTHER, null, "en"))
     }
 
-    private val passage = AiQuestionPassage("John 3:16 (KJV)", AiPassageDto("JHN 3:16", "For God so loved the world"))
+    private val passage = AiQuestionPassage("John 3:16 (KJV)", "JHN 3:16", "For God so loved the world")
 
     @Test
     fun `ask about this verse opens a new conversation with the passage and an editable question`() = runTest {

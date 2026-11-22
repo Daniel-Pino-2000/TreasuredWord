@@ -23,7 +23,7 @@ class AiQuestionPassageTest {
     @Test
     fun `one verse has no number in its text`() {
         assertEquals(
-            AiQuestionPassage("Juan 3:16 (RV1909)", AiPassageDto("JHN 3:16", "Porque de tal manera amó Dios al mundo")),
+            AiQuestionPassage("Juan 3:16 (RV1909)", "JHN 3:16", "Porque de tal manera amó Dios al mundo"),
             build(16)
         )
     }
@@ -34,7 +34,7 @@ class AiQuestionPassageTest {
 
         assertEquals("Juan 3:16-18, 20 (RV1909)", passage.label)
         assertEquals("JHN 3:16-18,20", passage.dto.reference)
-        assertEquals("16 Porque de tal manera amó Dios al mundo 17 Porque no envió Dios 18 El que en él cree 20 Porque todo aquel", passage.dto.text)
+        assertEquals("16 Porque de tal manera amó Dios al mundo 17 Porque no envió Dios 18 El que en él cree 20 Porque todo aquel", passage.text)
     }
 
     @Test
@@ -55,8 +55,36 @@ class AiQuestionPassageTest {
     fun `a long passage is cut at a word to the contract's 2,000 characters`() {
         val passage = build(16, 17) { "palabra ".repeat(300) }!!
 
-        assertTrue(passage.dto.text.length <= AI_PASSAGE_MAX_CHARS)
-        assertTrue(passage.dto.text.endsWith("palabra…"))
+        assertTrue(passage.text.length <= AI_PASSAGE_MAX_CHARS)
+        assertTrue(passage.text.endsWith("palabra…"))
+    }
+
+    @Test
+    fun `a licensed version's passage sends no text, only its reference and version (#383)`() {
+        val bible = YouVersionBibles.all.first()
+        // Made-up words: licensed text never goes in this repo (#366).
+        val passage = buildAiQuestionPassage(
+            listOf(VerseLocationDto(43, 3, 16)), { "Licensed words…" }, { "Juan" }, bible.abbreviation, licensedVersionId = bible.id
+        )!!
+
+        assertEquals("Licensed words…", passage.text) // shown with the question, on the phone
+        assertEquals(AiPassageDto("JHN 3:16", text = null, version = bible.abbreviation), passage.dto)
+        val json = HttpClientProvider.json.encodeToString(
+            AiAskRequestDto.serializer(),
+            AiAskRequestDto(listOf(AiMessageDto("user", "What does this mean?")), "es", passage.dto)
+        )
+        assertFalse("Licensed words" in json)
+        assertFalse("\"text\"" in json)
+        assertTrue("\"version\":\"${bible.abbreviation}\"" in json)
+        assertEquals("https://www.lockman.org", passage.publisherUrl)
+    }
+
+    @Test
+    fun `any other version's passage sends its text`() {
+        val passage = build(16)!!
+
+        assertEquals(AiPassageDto("JHN 3:16", "Porque de tal manera amó Dios al mundo"), passage.dto)
+        assertNull(passage.publisherUrl)
     }
 
     @Test

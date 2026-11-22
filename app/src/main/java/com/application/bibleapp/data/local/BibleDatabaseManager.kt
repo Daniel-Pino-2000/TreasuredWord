@@ -28,7 +28,6 @@ import com.application.bibleapp.data.model.TranslationLicense
 import com.application.bibleapp.data.model.VerseUI
 import com.application.bibleapp.data.model.decodeVerseContentOrNull
 import com.application.bibleapp.data.model.encodeToJson
-import com.application.bibleapp.data.remote.AiPassageDto
 import com.application.bibleapp.data.remote.BibleRemoteDataSource
 import com.application.bibleapp.data.remote.DownloadedTranslation
 import com.application.bibleapp.data.remote.MappedBookName
@@ -435,6 +434,8 @@ object BibleDatabaseManager {
         addColumnIfMissing(db, "ai_messages", "passage_label", "TEXT")
         addColumnIfMissing(db, "ai_messages", "passage_reference", "TEXT")
         addColumnIfMissing(db, "ai_messages", "passage_text", "TEXT")
+        // Set when the passage is a licensed version's (#383), whose text is shown but never sent.
+        addColumnIfMissing(db, "ai_messages", "passage_licensed_version", "TEXT")
         Log.d("BibleDB", "Bible Helper tables ready")
     }
 
@@ -638,6 +639,20 @@ object BibleDatabaseManager {
     }
 
     /** Wipes a downloaded translation so it can be cleanly re-fetched (e.g. to pick up a newer schema). */
+    /** Forgets the text of every passage asked about in a licensed version taken off the app (#381,
+     *  #383), [isWithdrawn]: the questions keep their reference, but its words leave the phone. */
+    fun forgetWithdrawnPassageText(context: Context, isWithdrawn: (versionId: String) -> Boolean) {
+        if (!BuildConfig.AI_HELPER_ENABLED) return // no Bible Helper tables
+        val db = getDatabase(context)
+        val versions = db.rawQuery(
+            "SELECT DISTINCT passage_licensed_version FROM ai_messages WHERE passage_licensed_version IS NOT NULL AND passage_text != ''",
+            null
+        ).use { cursor -> generateSequence { if (cursor.moveToNext()) cursor.getString(0) else null }.toList() }
+        versions.filter(isWithdrawn).forEach { versionId ->
+            db.execSQL("UPDATE ai_messages SET passage_text = '' WHERE passage_licensed_version = ?", arrayOf(versionId))
+        }
+    }
+
     fun deleteDownloadedVersion(context: Context, versionId: String) {
         if (versionId == "kjv") return // bundled, never deletable
         val db = getDatabase(context)
@@ -1735,7 +1750,7 @@ object BibleDatabaseManager {
         try {
             val id = db.compileStatement(
                 "INSERT INTO ai_messages (conversation_id, role, content, crisis, prompt_version, created_at, " +
-                    "passage_label, passage_reference, passage_text) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                    "passage_label, passage_reference, passage_text, passage_licensed_version) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
             ).use { statement ->
                 statement.bindLong(1, conversationId)
                 statement.bindString(2, role.stored)
@@ -1749,9 +1764,11 @@ object BibleDatabaseManager {
                     statement.bindNull(9)
                 } else {
                     statement.bindString(7, passage.label)
-                    statement.bindString(8, passage.dto.reference)
-                    statement.bindString(9, passage.dto.text)
+                    statement.bindString(8, passage.reference)
+                    statement.bindString(9, passage.text)
                 }
+                val licensed = passage?.licensedVersionId
+                if (licensed == null) statement.bindNull(10) else statement.bindString(10, licensed)
                 statement.executeInsert()
             }
             db.execSQL("UPDATE ai_conversations SET updated_at = ? WHERE id = ?", arrayOf(now, conversationId))
@@ -1781,7 +1798,7 @@ object BibleDatabaseManager {
     fun getAiMessages(context: Context, conversationId: Long): List<AiMessage> =
         getDatabase(context).rawQuery(
             "SELECT id, conversation_id, role, content, crisis, prompt_version, created_at, " +
-                "passage_label, passage_reference, passage_text FROM ai_messages WHERE conversation_id = ? ORDER BY id",
+                "passage_label, passage_reference, passage_text, passage_licensed_version FROM ai_messages WHERE conversation_id = ? ORDER BY id",
             arrayOf(conversationId.toString())
         ).use { cursor ->
             generateSequence {
@@ -1798,7 +1815,12 @@ object BibleDatabaseManager {
                         passage = if (cursor.isNull(7) || cursor.isNull(8) || cursor.isNull(9)) {
                             null
                         } else {
-                            AiQuestionPassage(cursor.getString(7), AiPassageDto(cursor.getString(8), cursor.getString(9)))
+                            AiQuestionPassage(
+                                label = cursor.getString(7),
+                                reference = cursor.getString(8),
+                                text = cursor.getString(9),
+                                licensedVersionId = if (cursor.isNull(10)) null else cursor.getString(10)
+                            )
                         }
                     )
                 } else {

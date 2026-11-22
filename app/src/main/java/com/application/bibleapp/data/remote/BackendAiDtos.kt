@@ -13,9 +13,11 @@ import kotlinx.serialization.Serializable
 data class AiMessageDto(val role: String, val content: String)
 
 /** The passage "Ask about this verse" attaches (#132): a USFM `reference` within one chapter, such
- *  as "JHN 3:16-18", and its `text` in the reader's translation, at most 2,000 characters. */
+ *  as "JHN 3:16-18", and its `text` in the reader's translation, at most 2,000 characters. A
+ *  licensed version's text is never sent (#383): `text` is left out of the JSON, `version` names the
+ *  version ("NASB 2020"), and the server quotes the public-domain BSB to the AI instead. */
 @Serializable
-data class AiPassageDto(val reference: String, val text: String)
+data class AiPassageDto(val reference: String, val text: String? = null, val version: String? = null)
 
 /** `messages`: 1–10, oldest first, alternating, the last one from the user. `language` is one of
  *  [com.application.bibleapp.utils.AppLanguage.supportedTags]. [passage] is left out of the JSON
