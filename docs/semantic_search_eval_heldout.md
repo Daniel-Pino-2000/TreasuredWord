@@ -33,6 +33,29 @@ The groups: **LIFE**, an everyday sentence about the person's life; **NEW**, a t
 none of the guides is about; **STORY**, a Bible story or passage described in plain words (any verse
 of it counts); **LANG**, the same kinds in the app's nine other languages.
 
+## First run (2026-11-22): today's search
+
+`bge-m3` vectors of the BSB with full-text search (RRF), the live ranking, plus Key passages
+(#320) as the Search screen shows them. Cost: about 1 neuron for the 132 queries.
+
+| Group | Queries | Matched a guide | Search alone | With Key passages (what Search shows) |
+|---|---|---|---|---|
+| LIFE (everyday sentences) | 40 | 20 | 9 (23%) | 16 (40%) |
+| NEW (topics no guide covers) | 40 | 6 | 28 (70%) | 27 (68%) |
+| STORY | 25 | 2 | 20 (80%) | 20 (80%) |
+| LANG (other languages) | 27 | 7 | 8 (30%) | 11 (41%) |
+| **All** | **132** | **35** | **65 (49%)** | **74 (56%)** |
+
+- **Everyday sentences are the weak spot.** Search finds verses that sound like the sentence:
+  "my dad is in the hospital and I'm scared" brings up Leviticus 13's skin diseases and Psalm 55's
+  terror, not Psalm 46:1 or Isaiah 41:10. A guide fixes the ones it matches (9 → 16), but only half
+  of these sentences match one.
+- **Other languages miss most when no guide matches:** the keyword half only reads English, so
+  they rest on the vectors alone.
+- **Topics and stories do well already** (68–80%), and a guide adds nothing there: few match one.
+- On the main set (written with the guides), the same search scores 27 of 43 alone and 42 of 43
+  with Key passages: the guides carry it.
+
 ## Queries
 
 ## Everyday sentences
