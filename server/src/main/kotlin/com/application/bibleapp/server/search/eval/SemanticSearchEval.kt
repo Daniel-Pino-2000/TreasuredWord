@@ -418,7 +418,14 @@ fun main(args: Array<String>) {
             navesVariants.forEach { v -> println("  ${withPassages(v).count { it.hit }} of ${v.results.size}  Key passages first, then ${v.name}") }
         }
     }
-    if (topics != null) variantsText += "\n" + topicMatchesReport(queries, queryVectors, topics)
+    if (topics != null) {
+        variantsText += "\n" + topicMatchesReport(queries, queryVectors, topics)
+        // The pages people would see at each threshold, to check off-topic matches by eye (#394).
+        for (threshold in listOf(0.60f, 0.65f, 0.70f)) {
+            val variant = variants.firstOrNull { it.name == "$NAVES_PREFIX ≥$threshold, 3 entries, RRF" } ?: continue
+            File(reportFolder, "$name-naves-top-$threshold.md").writeText(topResultsReport(variant, threshold, 3, queryVectors, topics, index, verseText))
+        }
+    }
     variantsFile.writeText(variantsText)
     println("Variants: ${variantsFile.absolutePath}")
     exitProcess(0)

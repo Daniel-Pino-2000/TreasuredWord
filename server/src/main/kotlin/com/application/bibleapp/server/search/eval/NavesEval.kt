@@ -106,6 +106,37 @@ fun keyPassagesOnTopReport(variants: List<VariantResult>, withPassages: (Variant
     }
 }
 
+/**
+ * What a person would see with one topical variant: each query's matched entries, then its top
+ * $TOP_K with their text, marking expected verses (✓) and the ones the entries brought in (N), to
+ * judge by eye whether off-topic matches reach the page.
+ */
+fun topResultsReport(
+    variant: VariantResult,
+    threshold: Float,
+    entries: Int,
+    queryVectors: QueryVectors,
+    topics: TopicIndex,
+    index: VectorIndex,
+    verseText: Map<VerseRef, String>
+): String = buildString {
+    appendLine("# Top $TOP_K with ${variant.name}")
+    for (result in variant.results) {
+        val vector = queryVectors.vectors.getValue(result.query.id)
+        val scores = topics.scores(vector)
+        val matched = scores.indices.filter { scores[it] >= threshold }.sortedByDescending { scores[it] }.take(entries)
+        val fromNaves = topics.verseRows(vector, threshold, entries).map { index.refs[it] }.toSet()
+        appendLine()
+        appendLine("## ${result.query.id}: ${result.query.query}")
+        appendLine()
+        appendLine("- **Entries:** " + matched.joinToString("; ") { "${topics.entries[it].text} (${"%.2f".format(scores[it])})" }.ifEmpty { "none" })
+        result.top.forEachIndexed { i, s ->
+            val marks = (if (s.ref in result.query.expected) " ✓" else "") + (if (s.ref in fromNaves) " N" else "")
+            appendLine("${i + 1}. **${s.ref}**$marks ${verseText[s.ref].orEmpty().take(100)}")
+        }
+    }
+}
+
 /** Each query's closest Nave's entry, to judge the matching by eye. */
 fun topicMatchesReport(queries: List<SearchEvalQuery>, queryVectors: QueryVectors, topics: TopicIndex): String = buildString {
     appendLine("## Closest Nave's entry per query (#394)")
