@@ -455,6 +455,7 @@ class MainActivity : AppCompatActivity() {
                     Screen.Register.route,
                     Screen.Library.route,
                     Screen.LibraryItemDetail.route,
+                    Screen.MemorizePractice.route,
                     Screen.Settings.route,
                     Screen.LanguagePicker.route,
                     Screen.Licenses.route,
@@ -603,6 +604,7 @@ class MainActivity : AppCompatActivity() {
                                 Screen.Login.route -> LoginTopBar { navController.popBackStack() }
                                 Screen.Register.route -> RegisterTopBar { navController.popBackStack() }
                                 Screen.Library.route -> LibraryTopBar { navController.popBackStack() }
+                                Screen.MemorizePractice.route -> SettingsTopBar(stringResource(Screen.MemorizePractice.titleRes)) { navController.popBackStack() }
                                 Screen.LibraryItemDetail.route -> {
                                     val title = if (entry?.arguments?.getString("type") ==
                                         Screen.LibraryItemDetail.TYPE_NOTE

@@ -559,4 +559,101 @@
     <string name="youversion_busy">Watu wengi wanasoma toleo hili sasa hivi. Tafadhali jaribu tena baada ya dakika moja.</string>
     <string name="youversion_unavailable">Toleo hili halipatikani kwa sasa. Tafadhali jaribu tena baadaye.</string>
     <string name="youversion_choose_downloaded">Chagua toleo lililopakuliwa</string>
+
+    <!-- Memorize practice games (#363) -->
+    <string name="practice_title">Fanya mazoezi</string>
+    <string name="practice_start">Mazoezi</string>
+    <plurals name="practice_due_count">
+        <item quantity="one">Mstari %1$d wa leo</item>
+        <item quantity="other">Mistari %1$d ya leo</item>
+    </plurals>
+    <string name="practice_none_due">Hakuna cha leo</string>
+    <plurals name="practice_streak">
+        <item quantity="one">Siku %1$d mfululizo</item>
+        <item quantity="other">Siku %1$d mfululizo</item>
+    </plurals>
+    <string name="practice_setup_verses">Mistari</string>
+    <string name="practice_setup_due">Ya leo (%1$d)</string>
+    <string name="practice_setup_all">Yote (%1$d)</string>
+    <string name="practice_setup_choose">Chagua mistari</string>
+    <string name="practice_setup_game">Mchezo</string>
+    <string name="practice_setup_start">Anza</string>
+    <string name="practice_game_mixed">Mchanganyiko</string>
+    <string name="practice_game_mixed_hint">Kila mstari unapata mchezo unaofaa kiwango chake</string>
+    <string name="practice_game_read">Soma na usikilize</string>
+    <string name="practice_game_read_hint">Soma mstari wote, au uusikie ukisomwa kwa sauti</string>
+    <string name="practice_game_gaps">Jaza mapengo</string>
+    <string name="practice_game_gaps_hint">Gusa maneno yanayokosekana</string>
+    <string name="practice_game_order">Panga kwa mpangilio</string>
+    <string name="practice_game_order_hint">Gusa vifungu kwa mpangilio sahihi</string>
+    <string name="practice_game_letters">Herufi za kwanza</string>
+    <string name="practice_game_letters_hint">Herufi ya kwanza tu ya kila neno inaonekana</string>
+    <string name="practice_game_fading">Maneno yanayofifia</string>
+    <string name="practice_game_fading_hint">Maneno yanatoweka hadi hakuna lililobaki</string>
+    <string name="practice_game_type">Andika kwa kumbukumbu</string>
+    <string name="practice_game_type_hint">Andika mstari wote: uthibitisho kwamba unaujua</string>
+    <string name="practice_game_reference">Ni mstari upi?</string>
+    <string name="practice_game_reference_hint">Linganisha mstari na kifungu chake</string>
+    <string name="practice_page_of">%1$d kati ya %2$d</string>
+    <string name="practice_bonus">Raundi ya ziada</string>
+    <string name="practice_read_in_bible">Soma katika Biblia</string>
+    <string name="practice_level">Kiwango %1$d kati ya %2$d</string>
+    <string name="practice_swipe_hint">Telezesha juu kwa mstari unaofuata</string>
+    <string name="practice_next">Endelea</string>
+    <string name="practice_listen">Sikiliza</string>
+    <string name="practice_stop">Simamisha</string>
+    <string name="practice_read_done">Nimesoma</string>
+    <string name="practice_gaps_instructions">Gusa maneno yanayokosekana kwa mpangilio.</string>
+    <string name="practice_gap_blank">pengo</string>
+    <string name="practice_not_that_one">Si hilo. Jaribu tena.</string>
+    <string name="practice_order_instructions">Gusa vifungu kwa mpangilio sahihi.</string>
+    <string name="practice_letters_instructions">Sema mstari moyoni, kisha uukague neno kwa neno.</string>
+    <string name="practice_letters_next_word">Neno linalofuata</string>
+    <string name="practice_show_all">Onyesha yote</string>
+    <string name="practice_got_it">Nimeweza</string>
+    <string name="practice_not_yet">Bado</string>
+    <string name="practice_fading_instructions">Soma mstari kwa sauti. Kila mguso unaficha maneno zaidi.</string>
+    <string name="practice_fading_hide">Ficha maneno zaidi</string>
+    <string name="practice_fading_recite">Sasa useme kwa kumbukumbu, kisha ukague.</string>
+    <string name="practice_fading_show">Onyesha mstari</string>
+    <string name="practice_check_yourself">Je, uliupata sawa?</string>
+    <string name="practice_type_instructions">Andika kifungu chote kwa kumbukumbu.</string>
+    <string name="practice_type_label">Mstari</string>
+    <string name="practice_type_check">Kagua</string>
+    <string name="practice_type_score">%1$d%% sahihi</string>
+    <string name="practice_type_legend">Maneno yaliyorukwa au yasiyo sahihi yako kwa rangi nyekundu. Makosa madogo ya kuandika yaliyosamehewa yamepigiwa mstari.</string>
+    <string name="practice_mark_missed">limerukwa</string>
+    <string name="practice_mark_wrong">si sahihi</string>
+    <string name="practice_mark_typo">kosa la kuandika</string>
+    <string name="practice_reference_pick_ref">Huu ni mstari upi?</string>
+    <string name="practice_reference_pick_text">Upi ni %1$s?</string>
+    <string name="practice_right">Sahihi!</string>
+    <string name="practice_answer_marked">Jibu sahihi limewekwa alama.</string>
+    <string name="practice_result_memorized">Umeukariri! Uliuandika kwa kumbukumbu siku mbili tofauti.</string>
+    <plurals name="practice_result_level">
+        <item quantity="one">Kiwango %1$d kati ya %2$d. Mazoezi yajayo baada ya siku %3$d.</item>
+        <item quantity="other">Kiwango %1$d kati ya %2$d. Mazoezi yajayo baada ya siku %3$d.</item>
+    </plurals>
+    <string name="practice_result_one_more">Umefaulu! Uandike tena kwa kumbukumbu siku nyingine ili uwe umeukariri.</string>
+    <string name="practice_result_still_memorized">Bado umeukariri. Utarudi baada ya mwezi mmoja ili usiusahau.</string>
+    <string name="practice_result_down">Bado kidogo wakati huu. Utarudi kesho, kiwango kimoja rahisi zaidi.</string>
+    <string name="practice_result_extra_pass">Vizuri sana! Haya yalikuwa mazoezi ya ziada, kwa hiyo ratiba yake haibadiliki.</string>
+    <string name="practice_result_extra_fail">Bado kidogo. Haya yalikuwa mazoezi ya ziada, kwa hiyo ratiba yake haibadiliki.</string>
+    <string name="practice_text_unavailable">Maandishi ya mstari huu hayapo kwenye kifaa chako sasa hivi. Unganisha intaneti, kisha ujaribu tena.</string>
+    <string name="practice_summary_title">Mazoezi yamekamilika</string>
+    <plurals name="practice_summary_practiced">
+        <item quantity="one">Mstari %1$d umefanyiwa mazoezi</item>
+        <item quantity="other">Mistari %1$d imefanyiwa mazoezi</item>
+    </plurals>
+    <plurals name="practice_summary_moved_up">
+        <item quantity="one">%1$d umepanda kiwango</item>
+        <item quantity="other">%1$d imepanda kiwango</item>
+    </plurals>
+    <plurals name="practice_summary_memorized">
+        <item quantity="one">%1$d umekaririwa kwa mara ya kwanza</item>
+        <item quantity="other">%1$d imekaririwa kwa mara ya kwanza</item>
+    </plurals>
+    <string name="practice_done">Imekamilika</string>
+    <string name="practice_again">Fanya mazoezi tena</string>
+    <string name="practice_nothing">Hakuna cha kufanyia mazoezi hapa. Chagua Yote, au ongeza mistari kutoka kwa kisomaji.</string>
 </resources>

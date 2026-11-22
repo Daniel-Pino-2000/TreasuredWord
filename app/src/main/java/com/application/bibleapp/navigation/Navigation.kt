@@ -29,6 +29,8 @@ import com.application.bibleapp.screens.BookPickerView
 import com.application.bibleapp.screens.HomeView
 import com.application.bibleapp.screens.LibraryItemDetailView
 import com.application.bibleapp.screens.LibraryView
+import com.application.bibleapp.screens.MemorizePracticeView
+import com.application.bibleapp.data.model.PracticeGame
 import com.application.bibleapp.screens.LoginView
 import com.application.bibleapp.screens.RegisterView
 import com.application.bibleapp.screens.SearchView
@@ -130,10 +132,9 @@ fun Navigation(
                 onSeeAllHighlightsClick = {
                     navController.navigate(Screen.Library.createRoute(Screen.Library.TAB_HIGHLIGHTS))
                 },
-                // Like a Memorize card in the Library (#362) until practice exists (#363).
+                // Practice on that one passage, like a Memorize card in the Library (#363).
                 onMemoryVerseClick = { verse ->
-                    bibleViewModel.openMemoryVerseFromLibrary(verse)
-                    navController.navigate(Screen.Bible.route)
+                    navController.navigate(Screen.MemorizePractice.createRoute(Screen.MemorizePractice.MIXED, listOf(verse.localId)))
                 }
             )
         }
@@ -225,13 +226,35 @@ fun Navigation(
                 bibleViewModel = bibleViewModel,
                 modifier = keyboardScreenModifier,
                 initialTab = backStackEntry.arguments?.getString("tab"),
-                onOpenMemoryVerse = { verse ->
-                    bibleViewModel.openMemoryVerseFromLibrary(verse)
-                    navController.navigate(Screen.Bible.route)
+                onPractice = { game, ids ->
+                    navController.navigate(Screen.MemorizePractice.createRoute(game, ids))
                 },
                 onOpenDetail = { type, localId ->
                     navController.navigate(Screen.LibraryItemDetail.createRoute(type, localId))
                 }
+            )
+        }
+
+        composable(
+            Screen.MemorizePractice.route,
+            arguments = listOf(
+                navArgument("game") { type = NavType.StringType },
+                navArgument("ids") { type = NavType.StringType; defaultValue = "" }
+            )
+        ) { backStackEntry ->
+            val ids = backStackEntry.arguments?.getString("ids").orEmpty()
+                .split(',').mapNotNull { it.toLongOrNull() }
+            MemorizePracticeView(
+                bibleViewModel = bibleViewModel,
+                ids = ids,
+                game = PracticeGame.fromStored(backStackEntry.arguments?.getString("game")),
+                // "Type it from memory" has a text field (#225, #228).
+                modifier = keyboardScreenModifier,
+                onOpenInBible = { verse ->
+                    bibleViewModel.openMemoryVerseFromLibrary(verse)
+                    navController.navigate(Screen.Bible.route)
+                },
+                onDone = { navController.popBackStack() }
             )
         }
 

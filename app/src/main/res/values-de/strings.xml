@@ -558,4 +558,101 @@
     <string name="youversion_busy">Gerade lesen sehr viele diese Übersetzung. Bitte versuche es in einer Minute erneut.</string>
     <string name="youversion_unavailable">Diese Übersetzung ist gerade nicht verfügbar. Bitte versuche es später erneut.</string>
     <string name="youversion_choose_downloaded">Heruntergeladene Übersetzung wählen</string>
+
+    <!-- Memorize practice games (#363) -->
+    <string name="practice_title">Üben</string>
+    <string name="practice_start">Üben</string>
+    <plurals name="practice_due_count">
+        <item quantity="one">%1$d Vers heute fällig</item>
+        <item quantity="other">%1$d Verse heute fällig</item>
+    </plurals>
+    <string name="practice_none_due">Heute nichts fällig</string>
+    <plurals name="practice_streak">
+        <item quantity="one">%1$d Tag in Folge</item>
+        <item quantity="other">%1$d Tage in Folge</item>
+    </plurals>
+    <string name="practice_setup_verses">Verse</string>
+    <string name="practice_setup_due">Heute fällig (%1$d)</string>
+    <string name="practice_setup_all">Alle (%1$d)</string>
+    <string name="practice_setup_choose">Verse auswählen</string>
+    <string name="practice_setup_game">Spiel</string>
+    <string name="practice_setup_start">Los</string>
+    <string name="practice_game_mixed">Gemischt</string>
+    <string name="practice_game_mixed_hint">Jeder Vers bekommt das Spiel, das zu seiner Stufe passt</string>
+    <string name="practice_game_read">Lesen und hören</string>
+    <string name="practice_game_read_hint">Lies den ganzen Vers oder lass ihn dir vorlesen</string>
+    <string name="practice_game_gaps">Lücken füllen</string>
+    <string name="practice_game_gaps_hint">Tippe auf die fehlenden Wörter</string>
+    <string name="practice_game_order">Richtige Reihenfolge</string>
+    <string name="practice_game_order_hint">Tippe die Satzteile in der richtigen Reihenfolge an</string>
+    <string name="practice_game_letters">Anfangsbuchstaben</string>
+    <string name="practice_game_letters_hint">Nur der erste Buchstabe jedes Wortes ist zu sehen</string>
+    <string name="practice_game_fading">Verblassende Wörter</string>
+    <string name="practice_game_fading_hint">Wörter verschwinden, bis keines mehr übrig ist</string>
+    <string name="practice_game_type">Aus dem Gedächtnis tippen</string>
+    <string name="practice_game_type_hint">Tippe den ganzen Vers: der Beweis, dass du ihn kannst</string>
+    <string name="practice_game_reference">Welche Stelle?</string>
+    <string name="practice_game_reference_hint">Ordne einen Vers seiner Bibelstelle zu</string>
+    <string name="practice_page_of">%1$d von %2$d</string>
+    <string name="practice_bonus">Bonusrunde</string>
+    <string name="practice_read_in_bible">In der Bibel lesen</string>
+    <string name="practice_level">Stufe %1$d von %2$d</string>
+    <string name="practice_swipe_hint">Nach oben wischen für den nächsten Vers</string>
+    <string name="practice_next">Weiter</string>
+    <string name="practice_listen">Anhören</string>
+    <string name="practice_stop">Stopp</string>
+    <string name="practice_read_done">Gelesen</string>
+    <string name="practice_gaps_instructions">Tippe die fehlenden Wörter der Reihe nach an.</string>
+    <string name="practice_gap_blank">Lücke</string>
+    <string name="practice_not_that_one">Nicht dieses. Versuch es noch einmal.</string>
+    <string name="practice_order_instructions">Tippe die Satzteile in der richtigen Reihenfolge an.</string>
+    <string name="practice_letters_instructions">Sag den Vers im Kopf auf und prüfe ihn dann Wort für Wort.</string>
+    <string name="practice_letters_next_word">Nächstes Wort</string>
+    <string name="practice_show_all">Alles zeigen</string>
+    <string name="practice_got_it">Gewusst</string>
+    <string name="practice_not_yet">Noch nicht</string>
+    <string name="practice_fading_instructions">Lies den Vers laut. Jedes Tippen blendet mehr Wörter aus.</string>
+    <string name="practice_fading_hide">Mehr Wörter ausblenden</string>
+    <string name="practice_fading_recite">Sag ihn jetzt aus dem Gedächtnis auf und prüfe dann.</string>
+    <string name="practice_fading_show">Vers zeigen</string>
+    <string name="practice_check_yourself">Hast du ihn richtig gewusst?</string>
+    <string name="practice_type_instructions">Tippe den ganzen Abschnitt aus dem Gedächtnis.</string>
+    <string name="practice_type_label">Der Vers</string>
+    <string name="practice_type_check">Prüfen</string>
+    <string name="practice_type_score">%1$d %% richtig</string>
+    <string name="practice_type_legend">Fehlende und falsche Wörter sind rot. Verziehene Tippfehler sind unterstrichen.</string>
+    <string name="practice_mark_missed">fehlt</string>
+    <string name="practice_mark_wrong">falsch</string>
+    <string name="practice_mark_typo">Tippfehler</string>
+    <string name="practice_reference_pick_ref">Welche Bibelstelle ist das?</string>
+    <string name="practice_reference_pick_text">Welcher ist %1$s?</string>
+    <string name="practice_right">Richtig!</string>
+    <string name="practice_answer_marked">Die richtige Antwort ist markiert.</string>
+    <string name="practice_result_memorized">Auswendig gelernt! Du hast ihn an zwei verschiedenen Tagen aus dem Gedächtnis getippt.</string>
+    <plurals name="practice_result_level">
+        <item quantity="one">Stufe %1$d von %2$d. Nächste Übung in %3$d Tag.</item>
+        <item quantity="other">Stufe %1$d von %2$d. Nächste Übung in %3$d Tagen.</item>
+    </plurals>
+    <string name="practice_result_one_more">Bestanden! Tippe ihn an einem anderen Tag noch einmal aus dem Gedächtnis, dann ist er auswendig gelernt.</string>
+    <string name="practice_result_still_memorized">Sitzt immer noch. In einem Monat kommt er wieder, damit es so bleibt.</string>
+    <string name="practice_result_down">Diesmal noch nicht ganz. Er kommt morgen wieder, eine Stufe leichter.</string>
+    <string name="practice_result_extra_pass">Gut gemacht! Das war eine Zusatzübung, der Plan bleibt gleich.</string>
+    <string name="practice_result_extra_fail">Noch nicht ganz. Das war eine Zusatzübung, der Plan bleibt gleich.</string>
+    <string name="practice_text_unavailable">Der Text dieses Verses ist gerade nicht auf deinem Gerät. Verbinde dich mit dem Internet und versuch es noch einmal.</string>
+    <string name="practice_summary_title">Übung beendet</string>
+    <plurals name="practice_summary_practiced">
+        <item quantity="one">%1$d Vers geübt</item>
+        <item quantity="other">%1$d Verse geübt</item>
+    </plurals>
+    <plurals name="practice_summary_moved_up">
+        <item quantity="one">%1$d eine Stufe höher</item>
+        <item quantity="other">%1$d eine Stufe höher</item>
+    </plurals>
+    <plurals name="practice_summary_memorized">
+        <item quantity="one">%1$d neu auswendig gelernt</item>
+        <item quantity="other">%1$d neu auswendig gelernt</item>
+    </plurals>
+    <string name="practice_done">Fertig</string>
+    <string name="practice_again">Nochmal üben</string>
+    <string name="practice_nothing">Hier gibt es nichts zu üben. Wähle „Alle“ oder füge im Leser Verse hinzu.</string>
 </resources>

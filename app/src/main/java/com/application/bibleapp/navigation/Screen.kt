@@ -40,6 +40,14 @@ sealed class Screen(val route: String, @StringRes val titleRes: Int) {
         fun createRoute(tab: String) = "library/$tab"
     }
 
+    /** The Memorize practice feed (#363): [ids] are the passages' local ids, in order, and
+     *  [game] one game for all of them or [MIXED] for each one's own level. In the route, so
+     *  the feed comes back after the app is closed in the background. */
+    object MemorizePractice: Screen("memorize_practice/{game}?ids={ids}", R.string.practice_title) {
+        const val MIXED = "mixed"
+        fun createRoute(game: String, ids: List<Long>) = "memorize_practice/$game?ids=${ids.joinToString(",")}"
+    }
+
     /** A single Library card's full detail — reached by tapping it in [Library], one tap short
      *  of actually jumping into the reading view. [type] is "highlight" or "note"; [localId]
      *  looks the item back up from BibleViewModel's already-loaded library StateFlows rather

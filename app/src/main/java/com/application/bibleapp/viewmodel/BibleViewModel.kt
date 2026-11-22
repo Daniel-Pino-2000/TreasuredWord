@@ -24,6 +24,10 @@ import com.application.bibleapp.data.model.MAX_MEMORY_PASSAGE_VERSES
 import com.application.bibleapp.data.model.MemorySelection
 import com.application.bibleapp.data.model.MemoryPassage
 import com.application.bibleapp.data.model.MemoryVerse
+import com.application.bibleapp.data.model.PracticeGame
+import com.application.bibleapp.data.model.PracticeOutcome
+import com.application.bibleapp.data.model.applyPracticeResult
+import com.application.bibleapp.data.model.withProgress
 import com.application.bibleapp.data.model.memorySelectionOf
 import com.application.bibleapp.data.model.Note
 import com.application.bibleapp.data.model.SelectedBibleVersion
@@ -44,6 +48,7 @@ import com.application.bibleapp.data.repository.NotificationTime
 import com.application.bibleapp.data.repository.ReadingPosition
 import com.application.bibleapp.data.repository.ReadingProgressRepository
 import com.application.bibleapp.data.repository.dailyVerseDateKey
+import com.application.bibleapp.data.repository.previousDailyVerseDateKey
 import com.application.bibleapp.ui.theme.ThemeMode
 import com.application.bibleapp.ui.theme.ThemePalette
 import com.application.bibleapp.widget.WidgetColors
@@ -555,6 +560,9 @@ class BibleViewModel(
     // verse instead of Genesis 1 and an empty list that then jump (#161).
     private val _startupChapterLoaded = MutableStateFlow(false)
     private val _startupLibraryLoaded = MutableStateFlow(false)
+
+    /** The Library's lists have loaded at least once, so an empty one really is empty (#363). */
+    val libraryLoaded: StateFlow<Boolean> = _startupLibraryLoaded.asStateFlow()
     private val _startupVerseOfTheDayLoaded = MutableStateFlow(false)
     val isStartupContentReady: StateFlow<Boolean> =
         combine(_startupChapterLoaded, _startupLibraryLoaded, _startupVerseOfTheDayLoaded) { chapter, library, verse ->
@@ -1325,9 +1333,33 @@ class BibleViewModel(
         viewModelScope.launch { repository.deleteMemoryVerse(verse.localId) }
     }
 
-    /** A Memorize card was tapped (#362): opens the reader at the passage with it selected, as
-     *  Home's verse card does. The practice games (#363) will open from here instead. */
+    /** Opens the reader at a Memorize passage with it selected, as Home's verse card does: from
+     *  a practice page's "Read in the Bible" (#363). */
     fun openMemoryVerseFromLibrary(verse: MemoryVerse) = openMemoryPassage(verse.bookId, verse.chapter, verse.verseStart, verse.verseEnd)
+
+    private val _practiceStreak = MutableStateFlow(repository.loadPracticeStreak())
+
+    /** The daily practice streak (#363): days in a row, up to today, with a game played. */
+    val practiceStreakDays: StateFlow<Int> = _practiceStreak
+        .map { it.current(dailyVerseDateKey(), previousDailyVerseDateKey()) }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, _practiceStreak.value.current(dailyVerseDateKey(), previousDailyVerseDateKey()))
+
+    /**
+     * A practice game finished (#363): moves the passage along the schedule
+     * ([applyPracticeResult]), saves the change for sync, and counts today for the streak. The
+     * Library list is updated in place, so the next game and the cards see it at once. Null if the
+     * passage was removed meanwhile.
+     */
+    fun recordMemoryPractice(localId: Long, game: PracticeGame, passed: Boolean): PracticeOutcome? {
+        val verse = _libraryMemoryVerses.value.firstOrNull { it.localId == localId } ?: return null
+        val outcome = applyPracticeResult(verse, game, passed, System.currentTimeMillis())
+        _practiceStreak.update { it.practiced(dailyVerseDateKey(), previousDailyVerseDateKey()) }
+        repository.savePracticeStreak(_practiceStreak.value)
+        val progress = outcome.progress ?: return outcome
+        _libraryMemoryVerses.update { list -> list.map { if (it.localId == localId) it.withProgress(progress) else it } }
+        viewModelScope.launch { repository.updateMemoryProgress(localId, progress) }
+        return outcome
+    }
 
     /** A tap on the "Verse to memorize" widget (#364), on a fresh start: the reader on the
      *  passage, selected, once the stored reading position has loaded, so that load can't

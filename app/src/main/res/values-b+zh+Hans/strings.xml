@@ -546,4 +546,95 @@
     <string name="youversion_busy">现在有很多人在读此译本。请一分钟后重试。</string>
     <string name="youversion_unavailable">此译本暂时无法使用。请稍后重试。</string>
     <string name="youversion_choose_downloaded">选择已下载的译本</string>
+
+    <!-- Memorize practice games (#363) -->
+    <string name="practice_title">练习</string>
+    <string name="practice_start">练习</string>
+    <plurals name="practice_due_count">
+        <item quantity="other">今天有 %1$d 节要复习</item>
+    </plurals>
+    <string name="practice_none_due">今天没有要复习的</string>
+    <plurals name="practice_streak">
+        <item quantity="other">连续 %1$d 天</item>
+    </plurals>
+    <string name="practice_setup_verses">经文</string>
+    <string name="practice_setup_due">今天要复习 (%1$d)</string>
+    <string name="practice_setup_all">全部 (%1$d)</string>
+    <string name="practice_setup_choose">选择经文</string>
+    <string name="practice_setup_game">游戏</string>
+    <string name="practice_setup_start">开始</string>
+    <string name="practice_game_mixed">混合</string>
+    <string name="practice_game_mixed_hint">每节经文按它的等级安排合适的游戏</string>
+    <string name="practice_game_read">读和听</string>
+    <string name="practice_game_read_hint">读完整节经文，或听它朗读出来</string>
+    <string name="practice_game_gaps">填空</string>
+    <string name="practice_game_gaps_hint">点出缺少的字词</string>
+    <string name="practice_game_order">排顺序</string>
+    <string name="practice_game_order_hint">按正确顺序点出各个短句</string>
+    <string name="practice_game_letters">首字提示</string>
+    <string name="practice_game_letters_hint">每个词只显示第一个字母，中文每句只显示第一个字</string>
+    <string name="practice_game_fading">渐隐字词</string>
+    <string name="practice_game_fading_hint">字词逐渐消失，直到一个不剩</string>
+    <string name="practice_game_type">默写</string>
+    <string name="practice_game_type_hint">打出整节经文：证明你已经会背</string>
+    <string name="practice_game_reference">哪一处经文？</string>
+    <string name="practice_game_reference_hint">把经文和出处配对</string>
+    <string name="practice_page_of">第 %1$d 个，共 %2$d 个</string>
+    <string name="practice_bonus">奖励回合</string>
+    <string name="practice_read_in_bible">在圣经中阅读</string>
+    <string name="practice_level">第 %1$d 级，共 %2$d 级</string>
+    <string name="practice_swipe_hint">向上滑动查看下一节</string>
+    <string name="practice_next">下一个</string>
+    <string name="practice_listen">朗读</string>
+    <string name="practice_stop">停止</string>
+    <string name="practice_read_done">我读完了</string>
+    <string name="practice_gaps_instructions">按顺序点出缺少的字词。</string>
+    <string name="practice_gap_blank">空格</string>
+    <string name="practice_not_that_one">不是这个，再试一次。</string>
+    <string name="practice_order_instructions">按正确顺序点出各个短句。</string>
+    <string name="practice_letters_instructions">先在心里背一遍，再逐字核对。</string>
+    <string name="practice_letters_next_word">下一个字词</string>
+    <string name="practice_show_all">全部显示</string>
+    <string name="practice_got_it">背对了</string>
+    <string name="practice_not_yet">还没有</string>
+    <string name="practice_fading_instructions">大声读出这节经文。每点一次，就会隐藏更多字词。</string>
+    <string name="practice_fading_hide">隐藏更多字词</string>
+    <string name="practice_fading_recite">现在凭记忆背出来，然后核对。</string>
+    <string name="practice_fading_show">显示经文</string>
+    <string name="practice_check_yourself">你背对了吗？</string>
+    <string name="practice_type_instructions">凭记忆打出整段经文。</string>
+    <string name="practice_type_label">经文</string>
+    <string name="practice_type_check">检查</string>
+    <string name="practice_type_score">正确 %1$d%%</string>
+    <string name="practice_type_legend">漏掉或写错的字词显示为红色。被容许的小笔误带下划线。</string>
+    <string name="practice_mark_missed">漏掉</string>
+    <string name="practice_mark_wrong">错误</string>
+    <string name="practice_mark_typo">笔误</string>
+    <string name="practice_reference_pick_ref">这是哪一处经文？</string>
+    <string name="practice_reference_pick_text">哪一个是 %1$s？</string>
+    <string name="practice_right">答对了！</string>
+    <string name="practice_answer_marked">已标出正确答案。</string>
+    <string name="practice_result_memorized">背熟了！你在两个不同的日子凭记忆打出了它。</string>
+    <plurals name="practice_result_level">
+        <item quantity="other">第 %1$d 级，共 %2$d 级。%3$d 天后再练习。</item>
+    </plurals>
+    <string name="practice_result_one_more">通过了！换一天再默写一次，就算背熟了。</string>
+    <string name="practice_result_still_memorized">仍然背得很熟。一个月后会再出现，帮你保持记忆。</string>
+    <string name="practice_result_down">这次还差一点。明天会再出现，降低一级。</string>
+    <string name="practice_result_extra_pass">做得好！这是额外练习，所以复习计划不变。</string>
+    <string name="practice_result_extra_fail">还差一点。这是额外练习，所以复习计划不变。</string>
+    <string name="practice_text_unavailable">这节经文的内容目前不在你的设备上。请连接网络后再试。</string>
+    <string name="practice_summary_title">练习完成</string>
+    <plurals name="practice_summary_practiced">
+        <item quantity="other">练习了 %1$d 节</item>
+    </plurals>
+    <plurals name="practice_summary_moved_up">
+        <item quantity="other">%1$d 节升了一级</item>
+    </plurals>
+    <plurals name="practice_summary_memorized">
+        <item quantity="other">%1$d 节新背熟</item>
+    </plurals>
+    <string name="practice_done">完成</string>
+    <string name="practice_again">再练一次</string>
+    <string name="practice_nothing">这里没有可练习的经文。请选择“全部”，或在阅读页面添加经文。</string>
 </resources>

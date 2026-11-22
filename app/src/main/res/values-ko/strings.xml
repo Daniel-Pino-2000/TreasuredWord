@@ -547,4 +547,95 @@
     <string name="youversion_busy">지금 많은 사람이 이 역본을 읽고 있습니다. 1분 후에 다시 시도해 주세요.</string>
     <string name="youversion_unavailable">지금은 이 역본을 사용할 수 없습니다. 나중에 다시 시도해 주세요.</string>
     <string name="youversion_choose_downloaded">다운로드한 역본 선택</string>
+
+    <!-- Memorize practice games (#363) -->
+    <string name="practice_title">연습</string>
+    <string name="practice_start">연습하기</string>
+    <plurals name="practice_due_count">
+        <item quantity="other">오늘 복습할 구절 %1$d개</item>
+    </plurals>
+    <string name="practice_none_due">오늘 복습할 구절 없음</string>
+    <plurals name="practice_streak">
+        <item quantity="other">%1$d일 연속</item>
+    </plurals>
+    <string name="practice_setup_verses">구절</string>
+    <string name="practice_setup_due">오늘 복습 (%1$d)</string>
+    <string name="practice_setup_all">전체 (%1$d)</string>
+    <string name="practice_setup_choose">구절 고르기</string>
+    <string name="practice_setup_game">게임</string>
+    <string name="practice_setup_start">시작</string>
+    <string name="practice_game_mixed">섞어서</string>
+    <string name="practice_game_mixed_hint">구절마다 단계에 맞는 게임이 나와요</string>
+    <string name="practice_game_read">읽고 듣기</string>
+    <string name="practice_game_read_hint">구절 전체를 읽거나 소리 내어 읽어 주는 것을 들어요</string>
+    <string name="practice_game_gaps">빈칸 채우기</string>
+    <string name="practice_game_gaps_hint">빠진 단어를 눌러요</string>
+    <string name="practice_game_order">순서 맞추기</string>
+    <string name="practice_game_order_hint">구절 조각을 바른 순서대로 눌러요</string>
+    <string name="practice_game_letters">첫 글자</string>
+    <string name="practice_game_letters_hint">단어마다 첫 글자만 보여요</string>
+    <string name="practice_game_fading">사라지는 단어</string>
+    <string name="practice_game_fading_hint">단어가 하나도 남지 않을 때까지 사라져요</string>
+    <string name="practice_game_type">외워서 입력하기</string>
+    <string name="practice_game_type_hint">구절 전체를 입력해요: 외웠다는 증거예요</string>
+    <string name="practice_game_reference">어느 구절일까요?</string>
+    <string name="practice_game_reference_hint">구절과 장절을 짝지어요</string>
+    <string name="practice_page_of">%2$d개 중 %1$d번째</string>
+    <string name="practice_bonus">보너스 라운드</string>
+    <string name="practice_read_in_bible">성경에서 읽기</string>
+    <string name="practice_level">%2$d단계 중 %1$d단계</string>
+    <string name="practice_swipe_hint">위로 밀면 다음 구절로 넘어가요</string>
+    <string name="practice_next">다음</string>
+    <string name="practice_listen">듣기</string>
+    <string name="practice_stop">정지</string>
+    <string name="practice_read_done">다 읽었어요</string>
+    <string name="practice_gaps_instructions">빠진 단어를 순서대로 눌러요.</string>
+    <string name="practice_gap_blank">빈칸</string>
+    <string name="practice_not_that_one">그 단어가 아니에요. 다시 해 보세요.</string>
+    <string name="practice_order_instructions">구절 조각을 바른 순서대로 눌러요.</string>
+    <string name="practice_letters_instructions">마음속으로 구절을 말해 본 뒤 한 단어씩 확인해요.</string>
+    <string name="practice_letters_next_word">다음 단어</string>
+    <string name="practice_show_all">모두 보기</string>
+    <string name="practice_got_it">맞혔어요</string>
+    <string name="practice_not_yet">아직이에요</string>
+    <string name="practice_fading_instructions">구절을 소리 내어 읽어요. 누를 때마다 단어가 더 가려져요.</string>
+    <string name="practice_fading_hide">단어 더 가리기</string>
+    <string name="practice_fading_recite">이제 외워서 말해 본 뒤 확인해요.</string>
+    <string name="practice_fading_show">구절 보기</string>
+    <string name="practice_check_yourself">맞게 말했나요?</string>
+    <string name="practice_type_instructions">본문 전체를 외워서 입력해요.</string>
+    <string name="practice_type_label">구절</string>
+    <string name="practice_type_check">확인</string>
+    <string name="practice_type_score">%1$d%% 맞음</string>
+    <string name="practice_type_legend">빠지거나 틀린 단어는 빨간색이에요. 봐준 오타에는 밑줄이 있어요.</string>
+    <string name="practice_mark_missed">빠짐</string>
+    <string name="practice_mark_wrong">틀림</string>
+    <string name="practice_mark_typo">오타</string>
+    <string name="practice_reference_pick_ref">어느 구절일까요?</string>
+    <string name="practice_reference_pick_text">%1$s은(는) 어느 것일까요?</string>
+    <string name="practice_right">정답이에요!</string>
+    <string name="practice_answer_marked">정답을 표시해 두었어요.</string>
+    <string name="practice_result_memorized">암송 완료! 서로 다른 두 날에 외워서 입력했어요.</string>
+    <plurals name="practice_result_level">
+        <item quantity="other">%2$d단계 중 %1$d단계. 다음 연습은 %3$d일 뒤예요.</item>
+    </plurals>
+    <string name="practice_result_one_more">통과! 다른 날 한 번 더 외워서 입력하면 암송 완료예요.</string>
+    <string name="practice_result_still_memorized">여전히 잘 외우고 있어요. 잊지 않도록 한 달 뒤에 다시 나와요.</string>
+    <string name="practice_result_down">이번에는 아쉬워요. 내일 한 단계 쉬워져서 다시 나와요.</string>
+    <string name="practice_result_extra_pass">잘했어요! 추가 연습이라 일정은 그대로예요.</string>
+    <string name="practice_result_extra_fail">아쉬워요. 추가 연습이라 일정은 그대로예요.</string>
+    <string name="practice_text_unavailable">지금은 이 구절의 본문이 기기에 없어요. 인터넷에 연결한 뒤 다시 해 보세요.</string>
+    <string name="practice_summary_title">연습 끝</string>
+    <plurals name="practice_summary_practiced">
+        <item quantity="other">구절 %1$d개 연습</item>
+    </plurals>
+    <plurals name="practice_summary_moved_up">
+        <item quantity="other">%1$d개 단계 올라감</item>
+    </plurals>
+    <plurals name="practice_summary_memorized">
+        <item quantity="other">%1$d개 새로 암송 완료</item>
+    </plurals>
+    <string name="practice_done">완료</string>
+    <string name="practice_again">다시 연습하기</string>
+    <string name="practice_nothing">여기에는 연습할 구절이 없어요. 전체를 고르거나 성경 읽기 화면에서 구절을 추가하세요.</string>
 </resources>

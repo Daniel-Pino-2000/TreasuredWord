@@ -30,6 +30,10 @@
         <intent>
             <action android:name="android.support.customtabs.action.CustomTabsService" />
         </intent>
+        <!-- Read aloud in Memorize practice (#363): Android's own on-device text-to-speech. -->
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE" />
+        </intent>
     </queries>
 
     <application
