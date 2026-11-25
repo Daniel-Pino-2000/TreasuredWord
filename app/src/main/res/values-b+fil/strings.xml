@@ -208,6 +208,10 @@
     <string name="search_error">Hindi makapaghanap ngayon. Pakisubukan ulit.</string>
     <string name="search_section_words">Mga talatang may mga salitang ito</string>
     <string name="search_section_key_passages">Mga pangunahing talata</string>
+    <!-- Search's offer of the Bible Helper when a search reads like a request for help (#401) -->
+    <string name="search_ask_title">Magtanong sa Katulong sa Bibliya</string>
+    <string name="search_ask_message">Mukhang gusto mo itong pag-usapan. Masasagot ito ng Katulong sa Bibliya gamit ang Kasulatan.</string>
+    <string name="search_ask_button">Itanong ito</string>
     <string name="search_section_meaning">Kaugnay ayon sa kahulugan</string>
     <string name="search_words_none">Walang talatang may mga salitang ito.</string>
     <!-- Search in a licensed version (#378, #382) when YouVersion's search couldn't be used (offline, too many requests). %1$s: the version's abbreviation, such as LBLA. -->

@@ -225,6 +225,10 @@
     <string name="search_error">No se pudo buscar en este momento. Inténtalo de nuevo.</string>
     <string name="search_section_words">Versículos con estas palabras</string>
     <string name="search_section_key_passages">Pasajes clave</string>
+    <!-- Search's offer of the Bible Helper when a search reads like a request for help (#401) -->
+    <string name="search_ask_title">Pregúntale al Ayudante bíblico</string>
+    <string name="search_ask_message">Parece algo de lo que quieres hablar. El Ayudante bíblico puede responderte con la Escritura.</string>
+    <string name="search_ask_button">Preguntar sobre esto</string>
     <string name="search_section_meaning">Relacionados por significado</string>
     <string name="search_words_none">Ningún versículo contiene estas palabras.</string>
     <!-- Search in a licensed version (#378, #382) when YouVersion's search couldn't be used (offline, too many requests). %1$s: the version's abbreviation, such as LBLA. -->

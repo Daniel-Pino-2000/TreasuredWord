@@ -51,13 +51,16 @@ data class KeyPassage(val reference: VerseReference, val verses: List<PassageVer
  * leaves out the verses [keyPassages] show. [crisis] (#324): the query matched the crisis guide, so
  * the Bible Helper's help card comes first; kept even when the verses couldn't be read. When the
  * server can't answer (offline, unavailable), the phone's own crisis phrases decide instead (#330).
+ * [suggestAsk] (#401): the server says the query reads like a request for help, so Search offers to
+ * ask the Bible Helper; only from the server, so never offline (the Bible Helper needs it anyway).
  */
 data class MeaningSearchState(
     val query: String = "",
     val status: MeaningSearchStatus = MeaningSearchStatus.IDLE,
     val results: List<MeaningVerse> = emptyList(),
     val keyPassages: List<KeyPassage> = emptyList(),
-    val crisis: Boolean = false
+    val crisis: Boolean = false,
+    val suggestAsk: Boolean = false
 ) {
     val isLoading: Boolean get() = status == MeaningSearchStatus.WAKING || status == MeaningSearchStatus.SEARCHING
 }
@@ -141,7 +144,8 @@ class MeaningSearch(
                 is SemanticSearchResult.Found -> {
                     found = result
                     // The help card never depends on reading the verses (#324).
-                    doneOrNull(query, result) ?: MeaningSearchState(query, MeaningSearchStatus.UNAVAILABLE, crisis = result.crisis)
+                    doneOrNull(query, result)
+                        ?: MeaningSearchState(query, MeaningSearchStatus.UNAVAILABLE, crisis = result.crisis, suggestAsk = result.suggestAsk)
                 }
                 SemanticSearchResult.Offline -> unanswered(query, MeaningSearchStatus.OFFLINE)
                 SemanticSearchResult.Unavailable -> unanswered(query, MeaningSearchStatus.UNAVAILABLE)
@@ -158,7 +162,7 @@ class MeaningSearch(
     private suspend fun doneOrNull(query: String, found: SemanticSearchResult.Found): MeaningSearchState? = try {
         val passages = if (found.keyPassages.isEmpty()) emptyList() else resolvePassages(found.keyPassages)
         val verses = resolve(found.verses).withoutKeyPassages(passages)
-        MeaningSearchState(query, MeaningSearchStatus.DONE, verses, passages, found.crisis)
+        MeaningSearchState(query, MeaningSearchStatus.DONE, verses, passages, found.crisis, found.suggestAsk)
     } catch (e: CancellationException) {
         throw e
     } catch (_: Exception) {

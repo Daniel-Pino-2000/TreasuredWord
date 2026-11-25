@@ -150,7 +150,19 @@ fun Navigation(
 
         composable(Screen.Search.route) {
             // The search is kept (it lives in the ViewModel), so Back returns to the same results.
-            SearchView(bibleViewModel, modifier = keyboardScreenModifier) { bookId, chapter, verse ->
+            SearchView(
+                bibleViewModel,
+                modifier = keyboardScreenModifier,
+                // "Ask about this" (#401): Ask opens as its tab, with the search's words ready to send.
+                onAskHelper = if (BuildConfig.AI_HELPER_ENABLED) {
+                    { question ->
+                        askViewModel.startWithQuestion(question)
+                        navController.navigateToTab(Screen.Ask.route)
+                    }
+                } else {
+                    null
+                }
+            ) { bookId, chapter, verse ->
                 bibleViewModel.setBook(bookId, chapter, verse)
                 navController.navigate(Screen.Bible.route)
             }

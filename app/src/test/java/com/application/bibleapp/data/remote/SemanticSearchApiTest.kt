@@ -94,6 +94,16 @@ class SemanticSearchApiTest {
     }
 
     @Test
+    fun `the Bible Helper suggestion is read, and its absence means none`() = runTest {
+        // #401
+        val asked = api { json(HttpStatusCode.OK, """{"results":[],"suggestAsk":true}""") }.search("my dad is in the hospital")
+        assertEquals(true, (asked as SemanticSearchResult.Found).suggestAsk)
+
+        val none = api { json(HttpStatusCode.OK, """{"results":[]}""") }.search("patience")
+        assertEquals(false, (none as SemanticSearchResult.Found).suggestAsk)
+    }
+
+    @Test
     fun `the query goes trimmed and cut to the contract's size, without the account's token`() = runTest {
         api { json(HttpStatusCode.OK, """{"results":[]}""") }.search("  " + "a".repeat(250) + "  ")
 

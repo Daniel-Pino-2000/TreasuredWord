@@ -240,6 +240,27 @@ class MeaningSearchTest {
     }
 
     @Test
+    fun `the server's Bible Helper suggestion is kept, also after a version change, and never offline`() = runTest {
+        // #401
+        answer = SemanticSearchResult.Found(listOf(VerseRef(19, 42, 5)), suggestAsk = true)
+        val search = meaningSearch()
+
+        search.submit("my dad is in the hospital and I'm scared")
+        advanceUntilIdle()
+        assertTrue(search.state.value.suggestAsk)
+
+        version = "spa"
+        search.onVersionChange()
+        advanceUntilIdle()
+        assertTrue(search.state.value.suggestAsk)
+
+        answer = SemanticSearchResult.Offline
+        search.submit("my dad is in the hospital")
+        advanceUntilIdle()
+        assertFalse(search.state.value.suggestAsk)
+    }
+
+    @Test
     fun `a crisis match brings the help card with its key passages, also after a version change`() = runTest {
         val comfort = VerseReference(19, 34, 18)
         answer = SemanticSearchResult.Found(listOf(VerseRef(19, 42, 5)), listOf(comfort), crisis = true)

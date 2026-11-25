@@ -42,6 +42,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.application.bibleapp.components.AiCrisisCard
+import com.application.bibleapp.components.AskHelperCard
 import com.application.bibleapp.components.FIND_A_HELPLINE_URL
 import com.application.bibleapp.components.SearchBar
 import com.application.bibleapp.utils.rememberExternalLinks
@@ -82,6 +83,8 @@ import com.application.bibleapp.viewmodel.SearchUiState
 fun SearchView(
     bibleViewModel: BibleViewModel,
     modifier: Modifier = Modifier,
+    /** Opens Ask with these words in the field, unsent (#401); null where the Bible Helper is off. */
+    onAskHelper: ((String) -> Unit)? = null,
     onVerseClicked: (bookId: Int, chapter: Int, verse: Int) -> Unit
 ) {
 
@@ -145,7 +148,8 @@ fun SearchView(
                         keyboardController?.hide()
                         bibleViewModel.onSearchSubmit()
                     },
-                    onFindHelpline = { links.openPage(FIND_A_HELPLINE_URL) }
+                    onFindHelpline = { links.openPage(FIND_A_HELPLINE_URL) },
+                    onAsk = onAskHelper?.let { ask -> { ask(searchState.query) } }
                 )
             )
             searchState.results.isNotEmpty() ->
@@ -294,7 +298,9 @@ private class MeaningSection(
     val publisherUrl: (String) -> String?,
     val onOpenLink: (String) -> Unit,
     val onSearch: () -> Unit,
-    val onFindHelpline: () -> Unit
+    val onFindHelpline: () -> Unit,
+    /** The Bible Helper card's tap (#401); null where the Bible Helper is off. */
+    val onAsk: (() -> Unit)? = null
 )
 
 /** The word search's paging and notes (#382, #378), and [onLoadMore] for its next results. */
@@ -342,6 +348,16 @@ private fun SearchResultsList(
                 listState.scrollToItem(0)
             }
         }
+        // The Bible Helper card (#401) arrives the same way, but it's an offer, not a warning:
+        // brought into view only if the person hasn't started scrolling the word results.
+        val offerAsk = meaning?.onAsk != null && meaning.state.suggestAsk && !crisis
+        var askShown by rememberSaveable { mutableStateOf(false) }
+        LaunchedEffect(offerAsk) {
+            if (offerAsk && !askShown) {
+                askShown = true
+                if (listState.firstVisibleItemIndex == 0) listState.scrollToItem(0)
+            }
+        }
 
         LazyColumn(
             state = listState,
@@ -358,6 +374,16 @@ private fun SearchResultsList(
                     )
                 }
                 keyPassagesSection(meaning, bookNames, onVerseClicked)
+            }
+            if (offerAsk) {
+                // A search about someone's life: the Bible Helper answers it better than a list of
+                // verses that sound like it. The results stay below (#401).
+                item(key = "ask_card") {
+                    AskHelperCard(
+                        onAsk = meaning!!.onAsk!!,
+                        modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.md)
+                    )
+                }
             }
             if (meaning != null) {
                 item(key = "words_header") { SectionHeader(stringResource(R.string.search_section_words)) }

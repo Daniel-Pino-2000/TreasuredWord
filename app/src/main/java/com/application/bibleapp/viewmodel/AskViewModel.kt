@@ -212,6 +212,19 @@ class AskViewModel(
     }
 
     /**
+     * Search's "Ask about this" (#401): a new conversation with [question], the words searched,
+     * in the field to read or edit, not sent. Ignored while a question is waiting for its answer.
+     * Unlike [startWithPassage]'s default question it's the person's own words, so leaving the
+     * conversation keeps it as their draft.
+     */
+    fun startWithQuestion(question: String) {
+        if (_state.value.isSending) return
+        _state.value = AskUiState(remainingToday = _state.value.remainingToday, limit = _state.value.limit)
+        passageQuestion = null
+        _draft.value = question.trim().take(MAX_QUESTION_CHARS)
+    }
+
+    /**
      * Leaving a conversation leaves its passage behind, so "What does this passage mean?" would
      * no longer say which one (#212): cleared if still untouched. A draft the person wrote stays.
      */
