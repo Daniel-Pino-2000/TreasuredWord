@@ -82,6 +82,24 @@ local pgvector Postgres 18: **27 of 43, MRR 0.47**, the same as phase 1's in-mem
 (27 of 43, 0.46), so Postgres's full-text ranking does as well as the BM25 measured here. The
 median query took 48 ms with no vector index.
 
+**The keywords list is BM25 in SQL since #399 (2026-11-25).** The held-out set
+(`docs/semantic_search_eval_heldout.md`) showed Postgres's `ts_rank` wasn't as good as this
+runner's BM25 after all: on everyday sentences it found 4 of 40 where BM25 found 9, because it
+doesn't weigh rare words above common ones or allow for a verse's length. Its own options
+(`ts_rank` normalization 1, 2 or 8, `ts_rank_cd`) moved the results by a query or two either way.
+The endpoint now scores BM25 itself (k1 = 1.2, b = 0.75, as `KeywordIndex`): each word's verse
+count comes from the full-text index, its count in a verse from the stored positions. Measured
+locally with Nave's on (#394):
+
+| Keywords list | Held-out (132) | of them LIFE | Main (43) | Median time |
+|---|---|---|---|---|
+| `ts_rank` (before) | 71 | 7 | 27 | 172 ms |
+| **BM25 in SQL** | **76** | **10** | **28** | **125 ms** |
+| In-memory BM25 (this runner) | 77 | 11 | 27 | – |
+
+The word counts and the translation's size are computed once per query (`MATERIALIZED`): without
+that, Postgres re-ran the count for every matching row, and a long KJV phrase took 17 s.
+
 ## How a query is written
 
 The runner reads every `###` heading after "## Queries" as one query:
