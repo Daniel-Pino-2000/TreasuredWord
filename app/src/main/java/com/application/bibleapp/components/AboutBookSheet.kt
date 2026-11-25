@@ -43,11 +43,12 @@ import kotlinx.coroutines.launch
 
 private val LeadingWidth = 48.dp
 private val LeadingHeight = 30.dp
+private val LogoHeight = 20.dp
 
 /**
  * "About <book>", from the reader's info icon: GotQuestions.org's summary of the book (#48) and
- * BibleProject's overview videos (#55). Each row names its source, since all of it is someone
- * else's content and opens outside the app. The sheet stays open behind the browser or YouTube,
+ * BibleProject's overview videos (#55). Each section shows its source's logo (#405), since all
+ * of it is someone else's content and opens outside the app. The sheet stays open behind the browser or YouTube,
  * so Back lands here, ready for part 2.
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -106,10 +107,15 @@ private fun AboutBookContent(bookId: Int, bookName: (Int) -> String, spanish: Bo
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.padding(bottom = Spacing.xs)
         )
+        // Each section is headed by what you do there and whose it is (#405), so its rows only
+        // say which item they are.
+        val sheetColor = MaterialTheme.colorScheme.surfaceContainerLow
         summaryUrl?.let { url ->
+            SectionHeader(stringResource(R.string.about_book_read)) {
+                GotQuestionsLogo(background = sheetColor, height = LogoHeight)
+            }
             ResourceRow(
-                title = stringResource(R.string.about_book_summary),
-                source = stringResource(R.string.source_gotquestions),
+                title = stringResource(R.string.about_book_summary_of, bookName(bookId)),
                 onClick = { links.openPage(url) }
             ) {
                 // Same width as the video placeholders, so every row's text lines up.
@@ -123,12 +129,18 @@ private fun AboutBookContent(bookId: Int, bookName: (Int) -> String, spanish: Bo
             }
         }
         if (videos.isNotEmpty()) {
-            Text(
-                text = stringResource(R.string.about_book_videos),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = Spacing.md)
-            )
+            SectionHeader(stringResource(R.string.about_book_watch), Modifier.padding(top = Spacing.md)) {
+                if (spanish) {
+                    // Proyecto Biblia's own logo isn't offered for download: name it instead.
+                    Text(
+                        text = stringResource(R.string.source_bibleproject),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                } else {
+                    BibleProjectLogo(background = sheetColor, height = LogoHeight)
+                }
+            }
             videos.forEachIndexed { index, videoId ->
                 val covered = BookResources.booksCovered(videoId, bookId, spanish)
                 val title = when {
@@ -140,7 +152,6 @@ private fun AboutBookContent(bookId: Int, bookName: (Int) -> String, spanish: Bo
                 }
                 ResourceRow(
                     title = title,
-                    source = stringResource(R.string.source_bibleproject),
                     onClick = { links.openYouTubeVideo(videoId) }
                 ) {
                     VideoPlaceholder()
@@ -160,11 +171,24 @@ private fun AboutBookContent(bookId: Int, bookName: (Int) -> String, spanish: Bo
     }
 }
 
-/** One outside resource: [leading] art, what it is, whose it is, and the opens-outside icon. */
+/** A section's [label] ("Read", "Watch") on the left and whose content it is, [source], on the right. */
+@Composable
+private fun SectionHeader(label: String, modifier: Modifier = Modifier, source: @Composable () -> Unit) {
+    Row(modifier = modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f)
+        )
+        source()
+    }
+}
+
+/** One outside resource: [leading] art, what it is, and the opens-outside icon. */
 @Composable
 private fun ResourceRow(
     title: String,
-    source: String,
     onClick: () -> Unit,
     leading: @Composable () -> Unit
 ) {
@@ -180,18 +204,12 @@ private fun ResourceRow(
             horizontalArrangement = Arrangement.spacedBy(Spacing.md)
         ) {
             leading()
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = source,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f)
+            )
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.OpenInNew,
                 contentDescription = stringResource(R.string.external_link_opens_outside),

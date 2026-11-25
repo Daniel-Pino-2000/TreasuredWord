@@ -161,7 +161,9 @@
     <string name="audio_speed_value">%1$s×</string>
     <string name="about_book_title">À propos de %1$s</string>
     <string name="about_book_summary">Résumé du livre</string>
-    <string name="about_book_videos">Vidéos de présentation</string>
+    <string name="about_book_read">Lire</string>
+    <string name="about_book_watch">Regarder</string>
+    <string name="about_book_summary_of">Résumé de %1$s</string>
     <string name="about_book_video">Vidéo de présentation</string>
     <string name="about_book_video_part">Vidéo de présentation, partie %1$d sur %2$d</string>
     <string name="about_book_video_covers">Vidéo de présentation de %1$s–%2$s</string>

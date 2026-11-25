@@ -160,7 +160,9 @@
     <string name="audio_speed_value">%1$s×</string>
     <string name="about_book_title">Über %1$s</string>
     <string name="about_book_summary">Zusammenfassung des Buches</string>
-    <string name="about_book_videos">Überblicksvideos</string>
+    <string name="about_book_read">Lesen</string>
+    <string name="about_book_watch">Ansehen</string>
+    <string name="about_book_summary_of">Zusammenfassung von %1$s</string>
     <string name="about_book_video">Überblicksvideo</string>
     <string name="about_book_video_part">Überblicksvideo, Teil %1$d von %2$d</string>
     <string name="about_book_video_covers">Überblicksvideo zu %1$s–%2$s</string>

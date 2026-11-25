@@ -161,7 +161,9 @@
     <string name="audio_speed_value">%1$s×</string>
     <string name="about_book_title">%1$s 소개</string>
     <string name="about_book_summary">책 요약</string>
-    <string name="about_book_videos">개요 영상</string>
+    <string name="about_book_read">읽기</string>
+    <string name="about_book_watch">보기</string>
+    <string name="about_book_summary_of">%1$s 요약</string>
     <string name="about_book_video">개요 영상</string>
     <string name="about_book_video_part">개요 영상, %2$d부 중 %1$d부</string>
     <string name="about_book_video_covers">%1$s–%2$s 개요 영상</string>
