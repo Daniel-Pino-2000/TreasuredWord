@@ -180,6 +180,25 @@ tasks.register<JavaExec>("loadVerseSearch") {
     )
 }
 
+// Search by meaning's topical index (#394, migration V11): Nave's Topical Bible's entries and their
+// verses into topic_entries and topic_entry_verses of DATABASE_URL (default: the local Docker
+// Postgres), replacing what's there. Vectors come from the evaluation's cache (0 neurons after
+// `semanticSearchEval -Pnaves=`). -Pnaves=<NavesTopicalDictionary.csv> is required. Never part of
+// `test`, `check` or CI: against Neon it writes production data.
+tasks.register<JavaExec>("loadTopicSearch") {
+    group = "application"
+    description = "Loads Nave's Topical Bible into the search-by-meaning topical index (#394)."
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("com.application.bibleapp.server.search.TopicSearchLoaderKt")
+    // ~22,000 cached vectors of 1,024 floats are ~90 MB in memory.
+    maxHeapSize = "1g"
+    args(
+        providers.gradleProperty("naves").map { rootProject.file(it).path }.getOrElse(""),
+        layout.buildDirectory.dir("semantic-search-eval/cache").get().asFile.path,
+        providers.gradleProperty("embeddingModel").getOrElse("@cf/baai/bge-m3")
+    )
+}
+
 dependencies {
     semanticSearchEvalRuntime(libs.sqlite.jdbc)
     // The tests read the real bible_default.db to check every expected verse exists (#287).

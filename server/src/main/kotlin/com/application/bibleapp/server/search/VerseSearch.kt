@@ -26,6 +26,11 @@ data class SearchFound(val verses: List<VerseHit>, val keyPassages: List<String>
  * BSB text, fused by reciprocal rank (k = 60). The vectors find verses *about* the idea in other
  * words; the keywords lift the verse with the exact word that the vectors may rank 50th.
  *
+ * A third list comes from Nave's Topical Bible (#394, migration V11): when the query is close to
+ * one of its entries ("Envy", "Jonah: Swallowed by a great fish"), that entry's verses, the ones
+ * Nave's says teach the topic, join the fusion. The vectors find verses that *sound like* a query;
+ * this list brings the ones that are *about* it. While V11's tables are empty it adds nothing.
+ *
  * One embedding call per search (~0.01 neurons), then one query. Only references come back; the
  * app shows each verse in the reader's own translation. The query is never logged
  * ([WorkersAiEmbeddingProvider] logs only status, time and neurons).
@@ -43,7 +48,9 @@ class VerseSearch(
     private val translation: String = TRANSLATION,
     private val clock: Clock = Clock.systemUTC(),
     private val dailyCap: Int = DAILY_CAP,
-    private val keyPassages: KeyPassages? = null
+    private val keyPassages: KeyPassages? = null,
+    /** topic_entries.source for the topical list (#394); tests use rows of their own. */
+    private val topicSource: String = TOPIC_SOURCE
 ) {
     private val day = AtomicReference(LocalDate.now(clock))
     private val searchesToday = AtomicInteger(0)
@@ -53,7 +60,7 @@ class VerseSearch(
         val vector = embedQuery(query)
         val started = System.nanoTime()
         val hits = newSuspendedTransaction(Dispatchers.IO) {
-            rankVerses(TransactionManager.current().connection.connection as Connection, provider.model, translation, vector, query, limit)
+            rankVerses(TransactionManager.current().connection.connection as Connection, provider.model, translation, vector, query, limit, topicSource)
         }
         log.info("Search: ${hits.size} results in ${(System.nanoTime() - started) / 1_000_000} ms")
         // Not logged, not even as a count: which guide matched would hint at what was asked.
@@ -98,17 +105,37 @@ class VerseSearch(
         const val RESULTS = 20
         private const val CANDIDATES = 200
         private const val RRF_K = 60
+        /** Which topical index the third list reads (topic_entries.source). */
+        const val TOPIC_SOURCE = "naves"
+        /**
+         * A Nave's entry joins at cosine similarity 0.65 or more (pgvector distance 0.35 or less),
+         * up to [TOPIC_ENTRIES] of them. The held-out set measured 0.55 and 0.60 a query or two
+         * higher, but their weak matches put off-topic verses on the page ("I hate the way I look"
+         * matched "Spitting: In the face"); 0.65 keeps nearly all the gain without them (#394).
+         */
+        private const val TOPIC_MAX_DISTANCE = 0.35
+        private const val TOPIC_ENTRIES = 3
         /** ~0.01 neurons each, so 20,000 searches are ~200 of the 10,000 a day. */
         const val DAILY_CAP = 20_000
 
         /**
-         * Both rankings in one round trip (Neon is a few hundred ms away). Each half keeps its best
-         * [CANDIDATES]; a verse past that in both lists would score under 2/(60 + 200), well below the
-         * 20th result. The keywords half ORs the query's words (stemmed by Postgres's English
-         * dictionary, common words dropped), so a long question still matches verses with some of its
-         * words; a query in another language usually has none and leaves the ranking to the vectors.
+         * All three rankings in one round trip (Neon is a few hundred ms away). Each list keeps its
+         * best [CANDIDATES]; a verse past that in every list would score under 3/(60 + 200), well
+         * below the 20th result. The keywords list ORs the query's words (stemmed by Postgres's
+         * English dictionary, common words dropped), so a long question still matches verses with
+         * some of its words; a query in another language usually has none and leaves the ranking to
+         * the vectors. The topical list ranks the matching entries' verses by their own closeness to
+         * the query, as the evaluation measured (`NAVES_PREFIX` variants in `search/eval`).
          */
-        fun rankVerses(connection: Connection, model: String, translation: String, vector: FloatArray, query: String, limit: Int): List<VerseHit> =
+        fun rankVerses(
+            connection: Connection,
+            model: String,
+            translation: String,
+            vector: FloatArray,
+            query: String,
+            limit: Int,
+            topicSource: String = TOPIC_SOURCE
+        ): List<VerseHit> =
             connection.prepareStatement(
                 """
                 WITH by_meaning AS (
@@ -131,20 +158,52 @@ class VerseSearch(
                         WHERE w.query IS NOT NULL AND s.translation = ? AND s.words @@ w.query
                         ORDER BY relevance DESC, s.book, s.chapter, s.verse LIMIT $CANDIDATES
                     ) matching
+                ),
+                topics AS (
+                    SELECT id FROM (
+                        SELECT id, embedding <=> ?::halfvec AS distance
+                        FROM topic_entries WHERE source = ? AND model = ?
+                        ORDER BY distance LIMIT $TOPIC_ENTRIES
+                    ) nearest
+                    WHERE distance <= $TOPIC_MAX_DISTANCE
+                ),
+                by_topic AS (
+                    SELECT book, chapter, verse, row_number() OVER (ORDER BY distance, book, chapter, verse) AS rank
+                    FROM (
+                        SELECT e.book, e.chapter, e.verse, e.embedding <=> ?::halfvec AS distance
+                        FROM (
+                            SELECT DISTINCT v.book, v.chapter, v.verse
+                            FROM topic_entry_verses v JOIN topics t ON t.id = v.id
+                            WHERE v.source = ?
+                        ) named
+                        JOIN verse_embeddings e
+                          ON e.model = ? AND e.translation = ?
+                         AND e.book = named.book AND e.chapter = named.chapter AND e.verse = named.verse
+                        ORDER BY distance, e.book, e.chapter, e.verse LIMIT $CANDIDATES
+                    ) closest
                 )
                 SELECT book, chapter, verse, SUM(1.0 / ($RRF_K + rank)) AS score
-                FROM (SELECT * FROM by_meaning UNION ALL SELECT * FROM by_words) ranked
+                FROM (SELECT * FROM by_meaning UNION ALL SELECT * FROM by_words UNION ALL SELECT * FROM by_topic) ranked
                 GROUP BY book, chapter, verse
                 ORDER BY score DESC, book, chapter, verse
                 LIMIT ?
                 """.trimIndent()
             ).use { statement ->
-                statement.setString(1, VerseSearchLoader.vectorLiteral(vector))
+                val literal = VerseSearchLoader.vectorLiteral(vector)
+                statement.setString(1, literal)
                 statement.setString(2, model)
                 statement.setString(3, translation)
                 statement.setString(4, query)
                 statement.setString(5, translation)
-                statement.setInt(6, limit)
+                // topics, then by_topic: its distance comes before its inner source filter.
+                statement.setString(6, literal)
+                statement.setString(7, topicSource)
+                statement.setString(8, model)
+                statement.setString(9, literal)
+                statement.setString(10, topicSource)
+                statement.setString(11, model)
+                statement.setString(12, translation)
+                statement.setInt(13, limit)
                 statement.executeQuery().use { rows ->
                     buildList {
                         while (rows.next()) add(VerseHit(rows.getInt(1), rows.getInt(2), rows.getInt(3), rows.getDouble(4)))

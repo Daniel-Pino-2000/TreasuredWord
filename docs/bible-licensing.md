@@ -15,6 +15,14 @@ Last reviewed: 2026-11-21.
 | [bible.helloao.org](https://bible.helloao.org) | 1,500+ public-domain and openly licensed translations (RV1909, BSB, WEB…) | Each translation's own, shown in the reader's credit (#98) | Downloaded whole |
 | [YouVersion Platform](https://developers.youversion.com) | **LBLA, NBLA, NASB 2020, NASB 1995, AMP** (Lockman) | Lockman Fast-track license, accepted 2026-11-21 | Each chapter is fetched the first time it's opened, then kept on the phone |
 
+**Search by meaning's topical index** (#394) isn't Bible text: it's which verses Nave's Topical
+Bible lists for each topic, used only on the server to rank search results (the app never shows it,
+and only references leave the server). It comes from `NavesTopicalDictionary.csv` in
+[BibleData](https://github.com/BradyStephenson/bible-data) by Brady Stephenson, licensed
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), made from Orville J. Nave's public-domain
+*Nave's Topical Bible* (1896). The server keeps its entry labels and references, with whole
+chapters expanded to their verses. It isn't copied into this repo.
+
 The list of YouVersion versions is `app/src/main/java/com/application/bibleapp/data/model/YouVersionBibles.kt`.
 A version may be added there only after its publisher's license is accepted in the portal and
 recorded below. A YouVersion version taken off that list is deleted from phones at startup

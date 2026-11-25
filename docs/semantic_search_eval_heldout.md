@@ -56,6 +56,38 @@ of it counts); **LANG**, the same kinds in the app's nine other languages.
 - On the main set (written with the guides), the same search scores 27 of 43 alone and 42 of 43
   with Key passages: the guides carry it.
 
+## Second run (2026-11-22): Nave's Topical Bible as a topical index (#394)
+
+`-Pnaves=<NavesTopicalDictionary.csv>`: Nave's 21,951 entries ("Envy", "Envy, instances of: Cain,
+of Abel"), each with the verses it lists, embedded once (~270 neurons, cached). The verses of the
+3 entries closest to the query, if they score at least the threshold, join the fusion as a third
+list, ranked by their own closeness to the query.
+
+| Ranking (in memory) | Main set (43) alone | Held-out alone | Held-out with Key passages |
+|---|---|---|---|
+| Today: vectors + keywords | 27 | 65 | 74 (56%) |
+| + Nave's ≥ 0.55 | 28 | 81 | 87 |
+| + Nave's ≥ 0.60 | 28 | 80 | 86 |
+| **+ Nave's ≥ 0.65 (built)** | **27** | **77** | **84 (64%)** |
+| + Nave's ≥ 0.70 | 27 | 73 | 81 |
+
+- **It helps topics and stories most:** at 0.65 with Key passages, NEW 27 → 32, STORY 20 → 24,
+  LIFE 16 → 17, LANG 11 → 11 (search alone 8 → 10; 14 with Key passages at 0.55, where its weak
+  matches come in too). No main-set query is lost.
+- **Why 0.65, not 0.55:** the lower thresholds score one to three queries more, but their weak
+  matches put off-topic verses on the page ("I hate the way I look" matched "Spitting: In the
+  face", "perdí mi trabajo" matched "Deceit: Work"). At 0.65 those are gone. One strong wrong match
+  remains: "I'm angry at God" matches "Wicked (people): God is angry with" (0.81), on a page that
+  was already about God's anger.
+- **Counting that list twice, or putting its best 5 first, scored lower** than one list in the
+  fusion (73–82 with Key passages).
+- **Everyday sentences stay the weak spot** (17 of 40): Nave's entries are topics, and a sentence
+  about a life situation rarely sits close to one. Topic guides for them are #397.
+- **Through the endpoint's SQL** (`semanticSearchEvalDb`, local Postgres, 2026-11-25): 60 → 71 of
+  132 alone, the same +11 as in memory. Its starting point is lower than in memory (60 vs 65)
+  because Postgres's full-text ranking does worse than this runner's BM25 on everyday sentences
+  (LIFE 4 vs 9), a gap that was there before Nave's.
+
 ## Queries
 
 ## Everyday sentences

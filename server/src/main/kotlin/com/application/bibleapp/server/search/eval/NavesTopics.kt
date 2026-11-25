@@ -20,7 +20,19 @@ data class TopicPassage(val book: Int, val chapter: Int, val firstVerse: Int?, v
  * One entry line of a topic: [text] is what a query is matched against ("Envy" for the topic's
  * general verses, "Envy, instances of: Cain, of Abel" for a sub-entry), [passages] its verses.
  */
-data class TopicEntry(val subject: String, val text: String, val passages: List<TopicPassage>)
+data class TopicEntry(val subject: String, val text: String, val passages: List<TopicPassage>) {
+    /**
+     * The verses this entry names, in order and once each, among [chapters] (a translation's
+     * verses by book and chapter): a whole chapter is all of its verses, and a verse the
+     * translation doesn't have (the BSB leaves out 16) is dropped.
+     */
+    fun verses(chapters: Map<Pair<Int, Int>, List<VerseRef>>): List<VerseRef> =
+        passages.flatMap { p ->
+            val chapter = chapters[p.book to p.chapter].orEmpty()
+            if (p.firstVerse == null) chapter
+            else chapter.filter { it.verse in p.firstVerse..(p.lastVerse ?: p.firstVerse) }
+        }.distinct()
+}
 
 object NavesTopics {
 
