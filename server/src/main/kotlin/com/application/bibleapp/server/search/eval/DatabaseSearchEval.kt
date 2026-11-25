@@ -1,5 +1,7 @@
 package com.application.bibleapp.server.search.eval
 
+import com.application.bibleapp.server.ai.TopicRouter
+import com.application.bibleapp.server.search.KeyPassages
 import com.application.bibleapp.server.search.VerseSearch
 import com.application.bibleapp.server.search.describeDatabase
 import java.io.File
@@ -30,16 +32,33 @@ fun main(args: Array<String>) {
     val password = System.getenv("DATABASE_PASSWORD") ?: "postgres"
     println("${queries.size} queries against ${describeDatabase(jdbcUrl)}, $model / ${VerseSearch.TRANSLATION}")
 
+    // What the Search screen shows besides the ranking: Key passages first (#320), and the Bible
+    // Helper card (#401). Both from the same query vector, as the endpoint does.
+    val keyPassages = KeyPassages(TopicRouter.fromResources(model))
     DriverManager.getConnection(jdbcUrl, user, password).use { connection ->
         connection.isReadOnly = true
         val millis = mutableListOf<Long>()
+        val screen = mutableListOf<Pair<SearchEvalQuery, Pair<Boolean, Boolean>>>()
         val results = queries.map { query ->
+            val vector = cached.getValue(query.query)
             val started = System.nanoTime()
-            val hits = VerseSearch.rankVerses(connection, model, VerseSearch.TRANSLATION, cached.getValue(query.query), query.query, TOP_K)
+            val ranked = VerseSearch.rank(connection, model, VerseSearch.TRANSLATION, vector, query.query, TOP_K)
             millis += (System.nanoTime() - started) / 1_000_000
-            val rank = hits.indexOfFirst { VerseRef(it.book, it.chapter, it.verse) in query.expected }.takeIf { it >= 0 }?.plus(1)
+            val refs = ranked.hits.map { VerseRef(it.book, it.chapter, it.verse) }
+            val rank = refs.indexOfFirst { it in query.expected }.takeIf { it >= 0 }?.plus(1)
+            val match = keyPassages.match(vector)
+            val onScreen = match.passages.any { p -> query.expected.any { passageCovers(p, it) } } ||
+                refs.take((TOP_K - match.passages.size).coerceAtLeast(0)).any { it in query.expected }
+            screen += query to (onScreen to VerseSearch.suggestsAsk(match, ranked.closestTopic))
             query to rank
         }
+        val shown = screen.count { it.second.first }
+        println("With Key passages (what Search shows): $shown of ${screen.size}")
+        screen.groupBy { it.first.group }.forEach { (group, rows) ->
+            println("  $group: ${rows.count { it.second.first }} of ${rows.size}, Bible Helper card ${rows.count { it.second.second }}")
+        }
+        val helped = screen.count { it.second.first || it.second.second }
+        println("A right verse on screen or the Bible Helper offered: $helped of ${screen.size}")
         val hits = results.count { it.second != null }
         val mrr = results.sumOf { (_, rank) -> rank?.let { 1.0 / it } ?: 0.0 } / results.size
         println("Hits in the top $TOP_K: $hits of ${results.size}; mean reciprocal rank %.2f".format(mrr))

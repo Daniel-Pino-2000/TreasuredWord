@@ -85,8 +85,7 @@ class VerseSearch(
      * answers well too). Never with the crisis card, which comes first and says more; never without
      * both sides to compare.
      */
-    private fun suggestAsk(match: KeyPassages.Match, closestTopic: Double?): Boolean =
-        !match.crisis && match.closestAsk != null && closestTopic != null && match.closestAsk - closestTopic > ASK_MARGIN
+    private fun suggestAsk(match: KeyPassages.Match, closestTopic: Double?): Boolean = suggestsAsk(match, closestTopic)
 
     /** Key passages never cost the search itself: if matching fails, the verses still come back. */
     private fun keyPassagesFor(vector: FloatArray): KeyPassages.Match = try {
@@ -141,6 +140,18 @@ class VerseSearch(
          * ("Jesus turns water into wine"); at +0.05, only 24 of 40.
          */
         const val ASK_MARGIN = 0.0
+
+        /** The Bible Helper card's rule (#401), shared with `semanticSearchEvalDb`'s end-to-end score. */
+        fun suggestsAsk(match: KeyPassages.Match, closestTopic: Double?): Boolean =
+            !match.crisis && match.closestAsk != null && closestTopic != null && match.closestAsk - closestTopic > ASK_MARGIN
+        /**
+         * The keywords list's BM25 (#399), the ranking the evaluation chose it with (`KeywordIndex`):
+         * a rare word counts for more than a common one, and a long verse doesn't win just by having
+         * more words. Postgres's own `ts_rank` does neither, and found 4 everyday sentences of 40
+         * where BM25 found 9.
+         */
+        private const val BM25_K1 = 1.2
+        private const val BM25_B = 0.75
         /** ~0.01 neurons each, so 20,000 searches are ~200 of the 10,000 a day. */
         const val DAILY_CAP = 20_000
 
@@ -150,7 +161,9 @@ class VerseSearch(
          * below the 20th result. The keywords list ORs the query's words (stemmed by Postgres's
          * English dictionary, common words dropped), so a long question still matches verses with
          * some of its words; a query in another language usually has none and leaves the ranking to
-         * the vectors. The topical list ranks the matching entries' verses by their own closeness to
+         * the vectors. It orders them by BM25 ([BM25_K1], [BM25_B]; #399), with each word's verse
+         * count and the translation's size computed once per query (MATERIALIZED: inlined, Postgres
+         * re-ran the count for every matching row, 17 s for a long KJV phrase). The topical list ranks the matching entries' verses by their own closeness to
          * the query, as the evaluation measured (`NAVES_PREFIX` variants in `search/eval`).
          */
         fun rankVerses(
@@ -186,16 +199,39 @@ class VerseSearch(
                         ORDER BY distance LIMIT $CANDIDATES
                     ) nearest
                 ),
+                query_words AS (
+                    SELECT DISTINCT word FROM unnest(tsvector_to_array(to_tsvector('english', ?))) AS word
+                ),
                 words AS (
-                    SELECT to_tsquery('simple', string_agg(quote_literal(word), ' | ')) AS query
-                    FROM unnest(tsvector_to_array(to_tsvector('english', ?))) AS word
+                    SELECT to_tsquery('simple', string_agg(quote_literal(word), ' | ')) AS query FROM query_words
+                ),
+                stats AS MATERIALIZED (
+                    SELECT count(*)::float8 AS verses, avg(length(words))::float8 AS average_length
+                    FROM search_verses WHERE translation = ?
+                ),
+                word_counts AS MATERIALIZED (
+                    SELECT q.word, (
+                        SELECT count(*) FROM search_verses s
+                        WHERE s.translation = ? AND s.words @@ to_tsquery('simple', quote_literal(q.word))
+                    )::float8 AS verses
+                    FROM query_words q
                 ),
                 by_words AS (
                     SELECT book, chapter, verse, row_number() OVER (ORDER BY relevance DESC, book, chapter, verse) AS rank
                     FROM (
-                        SELECT s.book, s.chapter, s.verse, ts_rank(s.words, w.query) AS relevance
-                        FROM search_verses s, words w
+                        SELECT s.book, s.chapter, s.verse,
+                               SUM(
+                                   ln(1 + (st.verses - c.verses + 0.5) / (c.verses + 0.5))
+                                   * cardinality(t.positions) * ($BM25_K1 + 1)
+                                   / (cardinality(t.positions) + $BM25_K1 * (1 - $BM25_B + $BM25_B * length(s.words) / st.average_length))
+                               ) AS relevance
+                        FROM search_verses s
+                        CROSS JOIN words w
+                        CROSS JOIN stats st
+                        CROSS JOIN LATERAL unnest(s.words) AS t(lexeme, positions, weights)
+                        JOIN word_counts c ON c.word = t.lexeme
                         WHERE w.query IS NOT NULL AND s.translation = ? AND s.words @@ w.query
+                        GROUP BY s.book, s.chapter, s.verse
                         ORDER BY relevance DESC, s.book, s.chapter, s.verse LIMIT $CANDIDATES
                     ) matching
                 ),
@@ -235,16 +271,19 @@ class VerseSearch(
                 statement.setString(2, model)
                 statement.setString(3, translation)
                 statement.setString(4, query)
+                // stats, word_counts, by_words
                 statement.setString(5, translation)
+                statement.setString(6, translation)
+                statement.setString(7, translation)
                 // topics, then by_topic: its distance comes before its inner source filter.
-                statement.setString(6, literal)
-                statement.setString(7, topicSource)
-                statement.setString(8, model)
-                statement.setString(9, literal)
-                statement.setString(10, topicSource)
-                statement.setString(11, model)
-                statement.setString(12, translation)
-                statement.setInt(13, limit)
+                statement.setString(8, literal)
+                statement.setString(9, topicSource)
+                statement.setString(10, model)
+                statement.setString(11, literal)
+                statement.setString(12, topicSource)
+                statement.setString(13, model)
+                statement.setString(14, translation)
+                statement.setInt(15, limit)
                 statement.executeQuery().use { rows ->
                     var topicDistance: Double? = null
                     val hits = buildList {
