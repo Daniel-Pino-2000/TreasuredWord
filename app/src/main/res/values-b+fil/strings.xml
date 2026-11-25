@@ -162,7 +162,9 @@
     <string name="audio_speed_value">%1$s×</string>
     <string name="about_book_title">Tungkol sa %1$s</string>
     <string name="about_book_summary">Buod ng aklat</string>
-    <string name="about_book_videos">Mga video ng pangkalahatang-ideya</string>
+    <string name="about_book_read">Basahin</string>
+    <string name="about_book_watch">Panoorin</string>
+    <string name="about_book_summary_of">Buod ng %1$s</string>
     <string name="about_book_video">Video ng pangkalahatang-ideya</string>
     <string name="about_book_video_part">Video ng pangkalahatang-ideya, bahagi %1$d ng %2$d</string>
     <string name="about_book_video_covers">Video ng pangkalahatang-ideya para sa %1$s–%2$s</string>

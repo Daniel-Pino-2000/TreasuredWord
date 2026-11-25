@@ -176,7 +176,11 @@
     <string name="audio_speed_value">%1$s×</string>
     <string name="about_book_title">About %1$s</string>
     <string name="about_book_summary">Book summary</string>
-    <string name="about_book_videos">Overview videos</string>
+    <!-- Headings over the GotQuestions.org and BibleProject sections of the About sheet (#405) -->
+    <string name="about_book_read">Read</string>
+    <string name="about_book_watch">Watch</string>
+    <!-- %1$s is the book, e.g. "Genesis" -->
+    <string name="about_book_summary_of">Summary of %1$s</string>
     <string name="about_book_video">Overview video</string>
     <!-- %1$d is the part number, %2$d how many parts there are -->
     <string name="about_book_video_part">Overview video, part %1$d of %2$d</string>

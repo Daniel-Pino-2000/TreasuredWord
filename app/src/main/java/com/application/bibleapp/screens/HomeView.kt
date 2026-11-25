@@ -34,7 +34,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
-import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.ContentCopy
@@ -96,7 +95,9 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import coil3.compose.AsyncImage
 import com.application.bibleapp.R
+import com.application.bibleapp.components.BibleProjectLogo
 import com.application.bibleapp.components.FitOnOneLineText
+import com.application.bibleapp.components.GotQuestionsLogo
 import com.application.bibleapp.components.MissingVersionBanners
 import com.application.bibleapp.data.model.BibleBooks
 import com.application.bibleapp.data.model.BookResources
@@ -286,6 +287,7 @@ fun HomeView(
                 title = title,
                 more = if (compactHeight) emptyList() else more.map { (book, id) -> readerBookName(book) to id },
                 horizontal = compactHeight,
+                spanish = spanish,
                 onPlay = { externalLinks.openYouTubeVideo(it) },
                 onCreditClick = { externalLinks.openPage(BookResources.bibleProjectHome(spanish)) }
             )
@@ -688,6 +690,9 @@ private fun MemorizeTile(
     }
 }
 
+/** The source logos at the top of the "Go deeper" cards (#405). */
+private val HomeLogoHeight = 22.dp
+
 /**
  * BibleProject's overview of the book being read (#55, #365), with YouTube's own thumbnail and
  * the credit their terms ask for, then [more] of the next books' videos. [horizontal] puts the
@@ -699,6 +704,7 @@ private fun WatchCard(
     title: String,
     more: List<Pair<String, String>>,
     horizontal: Boolean,
+    spanish: Boolean,
     onPlay: (String) -> Unit,
     onCreditClick: () -> Unit
 ) {
@@ -709,11 +715,20 @@ private fun WatchCard(
     val playLabel = stringResource(R.string.home_watch_play, title)
     val heading: @Composable (Modifier) -> Unit = { textModifier ->
         Column(modifier = textModifier, verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-            Text(
-                text = stringResource(R.string.source_bibleproject),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary
-            )
+            if (spanish) {
+                // Proyecto Biblia's own logo isn't offered for download: name it instead (#405).
+                Text(
+                    text = stringResource(R.string.source_bibleproject),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            } else {
+                BibleProjectLogo(
+                    background = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    height = HomeLogoHeight,
+                    modifier = Modifier.padding(vertical = Spacing.xs)
+                )
+            }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = stringResource(R.string.home_watch_title, title),
@@ -884,34 +899,21 @@ private fun QuestionsCard(bookName: String, onSummaryClick: (() -> Unit)?, onBro
             modifier = Modifier.padding(Spacing.md),
             verticalArrangement = Arrangement.spacedBy(Spacing.sm)
         ) {
-            Text(
-                text = stringResource(R.string.source_gotquestions),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary
+            // Their logo names the card (#405); its speech bubbles stand in for the old "?" tile.
+            GotQuestionsLogo(
+                background = MaterialTheme.colorScheme.primaryContainer,
+                height = HomeLogoHeight,
+                modifier = Modifier.padding(vertical = Spacing.xs)
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .background(MaterialTheme.colorScheme.primary, MaterialTheme.shapes.medium),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        Icons.AutoMirrored.Outlined.HelpOutline,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onPrimary
-                    )
-                }
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = stringResource(R.string.home_questions_book_title, bookName),
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    Text(
-                        text = stringResource(R.string.home_questions_body),
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
+            Column {
+                Text(
+                    text = stringResource(R.string.home_questions_book_title, bookName),
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Text(
+                    text = stringResource(R.string.home_questions_body),
+                    style = MaterialTheme.typography.bodyMedium
+                )
             }
             // Side by side when both fit (landscape, tablets); otherwise one under the other, full
             // width, rather than a ragged wrap. 340 dp fits both labels in English at default size.

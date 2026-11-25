@@ -161,7 +161,9 @@
     <string name="audio_speed_value">%1$s×</string>
     <string name="about_book_title">Kuhusu %1$s</string>
     <string name="about_book_summary">Muhtasari wa kitabu</string>
-    <string name="about_book_videos">Video za muhtasari</string>
+    <string name="about_book_read">Soma</string>
+    <string name="about_book_watch">Tazama</string>
+    <string name="about_book_summary_of">Muhtasari wa %1$s</string>
     <string name="about_book_video">Video ya muhtasari</string>
     <string name="about_book_video_part">Video ya muhtasari, sehemu ya %1$d kati ya %2$d</string>
     <string name="about_book_video_covers">Video ya muhtasari wa %1$s–%2$s</string>

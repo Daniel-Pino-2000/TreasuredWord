@@ -161,7 +161,9 @@
     <string name="audio_speed_value">%1$s×</string>
     <string name="about_book_title">Tentang %1$s</string>
     <string name="about_book_summary">Ringkasan kitab</string>
-    <string name="about_book_videos">Video ikhtisar</string>
+    <string name="about_book_read">Baca</string>
+    <string name="about_book_watch">Tonton</string>
+    <string name="about_book_summary_of">Ringkasan %1$s</string>
     <string name="about_book_video">Video ikhtisar</string>
     <string name="about_book_video_part">Video ikhtisar, bagian %1$d dari %2$d</string>
     <string name="about_book_video_covers">Video ikhtisar untuk %1$s–%2$s</string>
