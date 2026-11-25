@@ -14,6 +14,7 @@ exclude:
   - api_contract.md
   - release.md
   - semantic_search_eval.md
+  - semantic_search_eval_heldout.md
   - UI_Integration_Roadmap.md
   - icon-source
   - play-store

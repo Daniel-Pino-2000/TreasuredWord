@@ -3,12 +3,12 @@ package com.application.bibleapp.server.ai.eval
 import com.application.bibleapp.server.ai.DevAiBudget
 import com.application.bibleapp.server.ai.TopicGuides
 import com.application.bibleapp.server.ai.TopicRouter
-import com.application.bibleapp.server.ai.UsfmBookCodes
 import com.application.bibleapp.server.search.EmbeddingKind
 import com.application.bibleapp.server.search.VerseSearch
 import com.application.bibleapp.server.search.WorkersAiEmbeddingProvider
 import com.application.bibleapp.server.search.eval.SearchEvalQueries
 import com.application.bibleapp.server.search.eval.VerseRef
+import com.application.bibleapp.server.search.eval.passageCovers
 import io.ktor.server.config.MapApplicationConfig
 import kotlinx.coroutines.runBlocking
 import java.io.File
@@ -63,15 +63,6 @@ private val thresholds = listOf(0.45, 0.50, 0.55, 0.60, 0.65, 0.70, 0.75)
 
 private class Item(val id: String, val text: String, val set: String, val expected: Set<VerseRef> = emptySet())
 
-/** The verses a guide passage covers; a whole chapter ("PSA 73") covers its chapter. */
-private fun covers(passage: String, verse: VerseRef): Boolean {
-    val match = Regex("""^([1-3]?[A-Z]{2,3}) (\d+)(?::(\d+)(?:-(\d+))?)?$""").matchEntire(passage) ?: return false
-    val book = UsfmBookCodes.codes.indexOf(match.groupValues[1]) + 1
-    if (book != verse.book || match.groupValues[2].toInt() != verse.chapter) return false
-    val first = match.groupValues[3].toIntOrNull() ?: return true
-    val last = match.groupValues[4].toIntOrNull() ?: first
-    return verse.verse in first..last
-}
 
 /**
  * `./gradlew :server:topicRoutingEval` (#319). Embeds every question and search query once
@@ -162,7 +153,7 @@ fun main(args: Array<String>) {
             for (item in searchItems) {
                 val passages = picker.pick(scored.getValue(item.id)).flatMap { it.guide.passages.map { p -> p.first } }
                 val searchHit = ranked.getValue(item.id).any { it in item.expected }
-                val guideHit = passages.any { passage -> item.expected.any { covers(passage, it) } }
+                val guideHit = passages.any { passage -> item.expected.any { passageCovers(passage, it) } }
                 val combinedHit = guideHit || ranked.getValue(item.id).take((10 - passages.size).coerceAtLeast(0)).any { it in item.expected }
                 if (searchHit) alone++
                 if (combinedHit) { withGuide++; byGroup.merge(item.id.substringBefore('-'), 1, Int::plus) }

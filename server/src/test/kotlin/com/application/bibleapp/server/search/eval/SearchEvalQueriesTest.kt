@@ -39,9 +39,29 @@ class SearchEvalQueriesTest {
     @Test
     fun everyExpectedVerseIsInTheKjv() {
         val verses = BibleText.readKjv(kjvFile).map { it.ref }.toSet()
-        val missing = SearchEvalQueries.parse(queriesFile.readText())
+        val missing = (SearchEvalQueries.parse(queriesFile.readText()) + SearchEvalQueries.parse(heldOutFile.readText()))
             .flatMap { query -> query.expected.filter { it !in verses }.map { "${query.id}: $it" } }
         assertEquals(emptyList(), missing)
+    }
+
+    private val heldOutFile = File("../docs/semantic_search_eval_heldout.md")
+
+    @Test
+    fun theHeldOutSetIsReadWholeAndSharesNoQueryWithTheMainSet() {
+        val markdown = heldOutFile.readText()
+        val queries = SearchEvalQueries.parse(markdown)
+
+        val lines = markdown.lines().map { it.trimEnd() }
+        assertEquals(lines.drop(lines.indexOf("## Queries")).count { it.startsWith("### ") }, queries.size)
+        assertTrue(queries.size >= 120, "about 130 queries (#393), not ${queries.size}")
+        assertEquals(setOf("LIFE", "NEW", "STORY", "LANG"), queries.map { it.group }.toSet())
+        val languages = queries.groupingBy { it.language }.eachCount()
+        for (language in listOf("de", "es", "fr", "pt-BR", "id", "fil", "sw", "ko", "zh-Hans")) {
+            assertTrue((languages[language] ?: 0) >= 3, "$language has ${languages[language]} queries")
+        }
+        // Held out means new wording: a query the main set already has would be counted twice.
+        val main = SearchEvalQueries.parse(queriesFile.readText()).map { it.query.lowercase() }.toSet()
+        assertEquals(emptyList(), queries.filter { it.query.lowercase() in main }.map { it.id })
     }
 
     @Test
