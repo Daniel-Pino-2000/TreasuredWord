@@ -238,6 +238,37 @@ queries through the endpoint's SQL there. It reads only and spends no neurons; i
 rate (27 of 43 locally) and the time per query, which decides whether the vectors need an HNSW
 index (#287, phase 3).
 
+## Search by meaning: the topical index (#394)
+
+Migration V11 creates `topic_entries` (Nave's Topical Bible's ~22,000 entries, one bge-m3 vector
+each) and `topic_entry_verses` (the verses each entry names). **While they're empty, search ranks
+exactly as before**, so the deploy that runs V11 changes nothing; loading them switches the
+topical list on, and emptying them switches it off again:
+
+```sql
+DELETE FROM topic_entry_verses WHERE source = 'naves'; DELETE FROM topic_entries WHERE source = 'naves';
+```
+
+**Filling them** (after the deploy that ran V11, and after the verse tables above): like
+`loadVerseSearch`, this writes to production, so only the developer runs it. It needs Nave's CSV
+and the entries' vectors, which `semanticSearchEval -Pnaves=` paid for once (~270 neurons) and
+cached as `server/build/semantic-search-eval/cache/bge-m3-naves.queries`; with that cache it spends
+**no neurons**. Both are backed up outside `build/` in `~/TreasuredWord-search-data`. The CSV is
+`NavesTopicalDictionary.csv` from https://github.com/BradyStephenson/bible-data (CC BY 4.0; the
+credit is in `docs/bible-licensing.md`). With the same three Neon variables set:
+
+```powershell
+./gradlew :server:loadTopicSearch --configure-on-demand "-Pnaves=$HOME\TreasuredWord-search-data\NavesTopicalDictionary.csv"
+./gradlew :server:semanticSearchEvalDb --configure-on-demand -PqueriesFile=docs/semantic_search_eval_heldout.md
+```
+
+The load replaces the whole index in one transaction (loading twice changes nothing) and prints
+the sizes: about 63 MB for the entries and 25 MB for their verses, which takes the database from
+~111 MB to ~200 MB of the free 1 GB (measured locally on 2026-11-25). The second command should
+print 71 of 132 for the held-out set, as it does locally (60 of 132 with the tables empty). Locally
+the topical list added ~70–120 ms a search (median 52 → 172 ms) with no vector index; if Neon is
+much slower, an HNSW index on `topic_entries.embedding` is the next step.
+
 ## Switching the Bible Helper off in an emergency (#131)
 
 If the Bible Helper starts giving harmful or badly wrong answers, or Cloudflare changes its free

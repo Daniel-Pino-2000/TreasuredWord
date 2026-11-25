@@ -776,7 +776,9 @@ Errors: `400 VALIDATION_ERROR` (with `fieldErrors`), `401 UNAUTHORIZED`, `429` w
 Finds verses *about* an idea, not only verses with its words (#287). The server turns the query
 into a vector with Cloudflare Workers AI (`@cf/baai/bge-m3`, the Bible Helper's account and free
 neurons, ~0.01 a search) and ranks the BSB's verses by that vector and by Postgres full-text search
-together (reciprocal rank fusion, k = 60), as `docs/semantic_search_eval.md` measured. Only
+together (reciprocal rank fusion, k = 60), as `docs/semantic_search_eval.md` measured. When the
+query is close to an entry of Nave's Topical Bible (#394), that entry's verses join the fusion as a
+third list; the response is the same either way. Only
 references come back: the app shows each verse in the reader's own translation. The query is
 never stored or logged.
 

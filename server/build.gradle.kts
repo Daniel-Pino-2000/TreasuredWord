@@ -141,7 +141,9 @@ tasks.register<JavaExec>("semanticSearchEval") {
         rootProject.file("app/src/main/assets/bible_default.db").path,
         providers.gradleProperty("embeddingModel").getOrElse("@cf/baai/bge-m3"),
         providers.gradleProperty("queries").getOrElse(""),
-        providers.gradleProperty("bible").map { rootProject.file(it).path }.getOrElse("")
+        providers.gradleProperty("bible").map { rootProject.file(it).path }.getOrElse(""),
+        // -Pnaves=<NavesTopicalDictionary.csv>: also try Nave's Topical Bible as a topical index (#394).
+        providers.gradleProperty("naves").map { rootProject.file(it).path }.getOrElse("")
     )
 }
 
@@ -175,6 +177,25 @@ tasks.register<JavaExec>("loadVerseSearch") {
         layout.buildDirectory.dir("semantic-search-eval/cache").get().asFile.path,
         providers.gradleProperty("embeddingModel").getOrElse("@cf/baai/bge-m3"),
         providers.gradleProperty("limit").getOrElse("")
+    )
+}
+
+// Search by meaning's topical index (#394, migration V11): Nave's Topical Bible's entries and their
+// verses into topic_entries and topic_entry_verses of DATABASE_URL (default: the local Docker
+// Postgres), replacing what's there. Vectors come from the evaluation's cache (0 neurons after
+// `semanticSearchEval -Pnaves=`). -Pnaves=<NavesTopicalDictionary.csv> is required. Never part of
+// `test`, `check` or CI: against Neon it writes production data.
+tasks.register<JavaExec>("loadTopicSearch") {
+    group = "application"
+    description = "Loads Nave's Topical Bible into the search-by-meaning topical index (#394)."
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("com.application.bibleapp.server.search.TopicSearchLoaderKt")
+    // ~22,000 cached vectors of 1,024 floats are ~90 MB in memory.
+    maxHeapSize = "1g"
+    args(
+        providers.gradleProperty("naves").map { rootProject.file(it).path }.getOrElse(""),
+        layout.buildDirectory.dir("semantic-search-eval/cache").get().asFile.path,
+        providers.gradleProperty("embeddingModel").getOrElse("@cf/baai/bge-m3")
     )
 }
 

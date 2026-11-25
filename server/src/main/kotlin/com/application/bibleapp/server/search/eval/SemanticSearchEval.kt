@@ -297,9 +297,10 @@ fun report(
  * the report file, which stays on this computer.
  */
 fun main(args: Array<String>) {
-    require(args.size == 6) { "Usage: SemanticSearchEval <queries.md> <report folder> <bible_default.db> <model> <ID,ID,…> <translation.tsv>" }
+    require(args.size in 6..7) { "Usage: SemanticSearchEval <queries.md> <report folder> <bible_default.db> <model> <ID,ID,…> <translation.tsv> [naves.csv]" }
     val (queriesPath, reportPath, kjvPath, model, onlyArg) = args
     val biblePath = args[5]
+    val navesPath = args.getOrNull(6).orEmpty()
     // Only needed when something isn't cached yet: trying variants on cached vectors needs no token.
     val provider by lazy {
         val baseUrl = System.getenv("AI_BASE_URL")?.takeIf { it.isNotBlank() }
@@ -382,6 +383,7 @@ fun main(args: Array<String>) {
 
     val index = VectorIndex(vectors.filterKeys { it in verseText })
     vectors.clear() // ~130 MB that the variants below can use instead
+    val topics = navesPath.takeIf { it.isNotBlank() }?.let { loadTopicIndex(File(it), reportFolder, model, index) { provider } }
     val results = queries.map { score(it, queryVectors.vectors.getValue(it.id), index) }
     val date = LocalDate.now(ZoneOffset.UTC)
     // Another queries file (-PqueriesFile, #393) names its reports, so the held-out set's don't overwrite the main set's.
@@ -395,7 +397,7 @@ fun main(args: Array<String>) {
     println("Hit rate: $hits of ${results.size} (${percent(hits, results.size)}); missed: ${results.filterNot { it.hit }.joinToString(", ") { it.query.id }.ifEmpty { "none" }}")
     println("Report: ${file.absolutePath}")
 
-    val variants = runVariants(model, translation, kjvPath, reportFolder, index, verses, queries, queryVectors)
+    val variants = runVariants(model, translation, kjvPath, reportFolder, index, verses, queries, queryVectors, topics)
     val variantsFile = File(reportFolder, "$name-variants.md")
     var variantsText = variantsReport(model, translation, date, variants)
     variants.forEach { println("  ${it.results.count { r -> r.hit }} of ${it.results.size}  ${it.name}") }
@@ -404,9 +406,25 @@ fun main(args: Array<String>) {
     val live = variants.firstOrNull { it.name == LIVE_VARIANT }
     if (model == VerseSearch.MODEL && live != null) {
         val keyPassages = KeyPassages(TopicRouter.fromResources(model))
-        val withPassages = live.results.map { KeyPassagesResult(it.query, keyPassages.forQuery(queryVectors.vectors.getValue(it.query.id)), it) }
-        variantsText += "\n" + keyPassagesReport(withPassages)
-        println("  ${withPassages.count { it.hit }} of ${withPassages.size}  Key passages first, then $LIVE_VARIANT (what Search shows)")
+        fun withPassages(variant: VariantResult) =
+            variant.results.map { KeyPassagesResult(it.query, keyPassages.forQuery(queryVectors.vectors.getValue(it.query.id)), it) }
+        val onLive = withPassages(live)
+        variantsText += "\n" + keyPassagesReport(onLive)
+        println("  ${onLive.count { it.hit }} of ${onLive.size}  Key passages first, then $LIVE_VARIANT (what Search shows)")
+        // The same on top of each topical-index variant (#394): what Search would show with it.
+        val navesVariants = variants.filter { it.name.startsWith(NAVES_PREFIX) }
+        if (navesVariants.isNotEmpty()) {
+            variantsText += "\n" + keyPassagesOnTopReport(listOf(live) + navesVariants, ::withPassages)
+            navesVariants.forEach { v -> println("  ${withPassages(v).count { it.hit }} of ${v.results.size}  Key passages first, then ${v.name}") }
+        }
+    }
+    if (topics != null) {
+        variantsText += "\n" + topicMatchesReport(queries, queryVectors, topics)
+        // The pages people would see at each threshold, to check off-topic matches by eye (#394).
+        for (threshold in listOf(0.60f, 0.65f, 0.70f)) {
+            val variant = variants.firstOrNull { it.name == "$NAVES_PREFIX ≥$threshold, 3 entries, RRF" } ?: continue
+            File(reportFolder, "$name-naves-top-$threshold.md").writeText(topResultsReport(variant, threshold, 3, queryVectors, topics, index, verseText))
+        }
     }
     variantsFile.writeText(variantsText)
     println("Variants: ${variantsFile.absolutePath}")
@@ -426,7 +444,8 @@ private fun runVariants(
     index: VectorIndex,
     verses: List<Verse>,
     queries: List<SearchEvalQuery>,
-    queryVectors: QueryVectors
+    queryVectors: QueryVectors,
+    topics: TopicIndex? = null
 ): List<VariantResult> {
     fun evaluate(variant: Variant) =
         VariantResult(variant.name, queries.map { q -> rank(q, variant.scores(q, queryVectors.vectors.getValue(q.id)), index) })
@@ -439,6 +458,7 @@ private fun runVariants(
     out += evaluate(Variant("plain cosine ($translation)") { _, v -> index.scores(v) })
     out += evaluate(Variant("keywords only (BM25, $translation)") { q, _ -> keywords.scores(q.query) })
     out += evaluate(hybrid(LIVE_VARIANT, { _, v -> index.scores(v) }))
+    if (topics != null) out += navesVariants(topics, index, keywords).map(::evaluate)
     val centred = index.centred()
     out += evaluate(Variant("centred") { _, v -> centred.scores(v) })
     for (weight in listOf(0.3f, 0.5f, 1f)) {

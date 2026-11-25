@@ -56,6 +56,7 @@ class VerseSearchTest {
 
     @AfterTest
     fun cleanUp() {
+        deleteTopics()
         connection.prepareStatement("DELETE FROM verse_embeddings WHERE translation = ?").use { it.setString(1, translation); it.executeUpdate() }
         connection.prepareStatement("DELETE FROM search_verses WHERE translation = ?").use { it.setString(1, translation); it.executeUpdate() }
         connection.close()
@@ -102,6 +103,53 @@ class VerseSearchTest {
     fun `a query of only common words is ranked by the vectors alone`() = runBlocking {
         val hits = search().search("what is it").verses
         assertEquals(verses.size, hits.size)
+    }
+
+    /** A topical index of its own (#394), so the real Nave's rows are never touched or counted. */
+    private val topicSource = "test-${UUID.randomUUID().toString().take(8)}"
+
+    private fun loadTopics(vararg entries: com.application.bibleapp.server.search.eval.TopicEntry) {
+        val loader = TopicSearchLoader(connection, topicSource, fake.model)
+        loader.load(entries.toList(), entries.associate { it.text to fake.vector(it.text) }, loader.chapters(translation))
+    }
+
+    private fun refs(found: SearchFound) = found.verses.map { VerseRef(it.book, it.chapter, it.verse) }
+
+    @Test
+    fun `a query close to a topical entry lifts the verses it names, which share none of its words`() = runBlocking {
+        // Psalm 23:1 shares no word with the query, so by vectors and keywords it's near the bottom.
+        loadTopics(
+            com.application.bibleapp.server.search.eval.TopicEntry(
+                "TRUST", "Trust: In God's care when afraid",
+                listOf(com.application.bibleapp.server.search.eval.TopicPassage(19, 23, 1, 1))
+            )
+        )
+        val psalm23 = VerseRef(19, 23, 1)
+        val without = refs(VerseSearch(fake, translation, topicSource = "no-such-source").search("trust in God's care when afraid"))
+        val with = refs(VerseSearch(fake, translation, topicSource = topicSource).search("trust in God's care when afraid"))
+
+        assertTrue(with.indexOf(psalm23) < without.indexOf(psalm23), "with the entry $with, without $without")
+        // Philippians 4:6 has "God" in both lists, so it may stay first.
+        assertTrue(with.indexOf(psalm23) in 0..1, "Psalm 23:1 is first or second: $with")
+    }
+
+    @Test
+    fun `a query far from every entry ranks exactly as without the index`() = runBlocking {
+        loadTopics(
+            com.application.bibleapp.server.search.eval.TopicEntry(
+                "TRUST", "Trust: In God's care when afraid",
+                listOf(com.application.bibleapp.server.search.eval.TopicPassage(19, 23, null, null))
+            )
+        )
+        val without = VerseSearch(fake, translation, topicSource = "no-such-source").search("Jesus wept").verses
+        val with = VerseSearch(fake, translation, topicSource = topicSource).search("Jesus wept").verses
+        assertEquals(without, with)
+    }
+
+    private fun deleteTopics() {
+        for (table in listOf("topic_entry_verses", "topic_entries")) {
+            connection.prepareStatement("DELETE FROM $table WHERE source = ?").use { it.setString(1, topicSource); it.executeUpdate() }
+        }
     }
 
     @Test
