@@ -16,9 +16,18 @@ data class VerseHit(val book: Int, val chapter: Int, val verse: Int, val score: 
 
 /**
  * What a search found: the ranked [verses], a matching topic guide's [keyPassages] (#320), if any,
- * and [crisis] when that guide is the crisis guide (#324).
+ * [crisis] when that guide is the crisis guide (#324), and [suggestAsk] when the query reads like a
+ * request for help rather than a look-up, so the app offers the Bible Helper (#401).
  */
-data class SearchFound(val verses: List<VerseHit>, val keyPassages: List<String> = emptyList(), val crisis: Boolean = false)
+data class SearchFound(
+    val verses: List<VerseHit>,
+    val keyPassages: List<String> = emptyList(),
+    val crisis: Boolean = false,
+    val suggestAsk: Boolean = false
+)
+
+/** [rankVerses]'s hits, and how close the query's nearest Nave's entry is (cosine; null with no index loaded). */
+class Ranked(val hits: List<VerseHit>, val closestTopic: Double?)
 
 /**
  * Search by meaning (#287, phase 3), ranked the way phase 1's evaluation chose: the query's
@@ -59,14 +68,25 @@ class VerseSearch(
     suspend fun search(query: String, limit: Int = RESULTS): SearchFound {
         val vector = embedQuery(query)
         val started = System.nanoTime()
-        val hits = newSuspendedTransaction(Dispatchers.IO) {
-            rankVerses(TransactionManager.current().connection.connection as Connection, provider.model, translation, vector, query, limit, topicSource)
+        val ranked = newSuspendedTransaction(Dispatchers.IO) {
+            rank(TransactionManager.current().connection.connection as Connection, provider.model, translation, vector, query, limit, topicSource)
         }
-        log.info("Search: ${hits.size} results in ${(System.nanoTime() - started) / 1_000_000} ms")
+        log.info("Search: ${ranked.hits.size} results in ${(System.nanoTime() - started) / 1_000_000} ms")
         // Not logged, not even as a count: which guide matched would hint at what was asked.
         val match = keyPassagesFor(vector)
-        return SearchFound(hits, match.passages, match.crisis)
+        return SearchFound(ranked.hits, match.passages, match.crisis, suggestAsk(match, ranked.closestTopic))
     }
+
+    /**
+     * Offer the Bible Helper (#401) when the query is closer to what people ask it (the topic
+     * guides' "Asks" phrases) than to what people look up (Nave's entry labels). On the held-out
+     * set (docs/semantic_search_eval_heldout.md) that's 34 of 40 everyday sentences, all 9 in
+     * other languages, and 4 of 65 look-ups (laziness, caring for the poor: topics the Bible Helper
+     * answers well too). Never with the crisis card, which comes first and says more; never without
+     * both sides to compare.
+     */
+    private fun suggestAsk(match: KeyPassages.Match, closestTopic: Double?): Boolean =
+        !match.crisis && match.closestAsk != null && closestTopic != null && match.closestAsk - closestTopic > ASK_MARGIN
 
     /** Key passages never cost the search itself: if matching fails, the verses still come back. */
     private fun keyPassagesFor(vector: FloatArray): KeyPassages.Match = try {
@@ -115,6 +135,12 @@ class VerseSearch(
          */
         private const val TOPIC_MAX_DISTANCE = 0.35
         private const val TOPIC_ENTRIES = 3
+        /**
+         * How much closer to a guide phrase than to a Nave's entry a query must be for the Bible
+         * Helper card (#401). At −0.02, 38 of 40 everyday sentences, but stories start to get it
+         * ("Jesus turns water into wine"); at +0.05, only 24 of 40.
+         */
+        const val ASK_MARGIN = 0.0
         /** ~0.01 neurons each, so 20,000 searches are ~200 of the 10,000 a day. */
         const val DAILY_CAP = 20_000
 
@@ -135,7 +161,21 @@ class VerseSearch(
             query: String,
             limit: Int,
             topicSource: String = TOPIC_SOURCE
-        ): List<VerseHit> =
+        ): List<VerseHit> = rank(connection, model, translation, vector, query, limit, topicSource).hits
+
+        /**
+         * [rankVerses], plus how close the nearest Nave's entry is (#401), which the same query
+         * already finds for the topical list: the Bible Helper card needs it, at no extra cost.
+         */
+        fun rank(
+            connection: Connection,
+            model: String,
+            translation: String,
+            vector: FloatArray,
+            query: String,
+            limit: Int,
+            topicSource: String = TOPIC_SOURCE
+        ): Ranked =
             connection.prepareStatement(
                 """
                 WITH by_meaning AS (
@@ -159,13 +199,13 @@ class VerseSearch(
                         ORDER BY relevance DESC, s.book, s.chapter, s.verse LIMIT $CANDIDATES
                     ) matching
                 ),
+                nearest_entries AS (
+                    SELECT id, embedding <=> ?::halfvec AS distance
+                    FROM topic_entries WHERE source = ? AND model = ?
+                    ORDER BY distance LIMIT $TOPIC_ENTRIES
+                ),
                 topics AS (
-                    SELECT id FROM (
-                        SELECT id, embedding <=> ?::halfvec AS distance
-                        FROM topic_entries WHERE source = ? AND model = ?
-                        ORDER BY distance LIMIT $TOPIC_ENTRIES
-                    ) nearest
-                    WHERE distance <= $TOPIC_MAX_DISTANCE
+                    SELECT id FROM nearest_entries WHERE distance <= $TOPIC_MAX_DISTANCE
                 ),
                 by_topic AS (
                     SELECT book, chapter, verse, row_number() OVER (ORDER BY distance, book, chapter, verse) AS rank
@@ -182,7 +222,8 @@ class VerseSearch(
                         ORDER BY distance, e.book, e.chapter, e.verse LIMIT $CANDIDATES
                     ) closest
                 )
-                SELECT book, chapter, verse, SUM(1.0 / ($RRF_K + rank)) AS score
+                SELECT book, chapter, verse, SUM(1.0 / ($RRF_K + rank)) AS score,
+                       (SELECT min(distance) FROM nearest_entries) AS topic_distance
                 FROM (SELECT * FROM by_meaning UNION ALL SELECT * FROM by_words UNION ALL SELECT * FROM by_topic) ranked
                 GROUP BY book, chapter, verse
                 ORDER BY score DESC, book, chapter, verse
@@ -205,9 +246,15 @@ class VerseSearch(
                 statement.setString(12, translation)
                 statement.setInt(13, limit)
                 statement.executeQuery().use { rows ->
-                    buildList {
-                        while (rows.next()) add(VerseHit(rows.getInt(1), rows.getInt(2), rows.getInt(3), rows.getDouble(4)))
+                    var topicDistance: Double? = null
+                    val hits = buildList {
+                        while (rows.next()) {
+                            add(VerseHit(rows.getInt(1), rows.getInt(2), rows.getInt(3), rows.getDouble(4)))
+                            topicDistance = rows.getDouble(5).takeUnless { rows.wasNull() }
+                        }
                     }
+                    // pgvector's cosine distance is 1 − similarity.
+                    Ranked(hits, topicDistance?.let { 1.0 - it })
                 }
             }
     }

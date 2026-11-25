@@ -86,7 +86,34 @@ list, ranked by their own closeness to the query.
 - **Through the endpoint's SQL** (`semanticSearchEvalDb`, local Postgres, 2026-11-25): 60 → 71 of
   132 alone, the same +11 as in memory. Its starting point is lower than in memory (60 vs 65)
   because Postgres's full-text ranking does worse than this runner's BM25 on everyday sentences
-  (LIFE 4 vs 9), a gap that was there before Nave's.
+  (LIFE 4 vs 9), a gap that was there before Nave's. On Neon (2026-11-25, after the load): the same
+  71 of 132 and 27 of 43, median 243 ms a query from the developer's laptop.
+
+## Third run (2026-11-25): when to offer the Bible Helper (#401)
+
+An everyday sentence is a request for help, which the Bible Helper answers better than a list of
+verses. The rule: offer it when the query is closer to the nearest topic guide phrase (what people
+ask the Bible Helper) than to the nearest Nave's entry (what people look up). Both are already
+computed for the search, so it costs nothing. The variants report's `-ask.md` file lists every
+query's two scores.
+
+| Margin (phrase − entry) | LIFE (should get it) | NEW | STORY | LANG |
+|---|---|---|---|---|
+| −0.05 | 39/40 | 8/40 | 2/25 | 11/27 |
+| −0.02 | 38/40 | 5/40 | 1/25 | 9/27 |
+| **0 (built)** | **34/40** | **4/40** | **0/25** | **9/27** |
+| +0.05 | 24/40 | 2/40 | 0/25 | 9/27 |
+
+- **Other languages are exact at 0:** the 9 LANG queries that get it are the 9 about a life
+  situation (one per language), and none of the 18 topics or stories.
+- **The 4 look-ups at 0** are laziness, caring for the poor, serving others and watching what you
+  say: topics the Bible Helper answers well too, so the card isn't wrong there.
+- **Missed at 0:** "we just had a baby", "people at school make fun of me…", "taking care of my
+  elderly mother", "I'm angry at God" and "why do bad things happen to good people" (all within
+  0.03), and "church people are hypocrites" (−0.14, close to Nave's "Hypocrisy"). At −0.02 most
+  come in, but so does "Jesus turns water into wine".
+- The main set can't judge this: the guide phrases were written from its queries, so every
+  TOPIC and MOD query is close to one.
 
 ## Queries
 

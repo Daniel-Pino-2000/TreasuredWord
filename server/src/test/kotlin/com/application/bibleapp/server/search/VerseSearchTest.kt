@@ -146,6 +146,31 @@ class VerseSearchTest {
         assertEquals(without, with)
     }
 
+    @Test
+    fun `a search that sounds like a question for the Bible Helper gets the suggestion, a look-up doesn't`() = runBlocking {
+        val guides = com.application.bibleapp.server.ai.TopicGuides.load()
+        val router = com.application.bibleapp.server.ai.TopicRouter.embedding(guides, FakeEmbeddingProvider(maxBatch = 32, dimensions = 1024))
+        loadTopics(
+            com.application.bibleapp.server.search.eval.TopicEntry(
+                "TRUST", "Trust: In God's care when afraid",
+                listOf(com.application.bibleapp.server.search.eval.TopicPassage(19, 23, 1, 1))
+            )
+        )
+        val search = VerseSearch(fake, translation, keyPassages = KeyPassages(router), topicSource = topicSource)
+
+        // A guide's own phrase, sharing no word with the Nave's entry (#401).
+        assertTrue(search.search("I'm so stressed").suggestAsk)
+        // The entry's own words: a look-up.
+        assertEquals(false, search.search("trust in God's care when afraid").suggestAsk)
+        // The crisis card comes instead.
+        val crisis = search.search("I want to die")
+        assertTrue(crisis.crisis)
+        assertEquals(false, crisis.suggestAsk)
+        // With nothing to compare against, no suggestion: no topical index, or no guides.
+        assertEquals(false, VerseSearch(fake, translation, keyPassages = KeyPassages(router), topicSource = "no-such-source").search("I'm so stressed").suggestAsk)
+        assertEquals(false, VerseSearch(fake, translation, topicSource = topicSource).search("I'm so stressed").suggestAsk)
+    }
+
     private fun deleteTopics() {
         for (table in listOf("topic_entry_verses", "topic_entries")) {
             connection.prepareStatement("DELETE FROM $table WHERE source = ?").use { it.setString(1, topicSource); it.executeUpdate() }

@@ -420,6 +420,13 @@ fun main(args: Array<String>) {
     }
     if (topics != null) {
         variantsText += "\n" + topicMatchesReport(queries, queryVectors, topics)
+        if (model == VerseSearch.MODEL) {
+            val ask = askScores(queries, queryVectors, TopicRouter.fromResources(model, threshold = 0.0), topics)
+            File(reportFolder, "$name-ask.md").writeText(askSuggestionReport(ask))
+            for (m in ASK_MARGINS) {
+                println("  Ask offered at margin $m: " + ask.groupBy { it.query.group }.entries.joinToString(", ") { (g, s) -> "$g ${s.count { it.margin > m }}/${s.size}" })
+            }
+        }
         // The pages people would see at each threshold, to check off-topic matches by eye (#394).
         for (threshold in listOf(0.60f, 0.65f, 0.70f)) {
             val variant = variants.firstOrNull { it.name == "$NAVES_PREFIX ≥$threshold, 3 entries, RRF" } ?: continue

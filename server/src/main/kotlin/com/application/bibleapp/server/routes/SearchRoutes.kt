@@ -61,7 +61,9 @@ fun Route.searchRoutes(search: VerseSearch?) {
                     // Left out when no guide matched, so the answer is exactly what it was before #320.
                     keyPassages = found.keyPassages.ifEmpty { null },
                     // Same: only `true` is ever sent (#324).
-                    crisis = true.takeIf { found.crisis }
+                    crisis = true.takeIf { found.crisis },
+                    // Same (#401).
+                    suggestAsk = true.takeIf { found.suggestAsk }
                 )
             )
         }

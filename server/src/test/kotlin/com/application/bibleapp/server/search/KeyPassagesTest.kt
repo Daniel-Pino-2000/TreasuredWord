@@ -52,9 +52,20 @@ class KeyPassagesTest {
     @Test
     fun onlyTheCrisisGuideIsMarkedCrisis() {
         // #324: the app shows the help card for this one.
-        assertEquals(KeyPassages.Match(listOf("PSA 34:18", "MAT 11:28"), crisis = true), keyPassages.match(floatArrayOf(0f, 0f, 0f, 1f)))
+        assertEquals(KeyPassages.Match(listOf("PSA 34:18", "MAT 11:28"), crisis = true, closestAsk = 1.0), keyPassages.match(floatArrayOf(0f, 0f, 0f, 1f)))
         assertFalse(keyPassages.match(floatArrayOf(0f, 0.1f, 3f, 0f)).crisis)
-        assertEquals(KeyPassages.Match.NONE, keyPassages.match(floatArrayOf(0f, 1f, 0f, 0f)))
+        val none = keyPassages.match(floatArrayOf(0f, 1f, 0f, 0f))
+        assertEquals(emptyList(), none.passages)
+        assertFalse(none.crisis)
+    }
+
+    @Test
+    fun theClosestPhraseIsReportedEvenWhenNoGuideMatches() {
+        // #401: how much a query sounds like a question for the Bible Helper. jesus's phrase is
+        // 0.141 along this axis; nothing reaches the 0.70 to be matched.
+        val match = keyPassages.match(floatArrayOf(0f, 1f, 0f, 0f))
+        assertEquals(emptyList(), match.passages)
+        assertEquals(0.141, match.closestAsk!!, 0.001)
     }
 
     @Test
