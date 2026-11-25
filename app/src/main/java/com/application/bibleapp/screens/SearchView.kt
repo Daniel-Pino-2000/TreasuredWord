@@ -349,13 +349,14 @@ private fun SearchResultsList(
             }
         }
         // The Bible Helper card (#401) arrives the same way, but it's an offer, not a warning:
-        // brought into view only if the person hasn't started scrolling the word results.
+        // brought into view only if the person hasn't started scrolling the word results. By the
+        // time this runs the card is item 0, so an unscrolled list shows item 1 at its very top.
         val offerAsk = meaning?.onAsk != null && meaning.state.suggestAsk && !crisis
         var askShown by rememberSaveable { mutableStateOf(false) }
         LaunchedEffect(offerAsk) {
             if (offerAsk && !askShown) {
                 askShown = true
-                if (listState.firstVisibleItemIndex == 0) listState.scrollToItem(0)
+                if (listState.firstVisibleItemIndex <= 1 && listState.firstVisibleItemScrollOffset == 0) listState.scrollToItem(0)
             }
         }
 
