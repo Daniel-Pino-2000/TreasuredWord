@@ -20,21 +20,24 @@ class KeyPassages(private val router: TopicRouter) {
     /**
      * What a query matched: the guides' [passages] as USFM references ("MAT 11:28-30", "PSA 73"),
      * and [crisis] when the guide is an `Alone` one (the crisis guide), so the app shows its help
-     * card above them, as the Bible Helper does (#324).
+     * card above them, as the Bible Helper does (#324). [closestAsk] is the query's closeness to
+     * the nearest "Asks" phrase of any guide, matched or not: how much it sounds like something
+     * people ask the Bible Helper (#401).
      */
-    data class Match(val passages: List<String>, val crisis: Boolean) {
+    data class Match(val passages: List<String>, val crisis: Boolean, val closestAsk: Double? = null) {
         companion object {
             val NONE = Match(emptyList(), crisis = false)
         }
     }
 
     fun match(queryVector: FloatArray): Match {
-        val routed = router.route(queryVector)
-        if (routed.isEmpty()) return Match.NONE
+        val scored = router.scoresFor(queryVector)
+        val routed = router.pick(scored)
         return Match(
             passages = routed.flatMap { it.guide.passages.map { passage -> passage.first } }.distinct(),
-            // route() sends an alone guide by itself, so any() is that one guide.
-            crisis = routed.any { it.guide.alone }
+            // pick() sends an alone guide by itself, so any() is that one guide.
+            crisis = routed.any { it.guide.alone },
+            closestAsk = scored.firstOrNull()?.score
         )
     }
 

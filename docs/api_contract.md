@@ -801,7 +801,8 @@ data class SemanticSearchResult(val bookId: Int, val chapter: Int, val verse: In
 data class SemanticSearchResponse(
     val results: List<SemanticSearchResult>,   // up to 20, best first
     val keyPassages: List<String>? = null,     // #320: absent when no topic guide matches
-    val crisis: Boolean? = null                // #324: true for the crisis guide, absent otherwise
+    val crisis: Boolean? = null,               // #324: true for the crisis guide, absent otherwise
+    val suggestAsk: Boolean? = null            // #401: true to offer the Bible Helper, absent otherwise
 )
 ```
 
@@ -823,6 +824,14 @@ as ever.
 `crisis` (#324): `true` when the guide that matched is the crisis guide (marked `Alone: yes` in
 `topics.md`), whose passages are then the only key passages. The app shows the Bible Helper's help
 card (a kind word and Find A Helpline) above them. Left out, never `false`, otherwise.
+
+`suggestAsk` (#401): `true` when the query reads like a request for help (a life situation: "my
+dad is in the hospital and I'm scared") rather than a look-up, so the app offers to ask the Bible
+Helper with the same words. The query's vector is closer to the nearest topic guide phrase than
+to the nearest Nave's Topical Bible entry (#394); both are already computed for the search, so it
+costs nothing. Never with `crisis`. Left out when the topical index or the guides aren't there,
+and never `false`. The server never sends the query to the Bible Helper itself.
+
 POST, not GET, so the query never sits in a URL or a request log.
 Errors: `400 VALIDATION_ERROR` (`fieldErrors` keyed `q`), `503 SEARCH_UNAVAILABLE` (the AI_*
 settings aren't set, today's free neurons or the server's 20,000 searches a day are used up, or
