@@ -6,8 +6,8 @@
     <style name="Theme.BibleApp" parent="Theme.AppCompat.Light.NoActionBar" />
 
     <!-- Startup screen (#135), through core-splashscreen so Android 7–11 show the icon too, not
-         a blank window. The launcher icon's book on its espresso circle with the app's name under
-         it (#143), then the app's theme. No system icon background: the circle is part of the
+         a blank window. The launcher icon as a circle with the app's name under it (#143, #368),
+         then the app's theme. No system icon background: the circle is part of the
          icon, which gets the larger 288 dp area that way so the name fits. Splash follows the
          phone's light/dark; SplashLight and SplashDark are the fixed versions MainActivity picks
          on Android 13+ to follow the app's own theme setting. -->

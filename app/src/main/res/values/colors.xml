@@ -8,10 +8,9 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <!-- Startup screen (#135): the app's own light and dark backgrounds (ui/theme/Color.kt), so
-         nothing flashes when the first screen replaces it, and the launcher icon's espresso. -->
+         nothing flashes when the first screen replaces it. The icon's circle draws its own colors. -->
     <color name="splash_background_light">#FFFAF6EF</color>
     <color name="splash_background_dark">#FF1E1B16</color>
-    <color name="splash_icon_background">#FF2E251B</color>
     <!-- The other color themes' backgrounds (#244), for their startup screens on Android 13+. -->
     <color name="splash_background_ink_light">#FFFFFFFF</color>
     <color name="splash_background_ink_dark">#FF000000</color>

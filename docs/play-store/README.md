@@ -67,7 +67,9 @@ use the KJV with sample highlights and a sample note in Psalm 23. `8-ask.png` (N
 signed in; it's a screenshot, so it isn't labeled as AI-generated in Play's AI asset declaration. At least four screenshots of
 1080 px or more on each side keep the app eligible for Play's promotions.
 
-The feature graphic is the app icon's open Bible on the icon's espresso background, with the name
-in Georgia Bold and the tagline in Segoe UI Light. Its source is `feature-graphic.svg`; render it
-at 1024×500 on Windows (where both fonts are installed) and save it as an RGB PNG, since Play
-rejects feature graphics with transparency.
+The feature graphic is the app icon's open Bible on its brown tile (#368), with the name in Noto
+Serif Bold and the tagline in Roboto, both as letter outlines. Its source is `feature-graphic.svg`;
+`python docs/icon-source/make_icons.py` copies the icon's book into it and renders it at 1024×500
+as an RGB PNG, since Play rejects feature graphics with transparency. The app icon and the feature
+graphic were made with AI's help, so they're declared as AI-generated in Play's AI asset
+declaration (#110, #368).
