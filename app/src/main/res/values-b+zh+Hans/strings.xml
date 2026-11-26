@@ -222,6 +222,10 @@
     <string name="search_error">暂时无法搜索，请重试。</string>
     <string name="search_section_words">含有这些词的经文</string>
     <string name="search_section_key_passages">重点经文</string>
+    <!-- Search's offer of the Bible Helper when a search reads like a request for help (#401) -->
+    <string name="search_ask_title">问问圣经助手</string>
+    <string name="search_ask_message">这听起来像是你想倾诉的事。圣经助手可以用圣经来回答你。</string>
+    <string name="search_ask_button">就此提问</string>
     <string name="search_section_meaning">意思相关</string>
     <string name="search_words_none">没有经文包含这些词。</string>
     <!-- Search in a licensed version (#378, #382) when YouVersion's search couldn't be used (offline, too many requests). %1$s: the version's abbreviation, such as LBLA. -->

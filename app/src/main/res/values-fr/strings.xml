@@ -229,6 +229,10 @@
     <string name="search_error">Impossible de lancer la recherche pour le moment. Réessaie.</string>
     <string name="search_section_words">Versets contenant ces mots</string>
     <string name="search_section_key_passages">Passages clés</string>
+    <!-- Search's offer of the Bible Helper when a search reads like a request for help (#401) -->
+    <string name="search_ask_title">Demander à l\'Assistant biblique</string>
+    <string name="search_ask_message">On dirait que tu as besoin d\'en parler. L\'Assistant biblique peut te répondre avec les Écritures.</string>
+    <string name="search_ask_button">Poser la question</string>
     <string name="search_section_meaning">Liés par le sens</string>
     <string name="search_words_none">Aucun verset ne contient ces mots.</string>
     <!-- Search in a licensed version (#378, #382) when YouVersion's search couldn't be used (offline, too many requests). %1$s: the version's abbreviation, such as LBLA. -->

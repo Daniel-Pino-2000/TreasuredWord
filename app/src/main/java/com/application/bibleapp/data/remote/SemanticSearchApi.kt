@@ -20,12 +20,14 @@ data class SemanticSearchRequestDto(val q: String)
 data class SemanticSearchResultDto(val bookId: Int, val chapter: Int, val verse: Int, val score: Double)
 
 /** [keyPassages] (#320): a matching topic guide's passages as USFM references; absent when none matched.
- *  [crisis] (#324): true when that guide is the crisis guide; absent otherwise. */
+ *  [crisis] (#324): true when that guide is the crisis guide; absent otherwise.
+ *  [suggestAsk] (#401): true when the search reads like a request for help; absent otherwise. */
 @Serializable
 data class SemanticSearchResponseDto(
     val results: List<SemanticSearchResultDto>,
     val keyPassages: List<String>? = null,
-    val crisis: Boolean? = null
+    val crisis: Boolean? = null,
+    val suggestAsk: Boolean? = null
 )
 
 /** One verse search by meaning found; [bookId] is 1–66, as everywhere in the app. */
@@ -35,11 +37,13 @@ data class VerseRef(val bookId: Int, val chapter: Int, val verse: Int)
 sealed interface SemanticSearchResult {
     /** Best first; empty when nothing matched (or the server's verses aren't loaded yet).
      *  [keyPassages] (#320): the passages of the topic guide the query matched, to show first.
-     *  [crisis] (#324): the query matched the crisis guide, so the help card comes before anything. */
+     *  [crisis] (#324): the query matched the crisis guide, so the help card comes before anything.
+     *  [suggestAsk] (#401): it reads like a request for help, so Search offers the Bible Helper. */
     data class Found(
         val verses: List<VerseRef>,
         val keyPassages: List<VerseReference> = emptyList(),
-        val crisis: Boolean = false
+        val crisis: Boolean = false,
+        val suggestAsk: Boolean = false
     ) : SemanticSearchResult
 
     /** The phone couldn't reach the server. */
@@ -78,7 +82,8 @@ class SemanticSearchApi(
                 verses = body.results.map { VerseRef(it.bookId, it.chapter, it.verse) },
                 // One the app can't read (a newer server's format) is left out, never an error.
                 keyPassages = body.keyPassages.orEmpty().mapNotNull(UsfmBookCodes::parseReference).distinct(),
-                crisis = body.crisis == true
+                crisis = body.crisis == true,
+                suggestAsk = body.suggestAsk == true
             )
         } else {
             // 503 and 429 are expected on a busy day; a 400 would be our own bug (the query is

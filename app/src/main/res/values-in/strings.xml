@@ -223,6 +223,10 @@
     <string name="search_error">Tidak dapat mencari saat ini. Coba lagi.</string>
     <string name="search_section_words">Ayat dengan kata-kata ini</string>
     <string name="search_section_key_passages">Ayat-ayat kunci</string>
+    <!-- Search's offer of the Bible Helper when a search reads like a request for help (#401) -->
+    <string name="search_ask_title">Tanyakan kepada Asisten Alkitab</string>
+    <string name="search_ask_message">Sepertinya ini hal yang ingin Anda bicarakan. Asisten Alkitab dapat menjawabnya dengan firman Tuhan.</string>
+    <string name="search_ask_button">Tanyakan ini</string>
     <string name="search_section_meaning">Terkait menurut makna</string>
     <string name="search_words_none">Tidak ada ayat yang berisi kata-kata ini.</string>
     <!-- Search in a licensed version (#378, #382) when YouVersion's search couldn't be used (offline, too many requests). %1$s: the version's abbreviation, such as LBLA. -->

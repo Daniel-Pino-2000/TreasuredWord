@@ -529,6 +529,23 @@ class AskViewModelTest {
     }
 
     @Test
+    fun `ask about this search opens a new conversation with the words unsent, kept as the person's draft`() = runTest {
+        // #401
+        ask("Who was Moses?")
+        val before = sent.size
+
+        viewModel.startWithQuestion("  my dad is in the hospital and I'm scared ")
+
+        assertNull(viewModel.state.value.conversationId)
+        assertNull(viewModel.state.value.passage)
+        assertEquals("my dad is in the hospital and I'm scared", viewModel.draft.value)
+        assertEquals("nothing is sent until the person sends it", before, sent.size)
+        // Their own words, unlike a passage's default question: leaving keeps them.
+        viewModel.newConversation()
+        assertEquals("my dad is in the hospital and I'm scared", viewModel.draft.value)
+    }
+
+    @Test
     fun `the passage goes with the question and its follow-ups, until it's removed`() = runTest {
         viewModel.startWithPassage(passage, "What does this passage mean?")
         viewModel.send("en")

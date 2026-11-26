@@ -223,6 +223,10 @@
     <string name="search_error">지금은 검색할 수 없어요. 다시 시도해 주세요.</string>
     <string name="search_section_words">이 단어가 있는 구절</string>
     <string name="search_section_key_passages">핵심 구절</string>
+    <!-- Search's offer of the Bible Helper when a search reads like a request for help (#401) -->
+    <string name="search_ask_title">성경 도우미에게 물어보기</string>
+    <string name="search_ask_message">이야기를 나누고 싶은 일처럼 보여요. 성경 도우미가 성경 말씀으로 답해 드릴 수 있어요.</string>
+    <string name="search_ask_button">이것에 대해 묻기</string>
     <string name="search_section_meaning">의미가 비슷한 구절</string>
     <string name="search_words_none">이 단어가 들어 있는 구절이 없어요.</string>
     <!-- Search in a licensed version (#378, #382) when YouVersion's search couldn't be used (offline, too many requests). %1$s: the version's abbreviation, such as LBLA. -->
