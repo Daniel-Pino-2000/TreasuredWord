@@ -134,6 +134,13 @@
     <string name="home_watch_more">Iba pang pangkalahatang-ideya</string>
     <!-- TalkBack label for a video on Home. %1$s is a book name -->
     <string name="home_watch_play">Panoorin ang pangkalahatang-ideya ng BibleProject sa %1$s</string>
+    <!-- Home's BibleProject card when the chapter being read has its own video (#407).
+         %1$s is the passage, e.g. "Matthew 5–7" or "Exodus 20:8-11" -->
+    <string name="home_watch_passage_title">Video: %1$s</string>
+    <!-- TalkBack label for that video. %1$s is the passage, as above -->
+    <string name="home_watch_passage_play">Panoorin ang video ng BibleProject para sa %1$s</string>
+    <!-- Over the small videos under a chapter video: the book's overview, then the next books' -->
+    <string name="home_watch_more_videos">Iba pang video</string>
     <!-- Badge on Home's Verse to memorize tile when its review is due -->
     <string name="home_memorize_due">Dapat sanayin</string>
     <!-- %1$s is the book being read, e.g. "John" -->
@@ -168,6 +175,18 @@
     <string name="about_book_video">Video ng pangkalahatang-ideya</string>
     <string name="about_book_video_part">Video ng pangkalahatang-ideya, bahagi %1$d ng %2$d</string>
     <string name="about_book_video_covers">Video ng pangkalahatang-ideya para sa %1$s–%2$s</string>
+    <!-- About sheet, Watch section (#407): labels over the chapter's videos and the book's overviews -->
+    <string name="about_book_this_chapter">Kabanatang ito</string>
+    <string name="about_book_whole_book">Ang buong aklat</string>
+    <!-- A video about part of the book. %1$s is the passage, e.g. "Matthew 5–7" or "Exodus 20:8-11" -->
+    <string name="about_book_passage_video">Video para sa %1$s</string>
+    <!-- One of a series about the same passage. %1$s is the passage, %2$d the part number, %3$d how many parts -->
+    <string name="about_book_passage_video_part">Video para sa %1$s, bahagi %2$d ng %3$d</string>
+    <!-- Button under the first few chapter videos. %d is how many more there are -->
+    <plurals name="about_book_show_more_videos">
+        <item quantity="one">Ipakita ang %d pang video</item>
+        <item quantity="other">Ipakita ang %d pang video</item>
+    </plurals>
     <string name="about_book_video_credit">Mga video ng BibleProject, ang may-akda at may-ari nito. bibleproject.com</string>
     <string name="source_bibleproject">BibleProject</string>
 

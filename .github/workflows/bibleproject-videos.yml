@@ -1,0 +1,68 @@
+name: BibleProject new videos
+
+# The app's BibleProject videos (BookResources.kt, #407) are hand-checked and compiled in, so new
+# ones only reach readers when someone adds them. Every Monday this reads bibleproject.com's
+# sitemap (page URLs only, never their content) and, for videos not in
+# docs/bibleproject-videos-reviewed.txt, opens one issue, or comments on it while it is still open,
+# so nothing piles up. It never edits the app. Free: GitHub Actions on a public repository, one
+# short run a week. GitHub pauses scheduled workflows after 60 days with no repository activity
+# (it emails the owner; "Enable workflow" in the Actions tab turns it back on).
+# Pull requests that change the check run it read-only: the result is printed, no issue opened.
+on:
+  schedule:
+    - cron: "0 13 * * 1"
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/scripts/check_bibleproject_videos.py"
+      - ".github/workflows/bibleproject-videos.yml"
+      - "docs/bibleproject-videos-reviewed.txt"
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: bibleproject-videos-${{ github.event_name }}
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Self-test
+        run: python3 -I .github/scripts/check_bibleproject_videos.py --self-test
+
+      - name: Check the sitemap
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          title="New BibleProject videos to check"
+          number=$(gh issue list --state open --search "\"$title\" in:title" --json number,title \
+            --jq "map(select(.title == \"$title\")) | .[0].number // empty")
+          : > "$RUNNER_TEMP/listed.txt"
+          comment=()
+          if [ -n "$number" ]; then
+            gh issue view "$number" --json body,comments --jq '.body, .comments[].body' > "$RUNNER_TEMP/listed.txt"
+            comment=(--comment)
+          fi
+          python3 -I .github/scripts/check_bibleproject_videos.py \
+            --reviewed docs/bibleproject-videos-reviewed.txt \
+            --already-listed "$RUNNER_TEMP/listed.txt" \
+            --issue-body "$RUNNER_TEMP/body.md" "${comment[@]}"
+          if [ ! -s "$RUNNER_TEMP/body.md" ]; then
+            echo "Nothing new to report."
+            exit 0
+          fi
+          if [ "$EVENT" = "pull_request" ]; then
+            echo "Pull request run: would post this (to #${number:-a new issue}):"
+            cat "$RUNNER_TEMP/body.md"
+          elif [ -n "$number" ]; then
+            gh issue comment "$number" --body-file "$RUNNER_TEMP/body.md"
+          else
+            gh issue create --title "$title" --body-file "$RUNNER_TEMP/body.md"
+          fi

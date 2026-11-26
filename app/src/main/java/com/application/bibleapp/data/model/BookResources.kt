@@ -2,8 +2,9 @@ package com.application.bibleapp.data.model
 
 /**
  * Outside resources for each book, shown in the reader's "About this book" sheet (#48, #55):
- * GotQuestions.org's book summary and BibleProject's overview videos. Link-only — their content
- * is never copied, cached or re-hosted here.
+ * GotQuestions.org's book summary and BibleProject's overview videos, plus BibleProject's videos
+ * about single passages (#407, see [passageEntries]). Link-only — their content is never copied,
+ * cached or re-hosted here.
  *
  * Every entry was checked by hand on 2026-10-22: each summary URL returns its book's page, and
  * each video ID belongs to the channel it's listed under (YouTube's oEmbed author: @bibleproject
@@ -65,6 +66,119 @@ object BookResources {
         val books = videos.filterValues { videoId in it }.keys
         return if (books.isEmpty()) bookId..bookId else books.min()..books.max()
     }
+
+    /**
+     * BibleProject's videos about [chapter] of [bookId] itself rather than the whole book (#407):
+     * ones about a run of chapters or the whole chapter first, then ones about some of its
+     * verses, in verse order. Usually none or one; Exodus 20 and Matthew 5–7 have many. Spanish
+     * uses Proyecto Biblia's version, or the English video if there's none, as [overviewVideos]
+     * does.
+     */
+    fun passageVideos(bookId: Int, chapter: Int, spanish: Boolean): List<PassageVideo> =
+        passageVideos(passageEntries, bookId, chapter, spanish)
+
+    internal fun passageVideos(
+        entries: List<PassageEntry>,
+        bookId: Int,
+        chapter: Int,
+        spanish: Boolean
+    ): List<PassageVideo> = entries
+        .filter { it.bookId == bookId && chapter in it.chapters }
+        // Stable, so a series about the same verses keeps its episode order.
+        .sortedWith(compareBy({ it.verses != null }, { it.chapters.first }, { it.verses?.first }, { it.verses?.last }))
+        .map { PassageVideo(it.bookId, it.chapters, it.verses, (if (spanish) it.spanish else null) ?: it.english) }
+
+    /** One video in [passageEntries]: the chapters it's about, and the [verses] when it's about
+     *  part of one chapter; its YouTube ID on BibleProject's channel and, where there is one,
+     *  Proyecto Biblia's. */
+    internal data class PassageEntry(
+        val bookId: Int,
+        val chapters: IntRange,
+        val verses: IntRange?,
+        val english: String,
+        val spanish: String?
+    )
+
+    /**
+     * BibleProject videos whose subject is one passage (#407), from the video pages listed in
+     * bibleproject.com's sitemap. The passage is the one BibleProject names on the video's page
+     * or on YouTube; where they name only the chapter, the verses are what the video is about
+     * there (the Beatitudes are Matthew 5:3–12, the 6th Commandment Exodus 20:13).
+     *
+     * Left out: theme and word-study videos that quote a chapter along the way (they'd show on
+     * dozens of chapters); the Sermon on the Mount episodes whose page names no passage (1, 3,
+     * 10); BibleProject's short commentaries that aren't on YouTube; and a second Lord's Prayer
+     * video for the same verses as episode 7.
+     *
+     * YouTube IDs were matched to each page by topic, runtime and episode number, and every one
+     * checked 2026-11-25 with oEmbed (author @bibleproject, or @ProyectoBibliaOficial for
+     * Spanish); each has both thumbnail sizes. A null Spanish ID means Proyecto Biblia hasn't
+     * published that video.
+     */
+    internal val passageEntries: List<PassageEntry> = listOf(
+        // Creation series' visual commentary, "Genesis 1".
+        PassageEntry(1, 1..1, null, "afVN-7vY0KA", "z4A52O-41aI"),
+        // The 10 Commandments series ("given to Moses at Mount Sinai"; the 1st names Exodus 20:2),
+        // then one verse range per commandment.
+        PassageEntry(2, 20..20, 1..17, "4M9BsOvx6cs", "rH_Zgi3FJv8"), // The 10 Commandments as wisdom
+        PassageEntry(2, 20..20, 2..3, "JGI8nNVkZpA", "_-FJ0bjRApY"),
+        PassageEntry(2, 20..20, 4..6, "vXHDUs28rPM", "tchcdZAhqug"),
+        PassageEntry(2, 20..20, 7..7, "elhazm4fZeE", "QRu9Kj7tH2U"),
+        PassageEntry(2, 20..20, 8..11, "VsAmFJ6quZk", "mT_hQM4D5ZA"),
+        PassageEntry(2, 20..20, 12..12, "Q7PgVAN2MPo", "445--Xj6DRc"),
+        PassageEntry(2, 20..20, 13..13, "uAQ5KaEd98Q", "0ycWEE9T_WY"),
+        PassageEntry(2, 20..20, 14..14, "Pyk64lwOLpw", "HJUrEJKlq1c"),
+        PassageEntry(2, 20..20, 15..15, "WylKQKFI_4M", "ypwfpkgOxlw"),
+        PassageEntry(2, 20..20, 16..16, "SSBRI49NYmY", "5Yj3Ug951bA"),
+        PassageEntry(2, 20..20, 17..17, "185KpeCc-CY", "y8zkufr8iMQ"),
+        // Character of God series, all on "Exodus 34:6-7", in episode order: the visual
+        // commentary, then compassion, grace, slow to anger, loyal love, faithful.
+        PassageEntry(2, 34..34, 6..7, "nxwzq1PJImM", "oHMicgEfIrY"),
+        PassageEntry(2, 34..34, 6..7, "qJEtyAiAQik", "55Jp07kZLtI"),
+        PassageEntry(2, 34..34, 6..7, "ABPVVw_aw44", "CZtgCMtuoJo"),
+        PassageEntry(2, 34..34, 6..7, "TeQ1nq_YJD0", "KPNc-0mI0TM"),
+        PassageEntry(2, 34..34, 6..7, "UfbyFLgs_NM", "GBoth3FRATU"),
+        PassageEntry(2, 34..34, 6..7, "HCLuq_5o7_o", "7rvNyFm1bpA"),
+        // Shema word studies, one per word of the prayer in Deuteronomy 6:4–5, in its order:
+        // listen, YHWH, love, heart, soul, strength (their "final installment").
+        PassageEntry(5, 6..6, 4..5, "6KQLOuIKaRA", "pkGvJWE_sDk"),
+        PassageEntry(5, 6..6, 4..5, "eLrGM26pmM0", "7Ajug_ZAfW4"),
+        PassageEntry(5, 6..6, 4..5, "HV_LUs2lnIQ", "nEAYHpSx78M"),
+        PassageEntry(5, 6..6, 4..5, "aS4iM6KpPYo", "wiSZUO1TKmQ"),
+        PassageEntry(5, 6..6, 4..5, "g_igCcWAMAM", "WJtfCFyvYr8"),
+        PassageEntry(5, 6..6, 4..5, "9aaVy1AmFX4", "BUChIW2Jj04"),
+        // Visual commentaries: "Psalm 1", the Creation series' "Psalm 8", "Psalm 148" and
+        // "Proverbs 8", and "Isaiah 61".
+        PassageEntry(19, 1..1, null, "E7k01kfBx6Y", "JKssLyqHhYA"),
+        PassageEntry(19, 8..8, null, "d_-xvaK4wIw", "wtrUhJIX0Fc"),
+        PassageEntry(19, 148..148, null, "XgCrFl4Mc5Q", "LAhwgVeizHg"),
+        PassageEntry(20, 8..8, null, "k8P-x34iYRE", "xOtwUgUil1I"),
+        PassageEntry(23, 61..61, null, "d_Q6WkD_Pas", "o--UeqSsJu4"),
+        // Sermon on the Mount: the visual commentary on "Matthew 5-7" and on 5:3-16 and 5:17-20,
+        // and the video series' episodes 2 and 4–9 (Spanish has no 6, 8 or 9).
+        PassageEntry(40, 5..7, null, "ajwehw_AT0s", "1wRqEhIMaAw"),
+        PassageEntry(40, 5..5, 3..16, "W9fR7sHw9Y8", "RJiC3T_Lesc"),
+        PassageEntry(40, 5..5, 17..20, "Bpk-sI4MY58", "YOray6bUXDs"),
+        PassageEntry(40, 5..5, 3..12, "s9246LGlngs", "E4wSe7ejBEY"), // 2: the Beatitudes
+        PassageEntry(40, 5..5, 21..32, "okFibMvn3t0", "ha1Masb-Tnc"), // 4: murder, adultery, divorce
+        PassageEntry(40, 5..5, 33..48, "3EkD-alQhT8", "wsPLzDXGjvg"), // 5: oaths, revenge, enemies
+        PassageEntry(40, 6..6, 1..8, "wCo2LN7E6bo", null), // 6: "Matthew 6:1-8"
+        PassageEntry(40, 6..6, 9..13, "3-YlqQfKkKk", "GNgZ9v_NqvY"), // 7: the Lord's Prayer
+        PassageEntry(40, 6..6, 19..34, "GpqOdHV3dmU", null), // 8: wealth and worry
+        PassageEntry(40, 7..7, 1..12, "PqEiqCuIsvw", null), // 9: "Matthew 7:1-12"
+        // Luke–Acts series: their own chapter ranges, which meet on Luke 9 and 19.
+        PassageEntry(42, 1..2, null, "_OLezoUvOEQ", "DTL5QW6Ez7s"), // The Birth of Jesus
+        PassageEntry(42, 3..9, null, "0k4GbvZUPuo", "OfZRqfWs1lg"), // The Baptism of Jesus
+        PassageEntry(42, 9..19, null, "jUCCUHurV0I", "sm8-GQl9P6w"), // The Prodigal Son
+        PassageEntry(42, 19..23, null, "_unHmAf7INk", "KBE2nLYyCdc"), // The Crucifixion of Jesus
+        PassageEntry(42, 24..24, null, "Vb24Lk1Oh5M", "WHlHoQy3bVk"), // The Resurrection of Jesus
+        // Creation series: "John 1".
+        PassageEntry(43, 1..1, null, "XgslCbXOOIE", "rkSRDC49Dtc"),
+        PassageEntry(44, 1..7, null, "JQhkWmFJKnA", "OisTpQEle6E"), // Pentecost
+        PassageEntry(44, 8..12, null, "oiVAbkINtRU", "sEhT1mA-HU0"), // The Apostle Paul
+        PassageEntry(44, 13..20, null, "fglsbcGSr3A", "v0t5OzcBgPY"), // Paul's Missionary Journeys
+        PassageEntry(44, 21..28, null, "FJsiwOB0Pvg", "jWG-433qdWM"), // Bound for Rome
+    )
 
     /** Most pages are Book-of-<Name>.html; Song of Solomon and the four Gospels aren't. */
     internal val summaryPages: Map<Int, String> = mapOf(
@@ -278,4 +392,17 @@ object BookResources {
         65 to listOf("vhPyNSJiRZ8"), // Jude
         66 to listOf("PgV57gK-Xow", "DMXA-GERRzY"), // Revelation
     )
+}
+
+/** A BibleProject video about [chapters] of [bookId], or [verses] of its one chapter (#407),
+ *  from [BookResources.passageVideos]. */
+data class PassageVideo(val bookId: Int, val chapters: IntRange, val verses: IntRange?, val videoId: String) {
+    /** The passage as the app writes references elsewhere (`utils/VerseRefFormat.kt`): chapters
+     *  with an en dash, "Luke 1–2", "Psalms 8"; verses with a hyphen, "Exodus 20:8-11", "Exodus 20:7". */
+    fun reference(bookName: String): String = when {
+        verses != null && verses.first == verses.last -> "$bookName ${chapters.first}:${verses.first}"
+        verses != null -> "$bookName ${chapters.first}:${verses.first}-${verses.last}"
+        chapters.first == chapters.last -> "$bookName ${chapters.first}"
+        else -> "$bookName ${chapters.first}–${chapters.last}"
+    }
 }

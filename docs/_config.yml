@@ -12,6 +12,7 @@ exclude:
   - ai_helper_plan.md
   - ai_quality_audit.md
   - api_contract.md
+  - bibleproject-videos-reviewed.txt
   - release.md
   - semantic_search_eval.md
   - semantic_search_eval_heldout.md

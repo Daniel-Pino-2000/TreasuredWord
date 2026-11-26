@@ -132,6 +132,13 @@
     <string name="home_watch_more">更多概览</string>
     <!-- TalkBack label for a video on Home. %1$s is a book name -->
     <string name="home_watch_play">观看 BibleProject 的%1$s概览</string>
+    <!-- Home's BibleProject card when the chapter being read has its own video (#407).
+         %1$s is the passage, e.g. "Matthew 5–7" or "Exodus 20:8-11" -->
+    <string name="home_watch_passage_title">视频：%1$s</string>
+    <!-- TalkBack label for that video. %1$s is the passage, as above -->
+    <string name="home_watch_passage_play">观看 BibleProject 的%1$s视频</string>
+    <!-- Over the small videos under a chapter video: the book's overview, then the next books' -->
+    <string name="home_watch_more_videos">更多视频</string>
     <!-- Badge on Home's Verse to memorize tile when its review is due -->
     <string name="home_memorize_due">待练习</string>
     <!-- %1$s is the book being read, e.g. "John" -->
@@ -166,6 +173,17 @@
     <string name="about_book_video">概览视频</string>
     <string name="about_book_video_part">概览视频，第 %1$d 部分（共 %2$d 部分）</string>
     <string name="about_book_video_covers">%1$s–%2$s 概览视频</string>
+    <!-- About sheet, Watch section (#407): labels over the chapter's videos and the book's overviews -->
+    <string name="about_book_this_chapter">本章</string>
+    <string name="about_book_whole_book">整卷书</string>
+    <!-- A video about part of the book. %1$s is the passage, e.g. "Matthew 5–7" or "Exodus 20:8-11" -->
+    <string name="about_book_passage_video">%1$s 视频</string>
+    <!-- One of a series about the same passage. %1$s is the passage, %2$d the part number, %3$d how many parts -->
+    <string name="about_book_passage_video_part">%1$s 视频（第 %2$d 部分，共 %3$d 部分）</string>
+    <!-- Button under the first few chapter videos. %d is how many more there are -->
+    <plurals name="about_book_show_more_videos">
+        <item quantity="other">再显示 %d 个视频</item>
+    </plurals>
     <string name="about_book_video_credit">视频由 BibleProject 制作并拥有。bibleproject.com</string>
     <string name="source_bibleproject">BibleProject</string>
 

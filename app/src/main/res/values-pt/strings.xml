@@ -133,6 +133,13 @@
     <string name="home_watch_more">Mais visões gerais</string>
     <!-- TalkBack label for a video on Home. %1$s is a book name -->
     <string name="home_watch_play">Assistir à visão geral de %1$s do BibleProject</string>
+    <!-- Home's BibleProject card when the chapter being read has its own video (#407).
+         %1$s is the passage, e.g. "Matthew 5–7" or "Exodus 20:8-11" -->
+    <string name="home_watch_passage_title">Vídeo: %1$s</string>
+    <!-- TalkBack label for that video. %1$s is the passage, as above -->
+    <string name="home_watch_passage_play">Assistir ao vídeo do BibleProject sobre %1$s</string>
+    <!-- Over the small videos under a chapter video: the book's overview, then the next books' -->
+    <string name="home_watch_more_videos">Mais vídeos</string>
     <!-- Badge on Home's Verse to memorize tile when its review is due -->
     <string name="home_memorize_due">Pendente</string>
     <!-- %1$s is the book being read, e.g. "John" -->
@@ -167,6 +174,19 @@
     <string name="about_book_video">Vídeo de visão geral</string>
     <string name="about_book_video_part">Vídeo de visão geral, parte %1$d de %2$d</string>
     <string name="about_book_video_covers">Vídeo de visão geral de %1$s–%2$s</string>
+    <!-- About sheet, Watch section (#407): labels over the chapter's videos and the book's overviews -->
+    <string name="about_book_this_chapter">Este capítulo</string>
+    <string name="about_book_whole_book">O livro inteiro</string>
+    <!-- A video about part of the book. %1$s is the passage, e.g. "Matthew 5–7" or "Exodus 20:8-11" -->
+    <string name="about_book_passage_video">Vídeo sobre %1$s</string>
+    <!-- One of a series about the same passage. %1$s is the passage, %2$d the part number, %3$d how many parts -->
+    <string name="about_book_passage_video_part">Vídeo sobre %1$s, parte %2$d de %3$d</string>
+    <!-- Button under the first few chapter videos. %d is how many more there are -->
+    <plurals name="about_book_show_more_videos">
+        <item quantity="one">Mostrar mais %d vídeo</item>
+        <item quantity="many">Mostrar mais %d vídeos</item>
+        <item quantity="other">Mostrar mais %d vídeos</item>
+    </plurals>
     <string name="about_book_video_credit">Vídeos do BibleProject, seu autor e proprietário. bibleproject.com</string>
     <string name="source_bibleproject">BibleProject</string>
 

@@ -175,17 +175,22 @@ class TopicRouter(
 
     /**
      * The guides to send with a question: the best at [threshold] or above, and a close second.
-     * An [TopicGuide.alone] guide (crisis) at [threshold] or above and within [ALONE_MARGIN] of
-     * the best goes by itself instead: "I don't want to live anymore. Will God forgive me if I
-     * end it?" scores 0.795 on the guide about repeated sin and forgiveness and 0.766 on the
-     * crisis guide, and the pilot sent both. One further behind isn't sent, so "Does God forgive
-     * me if I keep looking at porn?" (0.789 against 0.701) keeps its own guide.
+     * An [TopicGuide.alone] guide (crisis) goes by itself instead when it's the best, or when it's
+     * within [ALONE_MARGIN] of the best and scores [ALONE_FLOOR] or more itself: "I don't want to
+     * live anymore. Will God forgive me if I end it?" scores 0.795 on the guide about repeated
+     * sin and forgiveness and 0.766 on the crisis guide, and the pilot sent both. One further
+     * behind isn't sent, so "Does God forgive me if I keep looking at porn?" (0.789 against
+     * 0.701) keeps its own guide, and a short sentence that only sounds like distress, such as
+     * "I can't sleep at night" (crisis 0.732, under the floor), doesn't get the crisis card.
+     * An alone guide is never sent as the second one either: that would show the card too.
      */
     fun pick(scored: List<RoutedGuide>): List<RoutedGuide> {
         val first = scored.firstOrNull()?.takeIf { it.score >= threshold } ?: return emptyList()
-        scored.firstOrNull { it.guide.alone && it.score >= threshold && first.score - it.score <= ALONE_MARGIN }
+        if (first.guide.alone) return listOf(first)
+        scored.firstOrNull { it.guide.alone && it.score >= maxOf(threshold, ALONE_FLOOR) && first.score - it.score <= ALONE_MARGIN }
             ?.let { return listOf(it) }
-        val second = scored.getOrNull(1)?.takeIf { it.score >= threshold && first.score - it.score <= secondMargin }
+        val second = scored.getOrNull(1)
+            ?.takeIf { !it.guide.alone && it.score >= threshold && first.score - it.score <= secondMargin }
         return listOfNotNull(first, second)
     }
 
@@ -201,6 +206,14 @@ class TopicRouter(
          * routing report): CRISIS-01 is 0.029 behind, the closest non-crisis question 0.088.
          */
         const val ALONE_MARGIN = 0.06
+        /**
+         * How well an alone guide must match by itself when another guide matches better (#408):
+         * the real crisis questions behind the best (CRISIS-01 0.766, "I'm scared I'm going to
+         * hurt myself" 0.788) are above it, while sleep, tiredness and pain sentences mostly sit
+         * at 0.70–0.73. It leaves CRISIS-01 0.036 to spare, more than [ALONE_MARGIN] leaves the
+         * closest real crisis question (0.025), so it's never the tighter of the two.
+         */
+        const val ALONE_FLOOR = 0.73
 
         /**
          * The live router: `topics.md` and the vectors made at build time. Fails when a phrase
