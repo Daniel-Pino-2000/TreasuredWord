@@ -5,7 +5,7 @@ permalink: /privacy/
 
 # TreasuredWord privacy policy
 
-**Effective date:** November 21, 2026
+**Effective date:** November 26, 2026
 
 TreasuredWord is a free Bible reading app made by Daniel Pino, an independent developer. In this policy, "we" and "us" mean Daniel Pino, the developer of TreasuredWord. It explains what information the app uses, where it goes, and the choices you have. If you have questions, email [pinoponedaniel@gmail.com](mailto:pinoponedaniel@gmail.com).
 
@@ -16,7 +16,7 @@ TreasuredWord is a free Bible reading app made by Daniel Pino, an independent de
 - If you create an account, we store your email address, a scrambled form of your password (or, if you sign in with Google, your Google account ID instead), and your highlights, notes, the verses you're memorizing with your practice progress, and reading position so they sync between your devices. You can delete the account and all of it from inside the app, or by emailing us.
 - We email you only when you ask for it: to check that your email address is yours, or to reset a forgotten password. Those emails are sent through Gmail, from TreasuredWord's own Gmail account.
 - If you ask the Bible Helper a question, it's sent with the recent conversation to our server and to Cloudflare, whose AI writes the answer. Cloudflare doesn't keep it or train on it.
-- When you search the Bible and press the search button, what you typed is also sent, without your account, to our server and to Cloudflare to find verses related by meaning. Neither keeps it.
+- When you search the Bible and press the search button, what you typed is also sent, without your account, to our server and to Cloudflare to find verses related by meaning. Neither keeps it, unless you choose to send us a search whose results didn't help.
 - If you read one of the licensed Bible translations (such as LBLA, NBLA, NASB or AMP), the app gets each chapter from YouVersion the first time you open it, and a word search in one of them is done by YouVersion. YouVersion sees which chapter, and the words you search, but not your account.
 - Some content comes from other websites, and some links open other services. Those services see that visit.
 
@@ -85,6 +85,7 @@ The **Search** tab finds verses in two ways. Verses that contain the words you t
 - **The app sends** what you typed (up to 200 characters) to our server, and nothing else: not your account, even if you're signed in. Nothing is sent while you're still typing, or when you search for a verse reference (like "John 3:16") or a phrase in quotation marks.
 - **Our server sends** that text to [Cloudflare Workers AI](https://developers.cloudflare.com/workers-ai/platform/data-usage/), which turns it into numbers that describe its meaning and sends them back. The server compares them with the Bible's verses and sends the app a list of verse references, which the app shows in your own Bible translation. Cloudflare acts as our service provider: it doesn't use what we send to train AI models and doesn't keep it, except where the law requires it. Your IP address isn't sent to Cloudflare.
 - **Our server doesn't store** your searches and never writes them to its logs. To stay within its free limits it counts searches (how many today, and how many from each IP address in the last minute), never what was searched; the counts are kept only in memory.
+- **If the results didn't help**, you can tap **These results didn't help** under them. The app first shows everything it would send, and sends it only if you tap **Send**: what you searched, the app's language and version, the Bible translation the results were shown in, and the references of the verses it showed (not their text). We store the report **without your account, your IP address or any other way to tell who sent it**, read it to make search better (for example, by adding it to the searches we test with), and delete it after 90 days. To stop too many reports from one place, the server counts how many came from each IP address in the last hour, in memory only.
 
 ## Deleting your account
 

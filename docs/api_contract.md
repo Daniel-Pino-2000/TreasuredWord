@@ -838,6 +838,30 @@ settings aren't set, today's free neurons or the server's 20,000 searches a day 
 Workers AI failed: keep word search and say this part isn't available right now), `429` with no
 body (the `search` zone, 20 searches a minute per IP)
 
+### `POST /api/v1/search/reports`
+Auth: none (a token, if sent, is ignored)
+Request:
+
+```kotlin
+@Serializable
+data class SearchReportRequest(
+    val q: String,                         // the search, 1–200 characters after trimming
+    val language: String,                  // the app's language, one of the Bible Helper's tags
+    val bibleVersion: String,              // the translation's ID the results were shown in, 1–40 characters
+    val appVersion: String? = null,        // the app's version name, at most 20 characters
+    val results: List<String> = emptyList(),     // "Related by meaning", USFM, at most 20
+    val keyPassages: List<String> = emptyList()  // "Key passages", USFM, at most 20
+)
+```
+
+Success: `204 No Content`. A search whose results didn't help (#402), sent only when the person
+taps Send in the sheet that shows all of the above. References are written as `keyPassages` above
+(`"JHN 3:16"`, `"MAT 11:28-30"`, `"PSA 73"`): never a verse's text. Stored **without the user or
+the IP** and deleted after 90 days, like the Bible Helper's reports. They become held-out queries
+for `docs/semantic_search_eval_heldout.md` once someone writes the verses a good result should have.
+Errors: `400 VALIDATION_ERROR` (with `fieldErrors`), `429` with no body (the `search-report` zone,
+10 reports an hour per IP)
+
 ---
 
 ## Deliberately deferred (not in v1)

@@ -4,6 +4,7 @@ import com.application.bibleapp.server.db.tables.AiDailyUsage
 import com.application.bibleapp.server.db.tables.AiReports
 import com.application.bibleapp.server.db.tables.EmailCodePurpose
 import com.application.bibleapp.server.db.tables.EmailCodes
+import com.application.bibleapp.server.db.tables.SearchReports
 import com.application.bibleapp.server.routes.registerTestUser
 import com.application.bibleapp.server.routes.startWithFakeAi
 import io.ktor.server.testing.testApplication
@@ -76,6 +77,33 @@ class RetentionCleanupTest {
         assertEquals(0, stored(old))
         assertEquals(1, stored(recent))
         transaction { AiReports.deleteWhere { AiReports.question eq recent } }
+    }
+
+    @Test
+    fun aSearchReportOlderThan90DaysIsDeletedEvenWithoutANewReport() = testApplication {
+        startWithFakeAi()
+        val now = Instant.now()
+        val old = "Old search ${UUID.randomUUID()}"
+        val recent = "Recent search ${UUID.randomUUID()}"
+        transaction {
+            for ((query, age) in listOf(old to Duration.ofDays(91), recent to Duration.ofDays(89))) {
+                SearchReports.insert {
+                    it[createdAt] = now.minus(age)
+                    it[SearchReports.query] = query
+                    it[language] = "en"
+                    it[bibleVersion] = "BSB"
+                    it[results] = "JHN 3:16"
+                    it[keyPassages] = ""
+                }
+            }
+        }
+
+        deleteExpiredRows(now)
+
+        fun stored(query: String) = transaction { SearchReports.selectAll().where { SearchReports.query eq query }.count() }
+        assertEquals(0, stored(old))
+        assertEquals(1, stored(recent))
+        transaction { SearchReports.deleteWhere { SearchReports.query eq recent } }
     }
 
     @Test

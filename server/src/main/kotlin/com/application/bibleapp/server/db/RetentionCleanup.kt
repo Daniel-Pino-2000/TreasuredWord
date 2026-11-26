@@ -4,6 +4,7 @@ import com.application.bibleapp.server.auth.EmailCodeStore
 import com.application.bibleapp.server.db.tables.AiDailyUsage
 import com.application.bibleapp.server.db.tables.AiReports
 import com.application.bibleapp.server.db.tables.EmailCodes
+import com.application.bibleapp.server.db.tables.SearchReports
 import com.application.bibleapp.server.routes.REPORT_RETENTION
 import io.ktor.server.application.Application
 import io.ktor.server.application.log
@@ -23,7 +24,7 @@ private val CLEANUP_EVERY = 6.hours
 
 /**
  * Deletes what the privacy policy says is gone by [now] (#223): emailed codes older than a day,
- * Bible Helper reports older than 90 days, and daily answer counts from before yesterday (UTC;
+ * Bible Helper and search reports (#402) older than 90 days, and daily answer counts from before yesterday (UTC;
  * only today's counts toward the limit). The deletes on insert in EmailCodeStore and AiRoutes
  * stay, but they only run when the same table gets a new row, which may not happen for weeks.
  */
@@ -32,13 +33,14 @@ suspend fun deleteExpiredRows(now: Instant): ExpiredRows = dbQuery {
     ExpiredRows(
         emailCodes = EmailCodes.deleteWhere { createdAt less now.minus(EmailCodeStore.KEEP_FOR) },
         aiReports = AiReports.deleteWhere { createdAt less now.minus(REPORT_RETENTION) },
+        searchReports = SearchReports.deleteWhere { createdAt less now.minus(REPORT_RETENTION) },
         aiDailyUsage = AiDailyUsage.deleteWhere { day less yesterday }
     )
 }
 
 /** How many rows [deleteExpiredRows] deleted from each table. */
-data class ExpiredRows(val emailCodes: Int, val aiReports: Int, val aiDailyUsage: Int) {
-    val total get() = emailCodes + aiReports + aiDailyUsage
+data class ExpiredRows(val emailCodes: Int, val aiReports: Int, val searchReports: Int, val aiDailyUsage: Int) {
+    val total get() = emailCodes + aiReports + searchReports + aiDailyUsage
 }
 
 /**

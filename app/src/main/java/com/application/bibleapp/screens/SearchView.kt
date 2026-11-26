@@ -10,7 +10,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.TextButton
+import androidx.compose.ui.platform.LocalConfiguration
+import com.application.bibleapp.BuildConfig
+import com.application.bibleapp.components.SearchReportSheet
+import com.application.bibleapp.utils.AppLanguage
+import com.application.bibleapp.utils.UiText
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.key
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -97,6 +103,27 @@ fun SearchView(
     val keyboardController = LocalSoftwareKeyboardController.current
     val links = rememberExternalLinks { bibleViewModel.showMessage(it) }
     val words = WordsStatus(searchState, bibleViewModel.versionLabel(selectedVersion.id), bibleViewModel::onSearchLoadMore)
+    val language = AppLanguage.answerLanguageTag(LocalConfiguration.current.locales[0])
+
+    // "These results didn't help" (#402). Worked out again from the section, so a new search or
+    // version closes the sheet rather than sending a search that's no longer on the screen.
+    var reporting by rememberSaveable { mutableStateOf(false) }
+    val reportDraft = remember(meaningState, selectedVersion) { bibleViewModel.searchReportDraft() }
+    if (reporting && reportDraft != null) {
+        SearchReportSheet(
+            draft = reportDraft,
+            language = language,
+            appVersion = BuildConfig.VERSION_NAME,
+            versionLabel = bibleViewModel.versionLabel(reportDraft.bibleVersionId),
+            bookName = { bookNames[it] ?: BibleBooks.getBookById(it)?.name ?: "Unknown" },
+            send = { bibleViewModel.sendSearchReport(reportDraft, language) },
+            onSent = {
+                reporting = false
+                bibleViewModel.showMessage(UiText.Res(R.string.search_report_sent))
+            },
+            onDismiss = { reporting = false }
+        )
+    }
 
     // Not for a verse reference or a quoted phrase (#287): those keep the plain list of results.
     val offersMeaning = remember(searchState.query, bookNames) {
@@ -149,7 +176,11 @@ fun SearchView(
                         bibleViewModel.onSearchSubmit()
                     },
                     onFindHelpline = { links.openPage(FIND_A_HELPLINE_URL) },
-                    onAsk = onAskHelper?.let { ask -> { ask(searchState.query) } }
+                    onAsk = onAskHelper?.let { ask -> { ask(searchState.query) } },
+                    onReport = {
+                        keyboardController?.hide()
+                        reporting = true
+                    }
                 )
             )
             searchState.results.isNotEmpty() ->
@@ -300,7 +331,9 @@ private class MeaningSection(
     val onSearch: () -> Unit,
     val onFindHelpline: () -> Unit,
     /** The Bible Helper card's tap (#401); null where the Bible Helper is off. */
-    val onAsk: (() -> Unit)? = null
+    val onAsk: (() -> Unit)? = null,
+    /** "These results didn't help" (#402): opens the sheet that shows what's sent. */
+    val onReport: (() -> Unit)? = null
 )
 
 /** The word search's paging and notes (#382, #378), and [onLoadMore] for its next results. */
@@ -507,6 +540,19 @@ private fun LazyListScope.meaningSection(
                     text = AnnotatedString(verse.text),
                     onClick = { onVerseClicked(verse.bookId, verse.chapter, verse.verse) }
                 )
+            }
+            // Quiet, under everything the server found, and only once it answered: offline there's
+            // nothing to report, and the sheet says so if the connection drops before Send (#402).
+            meaning.onReport?.let { onReport ->
+                item(key = "meaning_report") {
+                    TextButton(
+                        onClick = onReport,
+                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onSurfaceVariant),
+                        modifier = Modifier.padding(horizontal = Spacing.sm, vertical = Spacing.sm)
+                    ) {
+                        Text(stringResource(R.string.search_report_link))
+                    }
+                }
             }
         }
     }
