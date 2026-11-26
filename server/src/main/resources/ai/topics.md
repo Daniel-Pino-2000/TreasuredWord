@@ -273,6 +273,28 @@
   - EPH 4:26-27: don't let the sun go down on your anger
   - 1CO 13:4-7: love is patient and kind
 
+<!-- #411: "I'm thinking about getting a divorce" got the crisis guide, "Is divorce a sin?" the gossip
+     and anger guides, "I got divorced years ago. Does God still accept me?" the tattoos guide. Drawn
+     from the Bible Helper's own answers to eight divorce questions (2026-11-26, guides on and off)
+     and reviewed by the developer 2026-11-26 (PSA 34:18 in place of 1JN 1:9, so a child whose
+     parents divorce also finds comfort: held-out LIFE-15). -->
+## divorce
+- **Title:** Divorce and remarriage
+- **Asks:** What does the Bible say about divorce? | Is it a sin to get divorced? | Is divorce ever allowed for a Christian? | My spouse cheated on me, can I get a divorce? | Should I get a divorce? | I'm considering divorcing my husband | My husband left our marriage for another woman | My wife walked out and doesn't believe anymore | I'm divorced, does God still love me? | Can a divorced Christian marry again?
+- **Points:**
+  - God made marriage a lifelong covenant of one man and one woman, and He hates divorce: what God has joined, let no one separate. Unhappiness or constant fighting is not a biblical ground for divorce: encourage forgiveness, patience and reconciliation, with help from a pastor or Christian counselor.
+  - Scripture names two grounds for divorce: a spouse's sexual immorality, and an unbelieving spouse who leaves; in those cases the believer is not bound. Even then, forgiveness and reconciliation are good where possible. Someone who separates for other reasons should remain unmarried or be reconciled.
+  - On remarriage, many Baptists hold that the spouse betrayed by sexual immorality, or left by an unbelieving spouse, is free to marry again; Baptist churches differ on other cases. Say so plainly, and encourage talking with their pastor about their situation.
+  - No one has to stay in danger: if there is violence or abuse, getting safe now comes first (emergency services or someone they trust), and the Bible never commands staying where you're harmed. Divorce is not unforgivable: God forgives all who confess, there is no condemnation in Christ, and divorced people belong fully in the church. Never shame them.
+- **Passages:**
+  - MAT 19:4-6: the Creator made them male and female, one flesh; what God has joined together, let man not separate
+  - MAL 2:16: "I hate divorce," says the LORD; guard yourselves and do not break faith
+  - MAT 19:8-9: Moses permitted divorce because of hardness of heart; except for sexual immorality, divorce and remarriage is adultery
+  - 1CO 7:10-11: a spouse must not separate; one who does must remain unmarried or be reconciled
+  - 1CO 7:15: if the unbelieving spouse leaves, the believer is not bound; God has called you to peace
+  - PSA 34:18: the LORD is near to the brokenhearted, including anyone hurting from a divorce
+  - ROM 8:1: there is now no condemnation for those in Christ Jesus
+
 ## bible-reading
 - **Title:** Starting to read the Bible
 - **Asks:** How do I start reading the Bible? | Reading the Bible feels overwhelming | Where should I start in the Bible? | I don't understand the Bible
@@ -348,7 +370,7 @@
 
 ## abuse
 - **Title:** Abuse at home
-- **Asks:** My stepdad hits me | My parent hurts me | Do I have to stay quiet about abuse? | Is it my fault that they hit me? | My husband hits me
+- **Asks:** My stepdad hits me | My parent hurts me | Do I have to stay quiet about abuse? | Is it my fault that they hit me? | My husband hits me | Am I allowed to leave a husband who abuses me?
 - **Points:**
   - It is not their fault.
   - Honoring parents, or a spouse, never means hiding abuse or staying in danger.
