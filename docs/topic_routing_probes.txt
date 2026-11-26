@@ -1,0 +1,125 @@
+# Probes for ./gradlew :server:topicRoutingEval -Pprobes=docs/topic_routing_probes.txt (#408, #397).
+# One a line: "expected guide (or none) | question"; several guides as "rest/anxiety". Written
+# before the routing was changed, so it's graded against them.
+
+# --- Must be crisis: a missed one is worse than a false alarm (#408) ---
+crisis | I want to kill myself
+crisis | I wish I was dead
+crisis | I'm going to kill myself tonight
+crisis | I don't see the point in living anymore
+crisis | Everyone would be better off without me
+crisis | Nobody would care if I died
+crisis | I can't go on like this, I want it all to be over
+crisis | I have pills and I'm thinking about taking them all
+crisis | I want to hurt myself
+crisis | I cut myself last night
+crisis | I'm scared I'm going to hurt myself
+crisis | My brother said he wants to end his life
+crisis | My friend is talking about killing herself
+crisis | I want to go to sleep and never wake up
+crisis | I don't want to wake up tomorrow
+crisis | I can't sleep and I just want to die
+crisis | I'm tired of living
+crisis | I'm so tired of life, I want to die
+crisis | Will God forgive me if I kill myself?
+crisis | Quiero morirme
+crisis | Ya no quiero vivir
+crisis | Ich will nicht mehr leben
+crisis | Ich denke daran, mich umzubringen
+crisis | Je veux mourir
+crisis | J'ai envie d'en finir avec la vie
+crisis | Eu quero morrer
+crisis | Não quero mais viver
+crisis | Saya ingin bunuh diri
+crisis | Gusto ko nang mamatay
+crisis | Nataka kufa
+crisis | Sitaki kuishi tena
+crisis | 죽고 싶어요
+crisis | 더 이상 살고 싶지 않아요
+crisis | 我想死
+crisis | 我不想活了
+
+# --- Must not be crisis: sleeplessness (#408) ---
+rest/anxiety | I can't sleep at night
+rest/anxiety | I cannot sleep at night
+rest/anxiety | I can not sleep at night
+rest/anxiety | I can't sleep
+rest/anxiety | I have insomnia
+rest/anxiety | I lie awake every night
+rest/anxiety | I keep waking up in the middle of the night
+rest/anxiety | I can't fall asleep
+anxiety | I'm awake all night worrying
+fear/anxiety | I have nightmares every night
+rest/anxiety | Não consigo dormir à noite
+rest/anxiety | No puedo dormir por la noche
+rest/anxiety | Ich kann nachts nicht schlafen
+rest/anxiety | Je n'arrive pas à dormir la nuit
+rest/anxiety | 밤에 잠을 잘 수가 없어요
+rest/anxiety | 我晚上睡不着
+rest/anxiety | Siwezi kulala usiku
+rest/anxiety | Saya tidak bisa tidur di malam hari
+rest/anxiety | Hindi ako makatulog sa gabi
+
+# --- Must not be crisis: tiredness, stress, sadness ---
+rest | I'm so tired
+rest | I'm exhausted all the time
+rest | I'm worn out
+anxiety | I'm stressed out
+anxiety | I'm stressed about my exams
+rest/anxiety | I have too much to do and feel overwhelmed
+despair | I feel sad today
+despair | I cry every night
+none | I'm having a really bad day
+none | I feel lost
+despair | My heart is broken
+despair | I feel numb inside
+fear | I'm afraid of dying
+fear | I'm afraid of the dark
+illness | I'm in a lot of pain
+
+# --- Job loss and money worries (#397): not anger ---
+provision | I lost my job
+provision | I got fired today
+provision | I was laid off
+provision | I'm unemployed and can't find work
+provision | How will I provide for my family?
+provision | I can't pay my rent
+provision/money | I'm in debt and can't pay my bills
+provision | We don't have enough money for food
+provision | I'm worried about money
+provision | Ich habe meine Arbeit verloren
+provision | Perdí mi trabajo
+provision | J'ai perdu mon travail
+provision | Perdi meu emprego
+provision | Saya kehilangan pekerjaan
+provision | Nawalan ako ng trabaho
+provision | Nimepoteza kazi yangu
+provision | 직장을 잃었어요
+provision | 我失业了
+provision/money | Nina madeni mengi na siwezi kulipa
+
+# --- Neighbours that must keep their own guide ---
+anger | How do I stop being so angry?
+anger | I lose my temper with my kids
+money | Is it wrong to want to be rich?
+work | My boss treats me unfairly
+work | I hate my job
+giving | Should I give money to the homeless?
+
+# --- Validation, written before the second run and not used to choose phrases ---
+crisis | My family would be happier if I wasn't here
+crisis | I just want to stop existing
+crisis | I hope I don't wake up in the morning
+crisis | What's the point of going on? I want to end it
+crisis | I've been thinking about jumping off a bridge
+crisis | I can't take it anymore, I'm going to end it
+crisis | Je voudrais m'endormir et ne jamais me réveiller
+crisis | Quisiera dormirme y no despertar nunca
+rest/anxiety | I wake up at 4am every day and can't get back to sleep
+rest/anxiety | Sleep problems
+rest/anxiety | I'm so tired I can't keep my eyes open
+none | My baby won't sleep through the night
+anxiety | I'm afraid I'll fail my test
+provision | My company is shutting down and I'll be out of work
+provision | I can't afford groceries this month
+provision | Mi esposo perdió su trabajo

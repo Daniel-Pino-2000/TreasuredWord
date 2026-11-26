@@ -96,7 +96,7 @@ tasks.register<JavaExec>("embedTopicGuides") {
 
 // Topic guides: which guide each evaluation question and search query matches, at several
 // thresholds, and what the guides add to search's hits. Embeds the ~120 questions and queries
-// (~1 neuron; the phrases' vectors come from topic_vectors.tsv) and reads the verse tables in
+// (~1 neuron, once; the phrases' vectors come from topic_vectors.tsv) and reads the verse tables in
 // DATABASE_URL; never part of `test` or CI.
 tasks.register<JavaExec>("topicRoutingEval") {
     group = "verification"
@@ -108,7 +108,9 @@ tasks.register<JavaExec>("topicRoutingEval") {
         rootProject.file("docs/ai_helper_eval_heldout.md").path,
         rootProject.file("docs/semantic_search_eval.md").path,
         layout.buildDirectory.dir("ai-eval").get().asFile.path,
-        // -Pprobes=<file>: extra questions, "expected guide (or none) | question" a line.
+        // -Pprobes=<file>: extra questions, "expected guide (or none) | question" a line, several
+        // guides as "rest/anxiety"; docs/topic_routing_probes.txt holds #408's. Questions' vectors
+        // are cached under build/ai-eval/cache/, so a rerun with no new question needs no token.
         providers.gradleProperty("probes").map { rootProject.file(it).path }.getOrElse("")
     )
 }
