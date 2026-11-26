@@ -362,7 +362,7 @@
 
 ## crisis
 - **Title:** Someone in danger
-- **Asks:** I want to die | I don't want to live anymore | I'm thinking about killing myself | I want to end my life | Would God forgive suicide? | I hurt myself on purpose | I keep cutting myself | Someone I love is talking about suicide | My friend overdosed | Someone took too many pills | I'm not safe right now
+- **Asks:** I want to die | I don't want to live anymore | I'm thinking about killing myself | I want to end my life | Would God forgive suicide? | I hurt myself on purpose | I keep cutting myself | Someone I love is talking about suicide | My friend overdosed | Someone took too many pills | I'm not safe right now | Everyone would be better off without me | Nobody would miss me if I were gone | I wish I could fall asleep and never wake up | I don't want to wake up anymore
 - **Alone:** yes
 - **Points:**
   - When the person says they want to harm or kill themselves, or that someone is in danger now: begin with [[CRISIS]], keep the answer short and warm, and answer only their safety. Say that they matter to God and He is near them in their pain, that they should contact local emergency services or someone they trust right now, and give one verse of comfort. If they asked how to pray, a one-line prayer may follow.
@@ -416,7 +416,7 @@
 
 ## anxiety
 - **Title:** Worry and anxiety
-- **Asks:** What does the Bible say about worry? | I'm anxious about the future | I can't sleep because my mind won't stop racing | I'm so stressed | I'm afraid of what will happen tomorrow
+- **Asks:** What does the Bible say about worry? | I'm anxious about the future | I can't sleep because my mind won't stop racing | I'm so stressed | I'm afraid of what will happen tomorrow | Sleepless nights | Insomnia keeps me awake | Help me get some sleep
 - **Points:**
   - Jesus tells His followers not to worry, because the Father knows what they need: seek His kingdom first.
   - Bring every worry to God in prayer with thanksgiving, and His peace guards the heart; cast every care on Him.
@@ -574,6 +574,24 @@
   - MAT 6:19-21: store up treasures in heaven
   - LUK 12:15: guard against all greed
 
+<!-- #397: "I lost my job" matched the anger guide; no guide covered losing work or money worries.
+     Drafted 2026-11-25, awaiting the developer's review. -->
+## provision
+- **Title:** Losing a job and money worries
+- **Asks:** I've been let go from work and don't know what to do | I'm out of work and scared | Finding a new job is taking so long | How do I trust God to provide when money is tight? | Bills are piling up and I'm worried about money | Struggling with debt | We can barely afford food and rent
+- **Points:**
+  - The Father knows what they need: bring the worry to Him in prayer instead of carrying it alone, and seek His kingdom first; He promises to provide for His people and never to leave them.
+  - Losing a job or being short of money is not a sign that God has abandoned them or is punishing them.
+  - Take wise, honest steps: keep looking for work, live within what they have, and let their pastor and church know, since believers carry one another's burdens. Give no specific financial or legal advice.
+- **Passages:**
+  - MAT 6:31-33: don't worry about what you'll eat or wear; the Father knows you need them; seek His kingdom first
+  - PHP 4:19: God will supply all your needs according to His riches in Christ
+  - PSA 37:25: never have I seen the righteous abandoned or their children begging for bread
+  - 1PE 5:7: cast all your anxiety on Him, because He cares for you
+  - ISA 41:10: do not fear, for I am with you; I will strengthen you and help you
+  - HEB 13:5: be content with what you have, for God has said: never will I leave you
+  - GAL 6:2: carry one another's burdens
+
 ## giving
 - **Title:** Giving and the poor
 - **Asks:** Giving generously to the poor | How much should I give? | Should Christians help the poor?
@@ -639,7 +657,7 @@
 
 ## guidance
 - **Title:** Knowing God's will
-- **Asks:** How do I know what God wants me to do with my life? | What is God's will for me? | How do I make a big decision?
+- **Asks:** How do I know what God wants me to do with my life? | What is God's will for me? | How do I make a big decision? | I feel lost about my future
 - **Points:**
   - Most of God's will is already revealed in Scripture; ask Him for wisdom, trust Him with your path, and seek wise counsel.
 - **Passages:**
