@@ -133,6 +133,13 @@
     <string name="home_watch_more">Ikhtisar lainnya</string>
     <!-- TalkBack label for a video on Home. %1$s is a book name -->
     <string name="home_watch_play">Tonton ikhtisar %1$s dari BibleProject</string>
+    <!-- Home's BibleProject card when the chapter being read has its own video (#407).
+         %1$s is the passage, e.g. "Matthew 5–7" or "Exodus 20:8-11" -->
+    <string name="home_watch_passage_title">Video: %1$s</string>
+    <!-- TalkBack label for that video. %1$s is the passage, as above -->
+    <string name="home_watch_passage_play">Tonton video BibleProject tentang %1$s</string>
+    <!-- Over the small videos under a chapter video: the book's overview, then the next books' -->
+    <string name="home_watch_more_videos">Video lainnya</string>
     <!-- Badge on Home's Verse to memorize tile when its review is due -->
     <string name="home_memorize_due">Perlu dilatih</string>
     <!-- %1$s is the book being read, e.g. "John" -->
@@ -167,6 +174,17 @@
     <string name="about_book_video">Video ikhtisar</string>
     <string name="about_book_video_part">Video ikhtisar, bagian %1$d dari %2$d</string>
     <string name="about_book_video_covers">Video ikhtisar untuk %1$s–%2$s</string>
+    <!-- About sheet, Watch section (#407): labels over the chapter's videos and the book's overviews -->
+    <string name="about_book_this_chapter">Pasal ini</string>
+    <string name="about_book_whole_book">Seluruh kitab</string>
+    <!-- A video about part of the book. %1$s is the passage, e.g. "Matthew 5–7" or "Exodus 20:8-11" -->
+    <string name="about_book_passage_video">Video tentang %1$s</string>
+    <!-- One of a series about the same passage. %1$s is the passage, %2$d the part number, %3$d how many parts -->
+    <string name="about_book_passage_video_part">Video tentang %1$s, bagian %2$d dari %3$d</string>
+    <!-- Button under the first few chapter videos. %d is how many more there are -->
+    <plurals name="about_book_show_more_videos">
+        <item quantity="other">Tampilkan %d video lagi</item>
+    </plurals>
     <string name="about_book_video_credit">Video oleh BibleProject, pembuat dan pemiliknya. bibleproject.com</string>
     <string name="source_bibleproject">BibleProject</string>
 

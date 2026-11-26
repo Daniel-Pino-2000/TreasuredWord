@@ -282,15 +282,38 @@ fun HomeView(
                 currentBookName
             }
             val more = remember(currentBook, spanish) { BookResources.nextOverviews(currentBook, spanish) }
-            WatchCard(
-                videoId = videoId,
-                title = title,
-                more = if (compactHeight) emptyList() else more.map { (book, id) -> readerBookName(book) to id },
-                horizontal = compactHeight,
-                spanish = spanish,
-                onPlay = { externalLinks.openYouTubeVideo(it) },
-                onCreditClick = { externalLinks.openPage(BookResources.bibleProjectHome(spanish)) }
-            )
+            val moreBooks = if (compactHeight) emptyList() else more.map { (book, id) -> readerBookName(book) to id }
+            // A video about the chapter being read leads the card (#407); the book's overview
+            // then opens the small row, ahead of the next books'.
+            val passage = remember(currentBook, currentChapter, spanish) {
+                BookResources.passageVideos(currentBook, currentChapter, spanish).firstOrNull()
+            }
+            if (passage != null) {
+                val reference = passage.reference(currentBookName)
+                WatchCard(
+                    videoId = passage.videoId,
+                    heading = stringResource(R.string.home_watch_passage_title, reference),
+                    playLabel = stringResource(R.string.home_watch_passage_play, reference),
+                    more = if (compactHeight) emptyList() else listOf(title to videoId) + moreBooks.take(2),
+                    moreLabel = stringResource(R.string.home_watch_more_videos),
+                    horizontal = compactHeight,
+                    spanish = spanish,
+                    onPlay = { externalLinks.openYouTubeVideo(it) },
+                    onCreditClick = { externalLinks.openPage(BookResources.bibleProjectHome(spanish)) }
+                )
+            } else {
+                WatchCard(
+                    videoId = videoId,
+                    heading = stringResource(R.string.home_watch_title, title),
+                    playLabel = stringResource(R.string.home_watch_play, title),
+                    more = moreBooks,
+                    moreLabel = stringResource(R.string.home_watch_more),
+                    horizontal = compactHeight,
+                    spanish = spanish,
+                    onPlay = { externalLinks.openYouTubeVideo(it) },
+                    onCreditClick = { externalLinks.openPage(BookResources.bibleProjectHome(spanish)) }
+                )
+            }
         }
         // GotQuestions.org (#47): its book summaries are English pages; the front page has a Spanish site.
         QuestionsCard(
@@ -694,15 +717,17 @@ private fun MemorizeTile(
 private val HomeLogoHeight = 22.dp
 
 /**
- * BibleProject's overview of the book being read (#55, #365), with YouTube's own thumbnail and
- * the credit their terms ask for, then [more] of the next books' videos. [horizontal] puts the
- * picture beside the text, for landscape.
+ * BibleProject's video for the chapter being read (#407), or else their overview of the book
+ * (#55, #365), with YouTube's own thumbnail and the credit their terms ask for, then [more]
+ * videos under [moreLabel]. [horizontal] puts the picture beside the text, for landscape.
  */
 @Composable
 private fun WatchCard(
     videoId: String,
-    title: String,
+    heading: String,
+    playLabel: String,
     more: List<Pair<String, String>>,
+    moreLabel: String,
     horizontal: Boolean,
     spanish: Boolean,
     onPlay: (String) -> Unit,
@@ -712,8 +737,7 @@ private fun WatchCard(
     // Offline or with Data Saver on, the tile shows instead and nothing is fetched.
     val online = rememberIsOnline()
     val loadThumbnails = online && remember(online) { !NetworkUtils.isDataSaverOn(context) }
-    val playLabel = stringResource(R.string.home_watch_play, title)
-    val heading: @Composable (Modifier) -> Unit = { textModifier ->
+    val headingBlock: @Composable (Modifier) -> Unit = { textModifier ->
         Column(modifier = textModifier, verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
             if (spanish) {
                 // Proyecto Biblia's own logo isn't offered for download: name it instead (#405).
@@ -731,7 +755,7 @@ private fun WatchCard(
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = stringResource(R.string.home_watch_title, title),
+                    text = heading,
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.weight(1f)
@@ -775,7 +799,7 @@ private fun WatchCard(
                         .clickable(onClickLabel = playLabel) { onPlay(videoId) }
                 )
                 Column(modifier = Modifier.weight(0.55f), verticalArrangement = Arrangement.Center) {
-                    heading(
+                    headingBlock(
                         Modifier
                             .clickable(onClickLabel = playLabel) { onPlay(videoId) }
                             .padding(start = Spacing.md, end = Spacing.md, top = Spacing.sm)
@@ -795,12 +819,12 @@ private fun WatchCard(
                             .fillMaxWidth()
                             .aspectRatio(16f / 9f)
                     )
-                    heading(Modifier.padding(start = Spacing.md, end = Spacing.md, top = Spacing.md))
+                    headingBlock(Modifier.padding(start = Spacing.md, end = Spacing.md, top = Spacing.md))
                 }
                 credit(Modifier)
                 if (more.isNotEmpty()) {
                     Text(
-                        text = stringResource(R.string.home_watch_more),
+                        text = moreLabel,
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(horizontal = Spacing.md)
