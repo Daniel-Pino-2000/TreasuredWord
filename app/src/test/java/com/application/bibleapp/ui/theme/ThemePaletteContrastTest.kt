@@ -86,6 +86,11 @@ class ThemePaletteContrastTest {
         pairs += Pair("practice level dots", c.primary, c.background, NON_TEXT)
         pairs += Pair("practice check on a passed result", c.onPrimary, c.primary, NON_TEXT)
         pairs += Pair("practice cross on a failed result", c.errorContainer, c.onErrorContainer, NON_TEXT)
+        // A verse's game tabs and its "swipe up" bar sit on the page (#416); the bar that fills
+        // before a passed game moves on is on the passed result's primaryContainer.
+        pairs += Pair("practice game tab and up-next arrow", c.primary, c.background, TEXT)
+        pairs += Pair("practice unselected game tab and up-next label", c.onSurfaceVariant, c.background, TEXT)
+        pairs += Pair("practice move-on bar on a passed result", c.primary, c.primaryContainer, NON_TEXT)
         // Home (#365). The Verse to memorize tile and the Bible Helper's crisis card share the
         // second accent: text on tertiaryContainer, level dots and the Due badge (and the crisis
         // card's button) in tertiary with onTertiary on it.

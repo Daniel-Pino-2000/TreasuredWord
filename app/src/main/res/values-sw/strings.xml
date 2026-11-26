@@ -636,8 +636,16 @@
     <string name="practice_bonus">Raundi ya ziada</string>
     <string name="practice_read_in_bible">Soma katika Biblia</string>
     <string name="practice_level">Kiwango %1$d kati ya %2$d</string>
-    <string name="practice_swipe_hint">Telezesha juu kwa mstari unaofuata</string>
     <string name="practice_next">Endelea</string>
+    <string name="practice_next_game">Mchezo unaofuata</string>
+    <string name="practice_try_again">Jaribu tena</string>
+    <string name="practice_swipe_hint_games">Telezesha pembeni, au gusa kichupo, kwa michezo mingine ya mstari huu</string>
+    <string name="practice_game_passed">Umefaulu</string>
+    <string name="practice_up_next_verse">Telezesha juu kwa mstari unaofuata: %1$s</string>
+    <string name="practice_up_next_verse_plain">Telezesha juu kwa mstari unaofuata</string>
+    <string name="practice_up_next_bonus">Telezesha juu kwa raundi ya ziada</string>
+    <string name="practice_up_next_finish">Telezesha juu kumaliza</string>
+    <string name="practice_moving_on">Tunaenda kwenye mchezo unaofuata</string>
     <string name="practice_listen">Sikiliza</string>
     <string name="practice_stop">Simamisha</string>
     <string name="practice_read_done">Nimesoma</string>

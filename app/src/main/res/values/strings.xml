@@ -721,8 +721,25 @@
     <string name="practice_read_in_bible">Read in the Bible</string>
     <!-- Spoken label of the level dots. %1$d is the level, %2$d the highest level (5) -->
     <string name="practice_level">Level %1$d of %2$d</string>
-    <string name="practice_swipe_hint">Swipe up for the next verse</string>
     <string name="practice_next">Next</string>
+    <!-- After a passed game: goes on to the same verse's next game (#416) -->
+    <string name="practice_next_game">Next game</string>
+    <!-- After a game that wasn't passed: plays it again -->
+    <string name="practice_try_again">Try again</string>
+    <!-- Under the first verse's game, when the verse has several games side by side -->
+    <string name="practice_swipe_hint_games">Swipe sideways, or tap a tab, for this verse\'s other games</string>
+    <!-- Spoken by TalkBack on a game's tab once it's passed -->
+    <string name="practice_game_passed">Passed</string>
+    <!-- At the bottom of each verse's page: what swiping up leads to. %1$s is the next verse's reference -->
+    <string name="practice_up_next_verse">Swipe up for the next verse: %1$s</string>
+    <!-- The same, when the next verse's reference isn't known -->
+    <string name="practice_up_next_verse_plain">Swipe up for the next verse</string>
+    <!-- At the bottom of the last verse's page, when a bonus round follows -->
+    <string name="practice_up_next_bonus">Swipe up for the bonus round</string>
+    <!-- At the bottom of the last page, before the summary -->
+    <string name="practice_up_next_finish">Swipe up to finish</string>
+    <!-- Spoken by TalkBack for the bar that fills before a passed game moves on by itself -->
+    <string name="practice_moving_on">Moving on to the next game</string>
     <string name="practice_listen">Listen</string>
     <string name="practice_stop">Stop</string>
     <string name="practice_read_done">I\'ve read it</string>

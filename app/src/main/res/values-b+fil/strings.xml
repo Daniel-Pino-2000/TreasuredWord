@@ -637,8 +637,16 @@
     <string name="practice_bonus">Bonus na round</string>
     <string name="practice_read_in_bible">Basahin sa Bibliya</string>
     <string name="practice_level">Antas %1$d sa %2$d</string>
-    <string name="practice_swipe_hint">Mag-swipe pataas para sa susunod na talata</string>
     <string name="practice_next">Susunod</string>
+    <string name="practice_next_game">Susunod na laro</string>
+    <string name="practice_try_again">Subukan muli</string>
+    <string name="practice_swipe_hint_games">Mag-swipe pagilid, o i-tap ang isang tab, para sa ibang laro ng talatang ito</string>
+    <string name="practice_game_passed">Pasado</string>
+    <string name="practice_up_next_verse">Mag-swipe pataas para sa susunod na talata: %1$s</string>
+    <string name="practice_up_next_verse_plain">Mag-swipe pataas para sa susunod na talata</string>
+    <string name="practice_up_next_bonus">Mag-swipe pataas para sa bonus round</string>
+    <string name="practice_up_next_finish">Mag-swipe pataas para tapusin</string>
+    <string name="practice_moving_on">Lilipat sa susunod na laro</string>
     <string name="practice_listen">Pakinggan</string>
     <string name="practice_stop">Itigil</string>
     <string name="practice_read_done">Nabasa ko na</string>

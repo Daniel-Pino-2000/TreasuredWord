@@ -33,6 +33,26 @@ enum class PracticeGame(val level: Int) {
 /** What a practice runs: [game] for every passage, or null for Mixed (each passage's own level). */
 data class PracticeChoice(val game: PracticeGame?)
 
+/**
+ * The games a passage's page swipes through sideways, easiest first (#416): every game with a
+ * level. "Which reference?" isn't one of them; it gets a page of its own.
+ */
+val PRACTICE_LADDER: List<PracticeGame> = PracticeGame.entries.filter { it.level >= 0 }
+
+/**
+ * Where a passed game leads (#416). In Mixed, the passage's next game, so a passage climbs the
+ * ladder in one go; null means the next passage instead: the top of the ladder, a bonus round, or
+ * a practice of one game for every passage, where that game was picked on purpose.
+ */
+fun nextGameAfterPass(game: PracticeGame, mixed: Boolean): PracticeGame? =
+    if (!mixed) null else PRACTICE_LADDER.getOrNull(PRACTICE_LADDER.indexOf(game) + 1)?.takeIf { game in PRACTICE_LADDER }
+
+/**
+ * Whether a pass moves on by itself after a moment (#416). Not after "Type it from memory": its
+ * result marks the words that were missed, and that's worth reading before going on.
+ */
+fun movesOnAfterPass(game: PracticeGame): Boolean = game != PracticeGame.TYPE_FROM_MEMORY
+
 /** The game for a passage's level; a Memorized passage keeps proving itself by typing it. */
 fun gameForProgress(verse: MemoryVerse): PracticeGame =
     if (verse.status == MemoryStatus.MEMORIZED) PracticeGame.TYPE_FROM_MEMORY
