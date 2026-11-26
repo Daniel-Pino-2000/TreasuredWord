@@ -8,6 +8,7 @@ import io.ktor.client.call.body
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
+import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import kotlinx.coroutines.CancellationException
@@ -29,6 +30,24 @@ data class SemanticSearchResponseDto(
     val crisis: Boolean? = null,
     val suggestAsk: Boolean? = null
 )
+
+/**
+ * `POST /api/v1/search/reports` (#402): a search whose results didn't help, sent only from the
+ * sheet that shows all of it, on Send. References are USFM ("JHN 3:16", "PSA 73"); [bibleVersion]
+ * is the translation's ID, never its text.
+ */
+@Serializable
+data class SearchReportRequestDto(
+    val q: String,
+    val language: String,
+    val bibleVersion: String,
+    val appVersion: String? = null,
+    val results: List<String> = emptyList(),
+    val keyPassages: List<String> = emptyList()
+)
+
+/** How reporting a search (#402) ended, one snackbar line per case. */
+enum class SearchReportResult { SENT, OFFLINE, RATE_LIMITED, FAILED }
 
 /** One verse search by meaning found; [bookId] is 1–66, as everywhere in the app. */
 data class VerseRef(val bookId: Int, val chapter: Int, val verse: Int)
@@ -101,6 +120,35 @@ class SemanticSearchApi(
             isRetriableNetworkError(e) ->
                 if (phoneIsOnline?.invoke() == true) SemanticSearchResult.Unavailable else SemanticSearchResult.Offline
             else -> SemanticSearchResult.Unavailable
+        }
+    }
+
+    /** Sends [request] without the account, like the search itself ([anonymousBackendRequest]). */
+    suspend fun report(request: SearchReportRequestDto): SearchReportResult = try {
+        val response = client().post("$baseUrl/search/reports") {
+            anonymousBackendRequest()
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }
+        when {
+            response.status.isSuccess() -> SearchReportResult.SENT
+            // The `search-report` zone: 10 an hour per IP.
+            response.status == HttpStatusCode.TooManyRequests -> SearchReportResult.RATE_LIMITED
+            else -> {
+                // A 400 would be our own bug (the app sends only what the contract allows).
+                log("Search report rejected: ${response.status.value}")
+                SearchReportResult.FAILED
+            }
+        }
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        log("Search report failed: ${e.javaClass.simpleName}: ${e.message}")
+        when {
+            isServerResponseTimeout(e) -> SearchReportResult.FAILED
+            isRetriableNetworkError(e) ->
+                if (phoneIsOnline?.invoke() == true) SearchReportResult.FAILED else SearchReportResult.OFFLINE
+            else -> SearchReportResult.FAILED
         }
     }
 

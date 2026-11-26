@@ -158,4 +158,42 @@ class SemanticSearchApiTest {
     fun `an answer that isn't results is unavailable`() = runTest {
         assertEquals(SemanticSearchResult.Unavailable, api { json(HttpStatusCode.OK, "<html>") }.search("peace"))
     }
+
+    // Reporting a search that didn't help (#402).
+
+    private val report = SearchReportRequestDto(
+        q = "worried about my job", language = "en", bibleVersion = "BSB", appVersion = "1.9",
+        results = listOf("MAT 6:34"), keyPassages = listOf("PSA 73")
+    )
+
+    @Test
+    fun `a report goes to its endpoint, without the account's token`() = runTest {
+        val result = api { respond("", HttpStatusCode.NoContent) }.report(report)
+
+        assertEquals(SearchReportResult.SENT, result)
+        val request = sent.single()
+        assertEquals("https://backend.test/api/v1/search/reports", request.url.toString())
+        assertEquals(
+            """{"q":"worried about my job","language":"en","bibleVersion":"BSB","appVersion":"1.9","results":["MAT 6:34"],"keyPassages":["PSA 73"]}""",
+            (request.body as TextContent).text
+        )
+        assertNull(request.headers[HttpHeaders.Authorization])
+    }
+
+    @Test
+    fun `too many reports is rate limited`() = runTest {
+        assertEquals(SearchReportResult.RATE_LIMITED, api { respond("", HttpStatusCode.TooManyRequests) }.report(report))
+    }
+
+    @Test
+    fun `a rejected report failed`() = runTest {
+        assertEquals(SearchReportResult.FAILED, api { json(HttpStatusCode.BadRequest, """{"code":"VALIDATION_ERROR"}""") }.report(report))
+    }
+
+    @Test
+    fun `a report with no connection is offline, and failed when the phone is online`() = runTest {
+        assertEquals(SearchReportResult.OFFLINE, api { throw IOException("Unable to resolve host") }.report(report))
+        phoneOnline = true
+        assertEquals(SearchReportResult.FAILED, api { throw IOException("unexpected end of stream") }.report(report))
+    }
 }

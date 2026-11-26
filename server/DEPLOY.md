@@ -180,6 +180,23 @@ Once a report has been read and acted on (an instructions change, an evaluation 
 to `docs/ai_helper_eval.md`), it can be deleted early:
 `DELETE FROM ai_reports WHERE id = '<id>';`
 
+## Reading reported searches (#402)
+
+Under "Related by meaning" the app has a "These results didn't help" link. A report is the search,
+the app's language and version, the Bible version and the references shown, stored in
+`search_reports` without the user or the IP and deleted after 90 days. In Neon's **SQL Editor**:
+
+```sql
+SELECT created_at, language, bible_version, app_version, query, key_passages, results
+FROM search_reports
+ORDER BY created_at DESC
+LIMIT 50;
+```
+
+To use one, write the verses a good result should have and add it to the held-out set
+(`docs/semantic_search_eval_heldout.md`), then delete it early if you like:
+`DELETE FROM search_reports WHERE id = '<id>';`
+
 ## Search by meaning: the verse tables (#287)
 
 Migration V9 creates `search_verses` (the BSB text, with a full-text index) and

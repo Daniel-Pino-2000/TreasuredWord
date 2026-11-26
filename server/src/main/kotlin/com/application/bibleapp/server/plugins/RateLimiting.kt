@@ -35,6 +35,9 @@ val AI_REPORT_RATE_LIMIT = RateLimitName("ai-report")
 /** Rate-limit zone for search by meaning (#287): each search spends a little of the AI's free neurons. */
 val SEARCH_RATE_LIMIT = RateLimitName("search")
 
+/** Rate-limit zone for reporting searches that didn't help (#402): like [AI_REPORT_RATE_LIMIT], but signed out. */
+val SEARCH_REPORT_RATE_LIMIT = RateLimitName("search-report")
+
 /**
  * The caller's IP address, as both rate limits' key. Ktor's own default key is the same for
  * every caller, which made a limit server-wide (#162). On Render the server sits behind
@@ -96,6 +99,12 @@ fun Application.configureRateLimiting(clock: Clock = Clock.systemUTC()) {
         // still has room. Signed out, so the IP is the only key.
         register(SEARCH_RATE_LIMIT) {
             rateLimiter(limit = 20, refillPeriod = 1.minutes)
+            requestKey { call -> call.clientIp() }
+        }
+        // 10 search reports an hour per IP (#402), like the Bible Helper's reports, but signed
+        // out, so the IP is the only key. A person reports a search now and then, not ten an hour.
+        register(SEARCH_REPORT_RATE_LIMIT) {
+            rateLimiter(limit = 10, refillPeriod = 1.hours)
             requestKey { call -> call.clientIp() }
         }
     }

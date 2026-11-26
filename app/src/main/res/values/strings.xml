@@ -270,6 +270,20 @@
     <string name="search_meaning_start">Find verses related by meaning</string>
     <string name="search_meaning_loading">Looking for verses related by meaning…</string>
     <string name="search_meaning_none">No more verses found by meaning.</string>
+    <!-- Search (#402): "These results didn't help" under "Related by meaning", and its sheet, which shows everything sent before Send. -->
+    <string name="search_report_link">These results didn\'t help</string>
+    <string name="search_report_title">Send this search?</string>
+    <string name="search_report_intro">It helps us make search better. Only what\'s below is sent, without your account, and it\'s deleted after 90 days.</string>
+    <string name="search_report_query">Your search</string>
+    <string name="search_report_language">App language</string>
+    <string name="search_report_bible_version">Bible version</string>
+    <string name="search_report_app_version">App version</string>
+    <string name="search_report_none">None</string>
+    <string name="search_report_send">Send</string>
+    <string name="search_report_sent">Thanks, your search was sent.</string>
+    <string name="search_report_offline">You\'re offline. Connect to the internet to send it.</string>
+    <string name="search_report_failed">Couldn\'t send it. Try again.</string>
+    <string name="search_report_rate_limited">You\'ve sent a lot of searches. Try again later.</string>
     <string name="search_meaning_offline">Search by meaning needs an internet connection.</string>
     <string name="search_meaning_unavailable">Search by meaning isn\'t available right now.</string>
     <string name="search_clear">Clear search</string>

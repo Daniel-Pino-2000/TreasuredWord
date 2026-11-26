@@ -1,5 +1,6 @@
 package com.application.bibleapp.viewmodel
 
+import com.application.bibleapp.BuildConfig
 import com.application.bibleapp.data.model.YouVersionBibles
 import com.application.bibleapp.data.repository.ChapterProblem
 import com.application.bibleapp.data.remote.YouVersionBusyException
@@ -37,6 +38,7 @@ import com.application.bibleapp.data.model.VerseUI
 import com.application.bibleapp.data.model.chapterCount
 import com.application.bibleapp.data.model.resolveDailyVerseUI
 import com.application.bibleapp.data.remote.LanguageGroup
+import com.application.bibleapp.data.remote.SearchReportResult
 import com.application.bibleapp.data.remote.SemanticSearchApi
 import com.application.bibleapp.data.remote.ServerWake
 import com.application.bibleapp.data.remote.VerseLocationDto
@@ -439,6 +441,9 @@ class BibleViewModel(
         },
         isCrisis = CrisisPhrases::matches
     )
+
+    // Reporting a search whose results didn't help (#402): only from its sheet, on Send.
+    private val reportSearch = semanticSearchApi::report
 
     /** The "Related by meaning" section, without the verses the word results already show. */
     val meaningSearchState: StateFlow<MeaningSearchState> =
@@ -1501,6 +1506,15 @@ class BibleViewModel(
         verseSearch.submit()
         meaningSearch.submit(verseSearch.query.value)
     }
+
+    /** What reporting the current search would send (#402), or null until search by meaning has
+     *  answered. From the section before the word results are taken out: the server's whole answer. */
+    fun searchReportDraft(): SearchReportDraft? =
+        meaningSearch.state.value.reportDraft(_selectedVersion.value.id)
+
+    /** Sends [draft], with the app's [language] (an AppLanguage tag) and version, without the account. */
+    suspend fun sendSearchReport(draft: SearchReportDraft, language: String): SearchReportResult =
+        reportSearch(draft.toRequest(language, BuildConfig.VERSION_NAME))
 
     /** Whether [query] gets a "Related by meaning" section: not a verse reference or a quoted
      *  phrase (#287). The screen offers the search only for these. */

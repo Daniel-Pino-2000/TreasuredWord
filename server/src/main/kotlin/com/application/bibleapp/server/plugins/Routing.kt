@@ -55,7 +55,7 @@ fun Application.configureRouting(
             userRoutes(googleVerifier)
             syncRoutes()
             aiRoutes(aiProvider, clock, guides)
-            searchRoutes(search)
+            searchRoutes(search, clock)
         }
     }
 }

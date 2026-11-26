@@ -25,3 +25,21 @@ data class SemanticSearchResponse(
     val crisis: Boolean? = null,
     val suggestAsk: Boolean? = null
 )
+
+/**
+ * `POST /api/v1/search/reports` (#402): a search whose results didn't help, sent only when the
+ * person taps Send. [q] is what they searched (1–200 characters), [language] the app's language
+ * tag, [bibleVersion] the translation the results were shown in (its ID, never its text),
+ * [appVersion] the app's version name. [results] and [keyPassages] are the references the app
+ * showed under "Related by meaning" and "Key passages", as USFM ("JHN 3:16", "PSA 73"), at most
+ * 20 each. Stored without the user or the IP.
+ */
+@Serializable
+data class SearchReportRequest(
+    val q: String,
+    val language: String,
+    val bibleVersion: String,
+    val appVersion: String? = null,
+    val results: List<String> = emptyList(),
+    val keyPassages: List<String> = emptyList()
+)
