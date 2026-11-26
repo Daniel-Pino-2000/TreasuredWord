@@ -1,47 +1,80 @@
 <svg viewBox="0 0 108 108" xmlns="http://www.w3.org/2000/svg">
-  <!-- TreasuredWord launcher icon, full 108 x 108 adaptive-icon grid. Launchers show the
-       middle 72 x 72 (18..90) and keep the 66-unit circle around the centre always visible.
-       Mirrors res/drawable/ic_launcher_background.xml + ic_launcher_foreground.xml. -->
+  <!-- TreasuredWord launcher icon (#368): a gilded open Bible on a Parchment brown tile, with a
+       cross cut out of the book: the gutter and a bar across both pages. Full 108 x 108
+       adaptive-icon grid; launchers show the middle 72 x 72 (18..90) and keep the 66-unit circle
+       around the centre always visible.
+       THE ONE SOURCE: make_icons.py turns the three groups below into ic_launcher_background.xml,
+       ic_launcher_foreground.xml and ic_launcher_monochrome.xml, and renders every PNG from it.
+       It understands <path>, <rect> (with rx), fills that are colors or linear gradients, fill-rule
+       and a fill on a <g>; keep to those. -->
   <defs>
     <linearGradient id="bg" gradientUnits="userSpaceOnUse" x1="0" y1="18" x2="0" y2="90">
-      <stop offset="0" stop-color="#2E251B"/><stop offset="1" stop-color="#15110D"/>
+      <stop offset="0" stop-color="#8C6234"/><stop offset="1" stop-color="#573A1A"/>
     </linearGradient>
-    <linearGradient id="gold" gradientUnits="userSpaceOnUse" x1="26" y1="32" x2="82" y2="79">
-      <stop offset="0" stop-color="#F6D893"/><stop offset=".5" stop-color="#DDAA5C"/><stop offset="1" stop-color="#B57F37"/>
+    <linearGradient id="cover" gradientUnits="userSpaceOnUse" x1="28" y1="33" x2="80" y2="80">
+      <stop offset="0" stop-color="#C99248"/><stop offset="1" stop-color="#8E5E26"/>
+    </linearGradient>
+    <linearGradient id="gilt" gradientUnits="userSpaceOnUse" x1="0" y1="60" x2="0" y2="78">
+      <stop offset="0" stop-color="#F6D893"/><stop offset="1" stop-color="#DDAA5C"/>
     </linearGradient>
   </defs>
 
-  <!-- background layer -->
-  <rect width="108" height="108" fill="url(#bg)"/>
-
-  <!-- foreground layer: gold-edged cover, then the pages -->
-  <path d="M54 36 C46 33 36 32 26 34 V77 C36 75 46 76 54 79 C62 76 72 75 82 77 V34 C72 32 62 33 54 36 Z" fill="url(#gold)"/>
-  <path d="M53 34 C46 31 37 30 28 32 V74 C37 72 46 73 53 76 Z" fill="#F7EFDF"/>
-  <path d="M55 34 C62 31 71 30 80 32 V74 C71 72 62 73 55 76 Z" fill="#F7EFDF"/>
-
-  <!-- highlights: the app's Blue and Purple swatches (HighlightColors.kt) -->
-  <rect x="31" y="43" width="20" height="6" rx="1" fill="#7FA8C9"/>
-  <rect x="57" y="55" width="20" height="6" rx="1" fill="#A98FC9"/>
-  <rect x="31" y="61" width="15" height="6" rx="1" fill="#A98FC9"/>
-
-  <!-- lines of text; highlighted ones in a deeper shade of their highlight -->
-  <g fill="#C4B08B">
-    <rect x="32" y="40" width="18" height="2" rx="1"/><rect x="32" y="52" width="14" height="2" rx="1"/>
-    <rect x="32" y="58" width="18" height="2" rx="1"/><rect x="58" y="40" width="18" height="2" rx="1"/>
-    <rect x="58" y="46" width="15" height="2" rx="1"/><rect x="58" y="52" width="18" height="2" rx="1"/>
-    <rect x="58" y="64" width="17" height="2" rx="1"/>
+  <g id="background">
+    <!-- Parchment brown, lighter at the top. The gradient runs across the 72 units a launcher
+         shows (18..90), not the whole layer, so all of it is seen. -->
+    <rect width="108" height="108" fill="url(#bg)"/>
   </g>
-  <rect x="32" y="46" width="18" height="2" rx="1" fill="#4E7293"/>
-  <rect x="58" y="58" width="18" height="2" rx="1" fill="#6E5594"/>
-  <rect x="32" y="64" width="12" height="2" rx="1" fill="#6E5594"/>
 
-  <!-- ribbon down the gutter -->
-  <path d="M51.5 33 H56.5 V88 L54 85 L51.5 88 Z" fill="#B3423B"/>
+  <g id="foreground">
+    <!-- Ribbon tail, tucked under the right page and hanging out below the cover -->
+    <path d="M61.5,70 H65.5 V84.5 L63.5,82 L61.5,84.5 Z" fill="#B3423B"/>
+    <!-- The cross is cut out, not painted: the gutter (x 52..56) splits the cover, gilt edges and
+         pages into a left and a right half, and each half has the bar (y 43.5..47.5, out to x 38
+         and 70) notched into its gutter side. So the background shows through, and stays in line
+         when a launcher moves the two layers apart (parallax, press animations). -->
+    <!-- Cover, in two halves split at the gutter -->
+    <path fill="url(#cover)" d="M52,35.65 C44.85,32.93 36.22,32.67 28,34.5 V77.5 C36.22,75.67 44.85,75.93 52,78.65 V47.5 H38 V43.5 H52 Z
+             M56,35.65 C63.15,32.93 71.78,32.67 80,34.5 V77.5 C71.78,75.67 63.15,75.93 56,78.65 V47.5 H70 V43.5 H56 Z"/>
+    <!-- Gilt page edges: the pages again, 1.8 lower -->
+    <path fill="url(#gilt)" d="M52,35.8 C46,32.8 37,32.3 30,34.3 V75.8 C37,73.8 46,74.3 52,77.3 V47.5 H38 V43.5 H52 Z
+             M56,35.8 C62,32.8 71,32.3 78,34.3 V75.8 C71,73.8 62,74.3 56,77.3 V47.5 H70 V43.5 H56 Z"/>
+    <!-- Pages -->
+    <path fill="#F7EFDF" d="M52,34 C46,31 37,30.5 30,32.5 V74 C37,72 46,72.5 52,75.5 V47.5 H38 V43.5 H52 Z
+             M56,34 C62,31 71,30.5 78,32.5 V74 C71,72 62,72.5 56,75.5 V47.5 H70 V43.5 H56 Z"/>
+    <!-- Highlights in the app's Blue and Purple swatches (ui/theme/HighlightColors.kt), each with
+         its line of text in a deeper shade -->
+    <rect x="32" y="53.5" width="19" height="6" rx="1" fill="#7FA8C9"/>
+    <rect x="33" y="55.5" width="17" height="2" rx="1" fill="#4E7293"/>
+    <g fill="#A98FC9">
+      <rect x="57" y="50.5" width="19" height="6" rx="1"/>
+      <rect x="32" y="65.5" width="14" height="6" rx="1"/>
+    </g>
+    <g fill="#6E5594">
+      <rect x="58" y="52.5" width="17" height="2" rx="1"/>
+      <rect x="33" y="67.5" width="11" height="2" rx="1"/>
+    </g>
+    <!-- Lines of text -->
+    <g fill="#C4B08B">
+      <rect x="33" y="37.5" width="16" height="2" rx="1"/>
+      <rect x="33" y="50" width="17" height="2" rx="1"/>
+      <rect x="33" y="62.5" width="13" height="2" rx="1"/>
+      <rect x="58" y="37.5" width="17" height="2" rx="1"/>
+      <rect x="58" y="59.5" width="16" height="2" rx="1"/>
+      <rect x="58" y="63.5" width="13" height="2" rx="1"/>
+      <rect x="58" y="67.5" width="16" height="2" rx="1"/>
+    </g>
+  </g>
 
-  <!-- note on the corner of the right page, in the app's Yellow swatch -->
-  <g transform="rotate(8 75 39)">
-    <rect x="68" y="32" width="14" height="14" rx="1.2" fill="#E8C24A"/>
-    <rect x="70.5" y="36" width="9" height="1.6" rx=".8" fill="#8A6A16"/>
-    <rect x="70.5" y="39.6" width="6" height="1.6" rx=".8" fill="#8A6A16"/>
+  <g id="monochrome" display="none">
+    <!-- Themed icon (Android 13+, #105): the system draws this one shape in a color from the
+         wallpaper, so its own fill never shows. The two pages with the cross and the three
+         highlights cut out (evenOdd), and the ribbon tail on its own below them. The thin text
+         lines are left out, since at icon size they'd only blur. -->
+    <path fill="#FFFFFF" fill-rule="evenodd" d="M52,34 C46,31 37,30.5 30,32.5 V74 C37,72 46,72.5 52,75.5 V47.5 H38 V43.5 H52 Z
+             M56,34 C62,31 71,30.5 78,32.5 V74 C71,72 62,72.5 56,75.5 V47.5 H70 V43.5 H56 Z
+             M33,53.5 H50 A1,1 0 0 1 51,54.5 V58.5 A1,1 0 0 1 50,59.5 H33 A1,1 0 0 1 32,58.5 V54.5 A1,1 0 0 1 33,53.5 Z
+             M58,50.5 H75 A1,1 0 0 1 76,51.5 V55.5 A1,1 0 0 1 75,56.5 H58 A1,1 0 0 1 57,55.5 V51.5 A1,1 0 0 1 58,50.5 Z
+             M33,65.5 H45 A1,1 0 0 1 46,66.5 V70.5 A1,1 0 0 1 45,71.5 H33 A1,1 0 0 1 32,70.5 V66.5 A1,1 0 0 1 33,65.5 Z"/>
+    <path fill="#FFFFFF" d="M61.5,76 H65.5 V84.5 L63.5,82 L61.5,84.5 Z"/>
   </g>
 </svg>
