@@ -766,9 +766,11 @@ class MainActivity : AppCompatActivity() {
 
                         if (aboutBookOpen && currentRoute == Screen.Bible.route) {
                             val currentBook by bibleViewModel.currentBook.collectAsState()
+                            val currentChapter by bibleViewModel.currentChapter.collectAsState()
                             val bookNames by bibleViewModel.bookNames.collectAsState()
                             AboutBookSheet(
                                 bookId = currentBook,
+                                chapter = currentChapter,
                                 bookName = { id -> bookNames[id] ?: BibleBooks.getBookById(id)?.name.orEmpty() },
                                 spanish = isSpanishUi(),
                                 onDismiss = { aboutBookOpen = false }
