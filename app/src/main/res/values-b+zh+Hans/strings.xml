@@ -620,8 +620,16 @@
     <string name="practice_bonus">奖励回合</string>
     <string name="practice_read_in_bible">在圣经中阅读</string>
     <string name="practice_level">第 %1$d 级，共 %2$d 级</string>
-    <string name="practice_swipe_hint">向上滑动查看下一节</string>
     <string name="practice_next">下一个</string>
+    <string name="practice_next_game">下一个游戏</string>
+    <string name="practice_try_again">再试一次</string>
+    <string name="practice_swipe_hint_games">左右滑动或点按标签，切换这一节的其他游戏</string>
+    <string name="practice_game_passed">已通过</string>
+    <string name="practice_up_next_verse">向上滑动查看下一节：%1$s</string>
+    <string name="practice_up_next_verse_plain">向上滑动查看下一节</string>
+    <string name="practice_up_next_bonus">向上滑动进入加分回合</string>
+    <string name="practice_up_next_finish">向上滑动完成练习</string>
+    <string name="practice_moving_on">即将进入下一个游戏</string>
     <string name="practice_listen">朗读</string>
     <string name="practice_stop">停止</string>
     <string name="practice_read_done">我读完了</string>

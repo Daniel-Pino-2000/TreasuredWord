@@ -668,8 +668,16 @@
     <string name="practice_bonus">Ronda extra</string>
     <string name="practice_read_in_bible">Leer en la Biblia</string>
     <string name="practice_level">Nivel %1$d de %2$d</string>
-    <string name="practice_swipe_hint">Desliza hacia arriba para el siguiente versículo</string>
     <string name="practice_next">Siguiente</string>
+    <string name="practice_next_game">Siguiente juego</string>
+    <string name="practice_try_again">Intentar de nuevo</string>
+    <string name="practice_swipe_hint_games">Desliza hacia los lados, o toca una pestaña, para los otros juegos de este versículo</string>
+    <string name="practice_game_passed">Superado</string>
+    <string name="practice_up_next_verse">Desliza hacia arriba para el siguiente versículo: %1$s</string>
+    <string name="practice_up_next_verse_plain">Desliza hacia arriba para el siguiente versículo</string>
+    <string name="practice_up_next_bonus">Desliza hacia arriba para la ronda extra</string>
+    <string name="practice_up_next_finish">Desliza hacia arriba para terminar</string>
+    <string name="practice_moving_on">Pasando al siguiente juego</string>
     <string name="practice_listen">Escuchar</string>
     <string name="practice_stop">Detener</string>
     <string name="practice_read_done">Ya lo leí</string>

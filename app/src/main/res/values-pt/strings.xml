@@ -651,8 +651,16 @@
     <string name="practice_bonus">Rodada bônus</string>
     <string name="practice_read_in_bible">Ler na Bíblia</string>
     <string name="practice_level">Nível %1$d de %2$d</string>
-    <string name="practice_swipe_hint">Deslize para cima para o próximo versículo</string>
     <string name="practice_next">Próximo</string>
+    <string name="practice_next_game">Próximo jogo</string>
+    <string name="practice_try_again">Tentar de novo</string>
+    <string name="practice_swipe_hint_games">Deslize para os lados, ou toque numa aba, para os outros jogos deste versículo</string>
+    <string name="practice_game_passed">Concluído</string>
+    <string name="practice_up_next_verse">Deslize para cima para o próximo versículo: %1$s</string>
+    <string name="practice_up_next_verse_plain">Deslize para cima para o próximo versículo</string>
+    <string name="practice_up_next_bonus">Deslize para cima para a rodada bônus</string>
+    <string name="practice_up_next_finish">Deslize para cima para terminar</string>
+    <string name="practice_moving_on">Indo para o próximo jogo</string>
     <string name="practice_listen">Ouvir</string>
     <string name="practice_stop">Parar</string>
     <string name="practice_read_done">Já li</string>

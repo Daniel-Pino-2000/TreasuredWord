@@ -621,8 +621,16 @@
     <string name="practice_bonus">보너스 라운드</string>
     <string name="practice_read_in_bible">성경에서 읽기</string>
     <string name="practice_level">%2$d단계 중 %1$d단계</string>
-    <string name="practice_swipe_hint">위로 밀면 다음 구절로 넘어가요</string>
     <string name="practice_next">다음</string>
+    <string name="practice_next_game">다음 게임</string>
+    <string name="practice_try_again">다시 하기</string>
+    <string name="practice_swipe_hint_games">옆으로 밀거나 탭을 누르면 이 구절의 다른 게임을 할 수 있어요</string>
+    <string name="practice_game_passed">통과</string>
+    <string name="practice_up_next_verse">위로 밀면 다음 구절: %1$s</string>
+    <string name="practice_up_next_verse_plain">위로 밀면 다음 구절로 넘어가요</string>
+    <string name="practice_up_next_bonus">위로 밀면 보너스 라운드로 넘어가요</string>
+    <string name="practice_up_next_finish">위로 밀면 마쳐요</string>
+    <string name="practice_moving_on">다음 게임으로 넘어가는 중</string>
     <string name="practice_listen">듣기</string>
     <string name="practice_stop">정지</string>
     <string name="practice_read_done">다 읽었어요</string>

@@ -621,8 +621,16 @@
     <string name="practice_bonus">Ronde bonus</string>
     <string name="practice_read_in_bible">Baca di Alkitab</string>
     <string name="practice_level">Tingkat %1$d dari %2$d</string>
-    <string name="practice_swipe_hint">Geser ke atas untuk ayat berikutnya</string>
     <string name="practice_next">Berikutnya</string>
+    <string name="practice_next_game">Permainan berikutnya</string>
+    <string name="practice_try_again">Coba lagi</string>
+    <string name="practice_swipe_hint_games">Geser ke samping, atau ketuk tab, untuk permainan lain ayat ini</string>
+    <string name="practice_game_passed">Lulus</string>
+    <string name="practice_up_next_verse">Geser ke atas untuk ayat berikutnya: %1$s</string>
+    <string name="practice_up_next_verse_plain">Geser ke atas untuk ayat berikutnya</string>
+    <string name="practice_up_next_bonus">Geser ke atas untuk babak bonus</string>
+    <string name="practice_up_next_finish">Geser ke atas untuk selesai</string>
+    <string name="practice_moving_on">Lanjut ke permainan berikutnya</string>
     <string name="practice_listen">Dengarkan</string>
     <string name="practice_stop">Berhenti</string>
     <string name="practice_read_done">Sudah saya baca</string>

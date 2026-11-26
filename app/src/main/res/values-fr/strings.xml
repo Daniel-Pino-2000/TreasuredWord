@@ -651,8 +651,16 @@
     <string name="practice_bonus">Manche bonus</string>
     <string name="practice_read_in_bible">Lire dans la Bible</string>
     <string name="practice_level">Niveau %1$d sur %2$d</string>
-    <string name="practice_swipe_hint">Balayez vers le haut pour le verset suivant</string>
     <string name="practice_next">Suivant</string>
+    <string name="practice_next_game">Jeu suivant</string>
+    <string name="practice_try_again">Réessayer</string>
+    <string name="practice_swipe_hint_games">Balayez sur les côtés, ou touchez un onglet, pour les autres jeux de ce verset</string>
+    <string name="practice_game_passed">Réussi</string>
+    <string name="practice_up_next_verse">Balayez vers le haut pour le verset suivant : %1$s</string>
+    <string name="practice_up_next_verse_plain">Balayez vers le haut pour le verset suivant</string>
+    <string name="practice_up_next_bonus">Balayez vers le haut pour la manche bonus</string>
+    <string name="practice_up_next_finish">Balayez vers le haut pour terminer</string>
+    <string name="practice_moving_on">Passage au jeu suivant</string>
     <string name="practice_listen">Écouter</string>
     <string name="practice_stop">Arrêter</string>
     <string name="practice_read_done">Je l\'ai lu</string>

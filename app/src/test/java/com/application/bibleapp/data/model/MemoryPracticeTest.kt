@@ -201,4 +201,20 @@ class MemoryPracticeTest {
         // A two-verse chapter with nothing else on the list has no room for decoys.
         assertTrue(referenceDecoys(MemoryPassage(19, 117, 1, 1), emptyList(), 2, Random(1)) { true }.size < REFERENCE_DECOYS)
     }
+
+    @Test
+    fun `a passed game leads to the passage's next game in Mixed, and to the next passage otherwise`() {
+        assertEquals(PracticeGame.entries.filter { it != PracticeGame.WHICH_REFERENCE }, PRACTICE_LADDER)
+        assertEquals(PracticeGame.FILL_THE_GAPS, nextGameAfterPass(PracticeGame.READ_AND_LISTEN, mixed = true))
+        assertEquals(PracticeGame.TYPE_FROM_MEMORY, nextGameAfterPass(PracticeGame.FADING_WORDS, mixed = true))
+        // The top of the ladder, a bonus round, and one game for all go to the next passage (#416).
+        assertNull(nextGameAfterPass(PracticeGame.TYPE_FROM_MEMORY, mixed = true))
+        assertNull(nextGameAfterPass(PracticeGame.WHICH_REFERENCE, mixed = true))
+        assertNull(nextGameAfterPass(PracticeGame.FILL_THE_GAPS, mixed = false))
+    }
+
+    @Test
+    fun `every pass moves on by itself except Type it from memory, whose marks are worth reading`() {
+        PracticeGame.entries.forEach { assertEquals(it != PracticeGame.TYPE_FROM_MEMORY, movesOnAfterPass(it)) }
+    }
 }

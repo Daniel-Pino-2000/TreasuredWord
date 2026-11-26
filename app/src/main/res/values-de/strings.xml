@@ -635,8 +635,16 @@
     <string name="practice_bonus">Bonusrunde</string>
     <string name="practice_read_in_bible">In der Bibel lesen</string>
     <string name="practice_level">Stufe %1$d von %2$d</string>
-    <string name="practice_swipe_hint">Nach oben wischen für den nächsten Vers</string>
     <string name="practice_next">Weiter</string>
+    <string name="practice_next_game">Nächstes Spiel</string>
+    <string name="practice_try_again">Noch einmal</string>
+    <string name="practice_swipe_hint_games">Zur Seite wischen oder auf einen Tab tippen für die anderen Spiele dieses Verses</string>
+    <string name="practice_game_passed">Geschafft</string>
+    <string name="practice_up_next_verse">Nach oben wischen für den nächsten Vers: %1$s</string>
+    <string name="practice_up_next_verse_plain">Nach oben wischen für den nächsten Vers</string>
+    <string name="practice_up_next_bonus">Nach oben wischen für die Bonusrunde</string>
+    <string name="practice_up_next_finish">Nach oben wischen zum Abschließen</string>
+    <string name="practice_moving_on">Gleich geht es zum nächsten Spiel</string>
     <string name="practice_listen">Anhören</string>
     <string name="practice_stop">Stopp</string>
     <string name="practice_read_done">Gelesen</string>
