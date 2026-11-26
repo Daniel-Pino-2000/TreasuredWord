@@ -575,7 +575,8 @@
   - LUK 12:15: guard against all greed
 
 <!-- #397: "I lost my job" matched the anger guide; no guide covered losing work or money worries.
-     Drafted 2026-11-25, awaiting the developer's review. -->
+     Drafted and reviewed by the developer 2026-11-25: PSA 37:25 kept (cited for God not
+     abandoning His people); PRO 22:7 and ROM 13:8 left out, since here they'd read as blame. -->
 ## provision
 - **Title:** Losing a job and money worries
 - **Asks:** I've been let go from work and don't know what to do | I'm out of work and scared | Finding a new job is taking so long | How do I trust God to provide when money is tight? | Bills are piling up and I'm worried about money | Struggling with debt | We can barely afford food and rent
