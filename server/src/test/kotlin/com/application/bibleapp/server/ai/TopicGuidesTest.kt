@@ -73,6 +73,22 @@ class TopicGuidesTest {
     }
 
     @Test
+    fun aCloseButWeakCrisisGuideIsNeverSent() {
+        val guides = TopicGuides.load()
+        val crisis = guides.single { it.id == "crisis" }
+        val anxiety = guides.single { it.id == "anxiety" }
+        val router = TopicRouter(emptyList(), threshold = 0.70)
+        // #408 before its phrases: "I can't sleep at night" scored fear 0.755, crisis 0.732
+        // (0.023 behind), and Indonesian "Saya tidak bisa tidur di malam hari" anxiety 0.721,
+        // crisis 0.717. Within ALONE_MARGIN, but under ALONE_FLOOR: not crisis.
+        assertEquals(listOf(anxiety), router.pick(listOf(RoutedGuide(anxiety, 0.755), RoutedGuide(crisis, 0.729))).map { it.guide })
+        // Nor as a close second guide, which would show the crisis card all the same.
+        assertEquals(listOf(anxiety), router.pick(listOf(RoutedGuide(anxiety, 0.721), RoutedGuide(crisis, 0.717))).map { it.guide })
+        // As the best match it needs only the threshold.
+        assertEquals(listOf(crisis), router.pick(listOf(RoutedGuide(crisis, 0.71), RoutedGuide(anxiety, 0.70))).map { it.guide })
+    }
+
+    @Test
     fun aRouterMatchesByMeaningWithTheFakeEmbedder() = runBlocking {
         val guides = TopicGuides.parse(
             """

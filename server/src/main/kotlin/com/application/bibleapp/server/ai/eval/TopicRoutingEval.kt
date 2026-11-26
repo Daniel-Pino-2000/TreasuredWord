@@ -6,6 +6,7 @@ import com.application.bibleapp.server.ai.TopicRouter
 import com.application.bibleapp.server.search.EmbeddingKind
 import com.application.bibleapp.server.search.VerseSearch
 import com.application.bibleapp.server.search.WorkersAiEmbeddingProvider
+import com.application.bibleapp.server.search.eval.QueryVectorCache
 import com.application.bibleapp.server.search.eval.SearchEvalQueries
 import com.application.bibleapp.server.search.eval.VerseRef
 import com.application.bibleapp.server.search.eval.passageCovers
@@ -71,23 +72,11 @@ private class Item(val id: String, val text: String, val set: String, val expect
  * with search alone and with the matching guide's passages shown first. An optional fifth file
  * (`-Pprobes=`, or probes.txt in the report folder) holds extra questions, one a line as
  * `expected guide (or none) | question`, to check a guide change for false matches before any
- * answer is paid for.
+ * answer is paid for. Questions' vectors are cached under the report folder, so a rerun with no
+ * new question needs no token; `topic-scores.tsv` there holds every guide's score for each.
  */
 fun main(args: Array<String>) {
     require(args.size in 4..5) { "Usage: TopicRoutingEval <ai_helper_eval.md> <heldout.md> <semantic_search_eval.md> <report folder> [probes.txt]" }
-    val config = MapApplicationConfig().apply {
-        for ((setting, variable) in listOf("baseUrl" to "AI_BASE_URL", "apiToken" to "AI_API_TOKEN")) {
-            System.getenv(variable)?.let { put("ai.$setting", it) }
-        }
-    }
-    val workersAi = WorkersAiEmbeddingProvider.fromConfig(config, VerseSearch.MODEL)
-    if (workersAi == null) {
-        System.err.println("Set AI_BASE_URL and AI_API_TOKEN first.")
-        exitProcess(1)
-    }
-    // The app shares this Cloudflare account (#343).
-    val embeddings = DevAiBudget.fromEnvironment().also { println(it.summary()) }.wrap(workersAi)
-
     val items = EvalQuestions.parse(File(args[0]).readText()).map { Item(it.id, it.ask, "main") } +
         EvalQuestions.parse(File(args[1]).readText()).map { Item(it.id, it.ask, "heldout") } +
         SearchEvalQueries.parse(File(args[2]).readText()).map { Item(it.id, it.query, "search", it.expected) }
@@ -95,18 +84,39 @@ fun main(args: Array<String>) {
     val probes = probeFile?.readLines().orEmpty()
         .filter { it.isNotBlank() && !it.startsWith("#") }
         .mapIndexed { index, line -> "PROBE-${index + 1}" to line.split(" | ", limit = 2).map { it.trim() } }
-    val expected = expectedGuides + probes.associate { (id, parts) -> id to setOf(parts[0]).filter { it != "none" }.toSet() }
+    val expected = expectedGuides + probes.associate { (id, parts) -> id to parts[0].split("/").map { it.trim() }.filter { it != "none" }.toSet() }
     val allItems = items + probes.map { (id, parts) -> Item(id, parts[1], "probe") }
     val guides = TopicGuides.load()
     val router = TopicRouter.fromResources(VerseSearch.MODEL, threshold = 0.0)
 
-    val raw = mutableMapOf<String, FloatArray>()
-    val scored = runBlocking {
-        for (batch in allItems.chunked(embeddings.maxBatch)) {
-            embeddings.embed(batch.map { it.text }, EmbeddingKind.QUERY).vectors.forEachIndexed { i, v -> raw[batch[i].id] = v }
+    // The questions' vectors are kept under the report folder by their text, so a rerun after a
+    // routing or guide change embeds only new or reworded questions, and needs no token when
+    // there are none (#408).
+    val cache = QueryVectorCache(File(args[3], "cache/${QueryVectorCache.fileName(VerseSearch.MODEL).removeSuffix(".queries")}-routing.queries"), VerseSearch.MODEL)
+    val vectors = cache.load()
+    val missing = allItems.map { it.text }.distinct().filter { it !in vectors }
+    if (missing.isNotEmpty()) {
+        val config = MapApplicationConfig().apply {
+            for ((setting, variable) in listOf("baseUrl" to "AI_BASE_URL", "apiToken" to "AI_API_TOKEN")) {
+                System.getenv(variable)?.let { put("ai.$setting", it) }
+            }
         }
-        allItems.associate { it.id to router.scoresFor(raw.getValue(it.id)) }
+        val workersAi = WorkersAiEmbeddingProvider.fromConfig(config, VerseSearch.MODEL)
+        if (workersAi == null) {
+            System.err.println("${missing.size} questions need vectors: set AI_BASE_URL and AI_API_TOKEN first.")
+            exitProcess(1)
+        }
+        // The app shares this Cloudflare account (#343).
+        val embeddings = DevAiBudget.fromEnvironment().also { println(it.summary()) }.wrap(workersAi)
+        runBlocking {
+            for (batch in missing.chunked(embeddings.maxBatch)) {
+                embeddings.embed(batch, EmbeddingKind.QUERY).vectors.forEachIndexed { i, v -> vectors[batch[i]] = v }
+            }
+        }
+        cache.save(vectors)
     }
+    val raw = allItems.associate { it.id to vectors.getValue(it.text) }
+    val scored = allItems.associate { it.id to router.scoresFor(raw.getValue(it.id)) }
 
     val out = StringBuilder()
     fun line(text: String = "") { println(text); out.appendLine(text) }
@@ -172,6 +182,13 @@ fun main(args: Array<String>) {
         val label = if (item.set == "probe") "${item.id}: ${item.text}" else item.id
         line("| $label | ${item.set} | ${expected[item.id].orEmpty().joinToString("/").ifEmpty { "–" }} | $sent | $top |")
     }
+    // Every guide's score for every question, to try a routing rule without embedding again.
+    File(args[3]).apply { mkdirs() }.resolve("topic-scores.tsv").writeText(buildString {
+        appendLine("id\tset\texpected\tquestion\tguide\tscore")
+        for (item in allItems) for (routed in scored.getValue(item.id)) {
+            appendLine("${item.id}\t${item.set}\t${expected[item.id].orEmpty().joinToString("/")}\t${item.text}\t${routed.guide.id}\t${"%.4f".format(routed.score)}")
+        }
+    })
     val file = File(args[3]).apply { mkdirs() }.resolve("topic-routing.md")
     file.writeText(out.toString())
     println("Report: ${file.absolutePath}")
