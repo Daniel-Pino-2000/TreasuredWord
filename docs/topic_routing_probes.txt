@@ -123,3 +123,23 @@ anxiety | I'm afraid I'll fail my test
 provision | My company is shutting down and I'll be out of work
 provision | I can't afford groceries this month
 provision | Mi esposo perdió su trabajo
+
+# --- Divorce (#411): written before the divorce guide's vectors were made ---
+divorce | I'm thinking about getting a divorce
+divorce | I'm thinking about getting a divorce because we fight all the time. Is that okay?
+divorce | My husband cheated on me. Am I allowed to divorce him?
+divorce | My wife left me and says she doesn't believe in God anymore. Am I free to divorce?
+divorce | I'm divorced and I want to marry again. Is remarriage allowed for a Christian?
+divorce | I got divorced years ago. Does God still accept me?
+divorce | Is divorce a sin?
+divorce | My husband had an affair and I want to leave him
+divorce | Is it okay to remarry after a divorce?
+divorce | ¿Es pecado divorciarse?
+divorce | Darf sich ein Christ scheiden lassen?
+divorce | Est-ce que le divorce est un péché ?
+divorce | 이혼은 죄인가요?
+divorce | 离婚是罪吗?
+abuse/crisis | My husband hurts me. Can I divorce him as a Christian?
+abuse/crisis | My husband hits me and I want to leave
+marriage | My wife and I fight all the time
+marriage | How can I make my marriage stronger?
