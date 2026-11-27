@@ -5,6 +5,7 @@ import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.util.Log
 import com.application.bibleapp.BuildConfig
+import com.application.bibleapp.data.model.EsvStorage
 import com.application.bibleapp.data.model.AiConversation
 import com.application.bibleapp.data.model.AiMessage
 import com.application.bibleapp.data.model.AiQuestionPassage
@@ -767,6 +768,64 @@ object BibleDatabaseManager {
         } finally {
             db.endTransaction()
         }
+    }
+
+    /**
+     * Saves one ESV chapter (#377) and deletes the saved ones that no longer keep to Crossway's
+     * limit ([EsvStorage.toEvict]: at most 500 verses, never more than half of a book), in one
+     * transaction so the phone never holds more. [bookVerses] is a book's verse count. The chapter
+     * is saved last, so it's the newest; saving it again makes it the newest again.
+     */
+    fun saveChapterWithinLimit(
+        context: Context,
+        versionId: String,
+        bookId: Int,
+        chapter: Int,
+        verses: List<ParsedVerse>,
+        footnotes: List<Footnote>,
+        bookVerses: (bookId: Int) -> Int
+    ) {
+        if (verses.isEmpty()) return
+        val db = getDatabase(context)
+        db.beginTransaction()
+        try {
+            deleteChapter(db, versionId, bookId, chapter) // its old rows are replaced, never left behind
+            saveChapter(context, versionId, bookId, chapter, verses, footnotes)
+            EsvStorage.toEvict(savedChapters(db, versionId), bookVerses).forEach {
+                deleteChapter(db, versionId, it.bookId, it.chapter)
+            }
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
+        }
+    }
+
+    /** [versionId]'s saved chapters, the oldest saved first. */
+    fun savedChapters(context: Context, versionId: String): List<EsvStorage.SavedChapter> =
+        savedChapters(getDatabase(context), versionId)
+
+    private fun savedChapters(db: SQLiteDatabase, versionId: String): List<EsvStorage.SavedChapter> =
+        db.rawQuery(
+            "SELECT book_id, chapter, COUNT(*) FROM downloaded_verses WHERE version = ? " +
+                "GROUP BY book_id, chapter ORDER BY MIN(id)",
+            arrayOf(versionId)
+        ).use { cursor ->
+            generateSequence { if (cursor.moveToNext()) EsvStorage.SavedChapter(cursor.getInt(0), cursor.getInt(1), cursor.getInt(2)) else null }
+                .toList()
+        }
+
+    private fun deleteChapter(db: SQLiteDatabase, versionId: String, bookId: Int, chapter: Int) {
+        val args = arrayOf<Any>(versionId, bookId, chapter)
+        db.execSQL("DELETE FROM downloaded_verses WHERE version = ? AND book_id = ? AND chapter = ?", args)
+        db.execSQL("DELETE FROM downloaded_footnotes WHERE version = ? AND book_id = ? AND chapter = ?", args)
+    }
+
+    /** Records how many verses [versionId]'s [bookId] [chapter] really has, once it's been fetched (#377). */
+    fun updateChapterVerseCount(context: Context, versionId: String, bookId: Int, chapter: Int, verseCount: Int) {
+        getDatabase(context).execSQL(
+            "UPDATE downloaded_chapter_info SET verse_count = ? WHERE version = ? AND book_id = ? AND chapter = ?",
+            arrayOf<Any>(verseCount, versionId, bookId, chapter)
+        )
     }
 
     /**

@@ -28,6 +28,14 @@ import com.application.bibleapp.data.remote.NoteResponseDto
 import com.application.bibleapp.data.remote.ReadingProgressResponseDto
 import com.application.bibleapp.data.remote.VerseLocationDto
 import com.application.bibleapp.data.model.YouVersionBibles
+import com.application.bibleapp.data.model.BibleBooks
+import com.application.bibleapp.data.model.EsvBible
+import com.application.bibleapp.data.model.EsvStorage
+import com.application.bibleapp.data.remote.EsvBibleSource
+import com.application.bibleapp.data.remote.EsvBusyException
+import com.application.bibleapp.data.remote.EsvHtmlParser
+import com.application.bibleapp.data.remote.MappedBookName
+import com.application.bibleapp.data.remote.MappedChapterInfo
 import com.application.bibleapp.data.local.NoContentException
 import com.application.bibleapp.data.local.NoInternetException
 import com.application.bibleapp.data.remote.YouVersionBibleSource
@@ -145,7 +153,8 @@ class BibleRepository(
     private val context: Context,
     private val remote: BibleRemoteDataSource,
     private val daily: DailyVerseDataSource,
-    private val youVersion: YouVersionBibleSource = YouVersionBibleSource()
+    private val youVersion: YouVersionBibleSource = YouVersionBibleSource(),
+    private val esv: EsvBibleSource = EsvBibleSource()
 ) : SyncLocalStore {
     private val prefs by lazy {
         context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -159,6 +168,7 @@ class BibleRepository(
     /** Like [getChapter], plus why a YouVersion chapter couldn't be fetched, for the reader to say. */
     suspend fun loadChapter(bookId: Int, chapter: Int, versionId: String): ChapterLoad =
         withContext(Dispatchers.IO) {
+            if (EsvBible.isEsv(versionId)) return@withContext loadEsvChapter(bookId, chapter)
             val problem = if (YouVersionBibles.isYouVersion(versionId)) fetchYouVersionChapterIfMissing(bookId, chapter, versionId) else null
             ChapterLoad(
                 verses = BibleDatabaseManager.getVersesByChapter(context, bookId, chapter, versionId).map { it.toUI() },
@@ -185,6 +195,70 @@ class BibleRepository(
             Log.w("BibleRepository", "YouVersion chapter $versionId $bookId:$chapter failed: ${e.message}")
             if (NetworkUtils.isOnline(context)) ChapterProblem.UNAVAILABLE else ChapterProblem.OFFLINE
         }
+    }
+
+    /**
+     * ESV chapters (#377) too big to keep on the phone (more than half of their book, [EsvStorage]),
+     * held in memory only, the last few read, while the app runs.
+     */
+    private val unsavedEsvChapters = object : LinkedHashMap<Pair<Int, Int>, EsvHtmlParser.Chapter>(8, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<Pair<Int, Int>, EsvHtmlParser.Chapter>?) =
+            size > UNSAVED_ESV_CHAPTERS
+    }
+
+    /** Serializes ESV saves, so two chapters fetched at once (search) can't both pass the limit. */
+    private val esvSaveLock = Any()
+
+    /**
+     * One ESV chapter (#377): saved, held in memory, or fetched from Crossway. A fetched chapter is
+     * saved when it may be ([EsvStorage.canStore]), dropping the oldest saved ones beyond the limit;
+     * otherwise it's only held in memory. There's no read-ahead: the key's 5,000 queries a day are
+     * shared by every reader, and the phone may keep only 500 verses.
+     */
+    private suspend fun loadEsvChapter(bookId: Int, chapter: Int): ChapterLoad {
+        val versionId = EsvBible.ID
+        if (!BibleDatabaseManager.isVersionDownloaded(context, versionId)) return ChapterLoad(emptyList())
+        if (BibleDatabaseManager.hasChapter(context, versionId, bookId, chapter)) return savedChapterLoad(bookId, chapter, versionId)
+        synchronized(unsavedEsvChapters) { unsavedEsvChapters[bookId to chapter] }?.let { return ChapterLoad(it.toVerseUI(bookId, chapter)) }
+        if (!esv.isConfigured) return ChapterLoad(emptyList(), ChapterProblem.UNAVAILABLE)
+        if (!NetworkUtils.isOnline(context)) return ChapterLoad(emptyList(), ChapterProblem.OFFLINE)
+        val parsed = try {
+            esv.fetchChapter(bookId, chapter)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: EsvBusyException) {
+            return ChapterLoad(emptyList(), ChapterProblem.BUSY)
+        } catch (e: Exception) {
+            Log.w("BibleRepository", "ESV chapter $bookId:$chapter failed: ${e.message}")
+            return ChapterLoad(emptyList(), if (NetworkUtils.isOnline(context)) ChapterProblem.UNAVAILABLE else ChapterProblem.OFFLINE)
+        }
+        if (parsed.verses.isEmpty()) return ChapterLoad(emptyList(), ChapterProblem.UNAVAILABLE)
+
+        // The structure came from the KJV's; the chapter itself says how many verses it has.
+        val verseCount = parsed.verses.maxOf { it.number }
+        val structure = BibleDatabaseManager.getChapterStructure(context, versionId)
+        if (structure[bookId]?.get(chapter) != verseCount) {
+            BibleDatabaseManager.updateChapterVerseCount(context, versionId, bookId, chapter, verseCount)
+        }
+        val bookVerses = { id: Int ->
+            val chapters = structure[id].orEmpty()
+            if (id == bookId) chapters.values.sum() - (chapters[chapter] ?: 0) + verseCount else chapters.values.sum()
+        }
+        if (!EsvStorage.canStore(parsed.verses.size, bookVerses(bookId))) {
+            synchronized(unsavedEsvChapters) { unsavedEsvChapters[bookId to chapter] = parsed }
+            return ChapterLoad(parsed.toVerseUI(bookId, chapter))
+        }
+        synchronized(esvSaveLock) {
+            BibleDatabaseManager.saveChapterWithinLimit(context, versionId, bookId, chapter, parsed.verses, parsed.footnotes, bookVerses)
+        }
+        return savedChapterLoad(bookId, chapter, versionId)
+    }
+
+    private fun savedChapterLoad(bookId: Int, chapter: Int, versionId: String) =
+        ChapterLoad(BibleDatabaseManager.getVersesByChapter(context, bookId, chapter, versionId).map { it.toUI() })
+
+    private fun EsvHtmlParser.Chapter.toVerseUI(bookId: Int, chapter: Int): List<VerseUI> = verses.map {
+        VerseUI(id = null, text = it.plainText, bookId = bookId, chapter = chapter, verse = it.number, richContent = it.richContent)
     }
 
     /** The reader opened [bookId] [chapter] of [versionId]: if it's a licensed version added here
@@ -214,6 +288,9 @@ class BibleRepository(
 
     suspend fun getFootnotes(bookId: Int, chapter: Int, versionId: String): List<Footnote> =
         withContext(Dispatchers.IO) {
+            if (EsvBible.isEsv(versionId)) {
+                synchronized(unsavedEsvChapters) { unsavedEsvChapters[bookId to chapter] }?.let { return@withContext it.footnotes }
+            }
             BibleDatabaseManager.getFootnotesForChapter(context, bookId, chapter, versionId)
         }
 
@@ -227,7 +304,7 @@ class BibleRepository(
     /** A reference ("John 3:16", "Jn 3", the version's own book name) finds that passage; anything
      *  else, or a reference to verses this version doesn't have, is a word search (#59). A licensed
      *  version's chapter is fetched for a reference if it isn't saved, and its word search goes
-     *  through YouVersion ([LicensedWordSearch], #382). */
+     *  through YouVersion ([LicensedWordSearch], #382), or the ESV's through Crossway ([EsvWordSearch], #377). */
     suspend fun searchVerses(query: String, versionId: String): WordSearchPage =
         withContext(Dispatchers.IO) {
             if (query.isBlank()) return@withContext WordSearchPage(emptyList())
@@ -235,14 +312,21 @@ class BibleRepository(
             val passage = reference?.let { ref -> loadChapter(ref.bookId, ref.chapter, versionId).verses.passage(ref) }
             when {
                 !passage.isNullOrEmpty() -> WordSearchPage(passage)
-                isSearchedByYouVersion(versionId) -> licensedWordSearch(versionId).search(query)
+                EsvBible.isEsv(versionId) && esv.isConfigured -> esvWordSearch().search(query)
+                YouVersionBibles.find(versionId) != null && youVersion.isConfigured -> licensedWordSearch(versionId).search(query)
                 else -> WordSearchPage(BibleDatabaseManager.searchVerses(query, versionId))
             }
         }
 
-    /** A licensed version added on this device, whose word search goes through YouVersion (#382). */
-    fun isSearchedByYouVersion(versionId: String): Boolean =
-        YouVersionBibles.find(versionId) != null && youVersion.isConfigured
+    /** A licensed version whose word search goes online: through YouVersion (#382) or Crossway (#377). */
+    fun isSearchedOnline(versionId: String): Boolean =
+        (YouVersionBibles.find(versionId) != null && youVersion.isConfigured) || (EsvBible.isEsv(versionId) && esv.isConfigured)
+
+    private fun esvWordSearch() = EsvWordSearch(
+        searchPage = esv::search,
+        searchSaved = { query -> BibleDatabaseManager.searchVerses(query, EsvBible.ID) },
+        isOnline = { NetworkUtils.isOnline(context) }
+    )
 
     private fun licensedWordSearch(versionId: String): LicensedWordSearch {
         val bible = requireNotNull(YouVersionBibles.find(versionId))
@@ -508,12 +592,13 @@ class BibleRepository(
             .filter { it.isCompleteCanon }
             .also { writeCachedVersions(it) }
         saveMissingCredits(versions)
-        versions + youVersionTranslations()
+        versions + licensedTranslations()
     }
 
-    /** The licensed YouVersion Bibles (#366), offered only when the build has the App Key. */
-    private fun youVersionTranslations(): List<BibleTranslation> =
-        if (youVersion.isConfigured) YouVersionBibles.all.map { it.toTranslation() } else emptyList()
+    /** The licensed Bibles: the ESV (#377) and YouVersion's (#366), each offered only when the build has its key. */
+    private fun licensedTranslations(): List<BibleTranslation> =
+        (if (esv.isConfigured) listOf(EsvBible.toTranslation()) else emptyList()) +
+            (if (youVersion.isConfigured) YouVersionBibles.all.map { it.toTranslation() } else emptyList())
 
     /** Copies catalog titles and licenses onto downloads that lack them, so their credit works offline (#98). */
     private fun saveMissingCredits(versions: List<BibleTranslation>) {
@@ -604,6 +689,8 @@ class BibleRepository(
     ): Result<VersionDownloadSummary> =
         if (YouVersionBibles.isYouVersion(translationId)) {
             addYouVersion(translationId, onProgress)
+        } else if (EsvBible.isEsv(translationId)) {
+            addEsv(onProgress)
         } else {
             BibleDatabaseManager.downloadAndSaveVersion(
                 context = context,
@@ -648,6 +735,28 @@ class BibleRepository(
             }
         }
 
+    /**
+     * Adding the ESV (#377) saves only its credit, English book names and chapters, from the
+     * bundled KJV's structure (the API has no index); a chapter's verse count is corrected the first
+     * time it's fetched. Its chapters come as they're read ([loadEsvChapter]).
+     */
+    private suspend fun addEsv(onProgress: (Float) -> Unit): Result<VersionDownloadSummary> =
+        withContext(Dispatchers.IO) {
+            if (!esv.isConfigured) return@withContext Result.failure(NoContentException())
+            BibleDatabaseManager.registerOnlineVersion(
+                context = context,
+                versionId = EsvBible.ID,
+                name = EsvBible.ABBREVIATION,
+                fullName = EsvBible.TITLE,
+                license = EsvBible.toTranslation().license,
+                bookNames = BibleBooks.allBooks.map { MappedBookName(it.id, it.name) },
+                chapterInfo = BibleBooks.allBooks.flatMap { book -> book.chapters.map { MappedChapterInfo(book.id, it.number, it.verses) } }
+            )
+            synchronized(unsavedEsvChapters) { unsavedEsvChapters.clear() }
+            onProgress(1f)
+            Result.success(VersionDownloadSummary(0, 0, 0))
+        }
+
     /** Deletes then re-downloads [translationId] — the only way to pick up a newer schema_version. */
     suspend fun redownloadVersion(
         translationId: String,
@@ -659,6 +768,7 @@ class BibleRepository(
 
     /** Permanently removes [versionId]'s downloaded content. No-ops for the bundled "kjv". */
     suspend fun deleteVersion(versionId: String) = withContext(Dispatchers.IO) {
+        if (EsvBible.isEsv(versionId)) synchronized(unsavedEsvChapters) { unsavedEsvChapters.clear() }
         LicensedReadAheadScheduler.cancelFor(context, versionId) // stops its read-ahead (#384)
         BibleDatabaseManager.deleteDownloadedVersion(context, versionId)
     }
@@ -911,6 +1021,8 @@ class BibleRepository(
 
     internal companion object {
         private const val PREFS_NAME = "bible_prefs"
+        /** How many too-big-to-save ESV chapters stay in memory (#377): the few just read. */
+        private const val UNSAVED_ESV_CHAPTERS = 3
 
         /** Guards the reading position's compare-then-write steps (#82): the reader saves it on
          *  the main thread while a sync pass reads and writes it in the background. */

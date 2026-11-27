@@ -1,6 +1,7 @@
 package com.application.bibleapp.screens
 
-import com.application.bibleapp.data.model.YouVersionBibles
+import com.application.bibleapp.data.model.EsvBible
+import com.application.bibleapp.data.model.LicensedBibles
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -197,7 +198,7 @@ fun VersionPickerView(
         // The licensed Bibles read through YouVersion (#366) get their own section too, since they
         // work differently: chapters come online as they're read and are kept after that.
         val licensedTranslations = if (!catalogUnavailable && searchQuery.isBlank()) {
-            versions.filter { YouVersionBibles.isYouVersion(it.id) }
+            versions.filter { LicensedBibles.isLicensed(it.id) }
         } else emptyList()
 
         LazyColumn {
@@ -316,7 +317,7 @@ private fun VersionRow(
     val downloadInfoForVersion = downloadedVersions[version.id]
     val isDownloaded = isBundled || downloadInfoForVersion != null
     // Read online, a chapter at a time (#366): never downloaded whole, so no download button.
-    val isOnline = YouVersionBibles.isYouVersion(version.id)
+    val isOnline = LicensedBibles.isLicensed(version.id)
     // Re-downloading needs the catalog to still list this id (#63).
     val needsUpdate = isInCatalog && downloadInfoForVersion != null && !downloadInfoForVersion.isUpToDate
 
@@ -353,7 +354,8 @@ private fun VersionRow(
                     )
                 } else if (isOnline && !isSelected) {
                     Text(
-                        text = stringResource(R.string.version_status_online),
+                        // The ESV keeps only 500 verses on the phone (#377), unlike the others.
+                        text = stringResource(if (EsvBible.isEsv(version.id)) R.string.version_status_esv else R.string.version_status_online),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

@@ -1,7 +1,7 @@
 package com.application.bibleapp.viewmodel
 
 import com.application.bibleapp.BuildConfig
-import com.application.bibleapp.data.model.YouVersionBibles
+import com.application.bibleapp.data.model.LicensedBibles
 import com.application.bibleapp.data.repository.ChapterProblem
 import com.application.bibleapp.data.remote.YouVersionBusyException
 import com.application.bibleapp.data.remote.YouVersionNotLicensedException
@@ -202,7 +202,7 @@ fun translationCreditFor(
     return TranslationCredit(
         title = if (fullName.isBlank() || fullName == label) label else "$fullName ($label)",
         license = saved?.license ?: listed?.license,
-        isLicensed = YouVersionBibles.isYouVersion(versionId)
+        isLicensed = LicensedBibles.isLicensed(versionId)
     )
 }
 
@@ -413,7 +413,7 @@ class BibleViewModel(
         search = repository::searchVerses,
         currentVersionId = { _selectedVersion.value.id },
         debounceMillis = {
-            if (repository.isSearchedByYouVersion(_selectedVersion.value.id)) VerseSearch.REMOTE_DEBOUNCE_MILLIS
+            if (repository.isSearchedOnline(_selectedVersion.value.id)) VerseSearch.REMOTE_DEBOUNCE_MILLIS
             else VerseSearch.DEBOUNCE_MILLIS
         }
     )
@@ -502,7 +502,7 @@ class BibleViewModel(
     // A licensed version is searched through YouVersion (#382), where these common words always
     // find something, while the phone has only the chapters read so far: no check needed, or wanted.
     private val searchSuggestionFilter = SearchSuggestionFilter { word, versionId ->
-        repository.isSearchedByYouVersion(versionId) || repository.hasSearchMatch(word, versionId)
+        repository.isSearchedOnline(versionId) || repository.hasSearchMatch(word, versionId)
     }
 
     /** Topic chips for the empty Search screen, in the selected version's language, and only
@@ -893,7 +893,8 @@ class BibleViewModel(
         if (selection.isEmpty()) return null
         // A licensed Bible's text is shown with the question but never sent to Bible Helper
         // (#383, docs/bible-licensing.md): the passage says which version, and the server quotes the BSB.
-        val licensedVersionId = _selectedVersion.value.id.takeIf { YouVersionBibles.isYouVersion(it) }
+        val versionId = _selectedVersion.value.id
+        val licensedVersionId = versionId.takeIf { LicensedBibles.isLicensed(it) }
         val textByLocation = _verses.value
             .filter { it.bookId != null && it.chapter != null && it.verse != null }
             .groupBy { VerseLocationDto(it.bookId!!, it.chapter!!, it.verse!!) }
@@ -907,7 +908,9 @@ class BibleViewModel(
             licensedVersionId = licensedVersionId
         )
         clearSelection()
-        return passage
+        // A version whose terms bar any AI use (the ESV, #377) isn't even shown with the question:
+        // the conversation keeps only its reference, and the server quotes the BSB as for the others.
+        return if (LicensedBibles.allowsAi(versionId)) passage else passage?.copy(text = "")
     }
 
     /**
@@ -975,7 +978,7 @@ class BibleViewModel(
 
     /** A licensed Bible's publisher site for shared text (#366); null for every other translation. */
     private fun currentPublisherLink(): String? =
-        YouVersionBibles.find(_selectedVersion.value.id)?.licenseUrl
+        LicensedBibles.publisherUrl(_selectedVersion.value.id)
 
     /** The selected translation's license notice (#98), for a verse image. Computed here rather
      *  than read from [currentTranslationCredit], which only updates while the reader shows it. */

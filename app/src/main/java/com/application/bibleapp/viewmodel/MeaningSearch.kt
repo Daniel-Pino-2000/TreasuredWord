@@ -3,7 +3,7 @@ package com.application.bibleapp.viewmodel
 import com.application.bibleapp.data.model.DEFAULT_VERSION
 import com.application.bibleapp.data.model.PassageVerse
 import com.application.bibleapp.data.model.VerseUI
-import com.application.bibleapp.data.model.YouVersionBibles
+import com.application.bibleapp.data.model.LicensedBibles
 import com.application.bibleapp.data.model.loadAiVersePassage
 import com.application.bibleapp.data.model.passageIn
 import com.application.bibleapp.data.remote.SemanticSearchResult
@@ -208,14 +208,16 @@ fun List<MeaningVerse>.withoutWordResults(wordResults: List<VerseUI>): List<Mean
  *
  * A licensed version (#383) shows the whole list or none of it: its chapters not saved yet are
  * fetched [LICENSED_PARALLEL_CHAPTERS] at a time, as its word search does (#382), and if one can't
- * be (offline, a 429) or lacks a verse, the whole list is the KJV's, never a mix.
+ * be (offline, a 429) or lacks a verse, the whole list is the KJV's, never a mix. A version whose
+ * terms bar any AI use of its text (the ESV, #377) is never shown: the list is the KJV's.
  */
 suspend fun resolveMeaningVerses(
     refs: List<VerseRef>,
     selectedVersionId: String,
     chapterOf: suspend (versionId: String, bookId: Int, chapter: Int) -> List<VerseUI>
 ): List<MeaningVerse> {
-    if (YouVersionBibles.isYouVersion(selectedVersionId)) {
+    if (!LicensedBibles.allowsAi(selectedVersionId)) return resolveMeaningVerses(refs, DEFAULT_VERSION.id, chapterOf)
+    if (LicensedBibles.isLicensed(selectedVersionId)) {
         return licensedMeaningVerses(refs, selectedVersionId, chapterOf)
             ?: resolveMeaningVerses(refs, DEFAULT_VERSION.id, chapterOf)
     }

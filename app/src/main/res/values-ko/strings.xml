@@ -579,6 +579,10 @@
     <string name="version_section_licensed">라이선스 역본</string>
     <string name="version_section_licensed_hint">온라인으로 읽습니다. 연 장은 기기에 남습니다.</string>
     <string name="version_status_online">온라인 역본</string>
+    <!-- The ESV in the version list (#377): Crossway lets the phone keep at most 500 of its verses. -->
+    <string name="version_status_esv">온라인 역본. 마지막으로 읽은 500절만 기기에 남습니다.</string>
+    <!-- Bible Helper and search by meaning when the selected version's terms bar AI use of its text (the ESV, #377): their verses are the KJV's instead. %1$s: the version's abbreviation, such as ESV. -->
+    <string name="ai_version_kjv_note">%1$s 출판사가 AI 기능에서 본문 사용을 허용하지 않아, 이 구절들은 KJV입니다.</string>
     <string name="youversion_chapter_offline">이 장은 아직 기기에 없고, 이 역본은 장을 열려면 인터넷 연결이 필요합니다. 인터넷에 연결하거나 다운로드한 역본을 선택하세요.</string>
     <string name="youversion_chapter_failed">이 장을 불러오지 못했습니다. 다시 시도해 주세요.</string>
     <string name="youversion_busy">지금 많은 사람이 이 역본을 읽고 있습니다. 1분 후에 다시 시도해 주세요.</string>

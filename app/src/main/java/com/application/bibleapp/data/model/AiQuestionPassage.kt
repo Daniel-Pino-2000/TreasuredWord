@@ -26,12 +26,12 @@ data class AiQuestionPassage(
         get() = if (licensedVersionId == null) {
             AiPassageDto(reference, text)
         } else {
-            AiPassageDto(reference, version = YouVersionBibles.find(licensedVersionId)?.abbreviation)
+            AiPassageDto(reference, version = LicensedBibles.abbreviation(licensedVersionId))
         }
 
     /** The licensed version's publisher site, to link its name to (Lockman's tag rule, #383); null otherwise. */
     val publisherUrl: String?
-        get() = licensedVersionId?.let { YouVersionBibles.find(it)?.licenseUrl }
+        get() = licensedVersionId?.let { LicensedBibles.publisherUrl(it) }
 }
 
 /**

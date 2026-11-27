@@ -77,7 +77,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import com.application.bibleapp.components.appendVersionTag
 import com.application.bibleapp.components.passageText
 import com.application.bibleapp.components.versionTagLinkColor
-import com.application.bibleapp.data.model.YouVersionBibles
+import com.application.bibleapp.data.model.LicensedBibles
 import androidx.compose.ui.text.buildAnnotatedString
 import com.application.bibleapp.utils.formatVerseReference
 import com.application.bibleapp.viewmodel.KeyPassage
@@ -102,7 +102,14 @@ fun SearchView(
     val selectedVersion by bibleViewModel.selectedVersion.collectAsState()
     val keyboardController = LocalSoftwareKeyboardController.current
     val links = rememberExternalLinks { bibleViewModel.showMessage(it) }
-    val words = WordsStatus(searchState, bibleViewModel.versionLabel(selectedVersion.id), bibleViewModel::onSearchLoadMore)
+    val words = WordsStatus(
+        state = searchState,
+        versionName = bibleViewModel.versionLabel(selectedVersion.id),
+        onLoadMore = bibleViewModel::onSearchLoadMore,
+        publisherUrl = LicensedBibles.publisherUrl(selectedVersion.id),
+        notice = LicensedBibles.notice(selectedVersion.id),
+        onOpenLink = links::openPage
+    )
     val language = AppLanguage.answerLanguageTag(LocalConfiguration.current.locales[0])
 
     // "These results didn't help" (#402). Worked out again from the section, so a new search or
@@ -169,7 +176,8 @@ fun SearchView(
                     wordsFailed = searchState.hasError,
                     selectedVersionId = selectedVersion.id,
                     versionLabel = bibleViewModel::versionLabel,
-                    publisherUrl = { YouVersionBibles.find(it)?.licenseUrl },
+                    publisherUrl = { LicensedBibles.publisherUrl(it) },
+                    kjvInsteadOf = selectedVersion.id.takeUnless { LicensedBibles.allowsAi(it) }?.let { bibleViewModel.versionLabel(it) },
                     onOpenLink = links::openPage,
                     onSearch = {
                         keyboardController?.hide()
@@ -327,6 +335,8 @@ private class MeaningSection(
     val versionLabel: (String) -> String,
     /** A licensed version's publisher site, which its tag links to (#383); null for every other. */
     val publisherUrl: (String) -> String?,
+    /** The selected version's tag when its terms bar AI features from showing it (the ESV, #377). */
+    val kjvInsteadOf: String? = null,
     val onOpenLink: (String) -> Unit,
     val onSearch: () -> Unit,
     val onFindHelpline: () -> Unit,
@@ -340,7 +350,11 @@ private class MeaningSection(
 private class WordsStatus(
     val state: SearchUiState,
     val versionName: String,
-    val onLoadMore: () -> Unit
+    val onLoadMore: () -> Unit,
+    /** A licensed version's publisher site and notice, for the credit under its results (#377). */
+    val publisherUrl: String? = null,
+    val notice: String? = null,
+    val onOpenLink: (String) -> Unit = {}
 )
 
 /**
@@ -444,6 +458,7 @@ private fun SearchResultsList(
                 )
             }
             moreWords(words)
+            if (searchedVerses.isNotEmpty()) wordsCredit(words)
             if (meaning != null) meaningSection(meaning, meaningSlow, bookNames, onVerseClicked)
         }
     }
@@ -456,6 +471,30 @@ private fun LazyListScope.wordsNotes(words: WordsStatus) {
     }
     words.state.closeMatchesFor?.let { typed ->
         item(key = "words_close_matches") { SectionNote(stringResource(R.string.search_close_matches, typed)) }
+    }
+}
+
+/**
+ * Under a licensed version's word results, its tag linked to the publisher and its notice: Crossway
+ * asks for the ESV's notice and a link to esv.org on every page that shows its text (#377), and
+ * Lockman for its tag linked to lockman.org with quoted verses.
+ */
+private fun LazyListScope.wordsCredit(words: WordsStatus) {
+    val url = words.publisherUrl ?: return
+    item(key = "words_credit") {
+        val linkColor = versionTagLinkColor
+        Text(
+            text = buildAnnotatedString {
+                appendVersionTag(words.versionName, url, linkColor, words.onOpenLink)
+                words.notice?.let {
+                    append(" · ")
+                    append(it)
+                }
+            },
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.lg, vertical = Spacing.md)
+        )
     }
 }
 
@@ -496,6 +535,9 @@ private fun LazyListScope.meaningSection(
     onVerseClicked: (bookId: Int, chapter: Int, verse: Int) -> Unit
 ) {
     val state = meaning.state
+    if (meaning.kjvInsteadOf != null && state.status == MeaningSearchStatus.DONE) item(key = "meaning_kjv_note") {
+        SectionNote(stringResource(R.string.ai_version_kjv_note, meaning.kjvInsteadOf))
+    }
     // A matching topic guide's passages (#320): the ones that answer the query, above the verses
     // that are only close to it. They arrive with the results, so they never move the loading row.
     // A crisis guide's are already at the top, under the help card (#324).
