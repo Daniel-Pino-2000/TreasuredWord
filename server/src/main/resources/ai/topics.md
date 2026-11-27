@@ -384,7 +384,7 @@
 
 ## crisis
 - **Title:** Someone in danger
-- **Asks:** I want to die | I don't want to live anymore | I'm thinking about killing myself | I want to end my life | Would God forgive suicide? | I hurt myself on purpose | I keep cutting myself | Someone I love is talking about suicide | My friend overdosed | Someone took too many pills | I'm not safe right now | Everyone would be better off without me | Nobody would miss me if I were gone | I wish I could fall asleep and never wake up | I don't want to wake up anymore
+- **Asks:** I want to die | I don't want to live anymore | I'm thinking about killing myself | I want to end my life | Would God forgive suicide? | I hurt myself on purpose | I keep cutting myself | Someone I love is talking about suicide | My friend overdosed | Someone took too many pills | I'm not safe right now | Everyone would be better off without me | Nobody would miss me if I were gone | I wish I could fall asleep and never wake up | I don't want to wake up anymore | I see no reason to stay alive | I want to close my eyes and never open them again | Why am I even still alive? | I want to close my eyes and die
 - **Alone:** yes
 - **Points:**
   - When the person says they want to harm or kill themselves, or that someone is in danger now: begin with [[CRISIS]], keep the answer short and warm, and answer only their safety. Say that they matter to God and He is near them in their pain, that they should contact local emergency services or someone they trust right now, and give one verse of comfort. If they asked how to pray, a one-line prayer may follow.
@@ -438,7 +438,7 @@
 
 ## anxiety
 - **Title:** Worry and anxiety
-- **Asks:** What does the Bible say about worry? | I'm anxious about the future | I can't sleep because my mind won't stop racing | I'm so stressed | I'm afraid of what will happen tomorrow | Sleepless nights | Insomnia keeps me awake | Help me get some sleep
+- **Asks:** What does the Bible say about worry? | I'm anxious about the future | I can't sleep because my mind won't stop racing | I'm so stressed | I'm afraid of what will happen tomorrow | Sleepless nights | Insomnia keeps me awake | Help me get some sleep | I lie awake at night and can't sleep
 - **Points:**
   - Jesus tells His followers not to worry, because the Father knows what they need: seek His kingdom first.
   - Bring every worry to God in prayer with thanksgiving, and His peace guards the heart; cast every care on Him.
@@ -451,7 +451,7 @@
 
 ## fear
 - **Title:** Fear
-- **Asks:** I'm afraid | I'm scared | How can I stop being afraid? | Fear of the future
+- **Asks:** I'm afraid | I'm scared | How can I stop being afraid? | Fear of the future | I'm scared to die | Fear of death and dying
 - **Points:**
   - God is with His people and strengthens them; He hasn't given a spirit of fear.
   - Trust Him when afraid, and pray.
@@ -513,7 +513,7 @@
 
 ## rest
 - **Title:** Exhaustion and rest
-- **Asks:** I'm completely burned out and exhausted | I'm so tired of everything | I have no strength left
+- **Asks:** I'm completely burned out and exhausted | I'm so tired of everything | I have no strength left | I'm so sleepy I can barely stay awake | I'm so drowsy I keep nodding off | My eyes keep closing, I'm so tired
 - **Points:**
   - Jesus invites the weary to come to Him for rest; He took His own disciples away to rest.
   - God gives strength to the weary; rest is His good gift, not a failure.
@@ -680,7 +680,7 @@
 
 ## guidance
 - **Title:** Knowing God's will
-- **Asks:** How do I know what God wants me to do with my life? | What is God's will for me? | How do I make a big decision? | I feel lost about my future
+- **Asks:** How do I know what God wants me to do with my life? | What is God's will for me? | How do I make a big decision? | I feel lost about my future | What should I do with my life? | I have no direction in life
 - **Points:**
   - Most of God's will is already revealed in Scripture; ask Him for wisdom, trust Him with your path, and seek wise counsel.
 - **Passages:**
