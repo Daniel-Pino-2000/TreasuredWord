@@ -24,8 +24,8 @@ const val PRIVACY_POLICY_URL = "https://daniel-pino-2000.github.io/TreasuredWord
 
 /**
  * Every outside link in the app goes through here (#46): GotQuestions.org pages open in a Chrome
- * Custom Tab, a browser sheet over the app that Back closes, and BibleProject videos open in the
- * YouTube app. Never a WebView, so nobody else's page is framed or altered.
+ * Custom Tab, a browser sheet over the app that Back closes, BibleProject videos open in the
+ * YouTube app, and the app's own store page in the Play Store app (#426). Never a WebView, so nobody else's page is framed or altered.
  */
 class ExternalLinks internal constructor(
     private val context: Context,
@@ -72,6 +72,19 @@ class ExternalLinks internal constructor(
         }
     }
 
+    /** TreasuredWord's store page, for Settings' "Rate TreasuredWord" (#426): in the Play Store
+     *  app when it's installed, otherwise on play.google.com through [openPage]. */
+    fun openStoreListing() {
+        if (!NetworkUtils.isOnline(context)) return onFailure(UiText.Res(R.string.external_link_offline))
+        val url = "https://play.google.com/store/apps/details?id=$STORE_APP_ID"
+        val app = Intent(Intent.ACTION_VIEW, url.toUri()).setPackage(PLAY_STORE_PACKAGE)
+        try {
+            context.startActivity(app)
+        } catch (_: ActivityNotFoundException) {
+            openPage(url)
+        }
+    }
+
     private fun startOrReport(intent: Intent) {
         try {
             context.startActivity(intent)
@@ -82,6 +95,10 @@ class ExternalLinks internal constructor(
 
     private companion object {
         const val YOUTUBE_PACKAGE = "com.google.android.youtube"
+        const val PLAY_STORE_PACKAGE = "com.android.vending"
+        // The released app's ID, not this build's: debug builds have the same one, but the store
+        // page is always the production listing.
+        const val STORE_APP_ID = "com.treasuredword.app"
     }
 }
 

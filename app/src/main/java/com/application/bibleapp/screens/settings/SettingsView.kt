@@ -27,6 +27,7 @@ import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.PrivacyTip
+import androidx.compose.material.icons.outlined.StarRate
 import androidx.compose.material3.Icon
 import com.application.bibleapp.components.GroupedDivider
 import com.application.bibleapp.components.GroupedRow
@@ -94,6 +95,20 @@ fun SettingsView(
                 title = stringResource(R.string.settings_privacy_policy),
                 icon = Icons.Outlined.PrivacyTip,
                 onClick = { links.openPage(PRIVACY_POLICY_URL) },
+                trailing = {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.OpenInNew,
+                        contentDescription = stringResource(R.string.external_link_opens_outside),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            )
+            GroupedDivider()
+            // For anyone who wants to rate on their own (#426); Play's own card asks only now and then.
+            GroupedRow(
+                title = stringResource(R.string.settings_rate_app, stringResource(R.string.app_name)),
+                icon = Icons.Outlined.StarRate,
+                onClick = { links.openStoreListing() },
                 trailing = {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.OpenInNew,

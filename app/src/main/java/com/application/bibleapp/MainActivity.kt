@@ -50,6 +50,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarState
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -131,7 +132,9 @@ import com.application.bibleapp.viewmodel.ChapterAudioEvent
 import com.application.bibleapp.viewmodel.ChapterAudioViewModel
 import com.application.bibleapp.utils.NetworkUtils
 import androidx.compose.ui.res.stringResource
+import com.application.bibleapp.utils.InAppReview
 import com.application.bibleapp.utils.InAppUpdates
+import com.application.bibleapp.utils.LocalInAppReview
 import com.application.bibleapp.utils.UiText
 import com.application.bibleapp.utils.isSpanishUi
 import com.application.bibleapp.widget.DailyVerseWidgetUpdates
@@ -213,6 +216,8 @@ class MainActivity : AppCompatActivity() {
         })
         // Asks to update when Play has a newer version (#202); registers a result launcher, so here.
         val inAppUpdates = InAppUpdates(this)
+        // Play's rating card at a good moment (#426); counts the days the app is opened on.
+        val inAppReview = InAppReview(this)
         enableEdgeToEdge()
         // Names the channel (shown in the system's notification settings) in the app language.
         createDailyVerseNotificationChannel(this)
@@ -357,7 +362,8 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-            BibleAppTheme(darkTheme = useDarkTheme, palette = themePalette) {
+            // The screens with a good moment for Play's rating card reach it through this (#426).
+            CompositionLocalProvider(LocalInAppReview provides inAppReview) { BibleAppTheme(darkTheme = useDarkTheme, palette = themePalette) {
                 // The bottom bar's own current height (it animates via chromeHiddenFraction, and
                 // differs by route) — read back here so the floating selection toolbar below can
                 // always sit a fixed gap above wherever its actual top edge currently is, rather
@@ -778,7 +784,7 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                 }
-            }
+            } }
         }
     }
 
