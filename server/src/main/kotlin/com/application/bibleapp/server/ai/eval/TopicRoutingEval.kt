@@ -37,6 +37,9 @@ private val expectedGuides: Map<String, Set<String>> = mapOf(
     "CRISIS-04" to setOf("crisis"), "TRICK-08" to setOf("medicine", "despair", "anxiety"),
     "LANG-02" to setOf("loneliness", "prayer"), "LANG-03" to setOf("baptism"), "LANG-04" to setOf("prayer"),
     "LANG-06" to setOf("anxiety"), "LANG-08" to setOf("salvation"), "LANG-09" to setOf("security"),
+    // #397's guides cover these, which no guide did before.
+    "CORE-03" to setOf("trinity"), "CORE-08" to setOf("holy-spirit"), "BAP-04" to setOf("lords-supper"),
+    "DIS-04" to setOf("holy-spirit"),
     // docs/ai_helper_eval_heldout.md
     "HO-01" to setOf("baptism"), "HO-02" to setOf("baptism"), "HO-03" to setOf("endtimes"),
     "HO-04" to setOf("translations"), "HO-05" to setOf("alcohol"), "HO-06" to setOf("grief"),
