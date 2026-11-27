@@ -5,7 +5,7 @@ licenses behind it, and the duties those licenses bring. **Read it before adding
 changing a Bible version, adding AI or sharing features that touch Bible text, or adding anything
 that costs money (donations, ads, purchases).** Issue #366 has the history.
 
-Last reviewed: 2026-11-27 (ESV added, #377).
+Last reviewed: 2026-11-27 (ESV added, #377; other-language licenses checked, #379).
 
 ## Where the text comes from
 
@@ -180,9 +180,32 @@ Before accepting any of them, know what it asks:
 | **NKJV** (Thomas Nelson / HarperCollins) | Not offered | Not on the Platform | A direct license from HarperCollins Christian Publishing. Not requested (#376) |
 | **NIV, NIrV, NVI** (Biblica) | Deferred | Biblica's agreement is heavy for a fast-changing app: Biblica's written approval before every new or enhanced version of the app, a display limit, footnotes, encryption, a yearly audit, shipping within 12 months, destroying copies within 72 hours if it ends, Colorado arbitration. **Its terms are confidential once accepted**, so they're not summarized here | **Not now** (developer, 2026-11-21; #375 closed). Accept it in the portal only after the app's pace slows, ideally after asking Biblica in writing how the approval clause applies |
 | **The Passion Translation** (BroadStreet) | Not offered | A loose paraphrase by one translator that adds wording, widely criticized; YouVersion lists it "In Review", 51 books | — |
-| **Wycliffe** English/Spanish (Plain English Version, Gloss Spanish) | Not offered | Partial Bibles (29 and 39 books); the reader supports complete 66-book Bibles | Accepting Wycliffe's license would also unlock ~1,000 Bibles in other languages, worth a look for the app's other languages (#379) |
-| **SIL, Biblion, Hawaii Pidgin, EIB** | Not offered | No English or Spanish Bibles | Same as above, per language |
+| **Wycliffe** (1,037 Bibles) | Not offered; license not accepted | No complete Bible in any of the app's languages: English/Spanish ones are partial (29 and 39 books), and in the other app languages there is only a 12-book French model translation (#379, 2026-11-27) | Recheck yearly, below |
+| **SIL, Biblion, Hawaii Pidgin, EIB** | Not offered; licenses not accepted | None in the app's languages (SIL's 8 are minority-language portions; the others are Czech, Hawaii Pidgin and Polish) (#379) | Recheck yearly, below |
 | **EasyEnglish 2024** (MissionAssist) | Removed before release (#381) | Its license bars AI use of the text (see above), so it would be the one licensed version without verse cards in AI answers | — |
+
+### The app's other languages (#379, checked 2026-11-27)
+
+Every Bible behind each publisher license on the Platform was listed (`GET /v1/licenses` gives
+each license's Bible ids; bible.com's public version metadata gives each one's language and books):
+1,120 Bibles under nine licenses. For German, French, Portuguese, Indonesian, Filipino, Swahili,
+Korean and Chinese, the only complete licensed Bibles are **Biblica's**:
+
+| Language | Biblica on the Platform | Already free on bible.helloao.org |
+|---|---|---|
+| German | Hoffnung für alle (Hfa) | Luther 1912, Elberfelder (ELO, ELBBK), Schlachter 1951, Textbibel |
+| French | La Bible du Semeur 2015 (BDS) | Louis Segond 1910, Darby, Ostervald, néo-Crampon Libre |
+| Portuguese | NVI (2011 and 2023), Nova Bíblia Viva, O Livro (Portugal) | Bíblia Livre, World Portuguese Bible, ONBV |
+| Indonesian | Firman Allah Yang Hidup (New Testament only) | AYT, Plain Indonesian (48 books), New Testaments |
+| Filipino | Ang Salita ng Diyos 2025 | Biblica's open edition of the same (ASD), ULB, Ang Dating Biblia 1905 |
+| Swahili | Neno 2025 | Biblica's open edition of Neno, ONMM, ULB |
+| Korean | Korean Living Bible 1985 | Korean Bible 1910 |
+| Chinese | Chinese Contemporary Bible 2022 (Simplified) and 2023 (Traditional) | Biblica's open CCB, Chinese Union Version, Chinese Standard Bible |
+
+Wycliffe and SIL, the reason #379 was opened, have nothing complete in these languages. **Decision
+(developer, 2026-11-27): accept no license for them.** Biblica stays deferred as decided on
+2026-11-21 (see its row above); if it's ever accepted, these are the versions it would add, each
+needing its AI terms read first (`allowsAi`).
 
 Doctrinal check for any future version: the translation must be a faithful, complete Bible from a
 recognized Christian translation team (not one person's paraphrase), and fit YouVersion's Core
@@ -213,7 +236,7 @@ as for bible.helloao.org, but recheck the form whenever this changes (as with th
 | When | What | Where |
 |---|---|---|
 | **By the end of February** | Lockman: report the number of copies distributed in the previous calendar year. Use Play Console → Statistics → new installs ("device acquisitions") for 1 January–31 December. Send it through Lockman's [Email Us form](https://www.lockman.org/email-us/), or by post to The Lockman Foundation, PO Box 2279, La Habra, CA 90632-2279. Note the date sent in the reminder issue | A workflow (`.github/workflows/lockman-annual-report.yml`) opens a reminder issue every 1 February |
-| Once a year (with the report) | Recheck this file: Platform terms, each license's text (links above), whether RVR1960/NTV/NLT/NKJV became available on the Platform, the notices in `YouVersionBibles.kt`, and Crossway's ESV API conditions, permissions page and notice (`EsvBible.NOTICE`, the "ESV Text Edition" year) | — |
+| Once a year (with the report) | Recheck this file: Platform terms, each license's text (links above), whether RVR1960/NTV/NLT/NKJV became available on the Platform, whether Wycliffe or SIL now have complete Bibles in the app's languages (`GET /v1/licenses`, #379), the notices in `YouVersionBibles.kt`, and Crossway's ESV API conditions, permissions page and notice (`EsvBible.NOTICE`, the "ESV Text Edition" year) | — |
 | When YouVersion or a publisher writes | Apply notice changes or security updates; answer termination notices by removing the version | — |
 
 ## Technical notes
