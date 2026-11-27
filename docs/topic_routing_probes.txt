@@ -143,3 +143,36 @@ abuse/crisis | My husband hurts me. Can I divorce him as a Christian?
 abuse/crisis | My husband hits me and I want to leave
 marriage | My wife and I fight all the time
 marriage | How can I make my marriage stronger?
+
+# --- The last false alarms (#411): the held-out searches, and neighbours that must stay crisis ---
+fear | j'ai peur de mourir
+fear | Tengo miedo de morir
+fear | I'm scared of death
+guidance | I don't know what to do with my life
+guidance | No sé qué hacer con mi vida
+rest | I'm sleepy all the time
+rest/anxiety | Saya susah tidur
+crisis | I'm not afraid of dying, I want to die
+crisis | I don't know what to do with my life, I want to end it
+crisis | I'm so tired I want to close my eyes forever
+crisis | Saya tidak ingin hidup lagi
+crisis | J'ai envie de mourir
+
+# --- #411 validation, written with the probes above and not used to choose phrases ---
+fear | I'm terrified of death
+fear | Ich habe Angst vor dem Tod
+guidance | What should I do after I finish school?
+guidance | Je ne sais pas quoi faire de ma vie
+rest | I can barely stay awake at work
+rest/anxiety | Saya tidak bisa tidur nyenyak
+crisis | I'm afraid I'll kill myself
+crisis | I don't know why I'm still alive
+crisis | Saya ingin mati
+
+# --- #411 second validation, written before the crisis phrases for the two misses above ---
+crisis | There's no reason for me to keep living
+crisis | Honestly I'd rather not be alive
+rest | I keep dozing off during the day
+rest | I'm too tired to keep my eyes open in class
+crisis | What's the use of being alive?
+rest | My eyes are heavy and I can't stay awake
