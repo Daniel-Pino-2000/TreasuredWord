@@ -593,6 +593,10 @@
     <string name="version_section_licensed">Mga lisensyadong bersyon</string>
     <string name="version_section_licensed_hint">Binabasa online. Nananatili sa iyong device ang mga kabanatang binuksan mo.</string>
     <string name="version_status_online">Online na bersyon</string>
+    <!-- The ESV in the version list (#377): Crossway lets the phone keep at most 500 of its verses. -->
+    <string name="version_status_esv">Online na bersyon. Ang huling 500 talatang nabasa mo lang ang nananatili sa iyong device.</string>
+    <!-- Bible Helper and search by meaning when the selected version's terms bar AI use of its text (the ESV, #377): their verses are the KJV's instead. %1$s: the version's abbreviation, such as ESV. -->
+    <string name="ai_version_kjv_note">Hindi pinapayagan ng publisher ng %1$s ang teksto nito sa mga AI feature, kaya mula sa KJV ang mga talatang ito.</string>
     <string name="youversion_chapter_offline">Wala pa sa iyong device ang kabanatang ito, at kailangan ng bersyong ito ng internet para buksan ito. Kumonekta, o pumili ng na-download na bersyon.</string>
     <string name="youversion_chapter_failed">Hindi ma-load ang kabanatang ito. Pakisubukan ulit.</string>
     <string name="youversion_busy">Maraming tao ang nagbabasa ng bersyong ito ngayon. Pakisubukan ulit pagkalipas ng isang minuto.</string>

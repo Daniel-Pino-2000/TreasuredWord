@@ -579,6 +579,10 @@
     <string name="version_section_licensed">Versi berlisensi</string>
     <string name="version_section_licensed_hint">Dibaca secara online. Pasal yang Anda buka tetap tersimpan di perangkat.</string>
     <string name="version_status_online">Versi online</string>
+    <!-- The ESV in the version list (#377): Crossway lets the phone keep at most 500 of its verses. -->
+    <string name="version_status_esv">Versi online. Hanya 500 ayat terakhir yang Anda baca yang tersimpan di perangkat.</string>
+    <!-- Bible Helper and search by meaning when the selected version's terms bar AI use of its text (the ESV, #377): their verses are the KJV's instead. %1$s: the version's abbreviation, such as ESV. -->
+    <string name="ai_version_kjv_note">Penerbit %1$s tidak mengizinkan teksnya dipakai di fitur AI, jadi ayat-ayat ini dari KJV.</string>
     <string name="youversion_chapter_offline">Pasal ini belum ada di perangkat Anda, dan versi ini memerlukan koneksi internet untuk membukanya. Sambungkan ke internet, atau pilih versi yang sudah diunduh.</string>
     <string name="youversion_chapter_failed">Pasal ini tidak dapat dimuat. Silakan coba lagi.</string>
     <string name="youversion_busy">Banyak orang sedang membaca versi ini. Silakan coba lagi dalam satu menit.</string>

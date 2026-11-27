@@ -42,6 +42,18 @@ class AiVersePassageTest {
     }
 
     @Test
+    fun `the ESV is never shown next to an AI answer, the passage is the KJV's (#377)`() = runTest {
+        var asked = emptyList<String>()
+        val passage = loadAiVersePassage(VerseReference(43, 3, 16), EsvBible.ID) { versionId ->
+            asked = asked + versionId
+            if (versionId == "kjv") kjv else chapter(16 to "Made-up words")
+        }
+
+        assertEquals(AiVersePassage("kjv", listOf(PassageVerse(16, "For God so loved the world…"))), passage)
+        assertEquals(listOf("kjv"), asked) // its chapter isn't even loaded
+    }
+
+    @Test
     fun `a licensed chapter that can't be fetched (offline, 429) is the KJV whole`() = runTest {
         val passage = loadAiVersePassage(VerseReference(43, 3, 16, 17), YouVersionBibles.all.first().id, chapters(emptyList()))
 

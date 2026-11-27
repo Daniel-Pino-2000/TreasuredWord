@@ -133,7 +133,7 @@ import com.application.bibleapp.data.model.PracticePage
 import com.application.bibleapp.data.model.REFERENCE_DECOYS
 import com.application.bibleapp.data.model.REVIEW_INTERVAL_DAYS
 import com.application.bibleapp.data.model.ReferenceQuestion
-import com.application.bibleapp.data.model.YouVersionBibles
+import com.application.bibleapp.data.model.LicensedBibles
 import com.application.bibleapp.data.model.buildPracticePages
 import com.application.bibleapp.data.model.movesOnAfterPass
 import com.application.bibleapp.data.model.nextGameAfterPass
@@ -381,7 +381,7 @@ private fun chapterVerseCount(verse: MemoryVerse, textByKey: Map<VerseTextKey, S
 /** The passage's language (ISO 639-3) for reading aloud: KJV's when it's shown in KJV (#78). */
 private fun languageCodeOf(versionId: String, shownInKjv: Boolean, catalog: List<BibleTranslation>): String? = when {
     shownInKjv || versionId == DEFAULT_VERSION.id -> "eng"
-    else -> YouVersionBibles.find(versionId)?.languageCode ?: catalog.firstOrNull { it.id == versionId }?.languageCode
+    else -> LicensedBibles.languageCode(versionId) ?: catalog.firstOrNull { it.id == versionId }?.languageCode
 }
 
 @Composable

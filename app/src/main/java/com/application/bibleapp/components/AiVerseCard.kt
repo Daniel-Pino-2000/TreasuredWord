@@ -38,7 +38,7 @@ import androidx.compose.ui.unit.em
 import com.application.bibleapp.R
 import com.application.bibleapp.data.model.AiVersePassage
 import com.application.bibleapp.data.model.PassageVerse
-import com.application.bibleapp.data.model.YouVersionBibles
+import com.application.bibleapp.data.model.LicensedBibles
 import com.application.bibleapp.ui.theme.BibleAppTheme
 import com.application.bibleapp.ui.theme.Spacing
 import com.application.bibleapp.ui.theme.ThemePalette
@@ -80,7 +80,7 @@ fun AiVerseCard(
     // Reloads when the translation changes, so the card always matches the reader.
     val text by produceState<AiVerseCardText>(AiVerseCardText.Loading, reference, selectedVersion) {
         value = bibleViewModel.aiVersePassage(reference)
-            ?.let { AiVerseCardText.Loaded(it, bibleViewModel.versionLabel(it.versionId), YouVersionBibles.find(it.versionId)?.licenseUrl) }
+            ?.let { AiVerseCardText.Loaded(it, bibleViewModel.versionLabel(it.versionId), LicensedBibles.publisherUrl(it.versionId)) }
             ?: AiVerseCardText.Missing
     }
     AiVerseCardContent(

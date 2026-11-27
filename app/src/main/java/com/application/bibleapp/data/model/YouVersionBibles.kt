@@ -24,7 +24,10 @@ data class YouVersionBible(
     val languageCode: String,
     val publisher: String,
     val licenseUrl: String,
-    val notice: String?
+    val notice: String?,
+    /** Whether the license lets AI features show this text next to their answers (see
+     *  [LicensedBibles.allowsAi]); false for one that bars any AI use of the text (#377, #379). */
+    val allowsAi: Boolean = true
 ) {
     /** The id the rest of the app uses; the prefix keeps it apart from bible.helloao.org's ids. */
     val id: String get() = "$ID_PREFIX$yvId"

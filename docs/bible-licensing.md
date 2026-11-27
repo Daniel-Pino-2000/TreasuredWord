@@ -5,7 +5,7 @@ licenses behind it, and the duties those licenses bring. **Read it before adding
 changing a Bible version, adding AI or sharing features that touch Bible text, or adding anything
 that costs money (donations, ads, purchases).** Issue #366 has the history.
 
-Last reviewed: 2026-11-21.
+Last reviewed: 2026-11-27 (ESV added, #377).
 
 ## Where the text comes from
 
@@ -14,6 +14,7 @@ Last reviewed: 2026-11-21.
 | Bundled in the app | KJV | Public domain | Always |
 | [bible.helloao.org](https://bible.helloao.org) | 1,500+ public-domain and openly licensed translations (RV1909, BSB, WEB…) | Each translation's own, shown in the reader's credit (#98) | Downloaded whole |
 | [YouVersion Platform](https://developers.youversion.com) | **LBLA, NBLA, NASB 2020, NASB 1995, AMP** (Lockman) | Lockman Fast-track license, accepted 2026-11-21 | Each chapter is fetched the first time it's opened, then kept on the phone |
+| [ESV API](https://api.esv.org) (Crossway) | **ESV** | The API's non-commercial conditions, accepted by the developer when creating the API application (#377) | Each chapter is fetched when it's opened; at most 500 verses stay on the phone, never more than half of a book |
 
 **Search by meaning's topical index** (#394) isn't Bible text: it's which verses Nave's Topical
 Bible lists for each topic, used only on the server to rank search results (the app never shows it,
@@ -80,6 +81,49 @@ What we agreed to, and how the app keeps to it:
 | If the app ever charges money, tell users the YouVersion Bible App is free | Not applicable: the app is free and must stay so while these versions are offered |
 | Oklahoma law, no class actions, we indemnify YouVersion | — |
 
+## Crossway's ESV API (#377)
+
+The ESV isn't on the YouVersion Platform. Crossway offers it free for non-commercial use through
+its own [ESV API](https://api.esv.org). The developer creates the API application and accepts its
+conditions on api.esv.org; Claude never does. The conditions are the list on api.esv.org's home page
+and the "ESV Digital Permissions" section of [crossway.org/permissions](https://www.crossway.org/permissions/),
+both read on 2026-11-27. The esv.org [Terms of Service](https://www.esv.org/about/terms/) apply too.
+
+- **Application:** "TreasuredWord", submitted by the developer on 2026-11-27 as **Application
+  development**, not a company, within the API v3 guidelines. Asked whether the API is used "in a
+  platform that also uses AI", the answer was **Yes**, explaining that ESV text is never sent to,
+  accessed or processed by any AI system (the no-AI rule below). Status: **pending staff approval**
+  (the form says up to 3–4 weeks). Until a key exists the app doesn't offer the ESV (#377 stays open
+  for the check with the real key). The form's own guidelines say "500 consecutive verses"; the app
+  keeps to the stricter 500 verses in all.
+
+- **The key** is a secret ("You may not sell, share, or publish your access key"), kept like
+  YouVersion's: `ESV_API_KEY` in the git-ignored `local.properties` and the `ESV_API_KEY` repository
+  secret for App CI, reaching the app through `BuildConfig.ESV_API_KEY`. A key in an APK can be
+  extracted; if it leaks or is abused, create a new one on api.esv.org, update both places and
+  release an update. Without a key the build works and simply doesn't offer the ESV.
+- **Free plan limits:** 5,000 queries a day, 1,000 an hour, 60 a minute, for the one key, so for all
+  readers together; at most 500 verses or half a book per query. Over the limit Crossway throttles
+  (HTTP 429) and charges nothing: the reader shows its "try again in a minute" message, and search
+  falls back to the saved chapters. There's no read-ahead for the ESV, and search asks for one page
+  of 20 at a time, as the list scrolls.
+
+| Condition | How the app meets it |
+|---|---|
+| **Non-commercial**: no charge for any part; Crossway counts donations, ads and sponsorships as commercial | The app's rule; see Donations below |
+| For individuals and non-commercial organizations, consistent with the statement of faith on api.esv.org | The developer, as an individual, for a free app; the same Core Beliefs basics the app confirmed to YouVersion |
+| Mobile apps allowed "without formal permission" when the general conditions are met; the "license to organizations, not to individuals" policy is for formal licenses beyond them | Nothing beyond the standard conditions is used |
+| **Store at most 500 verses, or half of any book, whichever is less** | `EsvStorage`: after each saved chapter the oldest go until at most 500 verses remain and no book has more than half its verses saved. A chapter that's more than half its book (Jude and the other one-chapter books, Haggai 2) is shown but never saved, only held in memory while the app runs (`unsavedEsvChapters`). Crossway "encourages" clearing the cache periodically; dropping the oldest does that |
+| Display at most 500 verses, or half a book, on one page | A chapter at a time (Psalm 119 is 176 verses); search lists at most 100 results (`EsvWordSearch.MAX_RESULTS`) |
+| Don't change the words; headings, footnotes and verse numbers may be left out | `EsvHtmlParser` only drops the markup and the printed numbers. Footnotes and headings are kept |
+| **The ESV copyright notice and "ESV" with the text; a link to www.esv.org on each page that uses it** | The chapter credit shows Crossway's current notice word for word (`EsvBible.NOTICE`, from crossway.org/permissions) with an esv.org link; word-search results end with the "ESV" tag linked to esv.org and the notice; Copy and Share add "(ESV)" and `https://www.esv.org` |
+| Not translated in whole or in part into any other language | Nothing translates Bible text |
+| **"The ESV text may not be used, accessed, or processed by any artificial intelligence (AI) system"**, including "producing AI-generated responses based on the ESV text", with no exception (crossway.org/permissions) | Stricter than Lockman's: the ESV is a **no-AI version** (`LicensedBibles.allowsAi` is false). Bible Helper's verse cards, Key passages and search by meaning show the KJV for ESV readers, saying so (`ai_version_kjv_note`), and never load an ESV chapter. "Ask about this verse" in the ESV sends only the reference and "ESV", and the conversation keeps no ESV text; the server quotes the BSB to the model, as for the other licensed versions |
+| "ESV" and "English Standard Version" are Crossway's trademarks | Used only to name the version |
+| Crossway may revoke the key at its sole judgment, or end the service | Remove the ESV in an update: take it out of `LicensedBibles`/`EsvBible` and delete its saved chapters at startup, as `YouVersionBibles.isWithdrawn` does |
+| Terms of Service: Illinois law, Cook County courts, claims within one year; terms can change without notice | Reread them with the yearly check below |
+| Audio (`/v3/passage/audio/`) | Not used. The API docs give no terms for it beyond the permissions page's audio rules; it would need its own look first |
+
 ## Lockman Fast-track Bible License v1 (accepted 2026-11-21)
 
 Covers LBLA, NBLA, NASB 2020, NASB 1995 and AMP. Full text: [Google Doc](https://docs.google.com/document/d/1DOsHZz5GzDs0L9Yy5BTU7IdANPmzTtXuQuI-TVkg0VY/edit).
@@ -134,7 +178,6 @@ Before accepting any of them, know what it asks:
 | **RVR1960** (Sociedades Bíblicas Unidas) | Not offered | Not on the YouVersion Platform for other apps, only in YouVersion's own Bible App | A direct license from the Bible Societies (American Bible Society in the US), usually paid. Must be free. **The developer decided on 2026-11-21 not to write to publishers for now** (#376, closed); the yearly recheck below covers whether any of these join the Platform |
 | **NTV, NLT** (Tyndale) | Not offered | Not on the Platform | A direct license from Tyndale House. Not requested (#376) |
 | **NKJV** (Thomas Nelson / HarperCollins) | Not offered | Not on the Platform | A direct license from HarperCollins Christian Publishing. Not requested (#376) |
-| **ESV** (Crossway) | Not offered yet | Not on the Platform | The free, non-commercial [ESV API](https://api.esv.org): 5,000 queries a day, at most 500 verses stored offline, has chapter audio (#377) |
 | **NIV, NIrV, NVI** (Biblica) | Deferred | Biblica's agreement is heavy for a fast-changing app: Biblica's written approval before every new or enhanced version of the app, a display limit, footnotes, encryption, a yearly audit, shipping within 12 months, destroying copies within 72 hours if it ends, Colorado arbitration. **Its terms are confidential once accepted**, so they're not summarized here | **Not now** (developer, 2026-11-21; #375 closed). Accept it in the portal only after the app's pace slows, ideally after asking Biblica in writing how the approval clause applies |
 | **The Passion Translation** (BroadStreet) | Not offered | A loose paraphrase by one translator that adds wording, widely criticized; YouVersion lists it "In Review", 51 books | — |
 | **Wycliffe** English/Spanish (Plain English Version, Gloss Spanish) | Not offered | Partial Bibles (29 and 39 books); the reader supports complete 66-book Bibles | Accepting Wycliffe's license would also unlock ~1,000 Bibles in other languages, worth a look for the app's other languages (#379) |
@@ -152,26 +195,34 @@ are offered.** Lockman requires distribution "completely free of charge" with no
 the Platform terms and app registration say non-commercial; Biblica's license forbids using its
 text in connection with soliciting contributions. Before adding any of these, remove the licensed
 versions or get each publisher's written permission. API.Bible and the ESV API also count
-fundraising as commercial use.
+fundraising as commercial use; Crossway's ESV API conditions name donations, advertising and
+sponsorships.
 
 ## Privacy
 
 Reading a YouVersion version sends YouVersion the translation and chapter, the app's key and the
 device's IP address, never account data. Word search in one sends the words searched (#382).
-`docs/privacy-policy.md` says so (effective 2026-11-21).
+Reading the ESV sends Crossway the chapter, the app's key and the IP address; word search in it
+sends the words searched (#377). `docs/privacy-policy.md` says so (effective 2026-11-27).
 The Play Console **Data safety** form must list it: data shared with a third party is none of the
 user's personal data beyond the IP address that every web request carries, so it's the same answer
-as for bible.helloao.org, but recheck the form whenever this changes.
+as for bible.helloao.org, but recheck the form whenever this changes (as with the ESV, #377).
 
 ## Yearly duties
 
 | When | What | Where |
 |---|---|---|
 | **By the end of February** | Lockman: report the number of copies distributed in the previous calendar year. Use Play Console → Statistics → new installs ("device acquisitions") for 1 January–31 December. Send it through Lockman's [Email Us form](https://www.lockman.org/email-us/), or by post to The Lockman Foundation, PO Box 2279, La Habra, CA 90632-2279. Note the date sent in the reminder issue | A workflow (`.github/workflows/lockman-annual-report.yml`) opens a reminder issue every 1 February |
-| Once a year (with the report) | Recheck this file: Platform terms, each license's text (links above), whether RVR1960/NTV/NLT/NKJV/ESV became available on the Platform, the notices in `YouVersionBibles.kt` | — |
+| Once a year (with the report) | Recheck this file: Platform terms, each license's text (links above), whether RVR1960/NTV/NLT/NKJV became available on the Platform, the notices in `YouVersionBibles.kt`, and Crossway's ESV API conditions, permissions page and notice (`EsvBible.NOTICE`, the "ESV Text Edition" year) | — |
 | When YouVersion or a publisher writes | Apply notice changes or security updates; answer termination notices by removing the version | — |
 
 ## Technical notes
+
+- `EsvBibleSource` (#377): `GET /v3/passage/html/?q=BBCCC001-BBCCC999` for one chapter (verse ids,
+  so one-chapter books need no special name), header `Authorization: Token <key>`;
+  `GET /v3/passage/search/?q=…&page-size=20&page=N` for word search, which returns each verse's
+  text. Adding the ESV saves the KJV's book names and verse counts (the API has no index); a
+  chapter's count is corrected when it's first fetched. Its tests use made-up text and markup.
 
 - `YouVersionBibleSource`: `GET /v1/bibles/{id}/index` once per version (book names and verse
   counts), `GET /v1/bibles/{id}/passages/{BOOK.CHAPTER}?format=html` per chapter, `GET /v1/bibles/{id}`

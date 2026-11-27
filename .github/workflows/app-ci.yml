@@ -45,10 +45,11 @@ jobs:
 
       - name: Run unit tests and build debug APK
         # No local.properties needed: the runner image ships the Android SDK and sets ANDROID_HOME.
-        # The only key is the YouVersion App Key (#366), from the repository secret; pull requests
-        # from forks get none, and the build still passes without it.
+        # The keys are the YouVersion App Key (#366) and the ESV API key (#377), from repository
+        # secrets; pull requests from forks get none, and the build still passes without them.
         env:
           YOUVERSION_APP_KEY: ${{ secrets.YOUVERSION_APP_KEY }}
+          ESV_API_KEY: ${{ secrets.ESV_API_KEY }}
         run: ./gradlew :app:testDebugUnitTest :app:assembleDebug --console=plain
 
       - name: Upload test report

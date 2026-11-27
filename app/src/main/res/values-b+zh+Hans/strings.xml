@@ -578,6 +578,10 @@
     <string name="version_section_licensed">授权译本</string>
     <string name="version_section_licensed_hint">在线阅读。打开过的章节会保留在设备上。</string>
     <string name="version_status_online">在线译本</string>
+    <!-- The ESV in the version list (#377): Crossway lets the phone keep at most 500 of its verses. -->
+    <string name="version_status_esv">在线译本。只有你最近读过的 500 节经文会保留在设备上。</string>
+    <!-- Bible Helper and search by meaning when the selected version's terms bar AI use of its text (the ESV, #377): their verses are the KJV's instead. %1$s: the version's abbreviation, such as ESV. -->
+    <string name="ai_version_kjv_note">%1$s 的出版方不允许在 AI 功能中使用其经文，因此这些经文来自 KJV。</string>
     <string name="youversion_chapter_offline">此章尚未保存在你的设备上，此译本需要联网才能打开。请连接网络，或选择已下载的译本。</string>
     <string name="youversion_chapter_failed">无法加载此章。请重试。</string>
     <string name="youversion_busy">现在有很多人在读此译本。请一分钟后重试。</string>

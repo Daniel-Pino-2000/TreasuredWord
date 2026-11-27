@@ -591,6 +591,10 @@
     <string name="version_section_licensed">Lizenzierte Übersetzungen</string>
     <string name="version_section_licensed_hint">Online lesen. Geöffnete Kapitel bleiben auf deinem Gerät.</string>
     <string name="version_status_online">Online-Übersetzung</string>
+    <!-- The ESV in the version list (#377): Crossway lets the phone keep at most 500 of its verses. -->
+    <string name="version_status_esv">Online-Übersetzung. Nur die letzten 500 gelesenen Verse bleiben auf deinem Gerät.</string>
+    <!-- Bible Helper and search by meaning when the selected version's terms bar AI use of its text (the ESV, #377): their verses are the KJV's instead. %1$s: the version's abbreviation, such as ESV. -->
+    <string name="ai_version_kjv_note">Der Herausgeber der %1$s erlaubt ihren Text nicht in KI-Funktionen, daher stammen diese Verse aus der KJV.</string>
     <string name="youversion_chapter_offline">Dieses Kapitel ist noch nicht auf deinem Gerät, und diese Übersetzung braucht zum Öffnen eine Internetverbindung. Verbinde dich oder wähle eine heruntergeladene Übersetzung.</string>
     <string name="youversion_chapter_failed">Dieses Kapitel konnte nicht geladen werden. Bitte versuche es erneut.</string>
     <string name="youversion_busy">Gerade lesen sehr viele diese Übersetzung. Bitte versuche es in einer Minute erneut.</string>

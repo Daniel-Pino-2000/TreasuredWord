@@ -670,6 +670,10 @@
     <string name="version_section_licensed">Licensed versions</string>
     <string name="version_section_licensed_hint">Read online. Chapters you open stay on your device.</string>
     <string name="version_status_online">Online version</string>
+    <!-- The ESV in the version list (#377): Crossway lets the phone keep at most 500 of its verses. -->
+    <string name="version_status_esv">Online version. Keeps only the last 500 verses you read on your device.</string>
+    <!-- Bible Helper and search by meaning when the selected version's terms bar AI use of its text (the ESV, #377): their verses are the KJV's instead. %1$s: the version's abbreviation, such as ESV. -->
+    <string name="ai_version_kjv_note">%1$s\'s publisher doesn\'t allow its text in AI features, so these verses are from the KJV.</string>
     <string name="youversion_chapter_offline">This chapter isn\'t on your device yet, and this version needs an internet connection to open it. Connect, or choose a downloaded version.</string>
     <string name="youversion_chapter_failed">This chapter couldn\'t be loaded. Please try again.</string>
     <string name="youversion_busy">Many people are reading this version right now. Please try again in a minute.</string>

@@ -101,6 +101,7 @@ import com.application.bibleapp.data.model.AiQuestionPassage
 import com.application.bibleapp.data.model.AiRole
 import com.application.bibleapp.data.remote.AiAskResult
 import com.application.bibleapp.data.remote.AiPartialAnswer
+import com.application.bibleapp.data.model.LicensedBibles
 import com.application.bibleapp.data.model.YouVersionBibles
 import com.application.bibleapp.data.repository.AiHelperRepository.Companion.MAX_QUESTION_CHARS
 import com.application.bibleapp.ui.theme.BibleAppTheme
@@ -242,6 +243,8 @@ fun AskView(
         draft = draft,
         online = online,
         modifier = modifier,
+        // The ESV's terms bar its text from AI features (#377): the cards show the KJV, and say why.
+        kjvInsteadOf = selectedVersion.id.takeUnless { LicensedBibles.allowsAi(it) }?.let { bibleViewModel.versionLabel(it) },
         onDraftChange = askViewModel::onDraftChange,
         onSend = { send(null) },
         onStarter = { id, question ->
@@ -277,6 +280,7 @@ private fun AskChat(
     draft: String,
     online: Boolean,
     modifier: Modifier,
+    kjvInsteadOf: String? = null,
     onDraftChange: (String) -> Unit,
     onSend: () -> Unit,
     onStarter: (id: String, question: String) -> Unit,
@@ -332,7 +336,7 @@ private fun AskChat(
                 item(key = "intro") {
                     // Starters have ready answers that don't use a daily question, so they stay on
                     // while the limit lasts (#284).
-                    AskIntro(onStarter = onStarter, enabled = online, showStarters = state.passage == null)
+                    AskIntro(onStarter = onStarter, enabled = online, showStarters = state.passage == null, kjvInsteadOf = kjvInsteadOf)
                 }
             }
             items(state.messages, key = { it.id }) { message ->
@@ -458,11 +462,21 @@ private fun AskSignedOut(onSignInClick: () -> Unit, modifier: Modifier = Modifie
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun AskIntro(onStarter: (id: String, question: String) -> Unit, enabled: Boolean, showStarters: Boolean) {
+private fun AskIntro(
+    onStarter: (id: String, question: String) -> Unit,
+    enabled: Boolean,
+    showStarters: Boolean,
+    kjvInsteadOf: String? = null
+) {
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
         Text(text = stringResource(R.string.ai_intro_title), style = MaterialTheme.typography.titleLarge)
         Text(
             text = stringResource(R.string.ai_intro_message),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        if (kjvInsteadOf != null) Text(
+            text = stringResource(R.string.ai_version_kjv_note, kjvInsteadOf),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -546,7 +560,7 @@ private fun PassageQuote(passage: AiQuestionPassage, onOpenLink: (String) -> Uni
 @Composable
 private fun passageLabel(passage: AiQuestionPassage, onOpenLink: (String) -> Unit): AnnotatedString {
     val url = passage.publisherUrl
-    val tag = passage.licensedVersionId?.let { YouVersionBibles.find(it)?.abbreviation }
+    val tag = passage.licensedVersionId?.let { LicensedBibles.abbreviation(it) }
     val at = if (url != null && tag != null) passage.label.lastIndexOf("($tag)") else -1
     if (at < 0) return AnnotatedString(passage.label)
     val linkColor = LocalContentColor.current

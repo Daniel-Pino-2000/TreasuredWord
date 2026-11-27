@@ -592,6 +592,10 @@
     <string name="version_section_licensed">Matoleo yenye leseni</string>
     <string name="version_section_licensed_hint">Husomwa mtandaoni. Sura unazofungua hubaki kwenye kifaa chako.</string>
     <string name="version_status_online">Toleo la mtandaoni</string>
+    <!-- The ESV in the version list (#377): Crossway lets the phone keep at most 500 of its verses. -->
+    <string name="version_status_esv">Toleo la mtandaoni. Mistari 500 ya mwisho uliyosoma tu ndiyo hubaki kwenye kifaa chako.</string>
+    <!-- Bible Helper and search by meaning when the selected version's terms bar AI use of its text (the ESV, #377): their verses are the KJV's instead. %1$s: the version's abbreviation, such as ESV. -->
+    <string name="ai_version_kjv_note">Mchapishaji wa %1$s haruhusu maandishi yake katika vipengele vya AI, kwa hiyo mistari hii ni ya KJV.</string>
     <string name="youversion_chapter_offline">Sura hii bado haipo kwenye kifaa chako, na toleo hili linahitaji intaneti ili kuifungua. Unganisha, au chagua toleo lililopakuliwa.</string>
     <string name="youversion_chapter_failed">Imeshindikana kupakia sura hii. Tafadhali jaribu tena.</string>
     <string name="youversion_busy">Watu wengi wanasoma toleo hili sasa hivi. Tafadhali jaribu tena baada ya dakika moja.</string>

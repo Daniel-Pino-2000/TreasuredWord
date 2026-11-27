@@ -18,12 +18,16 @@ data class PassageVerse(val number: Int, val text: String)
  * to an AI answer when it's shown word for word (docs/bible-licensing.md), never sent to the AI.
  * [chapterOf] fetches its chapter when it isn't saved; offline or on a 429 it comes back empty, and
  * the passage is the KJV's.
+ *
+ * A version whose terms bar any AI use of its text, such as the ESV (#377,
+ * [LicensedBibles.allowsAi]), is never shown next to an answer: the passage is the KJV's.
  */
 suspend fun loadAiVersePassage(
     reference: VerseReference,
-    selectedVersionId: String,
+    readerVersionId: String,
     chapterOf: suspend (versionId: String) -> List<VerseUI>
 ): AiVersePassage? {
+    val selectedVersionId = readerVersionId.takeIf { LicensedBibles.allowsAi(it) } ?: DEFAULT_VERSION.id
     val selected = passageIn(chapterOf(selectedVersionId), reference)
     if (isComplete(selected, reference) || selectedVersionId == DEFAULT_VERSION.id) {
         return selected.takeIf { it.isNotEmpty() }?.let { AiVersePassage(selectedVersionId, it) }

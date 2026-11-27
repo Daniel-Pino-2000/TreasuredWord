@@ -2,6 +2,7 @@ package com.application.bibleapp.viewmodel
 
 import com.application.bibleapp.data.model.PassageVerse
 import com.application.bibleapp.data.model.VerseUI
+import com.application.bibleapp.data.model.EsvBible
 import com.application.bibleapp.data.model.YouVersionBibles
 import com.application.bibleapp.utils.VerseReference
 import com.application.bibleapp.data.remote.SemanticSearchResult
@@ -367,6 +368,20 @@ class MeaningSearchTest {
         }
         assertEquals(listOf("Peace I leave with you…", "The LORD is my shepherd…"), fallback.map { it.text })
         assertTrue(fallback.all { it.versionId == "kjv" })
+    }
+
+    @Test
+    fun `the ESV's terms bar AI features, so its readers' list is the KJV's (#377)`() = runTest {
+        val refs = listOf(VerseRef(43, 14, 27))
+        val asked = mutableListOf<String>()
+
+        val verses = resolveMeaningVerses(refs, EsvBible.ID) { versionId, bookId, chapter ->
+            asked += versionId
+            listOf(VerseUI(id = 27, text = if (versionId == "kjv") "Peace I leave with you…" else "Made-up words", bookId = bookId, chapter = chapter, verse = 27))
+        }
+
+        assertEquals(listOf("Peace I leave with you…"), verses.map { it.text })
+        assertEquals(listOf("kjv"), asked)
     }
 
     @Test

@@ -605,6 +605,10 @@
     <string name="version_section_licensed">Versions sous licence</string>
     <string name="version_section_licensed_hint">Lecture en ligne. Les chapitres ouverts restent sur votre appareil.</string>
     <string name="version_status_online">Version en ligne</string>
+    <!-- The ESV in the version list (#377): Crossway lets the phone keep at most 500 of its verses. -->
+    <string name="version_status_esv">Version en ligne. Seuls les 500 derniers versets lus restent sur votre appareil.</string>
+    <!-- Bible Helper and search by meaning when the selected version's terms bar AI use of its text (the ESV, #377): their verses are the KJV's instead. %1$s: the version's abbreviation, such as ESV. -->
+    <string name="ai_version_kjv_note">L\'éditeur de la %1$s n\'autorise pas son texte dans les fonctions d\'IA : ces versets viennent donc de la KJV.</string>
     <string name="youversion_chapter_offline">Ce chapitre n\'est pas encore sur votre appareil, et cette version a besoin d\'une connexion internet pour l\'ouvrir. Connectez-vous ou choisissez une version téléchargée.</string>
     <string name="youversion_chapter_failed">Impossible de charger ce chapitre. Veuillez réessayer.</string>
     <string name="youversion_busy">Beaucoup de personnes lisent cette version en ce moment. Veuillez réessayer dans une minute.</string>
