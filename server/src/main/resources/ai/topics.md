@@ -260,7 +260,7 @@
 
 ## marriage
 - **Title:** Marriage and conflict
-- **Asks:** My husband and I fight all the time | My wife and I keep arguing | What does the Bible say about marriage? | How should a husband and wife treat each other? | Our marriage is struggling
+- **Asks:** My husband and I fight all the time | My wife and I keep arguing | What does the Bible say about marriage? | How should a husband and wife treat each other? | Our marriage is struggling | How can I be a better husband or wife?
 - **Points:**
   - Marriage pictures Christ and the church: husbands love sacrificially, wives respect and support, both submit to one another in reverence for Christ.
   - Put on kindness, patience and forgiveness; be quick to listen and slow to anger; don't let anger fester. Conflict is rarely one person's fault.
@@ -384,7 +384,7 @@
 
 ## crisis
 - **Title:** Someone in danger
-- **Asks:** I want to die | I don't want to live anymore | I'm thinking about killing myself | I want to end my life | Would God forgive suicide? | I hurt myself on purpose | I keep cutting myself | Someone I love is talking about suicide | My friend overdosed | Someone took too many pills | I'm not safe right now | Everyone would be better off without me | Nobody would miss me if I were gone | I wish I could fall asleep and never wake up | I don't want to wake up anymore | I see no reason to stay alive | I want to close my eyes and never open them again | Why am I even still alive? | I want to close my eyes and die
+- **Asks:** I want to die | I don't want to live anymore | I'm thinking about killing myself | I want to end my life | Would God forgive suicide? | I hurt myself on purpose | I keep cutting myself | Someone I love is talking about suicide | My friend overdosed | Someone took too many pills | I'm not safe right now | Everyone would be better off without me | Nobody would miss me if I were gone | I wish I could fall asleep and never wake up | I don't want to wake up anymore | I see no reason to stay alive | I want to close my eyes and never open them again | Why am I even still alive? | I want to close my eyes and die | I wish I were dead
 - **Alone:** yes
 - **Points:**
   - When the person says they want to harm or kill themselves, or that someone is in danger now: begin with [[CRISIS]], keep the answer short and warm, and answer only their safety. Say that they matter to God and He is near them in their pain, that they should contact local emergency services or someone they trust right now, and give one verse of comfort. If they asked how to pray, a one-line prayer may follow.
@@ -438,7 +438,7 @@
 
 ## anxiety
 - **Title:** Worry and anxiety
-- **Asks:** What does the Bible say about worry? | I'm anxious about the future | I can't sleep because my mind won't stop racing | I'm so stressed | I'm afraid of what will happen tomorrow | Sleepless nights | Insomnia keeps me awake | Help me get some sleep | I lie awake at night and can't sleep
+- **Asks:** What does the Bible say about worry? | I'm anxious about the future | I can't sleep because my mind won't stop racing | I'm so stressed | I'm afraid of what will happen tomorrow | Sleepless nights | Insomnia keeps me awake | Help me get some sleep | I lie awake at night and can't sleep | Worry
 - **Points:**
   - Jesus tells His followers not to worry, because the Father knows what they need: seek His kingdom first.
   - Bring every worry to God in prayer with thanksgiving, and His peace guards the heart; cast every care on Him.
@@ -451,15 +451,19 @@
 
 ## fear
 - **Title:** Fear
-- **Asks:** I'm afraid | I'm scared | How can I stop being afraid? | Fear of the future | I'm scared to die | Fear of death and dying
+- **Asks:** I'm afraid | I'm scared | How can I stop being afraid? | Fear of the future | I'm scared to die | Fear of death and dying | What does the Bible say about the fear of death?
 - **Points:**
   - God is with His people and strengthens them; He hasn't given a spirit of fear.
   - Trust Him when afraid, and pray.
+  - For the fear of dying: Jesus shared our humanity to free those held all their lives by the fear of death; whoever believes in Him will live even though he dies, and death has lost its sting.
 - **Passages:**
   - ISA 41:10: do not fear, for I am with you; I will strengthen you
   - PSA 56:3-4: when I am afraid, I put my trust in You
   - JOS 1:9: be strong and courageous; the LORD is with you wherever you go
   - 2TI 1:7: God has not given us a spirit of fear, but of power, love and self-control
+  - HEB 2:14-15: by His death Jesus freed those held in slavery all their lives by the fear of death
+  - JHN 11:25-26: I am the resurrection and the life; whoever believes in Me will live, even though he dies
+  - 1CO 15:55-57: where, O death, is your sting? God gives us the victory through our Lord Jesus Christ
 
 ## loneliness
 - **Title:** Loneliness
@@ -640,7 +644,7 @@
 
 ## work
 - **Title:** Work and difficult bosses
-- **Asks:** How do I deal with a difficult boss at work? | Laziness and working hard | What does the Bible say about work?
+- **Asks:** How do I deal with a difficult boss at work? | Laziness and working hard | What does the Bible say about work? | I can't stand my job
 - **Points:**
   - Work heartily, as for the Lord; laziness is warned against.
   - Respect even a hard boss, and live at peace as far as it depends on you; unfair treatment can be raised honestly.
@@ -734,3 +738,313 @@
   - ROM 5:8: while we were still sinners, Christ died for us
   - MAT 19:4-6: from the beginning God made them male and female; the two become one flesh
   - 1CO 6:9-11: such were some of you, but you were washed and justified
+
+<!-- #397: guides for the topics #393's held-out searches missed most, plus the gaps the developer
+     asked for. Positions follow doctrine.md or the Bible Helper's own answers (aiEval, guides off,
+     2026-11-27); every passage was checked against its BSB text. Reviewed and approved by the
+     developer 2026-11-27, who decided that babies who die before birth are with the Lord (2SA 12:23).
+     Probes for every guide, and the crisis cases next to them, are in docs/topic_routing_probes.txt. -->
+## fertility
+- **Title:** Infertility and losing a baby
+- **Asks:** We've tried for years to have a baby and nothing happens | Why won't God give us a child? | We had a miscarriage and we're devastated | Our baby died in the womb | Is my baby who died before birth in heaven? | We are struggling with infertility | Sufrí un aborto espontáneo | Grieving a miscarriage
+- **Points:**
+  - Begin with compassion; don't rush them, lecture, or try to explain why it happened. The loss of a baby at any stage, or the long wait for one, is real grief.
+  - Infertility or a miscarriage is not God's punishment and not a lack of faith. Like Hannah, they can pour out their sorrow to the LORD honestly; He keeps count of every tear.
+  - A baby who died before birth was formed and known by God in the womb, and is with the Lord: when his infant son died, David said, "I will go to him, but he will not return to me." Say so plainly and gently, as comfort.
+  - Don't promise that they will have children, and give no medical advice. Christians hold different views on some fertility treatments, such as IVF, often over what happens to embryos: don't settle it; encourage them to talk with their pastor and their doctor. Encourage leaning on their spouse, a pastor and the church.
+- **Passages:**
+  - PSA 34:18: the LORD is near to the brokenhearted
+  - 1SA 1:10-11: Hannah, in bitter distress over having no child, prayed to the LORD and wept
+  - PSA 56:8: God keeps count of our tears
+  - PSA 139:13-16: God knit the child together in the womb; His eyes saw the unformed body
+  - 2SA 12:22-23: David, after his baby son died: I will go to him, but he will not return to me
+  - 2CO 1:3-4: the Father of compassion and the God of all comfort comforts us in all our troubles
+  - REV 21:4: He will wipe away every tear; no more death or mourning
+
+## purity
+- **Title:** Sexual purity and pornography
+- **Asks:** How do I quit watching pornography? | I'm struggling with porn | Is it wrong to have sex with my boyfriend or girlfriend? | Is premarital sex okay if we're engaged? | How do I fight lust? | Sexual sin and purity | Is masturbation wrong for a Christian? | My boyfriend is pressuring me to have sex | Staying sexually pure before marriage
+- **Points:**
+  - God made sex good, for the marriage of one man and one woman. Say plainly and gently that sex outside marriage, pornography and lust are sin, as Jesus taught. The Bible doesn't name masturbation: answer from Jesus' words on lust and from self-control, without shaming.
+  - God has not stopped loving them: whoever confesses is forgiven and cleansed, and there is no condemnation in Christ. Don't shame them.
+  - Practical steps: flee temptation (remove or block access, avoid what leads to it), fill their mind with Scripture, and confess to a trusted, mature believer of the same sex or a pastor who can keep them accountable. God provides a way out of every temptation.
+  - This is not a crisis: don't begin with [[CRISIS]] or add an emergency line unless they mention harm or danger. If anyone is forcing them, that is not their sin: they should tell someone they trust or the police.
+- **Passages:**
+  - 1CO 6:18-20: flee sexual immorality; your body is a temple of the Holy Spirit, so glorify God with it
+  - MAT 5:27-28: looking at a woman with lust is adultery in the heart
+  - HEB 13:4: honor marriage and keep the marriage bed undefiled
+  - 1TH 4:3-5: God's will is that you abstain from sexual immorality and control your body in holiness
+  - 1CO 10:13: God is faithful and provides a way out of temptation
+  - PSA 119:9-11: a young man keeps his way pure by guarding it with God's word
+  - 1JN 1:9: if we confess our sins, He is faithful and just to forgive us and cleanse us
+
+## addiction
+- **Title:** Addiction and self-control
+- **Asks:** I'm addicted and can't stop | How do I overcome an addiction? | I spend all day on my phone | I eat too much and can't stop | I can't stop gambling | I'm hooked on drugs | How can I have more self-control?
+- **Points:**
+  - If anyone may have taken too much of a drug or medicine, or says they might harm themselves, the crisis rules come first: begin with [[CRISIS]] and urge emergency help now.
+  - Being mastered by anything (a phone, food, gambling, alcohol, drugs, games) is a real struggle, and God's grace doesn't leave them there: sin need not be their master, and self-control is the fruit of His Spirit.
+  - Practical steps: confess it honestly to God and to someone they trust, put distance between themselves and what pulls them, fill the time with good things, prayer and Scripture, and keep going after a slip.
+  - For drugs, alcohol, gambling or an eating problem, help from a doctor, counselor or recovery group is wise and not a lack of faith. Give no medical advice.
+- **Passages:**
+  - 1CO 6:12: everything is permissible, but I will not be mastered by anything
+  - GAL 5:22-23: the fruit of the Spirit includes self-control
+  - ROM 6:14: sin shall not be your master, because you are under grace
+  - 1CO 10:13: God is faithful and provides a way out of temptation
+  - TIT 2:11-12: God's grace teaches us to renounce worldly passions and live sensible, upright, godly lives
+  - 1CO 9:25-27: I discipline my body and make it my slave
+  - JAS 5:16: confess your sins to each other and pray for each other so that you may be healed
+
+## suffering
+- **Title:** Suffering, and anger at God
+- **Asks:** Why does a good God allow evil and suffering? | Why does God let bad things happen? | Why do good people suffer? | I'm so angry with God | Is it okay to be mad at God? | How can God be good when the world is so cruel? | Why do innocent people suffer?
+- **Points:**
+  - Begin with compassion, not a quick explanation. Being honest with God about pain, confusion or anger is not forbidden: the psalmists cried "how long?" Bring it to Him rather than turning away.
+  - Suffering and evil came into the world through sin: creation groans, and much suffering comes from people's own sinful choices. But a person's suffering is not necessarily punishment for their own sin, as Jesus said of the man born blind.
+  - God is good and in control even when we can't see why: He can bring good out of what others meant for evil, and works all things together for good for those who love Him.
+  - God did not stay far off: Jesus suffered for us and understands our weakness, and He will one day wipe away every tear.
+- **Passages:**
+  - PSA 13:1-2: how long, O LORD? Will You forget me forever?
+  - JHN 9:2-3: neither this man nor his parents sinned; this happened so the works of God would be displayed
+  - GEN 50:20: what you intended for evil, God intended for good
+  - ROM 8:28: God works all things together for the good of those who love Him
+  - HEB 4:15: our high priest sympathizes with our weaknesses
+  - ROM 8:18: present sufferings are not comparable to the glory to come
+  - REV 21:4: He will wipe away every tear; no more death or pain
+
+## prodigal
+- **Title:** A child or loved one who left the faith
+- **Asks:** My child doesn't believe in God anymore | My son walked away from Jesus | My daughter turned her back on the faith | How do I reach my child who left the church? | Praying for a prodigal
+- **Points:**
+  - Begin with compassion: their grief and worry are real. Don't blame them; a child's choice is not simply the parent's failure.
+  - Keep praying and keep loving: like the father of the prodigal son, keep the door open, without nagging, pressure or cutting them off, and live the faith before them.
+  - God is patient, wanting everyone to come to repentance, and He goes after the one who is lost. Don't speculate about the person's salvation; leave it with God.
+  - Encourage leaning on a pastor and the church to pray with them.
+- **Passages:**
+  - LUK 15:20: the father saw his son from far off, ran to him and embraced him
+  - LUK 15:4: the shepherd goes after the one lost sheep until he finds it
+  - 2PE 3:9: the Lord is patient, not wanting anyone to perish but everyone to come to repentance
+  - 1TI 2:3-4: God wants everyone to be saved and to come to the knowledge of the truth
+  - COL 4:2: devote yourselves to prayer
+  - GAL 6:9: let us not grow weary in doing good, for in due time we will reap
+
+## guilt
+- **Title:** Guilt, and making things right
+- **Asks:** I feel guilty for lying | I hurt someone and want to apologize | How do I make things right after I wronged someone? | I did something wrong and feel terrible | I still feel guilty about what I did | I lied to my parents
+- **Points:**
+  - Guilt over a real wrong is God calling them back: confess it to Him, and He forgives and cleanses.
+  - Then make it right where they can: tell the truth, apologize to the person they wronged, and repay or restore what they can, as Zacchaeus did, without waiting for the other person to move first.
+  - Godly sorrow leads to repentance and freedom, not endless shame. If guilt stays after they've confessed, talking with a pastor can help.
+- **Passages:**
+  - PRO 28:13: whoever confesses and renounces his sins finds mercy
+  - 1JN 1:9: if we confess our sins, He is faithful and just to forgive us
+  - PSA 32:5: I confessed my transgressions, and You forgave the guilt of my sin
+  - MAT 5:23-24: first go and be reconciled to your brother
+  - LUK 19:8: Zacchaeus repays those he cheated fourfold
+  - EPH 4:25: put off falsehood and speak truthfully
+  - 2CO 7:10: godly sorrow brings repentance without regret
+
+## worth
+- **Title:** Self-worth and how you look
+- **Asks:** I don't feel good enough about myself | I think I'm ugly | I hate my appearance | I feel invisible | No one ever sees me | Does my life have value?
+- **Points:**
+  - Their worth comes from God, who made them in His image, knows them and loves them, not from their looks, other people's attention or what they achieve.
+  - The LORD looks at the heart, not the outward appearance; they are His workmanship and, in Christ, His children.
+  - Disliking how they look is not a crisis: don't begin with [[CRISIS]] or add an emergency line. Only if they say they might harm themselves do the crisis rules come first. If they've stopped eating, encourage talking with someone they trust and a doctor.
+- **Passages:**
+  - GEN 1:27: God created mankind in His own image
+  - PSA 139:13-14: You knit me together; I am fearfully and wonderfully made
+  - 1SA 16:7: man looks at the outward appearance, but the LORD looks at the heart
+  - MAT 10:29-31: the very hairs of your head are numbered; you are worth more than many sparrows
+  - EPH 2:10: we are God's workmanship, created in Christ Jesus for good works
+  - 1JN 3:1: see what love the Father has given us, that we should be called children of God
+
+## parenting
+- **Title:** Raising children
+- **Asks:** My children don't obey me | How do I raise kids as a Christian? | Parenting is so hard | We're new parents | How do I teach my kids about God? | How should I discipline my child? | My child is defiant and disrespectful | Being a Christian mom or dad | Is spanking biblical? | Should Christian parents spank their kids?
+- **Points:**
+  - Children are a gift from the LORD. Parents teach them God's ways in everyday life and by their own example.
+  - Discipline with love and patience, not anger: don't provoke or discourage children. Many Baptists hold that calm, loving physical discipline such as spanking can be biblical, and Christians differ; discipline is never done in anger and is never abuse.
+  - No parent is perfect: pray for them and ask God for wisdom, and lean on the church.
+  - If a child is being hurt, getting them safe comes first.
+- **Passages:**
+  - PSA 127:3: children are a heritage from the LORD
+  - DEU 6:6-7: teach God's words to your children when you sit at home and walk along the road
+  - EPH 6:4: don't provoke your children; bring them up in the discipline and instruction of the Lord
+  - COL 3:21: don't provoke your children, so they won't become discouraged
+  - PRO 22:6: train up a child in the way he should go
+  - HEB 12:11: discipline is painful at the time but later yields righteousness and peace
+  - JAS 1:5: if any of you lacks wisdom, ask God
+
+## sharing-faith
+- **Title:** Sharing your faith
+- **Asks:** How do I talk to my friends about Jesus? | How do I share the gospel? | I'm afraid to tell people I'm a Christian | How can I lead someone to Christ? | Witnessing to unbelievers
+- **Points:**
+  - Every Christian is called to make disciples, by word and by life, with gentleness and respect, not pressure.
+  - Practical steps: pray for them, listen, live it, tell what Jesus has done for them, and share the gospel simply (all have sinned; Christ died for sinners and rose; receive Him by faith). Invite them to church.
+  - The Holy Spirit gives the power and God saves; they only need to be faithful, not win every argument.
+- **Passages:**
+  - MAT 28:19-20: go and make disciples of all nations; I am with you always
+  - 1PE 3:15: always be ready to give a reason for your hope, with gentleness and respect
+  - ROM 1:16: I am not ashamed of the gospel; it is the power of God for salvation
+  - COL 4:5-6: act wisely toward outsiders; let your speech be gracious
+  - ACT 1:8: you will receive power when the Holy Spirit comes, and you will be My witnesses
+  - ROM 10:14: how can they believe in the One of whom they have not heard?
+
+## new-believer
+- **Title:** A new believer's first steps
+- **Asks:** I just accepted Jesus, what's next? | I'm a brand-new Christian | What should a new believer do? | I gave my life to Christ today | I was saved recently, how do I grow? | How do I grow as a Christian?
+- **Points:**
+  - Welcome them with joy: they are a new creation, saved by grace, and assurance rests on God's promise.
+  - First steps: be baptized as a believer (obedience after salvation) and join a local church; read the Bible every day, for example starting with a Gospel; pray; and meet with other believers.
+  - Growth takes time, and God finishes what He started. Invite them to talk with a pastor.
+- **Passages:**
+  - 2CO 5:17: if anyone is in Christ, he is a new creation
+  - ACT 2:41-42: those who believed were baptized and devoted themselves to teaching, fellowship, the breaking of bread and prayer
+  - 1PE 2:2: like newborn babies, crave pure spiritual milk, so you may grow
+  - JHN 15:5: I am the vine, you are the branches; remain in Me
+  - PHP 1:6: He who began a good work in you will carry it on to completion
+  - HEB 10:24-25: don't neglect meeting together; encourage one another
+
+## breakup
+- **Title:** A breakup and a broken heart
+- **Asks:** We broke up and I'm heartbroken | My relationship ended and it hurts so much | I miss my ex | My engagement ended | I still love my ex
+- **Points:**
+  - The pain is real; God is near the brokenhearted and heals.
+  - Bring the hurt to Him, guard their heart, and lean on friends and the church; don't seek revenge or pressure the other person to come back.
+  - Their worth doesn't depend on being chosen by someone; God holds their future. If they mention wanting to die, the crisis rules come first.
+- **Passages:**
+  - PSA 34:18: the LORD is near to the brokenhearted
+  - PSA 147:3: He heals the brokenhearted and binds up their wounds
+  - 1PE 5:7: cast all your anxiety on Him, because He cares for you
+  - PRO 4:23: guard your heart with all diligence
+  - PSA 73:26: my heart may fail, but God is the strength of my heart
+  - ROM 8:28: God works all things together for the good of those who love Him
+
+## aging-parents
+- **Title:** Caring for aging parents
+- **Asks:** Looking after my elderly parents | What does the Bible say about caring for older parents? | My elderly mother needs daily care | Caring for my father with dementia
+- **Points:**
+  - Caring for parents in old age honors them and pleases God; honoring father and mother lasts all life.
+  - Honoring doesn't mean doing it all alone: share the load with family, the church and professional care. Choosing a care home can be a loving way to care for them well, and resting is not failing them.
+  - God carries His people into old age, and gives strength to the weary caregiver.
+- **Passages:**
+  - EXO 20:12: honor your father and mother
+  - 1TI 5:4: children should repay their parents; this pleases God
+  - JHN 19:26-27: from the cross, Jesus gave His mother into His disciple's care
+  - LEV 19:32: honor the aged
+  - ISA 46:4: even to your old age I will carry you and sustain you
+  - GAL 6:9: let us not grow weary in doing good
+  - MAT 11:28: come to Me, all who are weary and burdened, and I will give you rest
+
+## singleness
+- **Title:** Singleness and dating
+- **Asks:** I long to be married | Will God bring me a spouse? | Being single as a Christian | Should a Christian date a non-Christian? | Is singleness a gift? | I'm still single, has God forgotten me?
+- **Points:**
+  - Singleness is not second best or a sign that God has forgotten them: Paul calls it a gift and a chance for undivided devotion to the Lord. Wanting to marry is good too: bring it to God and learn contentment in Him.
+  - Their worth and future are secure in God whether or not they marry. Don't promise them a spouse.
+  - For dating: marry only a believer, keep sexual purity, and seek wise counsel.
+- **Passages:**
+  - 1CO 7:7-8: each has his own gift from God; it is good for the unmarried to remain as I am
+  - 1CO 7:32-35: the unmarried can give undivided devotion to the Lord
+  - PHP 4:11-13: I have learned to be content in every situation
+  - 1CO 7:39: free to marry anyone she wishes, as long as he belongs to the Lord
+  - 2CO 6:14: do not be unequally yoked with unbelievers
+  - 1PE 5:7: cast all your anxiety on Him, because He cares for you
+
+## abortion
+- **Title:** Abortion
+- **Asks:** Is abortion a sin? | Is abortion wrong for a Christian? | I regret my abortion | Does God forgive abortion? | I'm pregnant and thinking about abortion | I'm being pressured to get an abortion | What does Scripture say about abortion and the unborn? | Ending a pregnancy
+- **Points:**
+  - Human life is God's gift from conception: He forms and knows each child in the womb, so ending an unborn child's life is wrong. Say so plainly, with love and never contempt.
+  - For someone who has had an abortion: God forgives every sin confessed to Him, and there is no condemnation in Christ. Never shame them; invite them to talk with a pastor.
+  - For someone pregnant and scared or pressured: answer with compassion, and encourage telling someone they trust, a pastor or a pregnancy help center; the church should stand with them. Give no medical advice.
+  - A miscarriage is not an abortion: if they lost a baby naturally, comfort them in their grief and never suggest blame.
+  - A pregnancy or abortion question is not a crisis by itself: don't begin with [[CRISIS]] unless they say they might harm themselves or are in danger now; then the crisis rules come first.
+- **Passages:**
+  - PSA 139:13-16: You knit me together in my mother's womb; Your eyes saw my unformed body
+  - JER 1:5: before I formed you in the womb I knew you
+  - LUK 1:41-44: the unborn John leaped for joy in Elizabeth's womb
+  - EXO 20:13: you shall not murder
+  - PRO 31:8: speak up for those who have no voice
+  - 1JN 1:9: if we confess our sins, He is faithful and just to forgive us
+  - ROM 8:1: no condemnation for those in Christ Jesus
+
+## holy-spirit
+- **Title:** The Holy Spirit
+- **Asks:** Who is the Holy Spirit and what does He do? | Is the Holy Spirit God? | Do all Christians have the Holy Spirit? | Do I need to speak in tongues to be saved? | Spiritual gifts | The Holy Spirit | The person and work of the Holy Spirit | Is the Holy Spirit a person or a force?
+- **Points:**
+  - The Holy Spirit is fully God, a person and not a force. He inspired Scripture, convicts of sin, gives new birth, lives in every believer from conversion and seals them, gives gifts to serve the church, and makes believers like Christ.
+  - Every believer has the Spirit from the moment they believe; no later experience, and no speaking in tongues, is needed to prove it. Not every believer has the same gifts.
+  - Whether gifts such as tongues continue today, faithful Christians differ: explain the continuationist and cessationist views fairly, without choosing, and never say that Christians on either side aren't saved.
+  - Being filled with the Spirit means yielding to Him day by day, and His fruit shows in their life.
+- **Passages:**
+  - JHN 14:16-17: the Father will give you another Advocate, the Spirit of truth, who will be in you
+  - ACT 5:3-4: lying to the Holy Spirit is lying to God
+  - ROM 8:9: anyone who does not have the Spirit of Christ does not belong to Him
+  - EPH 1:13-14: when you believed, you were sealed with the promised Holy Spirit
+  - 1CO 12:4-7: different gifts, but the same Spirit, given for the common good
+  - 1CO 12:30: do all speak in tongues?
+  - GAL 5:22-23: the fruit of the Spirit
+
+## trinity
+- **Title:** The Trinity
+- **Asks:** What is the Trinity? | How can God be three persons and one God? | Father, Son and Holy Spirit: three gods? | Is the Trinity in the Bible?
+- **Points:**
+  - There is one God, eternally Father, Son and Holy Spirit: three persons, each fully God, not three gods and not one person playing three roles.
+  - Scripture shows it: God is one; the Word was God and became flesh; lying to the Spirit is lying to God; and the Father, Son and Spirit appear together at Jesus' baptism and in the name believers are baptized into.
+  - It is beyond full understanding, but God has revealed it. Avoid comparisons that teach an error (such as water, ice and steam).
+- **Passages:**
+  - DEU 6:4: the LORD our God, the LORD is One
+  - JHN 1:1: the Word was with God, and the Word was God
+  - JHN 1:14: the Word became flesh
+  - ACT 5:3-4: lying to the Holy Spirit is lying to God
+  - MAT 3:16-17: the Spirit descends on the Son and the Father speaks from heaven
+  - MAT 28:19: baptizing in the name of the Father and of the Son and of the Holy Spirit
+  - 2CO 13:14: the grace of the Lord Jesus Christ, the love of God, and the fellowship of the Holy Spirit
+
+## lords-supper
+- **Title:** The Lord's Supper (communion)
+- **Asks:** What does communion mean? | Why do churches take the Lord's Supper? | Can I take communion if I'm not baptized? | Do the bread and the cup become Jesus' body and blood? | Communion | Holy Communion and the Lord's Table
+- **Points:**
+  - Jesus gave the Lord's Supper so His people remember His death and look for His return. Baptists hold that it is a symbolic act: the bread and cup picture His body and blood; they are not changed into them, and taking them does not save.
+  - It is for believers: in Baptist churches, believers who have been baptized, often members of that church. Churches differ on the details, so their pastor can explain their church's practice.
+  - Come examining yourself and confessing sin, not staying away for not being perfect. Scripture doesn't set how often; churches differ.
+  - Speak respectfully of churches that understand it differently.
+- **Passages:**
+  - LUK 22:19-20: this is My body given for you; do this in remembrance of Me
+  - 1CO 11:23-26: as often as you eat this bread and drink this cup, you proclaim the Lord's death until He comes
+  - 1CO 11:27-28: each one must examine himself before he eats and drinks
+  - 1CO 10:16-17: one loaf, one body, all sharing the one bread
+  - ACT 2:41-42: the baptized believers devoted themselves to the breaking of bread and to prayer
+
+## racism
+- **Title:** Racism and prejudice
+- **Asks:** Is racism a sin? | Does God love all races the same? | Can Christians of different races marry? | I'm treated badly because of my skin color | Prejudice and discrimination | What does the Bible teach about racism and prejudice? | Marrying someone of a different race
+- **Points:**
+  - God made every nation from one man, and people of every race are made in His image with full dignity. Racism and favoritism are sin.
+  - In Christ, believers of every people are one, and heaven gathers every nation, tribe and tongue. The Bible doesn't forbid marrying someone of another race; its rule is to marry a believer.
+  - For someone mistreated because of their race: it is not their fault, and God sees them. They can seek justice honestly, without repaying evil for evil.
+- **Passages:**
+  - GEN 1:27: God created mankind in His own image
+  - ACT 17:26: from one man He made every nation
+  - ACT 10:34-35: God shows no favoritism, but welcomes people from every nation
+  - GAL 3:28: you are all one in Christ Jesus
+  - REV 7:9: a multitude from every nation, tribe, people and tongue before the throne
+  - JAS 2:8-9: if you show favoritism, you sin
+  - 1JN 4:20: anyone who hates his brother cannot love God
+
+## gender
+- **Title:** Gender identity
+- **Asks:** I'm transgender, does God love me? | Is it a sin to be transgender? | I don't feel like a boy | I don't feel like a girl | Gender dysphoria | What does the Bible teach about transgender people? | Can a transgender person follow Jesus? | Questioning my gender | I feel like I'm the wrong gender
+- **Points:**
+  - God loves them: begin with compassion, especially if they're struggling or confused, and never mock or shame them.
+  - Give what the Bible teaches, honestly and gently: God made people male and female, and being male or female is part of His good creation, so the body He gave is received as His gift.
+  - Invite them to talk with a trusted pastor; if they're in distress, a Christian counselor can help too. This is not a crisis: don't begin with [[CRISIS]] or add an emergency line unless they mention harm or danger.
+- **Passages:**
+  - GEN 1:27: God created mankind in His image, male and female
+  - GEN 1:31: God saw all that He had made, and it was very good
+  - PSA 139:13-14: You knit me together in my mother's womb; I am fearfully and wonderfully made
+  - 1CO 6:19-20: your body is a temple of the Holy Spirit; glorify God with your body
+  - MAT 11:28-30: come to Me, all who are weary and burdened, and I will give you rest
+  - ROM 5:8: while we were still sinners, Christ died for us

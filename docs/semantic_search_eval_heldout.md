@@ -115,6 +115,33 @@ query's two scores.
 - The main set can't judge this: the guide phrases were written from its queries, so every
   TOPIC and MOD query is close to one.
 
+## Fourth run (2026-11-27): 19 new topic guides (#397)
+
+The guides chosen from this set's misses (infertility and miscarriage, sexual purity, addiction,
+suffering, a child who left the faith, guilt, self-worth, parenting, sharing faith, new believers,
+breakups, aging parents, singleness) and the gaps the developer added (abortion, the Holy Spirit,
+the Trinity, the Lord's Supper, racism, gender identity), plus fear-of-death passages in the fear
+guide. Same command and caches as above, so no neurons. "Before" is `main` at `b99561d`, which
+already had #414's divorce guide and #411's fixes, so it's higher than the first runs.
+
+| With Key passages | Before | After |
+|---|---|---|
+| Queries that matched a guide | 37 | 63 |
+| LIFE (everyday sentences) | 20 of 40 | 36 of 40 |
+| NEW | 27 of 40 | 31 of 40 |
+| STORY | 20 of 25 | 21 of 25 |
+| LANG | 13 of 27 | 17 of 27 |
+| **All**, today's ranking | **80 of 132** | **105 of 132** |
+| **All**, with Nave's ≥ 0.65 (live) | **90 of 132** | **113 of 132** |
+
+- **No query lost its hit**, and 25 gained one. Two did lose theirs in the first draft: "I'm
+  getting old and my body is failing" matched the worth and gender guides through "My body…"
+  phrases, and "I want to be a better husband" matched singleness through "I want a husband". Both
+  phrases were changed, and both searches are now probes.
+- **The Bible Helper card (#401)** is offered for more look-ups at margin 0: NEW 4 → 12 of 40
+  (LIFE 34 → 39). They are topics that now have a guide, such as the Holy Spirit and racism, so
+  the Bible Helper answers them with checked passages.
+
 ## Queries
 
 ## Everyday sentences

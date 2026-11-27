@@ -176,3 +176,194 @@ rest | I keep dozing off during the day
 rest | I'm too tired to keep my eyes open in class
 crisis | What's the use of being alive?
 rest | My eyes are heavy and I can't stay awake
+
+# --- New guides (#397): written before the guides' vectors were made ---
+fertility | we can't have children
+fertility | We've been trying for a baby for years
+fertility | Why can't I get pregnant?
+fertility | we lost our baby
+fertility | I had a miscarriage
+fertility | Our baby was stillborn
+fertility/grief | My baby died before she was born
+fertility | Is God punishing me because I can't have kids?
+fertility | No podemos tener hijos
+fertility | Tuve un aborto espontáneo
+fertility | 저희는 아이를 가질 수 없어요
+purity | I can't stop looking at porn
+purity | I'm addicted to pornography
+purity | Is sex before marriage a sin?
+purity | My boyfriend wants to sleep with me
+purity | How do I stay pure until marriage?
+purity | Is masturbation a sin?
+purity/repeated-sin | I watched porn again after promising God I'd stop
+purity | ¿Es pecado tener relaciones antes del matrimonio?
+purity | Saya kecanduan pornografi
+addiction | I'm addicted to my phone
+addiction | I can't control what I eat
+addiction | I'm addicted to gambling
+addiction | I can't stop smoking
+addiction | How do I break an addiction?
+addiction | I need more self-control
+addiction/alcohol | I think I'm an alcoholic
+addiction | I spend hours on video games every day
+addiction | Soy adicto a las drogas
+addiction | 我沉迷于手机
+suffering | why do bad things happen to good people
+suffering | I'm angry at God
+suffering | Why does God allow suffering?
+suffering | If God is good, why is there so much evil?
+suffering | Why did God let this happen to me?
+suffering | Is it a sin to be angry at God?
+suffering | Why do innocent children suffer?
+suffering | Warum lässt Gott Leid zu?
+suffering | 하나님은 왜 고통을 허락하시나요?
+prodigal | my son stopped believing in God
+prodigal | My daughter left the church
+prodigal | My child says he's an atheist now
+prodigal | How do I pray for my prodigal son?
+prodigal | My brother walked away from the faith
+prodigal | Mi hijo ya no cree en Dios
+guilt | I lied to my boss and I feel guilty
+guilt | I said something hurtful and want to make it right
+guilt | nagsinungaling ako sa mga magulang ko
+guilt | I stole something and feel terrible
+guilt | I can't stop feeling guilty about what I did
+guilt | How do I apologize to someone I hurt?
+guilt | I cheated on my exam
+guilt | Tengo mucha culpa por lo que hice
+worth | I hate the way I look
+worth | I feel like nobody notices me
+worth | I feel worthless
+worth | I'm ugly
+worth | I have low self-esteem
+worth | Where does my identity come from?
+worth | Je me sens sans valeur
+parenting | my kids won't listen to me
+parenting | anak saya tidak mau mendengarkan saya
+parenting | we just had a baby
+parenting | How do I raise my children to love God?
+parenting | My teenager is rebellious
+parenting | How should Christians discipline their kids?
+parenting | Being a good mom
+parenting | 我的孩子不听话
+sharing-faith | how do I share my faith with my friends
+sharing-faith | How do I tell my family about Jesus?
+sharing-faith | I'm scared to talk about my faith at work
+sharing-faith | How do I witness to an atheist?
+sharing-faith | ¿Cómo comparto el evangelio?
+new-believer | I just became a Christian, what now
+new-believer | I got saved last week, what should I do next?
+new-believer | How do I grow in my faith?
+new-believer | I'm a new Christian and don't know where to start
+new-believer | Acabo de aceptar a Cristo, ¿y ahora qué?
+breakup | my girlfriend broke up with me
+breakup | My boyfriend dumped me
+breakup | I can't get over my ex
+breakup | My fiancé called off the wedding
+breakup | Mi novia me dejó
+aging-parents | taking care of my elderly mother
+aging-parents | My dad has dementia and I'm caring for him
+aging-parents | How do I honor my aging parents?
+aging-parents | Should I put my mother in a nursing home?
+aging-parents | Cuidar a mis padres ancianos
+singleness | I'm single and I want to get married
+singleness | Will I ever find a husband?
+singleness | Is it okay to stay single?
+singleness | Can I date someone who isn't a Christian?
+singleness | How do I find a godly wife?
+singleness | Je suis célibataire et je veux me marier
+abortion | What does the Bible say about abortion?
+abortion | I had an abortion, can God forgive me?
+abortion | I'm pregnant and my boyfriend wants me to get an abortion
+abortion | Is abortion murder?
+abortion | Is it okay to end a pregnancy?
+abortion | ¿Qué dice la Biblia sobre el aborto?
+holy-spirit | the Holy Spirit
+holy-spirit | o Espírito Santo
+holy-spirit | 성령
+holy-spirit | Who is the Holy Spirit?
+holy-spirit | Do I have to speak in tongues?
+holy-spirit | What are the gifts of the Spirit?
+holy-spirit | What does it mean to be filled with the Spirit?
+holy-spirit | Der Heilige Geist
+trinity | the Trinity
+trinity | How can God be three in one?
+trinity/jesus | Is Jesus God?
+holy-spirit/trinity | Is the Holy Spirit a person or a force?
+trinity | ¿Qué es la Trinidad?
+lords-supper | communion
+lords-supper | What is the Lord's Supper?
+lords-supper | Who can take communion?
+lords-supper | Is the bread really the body of Jesus?
+lords-supper | How often should we take communion?
+lords-supper | La Santa Cena
+racism | racism
+racism | What does the Bible say about racism?
+racism | Is interracial marriage wrong?
+racism | People treat me badly because of my race
+racism | God loves every race
+racism | 인종차별에 대해 성경은 뭐라고 하나요?
+gender | What does the Bible say about being transgender?
+gender | I feel like I was born in the wrong body
+gender | Can a transgender person be a Christian?
+gender | I'm confused about my gender
+gender | ¿Qué dice la Biblia sobre ser transgénero?
+fear | I'm afraid of dying
+fear | j'ai peur de mourir
+
+# --- New guides: crisis must still win, and neighbours must keep their guide ---
+crisis | We lost our baby and I don't want to live anymore
+crisis | I hate myself and want to die
+crisis | I relapsed and took too many pills
+crisis | I'm so ashamed of what I did that I want to kill myself
+crisis | Since my girlfriend left me I want to end my life
+crisis | I'm pregnant and I want to die
+crisis | My son left the faith and I wish I was dead
+abuse/crisis | My dad hits me when he's drunk
+grief | My mom died last week
+grief | My grandfather passed away
+repeated-sin | I keep falling into the same sin
+marriage | How can I be a better husband?
+parents | How do I honor my parents when they're difficult?
+alcohol | Can Christians drink alcohol?
+same-sex | I'm gay, does God hate me?
+illness | Why does God allow sickness?
+god-far | Where is God when I'm suffering?
+comparison | I'm jealous of other people's lives
+comparison | I'm jealous of my friend's success
+baptism | Do I need to be baptized?
+salvation | How do I become a Christian?
+loneliness | I have no friends
+
+# --- New guides' validation: written with the probes above, not used to choose phrases ---
+fertility | My wife can't get pregnant and we're heartbroken
+fertility | Will I see my miscarried baby in heaven?
+purity | I'm struggling with lust
+purity | Is it wrong to live together before marriage?
+addiction | I'm hooked on social media
+addiction | I can't quit vaping
+suffering | Why doesn't God stop wars?
+suffering | I'm mad at God for what happened
+prodigal | My kids don't go to church anymore
+guilt | I feel so guilty about something I did years ago
+worth | I don't like myself
+parenting | My toddler throws tantrums
+sharing-faith | How do I evangelize?
+new-believer | I just got baptized, what's next?
+breakup | My heart is broken after our breakup
+aging-parents | My parents are getting old and need help
+singleness | I'm lonely being single
+abortion | My girlfriend is thinking about an abortion
+holy-spirit | How do I know the Holy Spirit lives in me?
+trinity | Father, Son and Holy Spirit
+lords-supper | Why do Baptists take communion?
+racism | Is it a sin to be prejudiced?
+gender | Is changing your gender a sin?
+crisis | I can't live with the guilt anymore, I want to die
+
+# --- Held-out searches the first draft took from their old guide or from search (#397) ---
+illness/rest | I'm getting old and my body is failing
+marriage | I want to be a better husband
+fear | I'm afraid of dying. What does the Bible say?
+parenting | Is it okay to spank my children?
+singleness | I'm 35, single, and I really want to get married. Has God forgotten me?
