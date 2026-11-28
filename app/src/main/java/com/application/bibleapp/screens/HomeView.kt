@@ -77,6 +77,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -89,6 +90,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
@@ -939,36 +941,17 @@ private fun QuestionsCard(bookName: String, onSummaryClick: (() -> Unit)?, onBro
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
-            // Side by side when both fit (landscape, tablets); otherwise one under the other, full
-            // width, rather than a ragged wrap. 340 dp fits both labels in English at default size.
-            BoxWithConstraints {
-                val sideBySide = maxWidth >= 340.dp
-                val buttonModifier = if (sideBySide) Modifier else Modifier.fillMaxWidth()
-                val buttons: @Composable (Modifier) -> Unit = { weightModifier ->
-                    if (onSummaryClick != null) {
-                        Button(
-                            onClick = onSummaryClick,
-                            modifier = weightModifier.then(buttonModifier),
-                            contentPadding = ButtonDefaults.ButtonWithIconContentPadding
-                        ) {
-                            Text(stringResource(R.string.about_book_summary))
-                            Spacer(modifier = Modifier.width(ButtonDefaults.IconSpacing))
-                            Icon(
-                                Icons.AutoMirrored.Filled.OpenInNew,
-                                contentDescription = opensOutside,
-                                modifier = Modifier.size(ButtonDefaults.IconSize)
-                            )
-                        }
-                    }
-                    // Bordered in primary: `outline` is too faint on the card's tint (#365).
-                    OutlinedButton(
-                        onClick = onBrowseClick,
-                        modifier = weightModifier.then(buttonModifier),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary),
+            // Side by side when both labels fit on one line (landscape, tablets, short labels);
+            // otherwise one under the other, full width. Decided from the labels themselves, not a
+            // fixed width: German's longer labels squeezed "Browse questions" into a narrow column
+            // that broke letter by letter (#427).
+            RowIfItFits(spacing = Spacing.sm) {
+                if (onSummaryClick != null) {
+                    Button(
+                        onClick = onSummaryClick,
                         contentPadding = ButtonDefaults.ButtonWithIconContentPadding
                     ) {
-                        Text(stringResource(R.string.home_questions_browse))
+                        Text(stringResource(R.string.about_book_summary))
                         Spacer(modifier = Modifier.width(ButtonDefaults.IconSpacing))
                         Icon(
                             Icons.AutoMirrored.Filled.OpenInNew,
@@ -977,10 +960,56 @@ private fun QuestionsCard(bookName: String, onSummaryClick: (() -> Unit)?, onBro
                         )
                     }
                 }
-                if (sideBySide) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) { buttons(Modifier) }
-                } else {
-                    Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) { buttons(Modifier) }
+                // Bordered in primary: `outline` is too faint on the card's tint (#365).
+                OutlinedButton(
+                    onClick = onBrowseClick,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary),
+                    contentPadding = ButtonDefaults.ButtonWithIconContentPadding
+                ) {
+                    Text(stringResource(R.string.home_questions_browse))
+                    Spacer(modifier = Modifier.width(ButtonDefaults.IconSpacing))
+                    Icon(
+                        Icons.AutoMirrored.Filled.OpenInNew,
+                        contentDescription = opensOutside,
+                        modifier = Modifier.size(ButtonDefaults.IconSize)
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Its children in a row, at their natural width, when they all fit on one line; otherwise one
+ * under the other, each the full width (#427). Measured from the content, so a longer translation
+ * stacks instead of squeezing the last child into whatever width is left.
+ */
+@Composable
+private fun RowIfItFits(spacing: Dp, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    Layout(content = content, modifier = modifier) { measurables, constraints ->
+        val gap = spacing.roundToPx()
+        val gaps = gap * (measurables.size - 1).coerceAtLeast(0)
+        val naturalWidth = measurables.sumOf { it.maxIntrinsicWidth(constraints.maxHeight) } + gaps
+        if (naturalWidth <= constraints.maxWidth) {
+            val placeables = measurables.map { it.measure(constraints.copy(minWidth = 0)) }
+            val width = (placeables.sumOf { it.width } + gaps).coerceIn(constraints.minWidth, constraints.maxWidth)
+            val height = placeables.maxOfOrNull { it.height } ?: 0
+            layout(width, height) {
+                var x = 0
+                placeables.forEach {
+                    it.placeRelative(x, (height - it.height) / 2)
+                    x += it.width + gap
+                }
+            }
+        } else {
+            val placeables = measurables.map { it.measure(Constraints.fixedWidth(constraints.maxWidth)) }
+            val height = placeables.sumOf { it.height } + gaps
+            layout(constraints.maxWidth, height) {
+                var y = 0
+                placeables.forEach {
+                    it.placeRelative(0, y)
+                    y += it.height + gap
                 }
             }
         }
