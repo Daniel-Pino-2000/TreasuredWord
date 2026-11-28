@@ -156,6 +156,7 @@ import com.application.bibleapp.utils.pickGaps
 import com.application.bibleapp.utils.practiceWords
 import com.application.bibleapp.utils.shuffledOrder
 import com.application.bibleapp.utils.splitPhrases
+import com.application.bibleapp.utils.LocalInAppReview
 import com.application.bibleapp.utils.tapGamePassed
 import com.application.bibleapp.utils.verseRefsText
 import com.application.bibleapp.utils.wordBank
@@ -247,6 +248,17 @@ fun MemorizePracticeView(
                             PracticePage.Summary -> {
                                 // Bonus rounds don't count; a passage played in several games counts once.
                                 val played = outcomes.filterKeys { (currentPages[it.page] as? PracticePage.Game)?.bonus == false }
+                                // A finished practice with a game passed: a good moment for Play's
+                                // rating card (#426). Only once the summary has settled on screen
+                                // (the pager also lays out a page being swiped toward), and after a
+                                // moment, so the result is seen first.
+                                if (pagerState.settledPage == index && played.values.any { it.passed }) {
+                                    val review = LocalInAppReview.current
+                                    LaunchedEffect(round) {
+                                        delay(REVIEW_AFTER_SUMMARY_MS)
+                                        review?.onPracticePassed()
+                                    }
+                                }
                                 PracticeSummary(
                                     practiced = played.keys.map { it.page }.distinct().size,
                                     outcomes = played.values.toList(),
@@ -315,6 +327,9 @@ fun MemorizePracticeView(
         }
     }
 }
+
+/** How long the practice summary is on screen before Play's rating card may open over it (#426). */
+private const val REVIEW_AFTER_SUMMARY_MS = 1_500L
 
 /** A finished game's result as the page shows it; [memorizedAfter] tells "still memorized" apart. */
 private data class PageOutcome(

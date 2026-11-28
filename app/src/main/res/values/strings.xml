@@ -443,6 +443,8 @@
     <string name="settings_app_version">%1$s · Version %2$s</string>
     <string name="settings_section_about">About</string>
     <string name="settings_privacy_policy">Privacy policy</string>
+    <!-- Settings → About row opening the app's Google Play page to rate it (#426); %1$s is the app name -->
+    <string name="settings_rate_app">Rate %1$s</string>
     <!-- Settings row and page listing the open-source libraries in the app and their licenses (#99) -->
     <string name="settings_open_source_licenses">Open-source licenses</string>
     <string name="settings_section_general">General</string>

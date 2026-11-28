@@ -1,9 +1,11 @@
 package com.application.bibleapp.navigation
 
+import android.os.SystemClock
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -39,6 +41,7 @@ import com.application.bibleapp.screens.VersionPickerView
 import com.application.bibleapp.screens.YouView
 import com.application.bibleapp.screens.settings.SettingsView
 import com.application.bibleapp.ui.theme.centeredContentWidth
+import com.application.bibleapp.utils.LocalInAppReview
 import com.application.bibleapp.utils.UiText
 import com.application.bibleapp.viewmodel.AskViewModel
 import com.application.bibleapp.viewmodel.AuthViewModel
@@ -112,6 +115,10 @@ fun Navigation(
     ) {
 
         composable(Screen.Home.route) {
+            // Back on Home after reading a while: a good moment for Play's rating card (#426).
+            // Runs each time Home comes back on screen, not on a rotation (configChanges).
+            val review = LocalInAppReview.current
+            LaunchedEffect(Unit) { review?.onHomeShown(chapterLoadedFine = bibleViewModel.chapterProblem.value == null) }
             HomeView(
                 bibleViewModel = bibleViewModel,
                 // Home picks its own max width — wider in landscape, where it goes two-column.
@@ -140,6 +147,12 @@ fun Navigation(
         }
 
         composable(Screen.Bible.route) {
+            // How long the reader was on screen, for the rating prompt's "read a while" (#426).
+            val review = LocalInAppReview.current
+            DisposableEffect(Unit) {
+                val openedAt = SystemClock.elapsedRealtime()
+                onDispose { review?.addReadingTime(SystemClock.elapsedRealtime() - openedAt) }
+            }
             BibleView(
                 bibleViewModel,
                 modifier = Modifier.padding(padding),

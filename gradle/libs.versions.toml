@@ -17,6 +17,8 @@ workManager = "2.9.1"
 glance = "1.1.1"
 browser = "1.8.0"
 playAppUpdate = "2.1.0"
+# Google Play's in-app rating card (#426). Apache 2.0, free, no key.
+playReview = "2.0.2"
 # 11.x is built for Kotlin 2.0 / Compose 1.6+; 12+ would pull in Compose 1.8+ (#99)
 aboutLibraries = "11.2.3"
 # The Google account's picture on the You tab (#335). Apache 2.0, free. 3.0.x is the last line
@@ -66,6 +68,7 @@ androidx-glance-material3 = { group = "androidx.glance", name = "glance-material
 androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workManager" }
 androidx-browser = { group = "androidx.browser", name = "browser", version.ref = "browser" }
 play-app-update-ktx = { group = "com.google.android.play", name = "app-update-ktx", version.ref = "playAppUpdate" }
+play-review-ktx = { group = "com.google.android.play", name = "review-ktx", version.ref = "playReview" }
 aboutlibraries-compose-m3 = { group = "com.mikepenz", name = "aboutlibraries-compose-m3", version.ref = "aboutLibraries" }
 
 # Ktor server

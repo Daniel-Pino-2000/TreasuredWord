@@ -119,6 +119,7 @@ TreasuredWord links to resources made by other ministries. They open outside the
 - **GotQuestions.org** answers and book summaries open in your phone's browser (shown as a browser sheet over the app). GotQuestions.org and your browser's provider see that visit.
 - **BibleProject** overview videos open in the YouTube app, or on youtube.com if the app isn't installed. Google (YouTube) sees what you watch.
 - **Video previews on Home.** Home shows the picture (thumbnail) of the BibleProject videos for the book you're reading. The app loads these pictures from YouTube's image server (`i.ytimg.com`) when Home opens, so Google sees your device's internet (IP) address and which video pictures were loaded, even if you don't play a video. Nothing else is sent. When you're offline, or Android's Data Saver is on, the app loads no pictures and shows a colored tile instead.
+- **Ratings on Google Play.** Now and then the app may show Google Play's own rating card, and Settings has a "Rate TreasuredWord" row that opens the app's Play Store page. The app sends nothing itself: Google Play handles the rating and any review you write, under Google's privacy policy. The app doesn't learn whether you rated it or what you chose.
 
 The app sends these services no account information and doesn't keep a record of what you open. Your visit is covered by their own privacy policies: [GotQuestions.org](https://www.gotquestions.org/privacy.html), [Google](https://policies.google.com/privacy) and your browser's.
 
