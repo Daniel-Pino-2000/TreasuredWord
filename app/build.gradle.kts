@@ -69,8 +69,9 @@ android {
         // 1.6: landscape keyboard and rotation fixes (#234).
         // 1.7: color themes, daily verse widget, verse images, Android 7–11 crash fix (#264).
         // 1.8: daily verse never repeats, Library undo, Bible Helper fixes; first production release.
-        versionCode = 9
-        versionName = "1.8"
+        // 1.9: Memorize, chapter audio, licensed versions, search by meaning, new icon (#390).
+        versionCode = 10
+        versionName = "1.9"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 

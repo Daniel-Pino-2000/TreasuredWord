@@ -17,6 +17,10 @@
 -dontwarn com.google.errorprone.annotations.Immutable
 -dontwarn com.google.errorprone.annotations.RestrictedApi
 
+# An annotation that Play's review-ktx (in-app review, #426) refers to but that only newer Play
+# services libraries ship. Nothing reads it while the app runs.
+-dontwarn com.google.android.gms.common.annotation.NoNullnessRewrite
+
 # Credential Manager finds its Google Play services provider by reflection (#112), as its docs say.
 -if class androidx.credentials.CredentialManager
 -keep class androidx.credentials.playservices.** {
