@@ -1,11 +1,5 @@
 package com.application.bibleapp.utils
 
-import android.app.Activity
-import com.google.android.play.core.review.ReviewInfo
-import com.google.android.play.core.review.ReviewManager
-import com.google.android.play.core.review.testing.FakeReviewManager
-import com.google.android.gms.tasks.Task
-import com.google.android.gms.tasks.Tasks
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -53,32 +47,55 @@ class InAppReviewTest {
     }
 
     @Test
-    fun `a fake Play review flow runs and starts the wait`() = runTest {
-        var asked = 0
-        val launched = runReviewFlow(FakeReviewManager(null), Activity(), stillWanted = { true }, onAsked = { asked++ })
+    fun `a review flow launches Play's card and starts the wait`() = runTest {
+        val events = mutableListOf<String>()
+        val launched = runReviewFlow(
+            request = { "info" },
+            launch = { events += "launched $it" },
+            stillWanted = { true },
+            onAsked = { events += "asked" }
+        )
         assertTrue(launched)
-        assertEquals(1, asked)
+        // The wait starts before the card opens, so it counts even if Play shows nothing.
+        assertEquals(listOf("asked", "launched info"), events)
     }
 
     @Test
     fun `nothing is launched or counted when the person moved on meanwhile`() = runTest {
-        var asked = 0
-        val launched = runReviewFlow(FakeReviewManager(null), Activity(), stillWanted = { false }, onAsked = { asked++ })
+        val events = mutableListOf<String>()
+        val launched = runReviewFlow(
+            request = { "info" },
+            launch = { events += "launched" },
+            stillWanted = { false },
+            onAsked = { events += "asked" }
+        )
         assertFalse(launched)
-        assertEquals(0, asked)
+        assertEquals(emptyList<String>(), events)
     }
 
     @Test
     fun `a failed request (offline, not from Play) is ignored and doesn't start the wait`() = runTest {
-        var asked = 0
-        val launched = runReviewFlow(FailingReviewManager, Activity(), stillWanted = { true }, onAsked = { asked++ })
+        val events = mutableListOf<String>()
+        val launched = runReviewFlow<String>(
+            request = { throw IllegalStateException("No Play Store") },
+            launch = { events += "launched" },
+            stillWanted = { true },
+            onAsked = { events += "asked" }
+        )
         assertFalse(launched)
-        assertEquals(0, asked)
+        assertEquals(emptyList<String>(), events)
     }
 
-    private object FailingReviewManager : ReviewManager {
-        override fun requestReviewFlow(): Task<ReviewInfo> = Tasks.forException(IllegalStateException("No Play Store"))
-        override fun launchReviewFlow(activity: Activity, reviewInfo: ReviewInfo): Task<Void> =
-            error("Not reached: the request failed")
+    @Test
+    fun `a card that fails to open still counts as asked`() = runTest {
+        var asked = 0
+        val launched = runReviewFlow(
+            request = { "info" },
+            launch = { throw IllegalStateException("Play closed") },
+            stillWanted = { true },
+            onAsked = { asked++ }
+        )
+        assertTrue(launched)
+        assertEquals(1, asked)
     }
 }

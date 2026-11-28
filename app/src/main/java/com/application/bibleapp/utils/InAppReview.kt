@@ -1,6 +1,5 @@
 package com.application.bibleapp.utils
 
-import android.app.Activity
 import android.content.Context
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -12,8 +11,8 @@ import androidx.lifecycle.lifecycleScope
 import com.application.bibleapp.data.repository.dailyVerseDateKey
 import com.google.android.play.core.review.ReviewManager
 import com.google.android.play.core.review.ReviewManagerFactory
-import com.google.android.play.core.review.ktx.launchReview
-import com.google.android.play.core.review.ktx.requestReview
+import com.google.android.play.core.ktx.launchReview
+import com.google.android.play.core.ktx.requestReview
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
@@ -52,22 +51,26 @@ internal fun shouldAskForReview(state: ReviewPromptState, nowMs: Long): Boolean 
         (state.lastAskedAtMs == 0L || nowMs < state.lastAskedAtMs || nowMs - state.lastAskedAtMs >= REVIEW_ASK_INTERVAL_MS)
 
 /**
- * Asks Play for its rating card and shows it over [activity] (#426). [stillWanted] is checked once
- * Play answers, since that takes a moment and the person may have moved on; [onAsked] runs just
- * before the card is launched, so the 90-day wait starts. Returns whether the flow was launched.
+ * Asks Play for its rating card ([request], `ReviewManager.requestReview`) and shows it ([launch],
+ * `ReviewManager.launchReview`) (#426). [stillWanted] is checked once Play answers, since that
+ * takes a moment and the person may have moved on; [onAsked] runs just before the card is
+ * launched, so the 90-day wait starts. Returns whether the card was launched.
  *
  * Play never says whether a card actually appeared or what was chosen, and may show nothing (its
- * quota, or a build not installed from Play), so nothing here depends on it. A failure (offline,
- * no Play Store) is ignored and doesn't start the wait.
+ * quota, or a build not installed from Play), so nothing here depends on it. A failed request
+ * (offline, no Play Store) is ignored and doesn't start the wait.
+ *
+ * Play's calls come in as functions so this runs in plain unit tests: Play's own
+ * `FakeReviewManager` needs a real `PendingIntent`, which only a device (or Robolectric) has.
  */
-internal suspend fun runReviewFlow(
-    manager: ReviewManager,
-    activity: Activity,
+internal suspend fun <T> runReviewFlow(
+    request: suspend () -> T,
+    launch: suspend (T) -> Unit,
     stillWanted: () -> Boolean,
     onAsked: () -> Unit
 ): Boolean {
     val info = try {
-        manager.requestReview()
+        request()
     } catch (e: CancellationException) {
         throw e
     } catch (_: Exception) {
@@ -76,7 +79,7 @@ internal suspend fun runReviewFlow(
     if (!stillWanted()) return false
     onAsked()
     try {
-        manager.launchReview(activity, info)
+        launch(info)
     } catch (e: CancellationException) {
         throw e
     } catch (_: Exception) {
@@ -144,8 +147,8 @@ class InAppReview internal constructor(
         activity.lifecycleScope.launch {
             try {
                 runReviewFlow(
-                    manager = manager,
-                    activity = activity,
+                    request = { manager.requestReview() },
+                    launch = { manager.launchReview(activity, it) },
                     stillWanted = ::isInFront,
                     onAsked = { save(load().copy(lastAskedAtMs = System.currentTimeMillis())) }
                 )
